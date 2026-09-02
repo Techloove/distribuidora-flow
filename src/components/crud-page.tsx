@@ -111,6 +111,9 @@ export function CrudPage({
   emptyLabel,
   searchColumns,
   onFieldChange,
+  decorate,
+  inlineEdit,
+  onInlineSave,
 }: {
   table: string;
   fields: CrudField[];
@@ -123,6 +126,12 @@ export function CrudPage({
     value: string,
     form: Record<string, string | boolean>,
   ) => Record<string, string | boolean> | void;
+  /** Acrescenta colunas calculadas às linhas (ex.: promoção vigente do produto). */
+  decorate?: (rows: Row[]) => Row[];
+  /** Campos editáveis direto na listagem. */
+  inlineEdit?: string[];
+  /** Converte a edição inline no patch gravado (ex.: markup ↔ preço de venda). */
+  onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
@@ -159,9 +168,11 @@ export function CrudPage({
 
   const rows = useMemo(() => {
     let list = query.data ?? [];
+    if (decorate) list = decorate(list);
     if (centro && list.some((r) => "centro_id" in r)) {
       list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
     }
+
     for (const f of filterFields) {
       if (f.type === "date") {
         const de = filtros[`${f.name}__de`];
@@ -188,7 +199,7 @@ export function CrudPage({
     return list.filter((row) =>
       searchColumns.some((col) => String(row[col] ?? "").toLowerCase().includes(term)),
     );
-  }, [query.data, search, searchColumns, centro, filterFields, filtros]);
+  }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate]);
 
   function openCreate() {
     setEditing(null);
@@ -288,6 +299,20 @@ export function CrudPage({
     },
     onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
+
+  const inlineUpdate = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
+      const { error } = await client!.from(table).update(patch).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Atualizado");
+      queryClient.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (error: Error) => toast.error(traduzErro(error.message)),
+  });
+
+  const inlineSet = new Set(inlineEdit ?? []);
 
   const tableFields = fields.filter((f) => f.inTable);
 
@@ -402,16 +427,45 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {f.type === "multicheck"
-                        ? (f.checks ?? [])
-                            .filter((c) => row[c.name])
-                            .map((c) => c.label)
-                            .join(", ") || "—"
-                        : f.type === "checkbox"
-                          ? row[f.name]
-                            ? "Sim"
-                            : "Não"
-                          : String(row[f.name] ?? "—")}
+                      {inlineSet.has(f.name) && canManage ? (
+                        <Input
+                          key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
+                          type="number"
+                          step={f.step ?? "0.01"}
+                          aria-label={f.label}
+                          defaultValue={
+                            row[f.name] === null || row[f.name] === undefined
+                              ? ""
+                              : Number(row[f.name]).toFixed(2)
+                          }
+                          className="h-8 w-24"
+                          onBlur={(e) => {
+                            const antes =
+                              row[f.name] === null || row[f.name] === undefined
+                                ? ""
+                                : Number(row[f.name]).toFixed(2);
+                            if (e.target.value === antes) return;
+                            const patch = onInlineSave
+                              ? onInlineSave(row, f.name, e.target.value)
+                              : { [f.name]: e.target.value === "" ? null : Number(e.target.value) };
+                            if (Object.keys(patch).length === 0) return;
+                            inlineUpdate.mutate({ id: row["id"] as string, patch });
+                          }}
+                        />
+                      ) : f.type === "multicheck" ? (
+                        (f.checks ?? [])
+                          .filter((c) => row[c.name])
+                          .map((c) => c.label)
+                          .join(", ") || "—"
+                      ) : f.type === "checkbox" ? (
+                        row[f.name] ? (
+                          "Sim"
+                        ) : (
+                          "Não"
+                        )
+                      ) : (
+                        String(row[f.name] ?? "—")
+                      )}
                     </TableCell>
                   ))}
 
