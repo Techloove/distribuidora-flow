@@ -666,6 +666,10 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               ) : null}
             </div>
 
+            {creditoPainel}
+
+
+
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
               <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
