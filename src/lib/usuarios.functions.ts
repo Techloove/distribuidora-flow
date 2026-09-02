@@ -44,10 +44,19 @@ async function admin(path: string, init?: RequestInit) {
 /** Valida o token e exige papel admin. Devolve o id do chamador. */
 async function exigirAdmin(token: string): Promise<string> {
   const { url, service } = env();
+  const anon = process.env["EXT_SUPABASE_ANON_KEY"] ?? "";
   const me = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: service, Authorization: `Bearer ${token}` },
+    headers: { apikey: anon || service, Authorization: `Bearer ${token}` },
   });
-  if (!me.ok) throw new Error("Sessão inválida. Entre novamente.");
+  if (!me.ok) {
+    const body = await me.text();
+    if (body.includes("Invalid API key")) {
+      throw new Error(
+        "Chave do Supabase inválida no servidor. Atualize o secret EXT_SUPABASE_SERVICE_ROLE_KEY com a service_role/secret key do projeto.",
+      );
+    }
+    throw new Error("Sessão inválida. Entre novamente.");
+  }
   const user = (await me.json()) as { id?: string };
   if (!user.id) throw new Error("Sessão inválida. Entre novamente.");
   const roles = (await admin(
