@@ -14,30 +14,32 @@
 - Relatórios, Dashboard, Notificações, Auditoria, RBAC + RLS (7 papéis)
 - Códigos sequenciais numéricos automáticos
 
+## Concluído na fase 14/15 (ver itens marcados)
+
 ## Pendente
 ### Alta prioridade
-- [ ] Fluxo completo de status do pedido (em digitação → aprovação → separação → separado → faturado → em rota → entregue; parcial, recusado, devolvido)
-- [ ] Aprovação comercial automática (limite de crédito, títulos vencidos, estoque, margem mínima, desconto máximo)
-- [ ] Separação (lista por pedido e por onda)
-- [ ] Filtro global de centro de custo no topo (Todos | Centro A | Centro B) afetando dashboard e relatórios
-- [ ] centro_id nas tabelas que ainda não têm (clientes/pessoas, produtos, contas a pagar/receber, comissões) + vínculo multi-centro para pessoas
-- [ ] Comissão escalonada por faixa (mensal/semanal/por pedido/faturamento/recebimento; base bruta/líquida)
-- [ ] Restrição de visibilidade: representante só vê seus clientes/pedidos/comissões
+- [x] Fluxo completo de status do pedido (em digitação → aprovação → separação → separado → faturado → em rota → entregue; parcial, recusado, devolvido)
+- [x] Aprovação comercial automática (limite de crédito, títulos vencidos, estoque, margem mínima, desconto máximo)
+- [x] Separação (lista por pedido e por onda)
+- [x] Filtro global de centro de custo no topo (Todos | Centro A | Centro B) afetando dashboard e relatórios
+- [x] centro_id nas tabelas que ainda não têm (clientes/pessoas, produtos, contas a pagar/receber, comissões) + vínculo multi-centro para pessoas
+- [x] Comissão escalonada por faixa (mensal/semanal/por pedido/faturamento/recebimento; base bruta/líquida)
+- [x] Restrição de visibilidade: representante só vê seus clientes/pedidos/comissões
 
 ### Média prioridade
-- [ ] Rotas (nome, região, cidades, bairros, dia da semana, motorista, veículo, sequência) + rota no cliente
-- [ ] Entregas/romaneio com status próprio (aguardando, em rota, entregue, parcial, não entregue, devolvido)
-- [ ] Planejamento de compras (média 30/60/90 dias, pendentes, em trânsito, sugestão de compra)
-- [ ] Clientes inativos (filtros 15/30/45/60/90/120 dias, potencial de recuperação)
-- [ ] Histórico comercial do produto (vendas, faturamento, custo, margem, clientes, média mensal)
-- [ ] Histórico de custos do produto (data, fornecedor, NF, qtd, custo) + último custo / custo de reposição
-- [ ] Histórico do cliente (ticket médio, total comprado, títulos abertos/vencidos, último pedido)
+- [x] Rotas (nome, região, cidades, bairros, dia da semana, motorista, veículo, sequência) + rota no cliente
+- [x] Entregas/romaneio com status próprio (aguardando, em rota, entregue, parcial, não entregue, devolvido)
+- [x] Planejamento de compras (média 30/60/90 dias, pendentes, em trânsito, sugestão de compra)
+- [x] Clientes inativos (filtros 15/30/45/60/90/120 dias, potencial de recuperação)
+- [x] Histórico comercial do produto (vendas, faturamento, custo, margem, clientes, média mensal)
+- [x] Histórico de custos do produto (data, fornecedor, NF, qtd, custo) + último custo / custo de reposição
+- [x] Histórico do cliente (ticket médio, total comprado, títulos abertos/vencidos, último pedido)
 - [ ] Semáforo de margem (vermelho/amarelo/verde) e margem mínima por produto
 - [ ] Dashboard visual (faturamento hoje/mês, pedidos em separação/entrega, clientes inativos, estoque baixo, gráficos)
-- [ ] Campos fiscais/logísticos do produto (SKU, subcategoria, CEST, CFOP, dimensões, estoque máximo, preço promocional, comissão do produto)
-- [ ] NF de entrada: chave NF-e, impostos, lote, validade
-- [ ] Cliente: WhatsApp, endereço de cobrança e de entrega separados
-- [ ] Representante: WhatsApp, CPF/CNPJ, tipo (vendedor/representante), meta mensal no cadastro
+- [x] Campos fiscais/logísticos do produto (SKU, subcategoria, CEST, CFOP, dimensões, estoque máximo, preço promocional, comissão do produto)
+- [x] NF de entrada: chave NF-e, impostos, lote, validade
+- [x] Cliente: WhatsApp, endereço de cobrança e de entrega separados
+- [x] Representante: WhatsApp, CPF/CNPJ, tipo (vendedor/representante), meta mensal no cadastro
 
 ### Baixa prioridade / depende de terceiros
 - [ ] Boletos Sicredi (OAuth2, emitir/consultar/PDF/baixar/alterar vencimento, webhook e conciliação) — exige credenciais e beneficiário no Sicredi
