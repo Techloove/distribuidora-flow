@@ -714,44 +714,101 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           />
         </FilterBar>
 
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Documentos", value: String(docsFiltrados.length) },
+            { label: "Total", value: brl(totalFiltrado) },
+            { label: "Ticket médio", value: brl(ticket) },
+          ].map((k) => (
+            <div key={k.label} className="rounded-lg border border-border bg-card px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
+              <p className="truncate text-sm font-semibold">{k.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {statusResumo.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setF("status", "")}
+              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                !filtros["status"] ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              Todos ({docsFiltrados.length})
+            </button>
+            {statusResumo.map(([s, n]) => (
+              <button
+                key={s}
+                onClick={() => setF("status", filtros["status"] === s ? "" : s)}
+                className={`rounded-full px-2.5 py-1 text-[11px] capitalize transition-colors ${
+                  filtros["status"] === s
+                    ? "bg-primary text-primary-foreground"
+                    : `${statusTone(s)} hover:opacity-80`
+                }`}
+              >
+                {s.replace(/_/g, " ")} ({n})
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <p className="text-xs text-muted-foreground">
-          {docsFiltrados.length} documento(s) · total {brl(totalFiltrado)}
+          {abertos} em andamento · {docsFiltrados.length} no filtro
         </p>
 
-        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <div className="max-h-[calc(100vh-360px)] divide-y divide-border overflow-y-auto rounded-lg border border-border bg-card">
           {docs.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Carregando...
+            <div className="space-y-2 p-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
+              ))}
             </div>
           ) : docs.isError ? (
             <p className="p-4 text-sm text-destructive">{(docs.error as Error).message}</p>
           ) : docsFiltrados.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Nenhum documento neste filtro.
-            </p>
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum documento neste filtro.</p>
+              <Button variant="link" onClick={() => setFiltros({})} className="text-xs">
+                Limpar filtros
+              </Button>
+            </div>
           ) : (
-            docsFiltrados.map((d) => (
-              <button
-                key={String(d["id"])}
-                onClick={() => setSelected(String(d["id"]))}
-                className={`block w-full px-4 py-3 text-left text-sm transition-colors ${
-                  selected === d["id"] ? "bg-accent" : "hover:bg-accent/50"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">#{String(d["numero"])}</span>
-                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
-                    {String(d["status"])}
-                  </span>
-                </div>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {partnerName(d[config.partnerKey])}
-                </p>
-                <p className="text-xs text-muted-foreground">{brl(d["total_liquido"])}</p>
-              </button>
-            ))
+            docsFiltrados.map((d) => {
+              const ativo = selected === d["id"];
+              return (
+                <button
+                  key={String(d["id"])}
+                  onClick={() => setSelected(String(d["id"]))}
+                  className={`block w-full border-l-2 px-4 py-3 text-left text-sm transition-all ${
+                    ativo
+                      ? "border-l-primary bg-accent"
+                      : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold">#{String(d["numero"])}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
+                        String(d["status"]),
+                      )}`}
+                    >
+                      {String(d["status"]).replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs font-medium">
+                    {partnerName(d[config.partnerKey])}
+                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{fmtDate(d[config.dateField])}</span>
+                    <span className="font-semibold text-foreground">{brl(d["total_liquido"])}</span>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
+
 
       </section>
 
