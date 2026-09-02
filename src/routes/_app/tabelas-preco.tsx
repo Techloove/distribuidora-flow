@@ -245,7 +245,9 @@ function TabelasPrecoPage() {
         <section className="space-y-4">
           {canManage && (
             <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="text-sm font-semibold">Nova tabela</h2>
+              <h2 className="text-sm font-semibold">
+                {editando ? "Editar promoção" : "Nova promoção"}
+              </h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Label>Nome</Label>
