@@ -51,7 +51,14 @@ export type DocumentoConfig = {
   doneStatus: string;
 };
 
-const emptyItem = { produto_id: "", quantidade: "1", preco: "0", desconto: "0" };
+const emptyItem = {
+  produto_id: "",
+  quantidade: "1",
+  preco: "0",
+  desconto: "0",
+  lote: "",
+  validade: "",
+};
 
 export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const { client, roles } = useSupabase();
@@ -261,6 +268,9 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       };
       if (config.itemsTable === "pedido_itens") {
         payload["desconto_percentual"] = Number(item.desconto || 0);
+      } else {
+        payload["lote"] = item.lote || null;
+        payload["validade"] = item.validade || null;
       }
       const { error } = await client!.from(config.itemsTable).insert(payload);
       if (error) throw new Error(error.message);
