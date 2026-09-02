@@ -172,6 +172,44 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
   const doc = docs.data?.find((d) => d["id"] === selected) ?? null;
 
+  /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
+  const clienteFoco =
+    config.partnerTable === "clientes"
+      ? String((openNew ? header["partner"] : doc?.["cliente_id"]) ?? "")
+      : "";
+
+  const credito = useQuery({
+    queryKey: ["vw_cliente_credito", clienteFoco],
+    enabled: !!client && !!clienteFoco,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("vw_cliente_credito")
+        .select("*")
+        .eq("cliente_id", clienteFoco)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? null) as Row | null;
+    },
+  });
+
+  const titulosAbertos = useQuery({
+    queryKey: ["contas_receber", "abertos", clienteFoco],
+    enabled: !!client && !!clienteFoco,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("contas_receber")
+        .select("id, documento, parcela, valor, valor_pago, vencimento, status")
+        .eq("cliente_id", clienteFoco)
+        .neq("status", "pago")
+        .neq("status", "cancelado")
+        .order("vencimento")
+        .limit(30);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+
   const createDoc = useMutation({
     mutationFn: async () => {
       const payload: Record<string, unknown> = {
