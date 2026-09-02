@@ -564,7 +564,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           <DialogHeader>
             <DialogTitle>Novo documento</DialogTitle>
             <DialogDescription>
-              Informe os dados do cabeçalho; os itens são lançados em seguida.
+              1) {config.partnerLabel} e centro · 2) itens · 3) forma de pagamento.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -584,6 +584,21 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               </select>
             </div>
             <div className="space-y-1.5">
+              <Label>Centro</Label>
+              <select
+                value={header["centro"] ?? ""}
+                onChange={(e) => setHeader((h) => ({ ...h, centro: e.target.value }))}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">—</option>
+                {centros.data?.map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label>{config.dateLabel}</Label>
               <Input
                 type="date"
@@ -591,44 +606,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 onChange={(e) => setHeader((h) => ({ ...h, data: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Parcelas</Label>
-              <Input
-                type="number"
-                min="1"
-                value={header["parcelas"] ?? "1"}
-                onChange={(e) => setHeader((h) => ({ ...h, parcelas: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Frete (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={header["frete"] ?? "0"}
-                onChange={(e) => setHeader((h) => ({ ...h, frete: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Desconto (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={header["desconto"] ?? "0"}
-                onChange={(e) => setHeader((h) => ({ ...h, desconto: e.target.value }))}
-              />
-            </div>
-            {config.table === "pedidos" ? (
-              <div className="space-y-1.5">
-                <Label>Comissão (%)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={header["comissao"] ?? "0"}
-                  onChange={(e) => setHeader((h) => ({ ...h, comissao: e.target.value }))}
-                />
-              </div>
-            ) : (
+            {config.table === "compras" ? (
               <div className="space-y-1.5">
                 <Label>NF número</Label>
                 <Input
@@ -636,7 +614,8 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
                 />
               </div>
-            )}
+            ) : null}
+
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Observações</Label>
               <Input
