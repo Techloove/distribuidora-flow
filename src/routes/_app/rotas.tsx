@@ -24,6 +24,12 @@ export const Route = createFileRoute("/_app/rotas")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "nome", label: "Nome da rota", span: 2, inTable: true, required: true },
+  {
+    name: "sequencia",
+    label: "Sequência da rota (1, 2, 3...)",
+    type: "number",
+    inTable: true,
+  },
   { name: "regiao", label: "Região", inTable: true },
   { name: "cidades", label: "Cidades atendidas", span: 2 },
   { name: "bairros", label: "Bairros atendidos", span: 2 },
