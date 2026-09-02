@@ -62,11 +62,17 @@ const emptyItem = {
   validade: "",
 };
 
-export function DocumentoPage({ config }: { config: DocumentoConfig }) {
+export function DocumentoPage({
+  config,
+  initialDocId = null,
+}: {
+  config: DocumentoConfig;
+  initialDocId?: string | null;
+}) {
   const { client, roles } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialDocId);
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
   const [item, setItem] = useState({ ...emptyItem });
