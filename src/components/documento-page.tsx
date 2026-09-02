@@ -629,6 +629,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 Salvar pagamento
               </Button>
+
+              {previaParcelas.length > 0 ? (
+                <div className="mt-4 overflow-hidden rounded-md border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-24">Parcela</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previaParcelas.map((p) => (
+                        <TableRow key={p.parcela}>
+                          <TableCell>
+                            {p.parcela}/{previaParcelas.length}
+                          </TableCell>
+                          <TableCell>{p.vencimento}</TableCell>
+                          <TableCell className="text-right">{brl(p.valor)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Escolha a forma de pagamento para ver as parcelas e vencimentos.
+                </p>
+              )}
             </div>
           </>
 
