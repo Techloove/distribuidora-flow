@@ -26,6 +26,7 @@ import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
+import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
@@ -114,6 +115,11 @@ const AppReceberRoute = AppReceberRouteImport.update({
   path: '/receber',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRegrasComissaoRoute = AppRegrasComissaoRouteImport.update({
+  id: '/regras-comissao',
+  path: '/regras-comissao',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
+  '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
   '/transportadoras': typeof AppTransportadorasRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
+  '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
   '/transportadoras': typeof AppTransportadorasRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/_app/pedidos': typeof AppPedidosRoute
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
+  '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/receber'
+    | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
     | '/transportadoras'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/receber'
+    | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
     | '/transportadoras'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/_app/pedidos'
     | '/_app/produtos'
     | '/_app/receber'
+    | '/_app/regras-comissao'
     | '/_app/relatorios'
     | '/_app/representantes'
     | '/_app/transportadoras'
@@ -389,6 +401,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReceberRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/regras-comissao': {
+      id: '/_app/regras-comissao'
+      path: '/regras-comissao'
+      fullPath: '/regras-comissao'
+      preLoaderRoute: typeof AppRegrasComissaoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/relatorios': {
       id: '/_app/relatorios'
       path: '/relatorios'
@@ -428,6 +447,7 @@ interface AppRouteChildren {
   AppPedidosRoute: typeof AppPedidosRoute
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
+  AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
@@ -448,6 +468,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPedidosRoute: AppPedidosRoute,
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
+  AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
