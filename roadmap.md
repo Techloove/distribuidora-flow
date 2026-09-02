@@ -57,3 +57,6 @@
 - [x] Produtos: editar % markup e preço de venda direto na listagem
 
 - [x] Corrigir markup: preço de venda recalculado a partir do markup e custo médio
+
+## Lead Rota (fase 25)
+- [x] Módulo Lead Rota: seleção de rota, carteira paginada, filtros/classificação, funil, metas da rota, painel do cliente, histórico, produtos frequentes, sugestões, limite de crédito, registro de contato, novo pedido / repetir último / produtos frequentes
