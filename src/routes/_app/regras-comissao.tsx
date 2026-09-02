@@ -33,7 +33,12 @@ function RegrasComissaoPage() {
     queryKey: ["representantes", "options"],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!.from("representantes").select("id, nome").order("nome");
+      const { data, error } = await client!
+        .from("pessoas")
+        .select("representante_id, razao_social")
+        .eq("is_representante", true)
+        .not("representante_id", "is", null)
+        .order("razao_social");
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -56,11 +61,11 @@ function RegrasComissaoPage() {
     { name: "nome", label: "Nome da regra", span: 2, required: true, inTable: true },
     {
       name: "representante_id",
-      label: "Representante (opcional)",
+      label: "Representante do cadastro unificado (vazio = todos)",
       type: "select",
       options: (representantes.data ?? []).map((r) => ({
-        value: String(r["id"]),
-        label: String(r["nome"]),
+        value: String(r["representante_id"]),
+        label: String(r["razao_social"]),
       })),
     },
     {
