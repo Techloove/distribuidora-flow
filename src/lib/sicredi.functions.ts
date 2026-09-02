@@ -198,21 +198,33 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const c = await conf();
     const tk = await token(c);
+    const juros = data.juros !== undefined ? data.juros : c.juros;
+    const multa = data.multa !== undefined ? data.multa : c.multa;
+    const diasProtesto = data.diasProtesto !== undefined ? data.diasProtesto : c.diasProtesto;
+    const informativo = data.informativo || c.informativo;
     const payload = {
-      tipoCobranca: "HIBRIDO",
+      tipoCobranca: c.tipoCobranca,
       codigoBeneficiario: c.beneficiario,
-      especieDocumento: "DUPLICATA_MERCANTIL_INDICACAO",
+      especieDocumento: c.especieDocumento,
       seuNumero: data.seuNumero,
       dataVencimento: data.vencimento,
       valor: Number(data.valor.toFixed(2)),
-      tipoDesconto: "NAO_TEM_DESCONTO",
-      tipoJuro: data.juros && data.juros > 0 ? "PERCENTUAL" : "ISENTO",
-      ...(data.juros && data.juros > 0 ? { juros: data.juros } : {}),
-      ...(data.multa && data.multa > 0 ? { multa: data.multa } : {}),
-      ...(data.diasProtesto && data.diasProtesto > 0
-        ? { validadeAposVencimento: data.diasProtesto }
+      tipoDesconto: c.tipoDesconto,
+      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0
+        ? { valorDesconto1: c.valorDesconto1, diasDesconto1: c.diasDesconto1 }
         : {}),
-      ...(data.informativo ? { informativos: [data.informativo.slice(0, 80)] } : {}),
+      tipoJuro: juros > 0 ? (c.tipoJuro === "ISENTO" ? "PERCENTUAL" : c.tipoJuro) : "ISENTO",
+      ...(juros > 0 ? { juros } : {}),
+      ...(multa > 0 ? { multa, diasMulta: c.diasMulta } : {}),
+      ...(c.tipoProtesto !== "SEM_PROTESTO" && diasProtesto > 0
+        ? { tipoProtesto: c.tipoProtesto, diasProtesto }
+        : {}),
+      ...(c.validadeAposVencimento > 0
+        ? { validadeAposVencimento: c.validadeAposVencimento }
+        : {}),
+      ...(informativo ? { informativos: [informativo.slice(0, 80)] } : {}),
+      ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
+
       pagador: {
         tipoPessoa: data.pagador.tipoPessoa,
         documento: data.pagador.documento.replace(/\D/g, ""),
