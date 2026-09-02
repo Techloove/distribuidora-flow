@@ -60,3 +60,76 @@ select setval('public.seq_codigo_forma_pagamento',
 update public.formas_pagamento set codigo = sub.n::text
   from (select id, row_number() over (order by created_at, id) as n from public.formas_pagamento) sub
  where sub.id = formas_pagamento.id and (formas_pagamento.codigo is null or btrim(formas_pagamento.codigo) = '');
+create or replace function public.confirmar_pedido(_pedido_id uuid)
+returns public.pedidos
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ped public.pedidos;
+  fp public.formas_pagamento;
+  item record;
+  n int;
+  valor_parcela numeric(14,2);
+  saldo numeric(14,2);
+  dias_1 int := 30;
+  intervalo int := 30;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissão para confirmar pedidos';
+  end if;
+
+  select * into ped from public.pedidos where id = _pedido_id for update;
+  if ped is null then raise exception 'Pedido não encontrado'; end if;
+  if ped.status <> 'rascunho' then raise exception 'Pedido já foi confirmado ou cancelado'; end if;
+  if not exists (select 1 from public.pedido_itens where pedido_id = _pedido_id) then
+    raise exception 'Inclua ao menos um item no pedido';
+  end if;
+  if ped.forma_pagamento_id is null then
+    raise exception 'Selecione a forma de pagamento do pedido';
+  end if;
+
+  select * into fp from public.formas_pagamento where id = ped.forma_pagamento_id;
+  if fp.id is not null then
+    dias_1 := fp.dias_primeira_parcela;
+    intervalo := fp.intervalo_dias;
+  end if;
+
+  perform public.recalcular_pedido(_pedido_id);
+  select * into ped from public.pedidos where id = _pedido_id;
+
+  for item in select produto_id, sum(quantidade) as qtd
+                from public.pedido_itens where pedido_id = _pedido_id group by produto_id loop
+    insert into public.estoque_movimentos
+      (produto_id, centro_id, tipo, quantidade, origem, documento_id, observacao, created_by)
+    values (item.produto_id, ped.centro_id, 'saida', item.qtd, 'pedido', _pedido_id,
+            'Baixa por confirmação de pedido', auth.uid());
+  end loop;
+
+  valor_parcela := round(ped.total_liquido / greatest(ped.parcelas, 1), 2);
+  saldo := ped.total_liquido;
+  for n in 1..greatest(ped.parcelas, 1) loop
+    if n = ped.parcelas then valor_parcela := saldo; end if;
+    insert into public.contas_receber
+      (cliente_id, pedido_id, documento, parcela, valor, vencimento)
+    values (ped.cliente_id, ped.id, 'PED-' || ped.numero, n, valor_parcela,
+            ped.data_pedido + (dias_1 + (n - 1) * intervalo));
+    saldo := saldo - valor_parcela;
+  end loop;
+
+  if ped.representante_id is not null and ped.comissao_valor > 0 then
+    insert into public.comissoes
+      (representante_id, pedido_id, base_calculo, percentual, valor)
+    values (ped.representante_id, ped.id, ped.total_itens, ped.comissao_percentual, ped.comissao_valor);
+  end if;
+
+  update public.pedidos set status = 'confirmado' where id = _pedido_id returning * into ped;
+
+  insert into public.auditoria (tabela, registro_id, acao, detalhe, user_id)
+  values ('pedidos', _pedido_id, 'confirmar',
+          jsonb_build_object('total', ped.total_liquido, 'parcelas', ped.parcelas), auth.uid());
+
+  return ped;
+end;
+$$;
