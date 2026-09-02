@@ -26,9 +26,11 @@ import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
+import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
+import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -114,6 +116,11 @@ const AppReceberRoute = AppReceberRouteImport.update({
   path: '/receber',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRegrasComissaoRoute = AppRegrasComissaoRouteImport.update({
+  id: '/regras-comissao',
+  path: '/regras-comissao',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -127,6 +134,11 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
 const AppTransportadorasRoute = AppTransportadorasRouteImport.update({
   id: '/transportadoras',
   path: '/transportadoras',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -147,9 +159,11 @@ export interface FileRoutesByFullPath {
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
+  '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
   '/transportadoras': typeof AppTransportadorasRoute
+  '/usuarios': typeof AppUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -168,9 +182,11 @@ export interface FileRoutesByTo {
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
+  '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
   '/transportadoras': typeof AppTransportadorasRoute
+  '/usuarios': typeof AppUsuariosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,9 +207,11 @@ export interface FileRoutesById {
   '/_app/pedidos': typeof AppPedidosRoute
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
+  '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
+  '/_app/usuarios': typeof AppUsuariosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,9 +232,11 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/receber'
+    | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
     | '/transportadoras'
+    | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -235,9 +255,11 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/receber'
+    | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
     | '/transportadoras'
+    | '/usuarios'
   id:
     | '__root__'
     | '/'
@@ -257,9 +279,11 @@ export interface FileRouteTypes {
     | '/_app/pedidos'
     | '/_app/produtos'
     | '/_app/receber'
+    | '/_app/regras-comissao'
     | '/_app/relatorios'
     | '/_app/representantes'
     | '/_app/transportadoras'
+    | '/_app/usuarios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -389,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReceberRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/regras-comissao': {
+      id: '/_app/regras-comissao'
+      path: '/regras-comissao'
+      fullPath: '/regras-comissao'
+      preLoaderRoute: typeof AppRegrasComissaoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/relatorios': {
       id: '/_app/relatorios'
       path: '/relatorios'
@@ -410,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransportadorasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -428,9 +466,11 @@ interface AppRouteChildren {
   AppPedidosRoute: typeof AppPedidosRoute
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
+  AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -448,9 +488,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppPedidosRoute: AppPedidosRoute,
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
+  AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

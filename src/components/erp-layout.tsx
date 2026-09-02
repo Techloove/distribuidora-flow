@@ -9,7 +9,9 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  Percent,
   ScrollText,
+  ShieldCheck,
   ShoppingCart,
   Truck,
   UserRound,
@@ -49,6 +51,7 @@ const nav = [
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
       { to: "/comissoes", label: "Comissões", icon: UserRound },
+      { to: "/regras-comissao", label: "Regras de comissão", icon: Percent },
     ],
   },
   {
@@ -56,6 +59,7 @@ const nav = [
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
+      { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },
     ],
   },
