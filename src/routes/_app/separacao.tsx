@@ -90,7 +90,16 @@ function SeparacaoPage() {
     if (f["somenteFalta"] === "1") {
       list = list.filter((r) => Number(r["estoque_atual"] ?? 0) < Number(r["quantidade"] ?? 0));
     }
-    return list;
+    const num = (v: unknown) => (v === null || v === undefined || v === "" ? 9999 : Number(v));
+    return [...list].sort(
+      (a, b) =>
+        num(a["rota_sequencia"]) - num(b["rota_sequencia"]) ||
+        String(a["rota"] ?? "").localeCompare(String(b["rota"] ?? "")) ||
+        num(a["sequencia_entrega"]) - num(b["sequencia_entrega"]) ||
+        String(a["numero"] ?? "").localeCompare(String(b["numero"] ?? ""), "pt-BR", {
+          numeric: true,
+        }),
+    );
   }, [lista.data, centro, filtros]);
 
   const avancar = useMutation({
