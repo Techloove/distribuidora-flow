@@ -227,9 +227,9 @@ begin
       data_entrega = case when _status = 'entregue' then coalesce(_data, current_date) else data_entrega end
   where id = _id;
 
-  insert into public.auditoria (usuario_id, acao, entidade, entidade_id, detalhe)
-  values (auth.uid(), 'expedicao_' || _status, 'expedicoes', _id,
-          jsonb_build_object('status_anterior', v_exp.status, 'status', _status));
+  insert into public.auditoria (tabela, registro_id, acao, detalhe, user_id)
+  values ('expedicoes', _id, 'expedicao_' || _status,
+          jsonb_build_object('status_anterior', v_exp.status, 'status', _status), auth.uid());
 
   perform public.notificar(
     'Expedicao ' || v_exp.numero || ' -> ' || _status,
