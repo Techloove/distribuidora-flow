@@ -350,7 +350,17 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {config.dateLabel}: {String(doc[config.dateField] ?? "—")} ·{" "}
-                    {String(doc["parcelas"])}x
+                    {String(doc["parcelas"])}x ·{" "}
+                    {String(
+                      formas.data?.find((f) => f["id"] === doc["forma_pagamento_id"])?.["nome"] ??
+                        "sem forma de pagamento",
+                    )}{" "}
+                    ·{" "}
+                    {String(
+                      centros.data?.find((c) => c["id"] === doc["centro_id"])?.["nome"] ??
+                        "sem centro",
+                    )}
+
                   </p>
                 </div>
                 <div className="text-right">
