@@ -79,8 +79,6 @@ const nav = [
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
       { to: "/comissoes", label: "Comissões", icon: UserRound },
-      { to: "/regras-comissao", label: "Regras de comissão", icon: Percent },
-      { to: "/comissao-faixas", label: "Comissão escalonada", icon: Layers },
     ],
   },
   {
