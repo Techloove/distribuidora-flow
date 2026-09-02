@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ComissaoRepresentante } from "@/components/comissao-representante";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 
@@ -94,6 +95,17 @@ function PessoasPage() {
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
+        extraForm={({ form, editing }) =>
+          form["is_representante"] ? (
+            <ComissaoRepresentante
+              representanteId={
+                editing && editing["representante_id"]
+                  ? String(editing["representante_id"])
+                  : null
+              }
+            />
+          ) : null
+        }
       />
     </ErpLayout>
   );

@@ -114,6 +114,7 @@ export function CrudPage({
   decorate,
   inlineEdit,
   onInlineSave,
+  extraForm,
 }: {
   table: string;
   fields: CrudField[];
@@ -132,6 +133,11 @@ export function CrudPage({
   inlineEdit?: string[];
   /** Converte a edição inline no patch gravado (ex.: markup ↔ preço de venda). */
   onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
+  /** Blocos extras dentro do formulário (ex.: comissão do representante). */
+  extraForm?: (ctx: {
+    form: Record<string, string | boolean>;
+    editing: Row | null;
+  }) => React.ReactNode;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
@@ -604,6 +610,7 @@ export function CrudPage({
               </div>
             ))}
           </div>
+          {extraForm ? <div className="mt-4">{extraForm({ form, editing })}</div> : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
