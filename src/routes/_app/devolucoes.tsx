@@ -1,0 +1,508 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { brl } from "@/components/documento-page";
+import { ErpLayout } from "@/components/erp-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useSupabase } from "@/lib/supabase-provider";
+
+export const Route = createFileRoute("/_app/devolucoes")({
+  head: () => ({
+    meta: [
+      { title: "Devoluções de venda — ERP Distribuidora" },
+      {
+        name: "description",
+        content:
+          "Registre devoluções de clientes com retorno automático ao estoque e crédito no contas a receber.",
+      },
+      { property: "og:title", content: "Devoluções de venda — ERP Distribuidora" },
+      {
+        property: "og:description",
+        content: "Devoluções com retorno de estoque e crédito financeiro auditado.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: DevolucoesPage,
+});
+
+type Row = Record<string, unknown>;
+
+function DevolucoesPage() {
+  const { client, canManage } = useSupabase();
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [head, setHead] = useState({
+    cliente_id: "",
+    pedido_id: "",
+    centro_id: "",
+    data_devolucao: new Date().toISOString().slice(0, 10),
+    motivo: "",
+  });
+  const [item, setItem] = useState({ produto_id: "", quantidade: "1", preco_unitario: "0" });
+
+  const devolucoes = useQuery({
+    queryKey: ["devolucoes"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("devolucoes")
+        .select("*")
+        .order("numero", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const clientes = useQuery({
+    queryKey: ["clientes", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("clientes")
+        .select("id, razao_social")
+        .order("razao_social");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const centros = useQuery({
+    queryKey: ["centros", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("centros").select("id, nome").order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const pedidos = useQuery({
+    queryKey: ["pedidos", "faturados", head.cliente_id],
+    enabled: !!client && !!head.cliente_id,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("pedidos")
+        .select("id, numero, total_liquido")
+        .eq("cliente_id", head.cliente_id)
+        .in("status", ["confirmado", "faturado"])
+        .order("numero", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const produtos = useQuery({
+    queryKey: ["produtos", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("produtos")
+        .select("id, codigo, descricao, preco_venda")
+        .order("descricao");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const itens = useQuery({
+    queryKey: ["devolucao_itens", selected],
+    enabled: !!client && !!selected,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("devolucao_itens")
+        .select("*")
+        .eq("devolucao_id", selected!)
+        .order("created_at");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const doc = devolucoes.data?.find((d) => d["id"] === selected) ?? null;
+  const nomeProduto = (id: unknown) => {
+    const p = produtos.data?.find((x) => x["id"] === id);
+    return p ? `${String(p["codigo"] ?? "")} ${String(p["descricao"])}`.trim() : "—";
+  };
+  const cliName = (id: unknown) =>
+    String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—");
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["devolucoes"] });
+    queryClient.invalidateQueries({ queryKey: ["devolucao_itens", selected] });
+    queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
+    queryClient.invalidateQueries({ queryKey: ["produtos"] });
+  };
+
+  const criar = useMutation({
+    mutationFn: async () => {
+      if (!head.cliente_id) throw new Error("Selecione o cliente");
+      const { data, error } = await client!
+        .from("devolucoes")
+        .insert({
+          cliente_id: head.cliente_id,
+          pedido_id: head.pedido_id || null,
+          centro_id: head.centro_id || null,
+          data_devolucao: head.data_devolucao,
+          motivo: head.motivo.trim() || null,
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      return data as Row;
+    },
+    onSuccess: (data) => {
+      toast.success("Devolução criada");
+      setSelected(String(data["id"]));
+      setHead((f) => ({ ...f, pedido_id: "", motivo: "" }));
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const addItem = useMutation({
+    mutationFn: async () => {
+      if (!selected) throw new Error("Selecione uma devolução");
+      if (!item.produto_id) throw new Error("Selecione o produto");
+      const { error } = await client!.from("devolucao_itens").insert({
+        devolucao_id: selected,
+        produto_id: item.produto_id,
+        quantidade: Number(item.quantidade || 0),
+        preco_unitario: Number(item.preco_unitario || 0),
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      setItem({ produto_id: "", quantidade: "1", preco_unitario: "0" });
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client!.from("devolucao_itens").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const confirmar = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client!.rpc("confirmar_devolucao", { _id: id });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Devolução confirmada: estoque e crédito atualizados");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelar = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client!.rpc("cancelar_devolucao", { _id: id });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Devolução cancelada");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <ErpLayout
+      title="Devoluções de venda"
+      description="Confirmar devolve os itens ao estoque e lança um crédito negativo no contas a receber."
+    >
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+        <section className="space-y-4">
+          {canManage && (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h2 className="text-sm font-semibold">Nova devolução</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>Cliente</Label>
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={head.cliente_id}
+                    onChange={(e) =>
+                      setHead((f) => ({ ...f, cliente_id: e.target.value, pedido_id: "" }))
+                    }
+                  >
+                    <option value="">Selecione...</option>
+                    {(clientes.data ?? []).map((c) => (
+                      <option key={String(c["id"])} value={String(c["id"])}>
+                        {String(c["razao_social"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Pedido de origem (opcional)</Label>
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={head.pedido_id}
+                    onChange={(e) => setHead((f) => ({ ...f, pedido_id: e.target.value }))}
+                  >
+                    <option value="">Sem pedido</option>
+                    {(pedidos.data ?? []).map((p) => (
+                      <option key={String(p["id"])} value={String(p["id"])}>
+                        #{String(p["numero"])} — {brl(p["total_liquido"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Centro</Label>
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={head.centro_id}
+                    onChange={(e) => setHead((f) => ({ ...f, centro_id: e.target.value }))}
+                  >
+                    <option value="">Sem centro</option>
+                    {(centros.data ?? []).map((c) => (
+                      <option key={String(c["id"])} value={String(c["id"])}>
+                        {String(c["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Data</Label>
+                  <Input
+                    type="date"
+                    value={head.data_devolucao}
+                    onChange={(e) => setHead((f) => ({ ...f, data_devolucao: e.target.value }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Motivo</Label>
+                  <Input
+                    value={head.motivo}
+                    onChange={(e) => setHead((f) => ({ ...f, motivo: e.target.value }))}
+                    placeholder="Avaria no transporte"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Button
+                    className="w-full"
+                    disabled={criar.isPending}
+                    onClick={() => criar.mutate()}
+                  >
+                    <Plus className="size-4" /> Criar devolução
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-border bg-card">
+            {devolucoes.isLoading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> Carregando...
+              </div>
+            ) : devolucoes.isError ? (
+              <div className="p-6 text-sm text-destructive">
+                {(devolucoes.error as Error).message}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Rode <code>db/fase7_precos_devolucoes_metas_config.sql</code> no SQL Editor do
+                  Supabase.
+                </p>
+              </div>
+            ) : (devolucoes.data ?? []).length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Nenhuma devolução registrada.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nº</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {devolucoes.data!.map((d) => (
+                    <TableRow
+                      key={String(d["id"])}
+                      onClick={() => setSelected(String(d["id"]))}
+                      className={`cursor-pointer ${selected === d["id"] ? "bg-muted/60" : ""}`}
+                    >
+                      <TableCell>#{String(d["numero"])}</TableCell>
+                      <TableCell>{cliName(d["cliente_id"])}</TableCell>
+                      <TableCell>{String(d["data_devolucao"])}</TableCell>
+                      <TableCell className="text-right">{brl(d["valor_total"])}</TableCell>
+                      <TableCell>{String(d["status"])}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          {!doc ? (
+            <p className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+              Selecione uma devolução para lançar itens.
+            </p>
+          ) : (
+            <>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold">Devolução #{String(doc["numero"])}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cliName(doc["cliente_id"])} · {String(doc["status"])}
+                    </p>
+                  </div>
+                  <p className="text-lg font-semibold">{brl(doc["valor_total"])}</p>
+                </div>
+
+                {doc["status"] === "rascunho" && canManage && (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <Label>Produto</Label>
+                      <select
+                        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={item.produto_id}
+                        onChange={(e) => {
+                          const p = produtos.data?.find((x) => x["id"] === e.target.value);
+                          setItem((f) => ({
+                            ...f,
+                            produto_id: e.target.value,
+                            preco_unitario: String(p?.["preco_venda"] ?? f.preco_unitario),
+                          }));
+                        }}
+                      >
+                        <option value="">Selecione...</option>
+                        {(produtos.data ?? []).map((p) => (
+                          <option key={String(p["id"])} value={String(p["id"])}>
+                            {nomeProduto(p["id"])}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Quantidade</Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={item.quantidade}
+                        onChange={(e) => setItem((f) => ({ ...f, quantidade: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>Preço unitário</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.preco_unitario}
+                        onChange={(e) => setItem((f) => ({ ...f, preco_unitario: e.target.value }))}
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        disabled={addItem.isPending}
+                        onClick={() => addItem.mutate()}
+                      >
+                        <Plus className="size-4" /> Adicionar item
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        disabled={confirmar.isPending}
+                        onClick={() => confirmar.mutate(String(doc["id"]))}
+                      >
+                        Confirmar devolução
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {doc["status"] !== "cancelada" && canManage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    disabled={cancelar.isPending}
+                    onClick={() => cancelar.mutate(String(doc["id"]))}
+                  >
+                    Cancelar devolução
+                  </Button>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border bg-card">
+                {itens.isLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Carregando...
+                  </div>
+                ) : (itens.data ?? []).length === 0 ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">
+                    Nenhum item lançado.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produto</TableHead>
+                        <TableHead className="text-right">Qtd</TableHead>
+                        <TableHead className="text-right">Preço</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {itens.data!.map((i) => (
+                        <TableRow key={String(i["id"])}>
+                          <TableCell>{nomeProduto(i["produto_id"])}</TableCell>
+                          <TableCell className="text-right">
+                            {Number(i["quantidade"] ?? 0)}
+                          </TableCell>
+                          <TableCell className="text-right">{brl(i["preco_unitario"])}</TableCell>
+                          <TableCell className="text-right">{brl(i["total"])}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              disabled={!canManage || doc["status"] !== "rascunho"}
+                              onClick={() => removeItem.mutate(String(i["id"]))}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+    </ErpLayout>
+  );
+}

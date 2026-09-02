@@ -31,6 +31,7 @@ import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
+import { Route as AppTabelasPrecoRouteImport } from './routes/_app/tabelas-preco'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 
@@ -143,6 +144,11 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
   path: '/representantes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTabelasPrecoRoute = AppTabelasPrecoRouteImport.update({
+  id: '/tabelas-preco',
+  path: '/tabelas-preco',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTransportadorasRoute = AppTransportadorasRouteImport.update({
   id: '/transportadoras',
   path: '/transportadoras',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
 }
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
 }
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
+  '/_app/tabelas-preco': typeof AppTabelasPrecoRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
 }
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
   id:
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/_app/regras-comissao'
     | '/_app/relatorios'
     | '/_app/representantes'
+    | '/_app/tabelas-preco'
     | '/_app/transportadoras'
     | '/_app/usuarios'
   fileRoutesById: FileRoutesById
@@ -472,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRepresentantesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tabelas-preco': {
+      id: '/_app/tabelas-preco'
+      path: '/tabelas-preco'
+      fullPath: '/tabelas-preco'
+      preLoaderRoute: typeof AppTabelasPrecoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/transportadoras': {
       id: '/_app/transportadoras'
       path: '/transportadoras'
@@ -509,6 +528,7 @@ interface AppRouteChildren {
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
+  AppTabelasPrecoRoute: typeof AppTabelasPrecoRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
 }
@@ -533,6 +553,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
+  AppTabelasPrecoRoute: AppTabelasPrecoRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
   AppUsuariosRoute: AppUsuariosRoute,
 }
