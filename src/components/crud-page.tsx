@@ -114,6 +114,7 @@ export function CrudPage({
   decorate,
   inlineEdit,
   onInlineSave,
+  extraForm,
 }: {
   table: string;
   fields: CrudField[];
