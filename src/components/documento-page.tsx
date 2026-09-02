@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const brl = (value: unknown) =>
@@ -62,6 +64,7 @@ const emptyItem = {
 
 export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const { client, roles } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [openNew, setOpenNew] = useState(false);
