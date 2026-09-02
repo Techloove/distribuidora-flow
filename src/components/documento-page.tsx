@@ -716,7 +716,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           />
         </FilterBar>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
           {[
             { label: "Documentos", value: String(docsFiltrados.length) },
             { label: "Total", value: brl(totalFiltrado) },
