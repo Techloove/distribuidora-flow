@@ -55,3 +55,5 @@
 - [x] Editar dados da promoção + preço promocional no cadastro/listagem de produtos
 - [x] Produtos: preço promocional vigente + data limite vindos da Promoção na listagem
 - [x] Produtos: editar % markup e preço de venda direto na listagem
+
+- [ ] Corrigir markup do produto 3 (Cimento CP2) conforme valor informado pelo usuário

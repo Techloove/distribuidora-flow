@@ -34,7 +34,7 @@ const fields: CrudField[] = [
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
   { name: "ultimo_custo", label: "Custo Compra", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "custo_medio", label: "Custo médio", type: "number", step: "0.01", inTable: true, span: 1 },
-  { name: "markup_percentual", label: "% Markup", type: "number", step: "0.01", inTable: true, span: 1, virtual: true },
+  { name: "markup_percentual", label: "% Markup", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "promo_preco", label: "Preço de Promoção", inTable: true, auto: true, virtual: true },
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
@@ -129,8 +129,11 @@ function ProdutosPage() {
     const custo = num(row["custo_medio"]);
     const novo = num(value);
     if (name === "markup_percentual") {
-      if (custo <= 0) return {};
-      return { preco_venda: Number((custo * (1 + novo / 100)).toFixed(2)) };
+      if (custo <= 0) return { markup_percentual: novo };
+      return {
+        markup_percentual: novo,
+        preco_venda: Number((custo * (1 + novo / 100)).toFixed(2)),
+      };
     }
     return { preco_venda: Number(novo.toFixed(2)) };
   }, []);
