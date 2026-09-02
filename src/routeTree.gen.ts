@@ -13,8 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
+import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
+import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-inativos'
+import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-faixas'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
@@ -31,11 +34,14 @@ import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppPessoasRouteImport } from './routes/_app/pessoas'
+import { Route as AppPlanejamentoComprasRouteImport } from './routes/_app/planejamento-compras'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
+import { Route as AppRotasRouteImport } from './routes/_app/rotas'
+import { Route as AppSeparacaoRouteImport } from './routes/_app/separacao'
 import { Route as AppTabelasPrecoRouteImport } from './routes/_app/tabelas-preco'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
@@ -59,6 +65,11 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
   path: '/auditoria',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBoletosRoute = AppBoletosRouteImport.update({
+  id: '/boletos',
+  path: '/boletos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCentrosRoute = AppCentrosRouteImport.update({
   id: '/centros',
   path: '/centros',
@@ -67,6 +78,16 @@ const AppCentrosRoute = AppCentrosRouteImport.update({
 const AppClientesRoute = AppClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientesInativosRoute = AppClientesInativosRouteImport.update({
+  id: '/clientes-inativos',
+  path: '/clientes-inativos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppComissaoFaixasRoute = AppComissaoFaixasRouteImport.update({
+  id: '/comissao-faixas',
+  path: '/comissao-faixas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppComissoesRoute = AppComissoesRouteImport.update({
@@ -149,6 +170,11 @@ const AppPessoasRoute = AppPessoasRouteImport.update({
   path: '/pessoas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlanejamentoComprasRoute = AppPlanejamentoComprasRouteImport.update({
+  id: '/planejamento-compras',
+  path: '/planejamento-compras',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProdutosRoute = AppProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -174,6 +200,16 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
   path: '/representantes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRotasRoute = AppRotasRouteImport.update({
+  id: '/rotas',
+  path: '/rotas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSeparacaoRoute = AppSeparacaoRouteImport.update({
+  id: '/separacao',
+  path: '/separacao',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTabelasPrecoRoute = AppTabelasPrecoRouteImport.update({
   id: '/tabelas-preco',
   path: '/tabelas-preco',
@@ -194,8 +230,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
+  '/boletos': typeof AppBoletosRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
+  '/clientes-inativos': typeof AppClientesInativosRoute
+  '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
   '/configuracoes': typeof AppConfiguracoesRoute
@@ -212,11 +251,14 @@ export interface FileRoutesByFullPath {
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
   '/pessoas': typeof AppPessoasRoute
+  '/planejamento-compras': typeof AppPlanejamentoComprasRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/rotas': typeof AppRotasRoute
+  '/separacao': typeof AppSeparacaoRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -225,8 +267,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
+  '/boletos': typeof AppBoletosRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
+  '/clientes-inativos': typeof AppClientesInativosRoute
+  '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
   '/configuracoes': typeof AppConfiguracoesRoute
@@ -243,11 +288,14 @@ export interface FileRoutesByTo {
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
   '/pessoas': typeof AppPessoasRoute
+  '/planejamento-compras': typeof AppPlanejamentoComprasRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/rotas': typeof AppRotasRoute
+  '/separacao': typeof AppSeparacaoRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -258,8 +306,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
+  '/_app/boletos': typeof AppBoletosRoute
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
+  '/_app/clientes-inativos': typeof AppClientesInativosRoute
+  '/_app/comissao-faixas': typeof AppComissaoFaixasRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
   '/_app/configuracoes': typeof AppConfiguracoesRoute
@@ -276,11 +327,14 @@ export interface FileRoutesById {
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
   '/_app/pessoas': typeof AppPessoasRoute
+  '/_app/planejamento-compras': typeof AppPlanejamentoComprasRoute
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
+  '/_app/rotas': typeof AppRotasRoute
+  '/_app/separacao': typeof AppSeparacaoRoute
   '/_app/tabelas-preco': typeof AppTabelasPrecoRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
@@ -291,8 +345,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auditoria'
+    | '/boletos'
     | '/centros'
     | '/clientes'
+    | '/clientes-inativos'
+    | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
     | '/configuracoes'
@@ -309,11 +366,14 @@ export interface FileRouteTypes {
     | '/pagar'
     | '/pedidos'
     | '/pessoas'
+    | '/planejamento-compras'
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/rotas'
+    | '/separacao'
     | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
@@ -322,8 +382,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auditoria'
+    | '/boletos'
     | '/centros'
     | '/clientes'
+    | '/clientes-inativos'
+    | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
     | '/configuracoes'
@@ -340,11 +403,14 @@ export interface FileRouteTypes {
     | '/pagar'
     | '/pedidos'
     | '/pessoas'
+    | '/planejamento-compras'
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/rotas'
+    | '/separacao'
     | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
@@ -354,8 +420,11 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/_app/auditoria'
+    | '/_app/boletos'
     | '/_app/centros'
     | '/_app/clientes'
+    | '/_app/clientes-inativos'
+    | '/_app/comissao-faixas'
     | '/_app/comissoes'
     | '/_app/compras'
     | '/_app/configuracoes'
@@ -372,11 +441,14 @@ export interface FileRouteTypes {
     | '/_app/pagar'
     | '/_app/pedidos'
     | '/_app/pessoas'
+    | '/_app/planejamento-compras'
     | '/_app/produtos'
     | '/_app/receber'
     | '/_app/regras-comissao'
     | '/_app/relatorios'
     | '/_app/representantes'
+    | '/_app/rotas'
+    | '/_app/separacao'
     | '/_app/tabelas-preco'
     | '/_app/transportadoras'
     | '/_app/usuarios'
@@ -418,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuditoriaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/boletos': {
+      id: '/_app/boletos'
+      path: '/boletos'
+      fullPath: '/boletos'
+      preLoaderRoute: typeof AppBoletosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/centros': {
       id: '/_app/centros'
       path: '/centros'
@@ -430,6 +509,20 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof AppClientesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clientes-inativos': {
+      id: '/_app/clientes-inativos'
+      path: '/clientes-inativos'
+      fullPath: '/clientes-inativos'
+      preLoaderRoute: typeof AppClientesInativosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/comissao-faixas': {
+      id: '/_app/comissao-faixas'
+      path: '/comissao-faixas'
+      fullPath: '/comissao-faixas'
+      preLoaderRoute: typeof AppComissaoFaixasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/comissoes': {
@@ -544,6 +637,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPessoasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/planejamento-compras': {
+      id: '/_app/planejamento-compras'
+      path: '/planejamento-compras'
+      fullPath: '/planejamento-compras'
+      preLoaderRoute: typeof AppPlanejamentoComprasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/produtos': {
       id: '/_app/produtos'
       path: '/produtos'
@@ -579,6 +679,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRepresentantesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/rotas': {
+      id: '/_app/rotas'
+      path: '/rotas'
+      fullPath: '/rotas'
+      preLoaderRoute: typeof AppRotasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/separacao': {
+      id: '/_app/separacao'
+      path: '/separacao'
+      fullPath: '/separacao'
+      preLoaderRoute: typeof AppSeparacaoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tabelas-preco': {
       id: '/_app/tabelas-preco'
       path: '/tabelas-preco'
@@ -605,8 +719,11 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
+  AppBoletosRoute: typeof AppBoletosRoute
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
+  AppClientesInativosRoute: typeof AppClientesInativosRoute
+  AppComissaoFaixasRoute: typeof AppComissaoFaixasRoute
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
@@ -623,11 +740,14 @@ interface AppRouteChildren {
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
   AppPessoasRoute: typeof AppPessoasRoute
+  AppPlanejamentoComprasRoute: typeof AppPlanejamentoComprasRoute
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
+  AppRotasRoute: typeof AppRotasRoute
+  AppSeparacaoRoute: typeof AppSeparacaoRoute
   AppTabelasPrecoRoute: typeof AppTabelasPrecoRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
@@ -635,8 +755,11 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
+  AppBoletosRoute: AppBoletosRoute,
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
+  AppClientesInativosRoute: AppClientesInativosRoute,
+  AppComissaoFaixasRoute: AppComissaoFaixasRoute,
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
@@ -653,11 +776,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
   AppPessoasRoute: AppPessoasRoute,
+  AppPlanejamentoComprasRoute: AppPlanejamentoComprasRoute,
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
+  AppRotasRoute: AppRotasRoute,
+  AppSeparacaoRoute: AppSeparacaoRoute,
   AppTabelasPrecoRoute: AppTabelasPrecoRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
   AppUsuariosRoute: AppUsuariosRoute,

@@ -22,9 +22,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
-export type FieldType = "text" | "email" | "number" | "select" | "checkbox" | "multicheck";
+export type FieldType =
+  | "text"
+  | "email"
+  | "number"
+  | "date"
+  | "select"
+  | "checkbox"
+  | "multicheck"
+  | "ref";
 
 export type CrudField = {
   name: string;
@@ -33,6 +42,8 @@ export type CrudField = {
   options?: { value: string; label: string }[];
   /** Colunas booleanas exibidas como grupo de caixas de seleção (type: "multicheck"). */
   checks?: { name: string; label: string }[];
+  /** Seleção de registro relacionado (type: "ref"). */
+  ref?: { table: string; labelField: string };
   required?: boolean;
   step?: string;
   inTable?: boolean;
@@ -40,6 +51,51 @@ export type CrudField = {
   /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
   auto?: boolean;
 };
+
+/** Opções de um campo de referência (FK). */
+function useRefOptions(field: CrudField) {
+  const { client } = useSupabase();
+  const ref = field.ref;
+  return useQuery({
+    queryKey: ["ref", ref?.table],
+    enabled: !!client && !!ref,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from(ref!.table)
+        .select(`id, ${ref!.labelField}`)
+        .order(ref!.labelField);
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as unknown) as Record<string, unknown>[];
+    },
+  });
+}
+
+function RefSelect({
+  field,
+  value,
+  onChange,
+}: {
+  field: CrudField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const options = useRefOptions(field);
+  return (
+    <select
+      id={field.name}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+    >
+      <option value="">—</option>
+      {(options.data ?? []).map((o) => (
+        <option key={String(o["id"])} value={String(o["id"])}>
+          {String(o[field.ref!.labelField] ?? "")}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 
 export type Row = Record<string, unknown>;
@@ -58,6 +114,7 @@ export function CrudPage({
   searchColumns: string[];
 }) {
   const { client, canManage } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -75,13 +132,16 @@ export function CrudPage({
   });
 
   const rows = useMemo(() => {
-    const list = query.data ?? [];
+    let list = query.data ?? [];
+    if (centro && list.some((r) => "centro_id" in r)) {
+      list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
+    }
     const term = search.trim().toLowerCase();
     if (!term) return list;
     return list.filter((row) =>
       searchColumns.some((col) => String(row[col] ?? "").toLowerCase().includes(term)),
     );
-  }, [query.data, search, searchColumns]);
+  }, [query.data, search, searchColumns, centro]);
 
   function openCreate() {
     setEditing(null);
@@ -321,6 +381,12 @@ export function CrudPage({
                       </label>
                     ))}
                   </div>
+                ) : field.type === "ref" ? (
+                  <RefSelect
+                    field={field}
+                    value={String(form[field.name] ?? "")}
+                    onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
+                  />
                 ) : field.type === "select" ? (
 
                   <select

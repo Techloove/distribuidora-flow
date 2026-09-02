@@ -51,7 +51,14 @@ export type DocumentoConfig = {
   doneStatus: string;
 };
 
-const emptyItem = { produto_id: "", quantidade: "1", preco: "0", desconto: "0" };
+const emptyItem = {
+  produto_id: "",
+  quantidade: "1",
+  preco: "0",
+  desconto: "0",
+  lote: "",
+  validade: "",
+};
 
 export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const { client, roles } = useSupabase();
@@ -116,6 +123,20 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  const rotas = useQuery({
+    queryKey: ["rotas", "options"],
+    enabled: !!client && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("rotas")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const formas = useQuery({
     queryKey: ["formas_pagamento", "options"],
     enabled: !!client,
@@ -156,6 +177,11 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       };
       if (config.table === "compras") {
         payload["nf_numero"] = header["nf"] || null;
+        payload["chave_acesso"] = header["chave"] || null;
+        payload["valor_impostos"] = Number(header["impostos"] || 0);
+      } else {
+        payload["rota_id"] = header["rota"] || null;
+        payload["previsao_entrega"] = header["previsao"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
       const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
@@ -242,6 +268,9 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       };
       if (config.itemsTable === "pedido_itens") {
         payload["desconto_percentual"] = Number(item.desconto || 0);
+      } else {
+        payload["lote"] = item.lote || null;
+        payload["validade"] = item.validade || null;
       }
       const { error } = await client!.from(config.itemsTable).insert(payload);
       if (error) throw new Error(error.message);
@@ -313,6 +342,53 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  /** Fluxo de status do pedido: próximos passos permitidos. */
+  const proximosStatus: Record<string, { status: string; label: string }[]> = {
+    rascunho: [{ status: "aguardando_aprovacao", label: "Enviar para aprovação" }],
+    digitacao: [{ status: "aguardando_aprovacao", label: "Enviar para aprovação" }],
+    aguardando_aprovacao: [
+      { status: "aprovado", label: "Aprovar" },
+      { status: "recusado", label: "Recusar" },
+    ],
+    aprovado: [{ status: "separacao", label: "Enviar para separação" }],
+    confirmado: [{ status: "separacao", label: "Enviar para separação" }],
+    separacao: [{ status: "separado", label: "Marcar como separado" }],
+    separado: [{ status: "em_rota", label: "Em rota de entrega" }],
+    faturado: [{ status: "em_rota", label: "Em rota de entrega" }],
+    em_rota: [
+      { status: "entregue", label: "Entregue" },
+      { status: "parcial", label: "Entrega parcial" },
+      { status: "nao_entregue", label: "Não entregue" },
+      { status: "devolvido", label: "Devolvido" },
+    ],
+  };
+
+  const avancar = useMutation({
+    mutationFn: async (novo: string) => {
+      const { error } = await client!.rpc("avancar_pedido", {
+        _pedido_id: selected,
+        _novo_status: novo,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Status do pedido atualizado");
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  /** Aprovação comercial automática (crédito, títulos, estoque, margem, desconto). */
+  const validacao = useQuery({
+    queryKey: ["validar_pedido", selected],
+    enabled: !!client && !!selected && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("validar_pedido", { _pedido_id: selected });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { nivel: string; mensagem: string }[];
+    },
   });
 
   function pickProduto(id: string) {
@@ -409,14 +485,30 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   onClick={() => efetivar.mutate()}
-                  disabled={doc["status"] !== "rascunho" || efetivar.isPending || !canWrite}
+                  disabled={
+                    !["rascunho", "digitacao", "aprovado"].includes(String(doc["status"])) ||
+                    efetivar.isPending ||
+                    !canWrite
+                  }
                 >
                   {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                   {config.rpcLabel}
                 </Button>
+                {config.table === "pedidos"
+                  ? (proximosStatus[String(doc["status"])] ?? []).map((s) => (
+                      <Button
+                        key={s.status}
+                        variant="secondary"
+                        onClick={() => avancar.mutate(s.status)}
+                        disabled={avancar.isPending}
+                      >
+                        {s.label}
+                      </Button>
+                    ))
+                  : null}
                 <Button
                   variant="outline"
                   onClick={() => cancelar.mutate()}
@@ -427,9 +519,28 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   Cancelar documento
                 </Button>
               </div>
+
+              {config.table === "pedidos" && (validacao.data ?? []).length > 0 ? (
+                <div className="mt-4 space-y-1.5 rounded-md border border-border bg-background p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Aprovação comercial
+                  </p>
+                  {(validacao.data ?? []).map((v, i) => (
+                    <p
+                      key={i}
+                      className={`text-sm ${
+                        v.nivel === "bloqueio" ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                    >
+                      {v.nivel === "bloqueio" ? "🔴 BLOQUEIO" : "🟡 Atenção"} — {v.mensagem}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            {doc["status"] === "rascunho" ? (
+
+            {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
               <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
@@ -464,16 +575,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                     onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Desc. %</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    disabled={config.itemsTable !== "pedido_itens"}
-                    value={item.desconto}
-                    onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
-                  />
-                </div>
+                {config.itemsTable === "pedido_itens" ? (
+                  <div className="space-y-1.5">
+                    <Label>Desc. %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.desconto}
+                      onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Lote</Label>
+                      <Input
+                        value={item.lote}
+                        onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Validade</Label>
+                      <Input
+                        type="date"
+                        value={item.validade}
+                        onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="flex items-end">
                   <Button onClick={() => addItem.mutate()} disabled={addItem.isPending}>
                     <Plus className="size-4" /> Item
@@ -505,7 +635,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                       <TableRow key={String(it["id"])}>
                         <TableCell>{produtoName(it["produto_id"])}</TableCell>
                         <TableCell className="text-right">
-                          {doc["status"] === "rascunho" ? (
+                          {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
                             <Input
                               type="number"
                               step="0.001"
@@ -527,7 +657,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {doc["status"] === "rascunho" ? (
+                          {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
                             <Input
                               type="number"
                               step="0.01"
@@ -713,14 +843,59 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               />
             </div>
             {config.table === "compras" ? (
-              <div className="space-y-1.5">
-                <Label>NF número</Label>
-                <Input
-                  value={header["nf"] ?? ""}
-                  onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
-                />
-              </div>
-            ) : null}
+              <>
+                <div className="space-y-1.5">
+                  <Label>NF número</Label>
+                  <Input
+                    value={header["nf"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Chave de acesso da NF-e</Label>
+                  <Input
+                    value={header["chave"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, chave: e.target.value }))}
+                    placeholder="44 dígitos"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Valor de impostos (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={header["impostos"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, impostos: e.target.value }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Rota de entrega</Label>
+                  <select
+                    value={header["rota"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {rotas.data?.map((r) => (
+                      <option key={String(r["id"])} value={String(r["id"])}>
+                        {String(r["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Previsão de entrega</Label>
+                  <Input
+                    type="date"
+                    value={header["previsao"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, previsao: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Observações</Label>
