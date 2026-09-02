@@ -27,7 +27,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
-import { atualizarUsuario, criarUsuario, excluirUsuario } from "@/lib/usuarios.functions";
 
 export const Route = createFileRoute("/_app/usuarios")({
   head: () => ({
@@ -73,10 +72,9 @@ type Form = {
 const vazio: Form = { userId: "", nome: "", email: "", telefone: "", senha: "", ativo: true };
 
 function UsuariosPage() {
-  const { client, session, roles } = useSupabase();
+  const { client, roles } = useSupabase();
   const queryClient = useQueryClient();
   const isAdmin = roles.includes("admin");
-  const token = session?.access_token ?? "";
   const [form, setForm] = useState<Form | null>(null);
   const [excluir, setExcluir] = useState<Row | null>(null);
 
@@ -132,27 +130,23 @@ function UsuariosPage() {
   const salvar = useMutation({
     mutationFn: async (f: Form) => {
       if (f.userId) {
-        await atualizarUsuario({
-          data: {
-            token,
-            userId: f.userId,
-            nome: f.nome,
-            email: f.email,
-            telefone: f.telefone,
-            ativo: f.ativo,
-            ...(f.senha ? { senha: f.senha } : {}),
-          },
+        const { error } = await client!.rpc("admin_atualizar_usuario", {
+          _user_id: f.userId,
+          _nome: f.nome,
+          _email: f.email,
+          _telefone: f.telefone,
+          _ativo: f.ativo,
+          _senha: f.senha || null,
         });
+        if (error) throw new Error(error.message);
       } else {
-        await criarUsuario({
-          data: {
-            token,
-            email: f.email,
-            senha: f.senha,
-            nome: f.nome,
-            telefone: f.telefone,
-          },
+        const { error } = await client!.rpc("admin_criar_usuario", {
+          _email: f.email,
+          _senha: f.senha,
+          _nome: f.nome,
+          _telefone: f.telefone,
         });
+        if (error) throw new Error(error.message);
       }
     },
     onSuccess: (_d, f) => {
@@ -165,7 +159,8 @@ function UsuariosPage() {
 
   const remover = useMutation({
     mutationFn: async (userId: string) => {
-      await excluirUsuario({ data: { token, userId } });
+      const { error } = await client!.rpc("admin_excluir_usuario", { _user_id: userId });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Usuário excluído");
