@@ -24,19 +24,10 @@ export const Route = createFileRoute("/_app/produtos")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
-  { name: "sku", label: "SKU interno" },
-  { name: "ean", label: "EAN" },
-  { name: "ncm", label: "NCM" },
-  { name: "cest", label: "CEST" },
-  { name: "cfop", label: "CFOP padrão" },
   { name: "categoria", label: "Categoria", inTable: true },
-  { name: "subcategoria", label: "Subcategoria" },
   { name: "marca", label: "Marca" },
   { name: "unidade", label: "Unidade" },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
-  { name: "comprimento_cm", label: "Comprimento (cm)", type: "number", step: "0.01" },
-  { name: "largura_cm", label: "Largura (cm)", type: "number", step: "0.01" },
-  { name: "altura_cm", label: "Altura (cm)", type: "number", step: "0.01" },
   { name: "preco_custo", label: "Preço de custo", type: "number", step: "0.0001", inTable: true },
   { name: "ultimo_custo", label: "Último custo", type: "number", step: "0.0001" },
   { name: "custo_reposicao", label: "Custo de reposição", type: "number", step: "0.0001" },
@@ -44,15 +35,14 @@ const fields: CrudField[] = [
   { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.0001", inTable: true },
   { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.0001" },
   { name: "markup_percentual", label: "Markup (%)", auto: true, inTable: true },
-  { name: "margem_minima", label: "Margem mínima (%)", type: "number", step: "0.01" },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   { name: "estoque_maximo", label: "Estoque máximo", type: "number", step: "0.001" },
   { name: "estoque_atual", label: "Estoque atual", type: "number", step: "0.001", inTable: true },
-  { name: "prazo_fornecedor_dias", label: "Prazo do fornecedor (dias)", type: "number" },
   { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
+
 
 function ProdutosPage() {
   return (
