@@ -85,26 +85,32 @@ export function CrudPage({
 
   function openCreate() {
     setEditing(null);
-    setForm(
-      Object.fromEntries(
-        fields.map((f) => [f.name, f.type === "checkbox" ? true : ""]),
-      ) as Record<string, string | boolean>,
-    );
+    const next: Record<string, string | boolean> = {};
+    for (const f of fields) {
+      if (f.type === "multicheck") {
+        for (const c of f.checks ?? []) next[c.name] = false;
+      } else {
+        next[f.name] = f.type === "checkbox" ? true : "";
+      }
+    }
+    setForm(next);
     setOpen(true);
   }
 
   function openEdit(row: Row) {
     setEditing(row);
-    setForm(
-      Object.fromEntries(
-        fields.map((f) => [
-          f.name,
-          f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? ""),
-        ]),
-      ) as Record<string, string | boolean>,
-    );
+    const next: Record<string, string | boolean> = {};
+    for (const f of fields) {
+      if (f.type === "multicheck") {
+        for (const c of f.checks ?? []) next[c.name] = Boolean(row[c.name]);
+      } else {
+        next[f.name] = f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? "");
+      }
+    }
+    setForm(next);
     setOpen(true);
   }
+
 
   function traduzErro(message: string) {
     if (/row-level security|violates row-level/i.test(message)) {
