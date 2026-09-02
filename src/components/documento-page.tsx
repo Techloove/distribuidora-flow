@@ -628,9 +628,11 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   })();
 
+  const listaVisivel = !selected && !openNew;
+
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
+      <section className={`space-y-3 ${listaVisivel ? "" : "hidden"}`}>
         <div className="flex justify-end">
           <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
             <Plus className="size-4" /> Novo Pedido
@@ -640,6 +642,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
 
         <FilterBar onClear={() => setFiltros({})}>
+
           <FilterText
             label="Buscar"
             value={filtros["busca"] ?? ""}
@@ -831,12 +834,18 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
       <section className="space-y-4">
         {!doc ? (
-          <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Selecione um documento na lista acima ou crie um novo.
-          </div>
+          listaVisivel ? (
+            <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              Selecione um documento na lista acima ou crie um novo.
+            </div>
+          ) : null
         ) : (
           <>
+            <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
+              ← Voltar à lista
+            </Button>
             <div className="rounded-lg border border-border bg-card p-5">
+
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
@@ -930,22 +939,16 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
-                  <select
+                  <ProdutoPicker
+                    produtos={produtos.data ?? []}
                     value={item.produto_id}
-                    onChange={(e) => pickProduto(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">—</option>
-                    {produtos.data?.map((p) => (
-                      <option key={String(p["id"])} value={String(p["id"])}>
-                        {String(p["descricao"])} (est. {String(p["estoque_atual"])})
-                      </option>
-                    ))}
-                  </select>
+                    onPick={(id) => pickProduto(id)}
+                  />
                 </div>
+
                 <div className="space-y-1.5">
                   <Label>Qtd</Label>
                   <Input
@@ -1313,6 +1316,81 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Busca de produto por código ou nome, com lista filtrada. */
+function ProdutoPicker({
+  produtos,
+  value,
+  onPick,
+}: {
+  produtos: Row[];
+  value: string;
+  onPick: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [aberto, setAberto] = useState(false);
+  const sel = produtos.find((p) => String(p["id"]) === value);
+  const rotulo = sel
+    ? `${String(sel["codigo"] ?? "")} · ${String(sel["descricao"])}`
+    : "";
+  const termo = q.trim().toLowerCase();
+  const lista = (
+    termo
+      ? produtos.filter(
+          (p) =>
+            String(p["descricao"]).toLowerCase().includes(termo) ||
+            String(p["codigo"] ?? "").toLowerCase().includes(termo),
+        )
+      : produtos
+  ).slice(0, 50);
+
+  return (
+    <div className="relative">
+      <Input
+        className="h-9"
+        value={aberto ? q : rotulo}
+        placeholder="Buscar por código ou nome"
+        onFocus={() => {
+          setQ("");
+          setAberto(true);
+        }}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setAberto(true);
+        }}
+        onBlur={() => window.setTimeout(() => setAberto(false), 150)}
+      />
+      {aberto ? (
+        <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
+          {lista.length === 0 ? (
+            <p className="p-3 text-sm text-muted-foreground">Nenhum produto encontrado.</p>
+          ) : (
+            lista.map((p) => (
+              <button
+                key={String(p["id"])}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onPick(String(p["id"]));
+                  setAberto(false);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent"
+              >
+                <span className="truncate">
+                  <span className="font-semibold">{String(p["codigo"] ?? "—")}</span> ·{" "}
+                  {String(p["descricao"])}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  est. {String(p["estoque_atual"] ?? 0)}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
