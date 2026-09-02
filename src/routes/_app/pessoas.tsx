@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ComissaoRepresentante } from "@/components/comissao-representante";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 
