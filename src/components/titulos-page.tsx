@@ -78,10 +78,50 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     },
   });
 
+  const isReceber = config.table === "contas_receber";
+
+  const boletos = useQuery({
+    queryKey: ["boletos", "por-conta"],
+    enabled: !!client && isReceber,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("boletos")
+        .select("id, conta_receber_id, status, nosso_numero, linha_digitavel, created_at")
+        .order("created_at");
+      if (error) throw new Error(error.message);
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const boletoPorConta = useMemo(() => {
+    const map = new Map<string, Row>();
+    for (const b of boletos.data ?? []) {
+      const key = String(b["conta_receber_id"] ?? "");
+      if (!key) continue;
+      if (String(b["status"]) === "cancelado" && map.has(key)) continue;
+      map.set(key, b);
+    }
+    return map;
+  }, [boletos.data]);
+
+  const boletoLabel = (r: Row) => {
+    if (!isReceber) return "—";
+    const b = boletoPorConta.get(String(r["id"]));
+    if (!b) return "Sem boleto";
+    return String(b["status"] ?? "—");
+  };
+
   const rows = useMemo(() => {
     let list = titulos.data ?? [];
     if (status !== "todos") list = list.filter((r) => r["status"] === status);
     const f = filtros;
+    if (isReceber && f["boleto"]) {
+      list = list.filter((r) => {
+        const b = boletoPorConta.get(String(r["id"]));
+        if (f["boleto"] === "sem") return !b;
+        return !!b && String(b["status"]) === f["boleto"];
+      });
+    }
     const hoje = new Date().toISOString().slice(0, 10);
     if (f["parceiro"])
       list = list.filter((r) => String(r[config.partnerKey] ?? "") === f["parceiro"]);
