@@ -122,7 +122,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     queryFn: async () => {
       const { data, error } = await client!
         .from("formas_pagamento")
-        .select("id, nome, parcelas_padrao")
+        .select("id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias")
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
@@ -179,7 +179,6 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       if (!doc) throw new Error("Selecione um documento");
       const patch: Record<string, unknown> = {
         forma_pagamento_id: pagamento["forma"] ?? doc["forma_pagamento_id"] ?? null,
-        parcelas: Number(pagamento["parcelas"] ?? doc["parcelas"] ?? 1),
         frete_valor: Number(pagamento["frete"] ?? doc["frete_valor"] ?? 0),
         desconto_valor: Number(pagamento["desconto"] ?? doc["desconto_valor"] ?? 0),
       };
@@ -200,13 +199,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   });
 
   function pickForma(id: string) {
-    const f = formas.data?.find((x) => x["id"] === id);
-    setPagamento((s) => ({
-      ...s,
-      forma: id,
-      parcelas: String(Number(f?.["parcelas_padrao"] ?? s["parcelas"] ?? 1)),
-    }));
+    setPagamento((s) => ({ ...s, forma: id }));
   }
+
+  const formaSelecionada =
+    formas.data?.find(
+      (f) => f["id"] === (pagamento["forma"] ?? doc?.["forma_pagamento_id"] ?? ""),
+    ) ?? null;
+
+  /** Prévia das parcelas conforme a forma de pagamento escolhida. */
+  const previaParcelas = (() => {
+    if (!doc || !formaSelecionada) return [];
+    const total = Number(doc["total_liquido"] ?? 0);
+    const qtd = Math.max(1, Number(formaSelecionada["parcelas_padrao"] ?? 1));
+    const dias1 = Number(formaSelecionada["dias_primeira_parcela"] ?? 0);
+    const intervalo = Number(formaSelecionada["intervalo_dias"] ?? 0);
+    const base = new Date(String(doc[config.dateField] ?? new Date().toISOString().slice(0, 10)));
+    const valor = Math.round((total / qtd) * 100) / 100;
+    let saldo = total;
+    const list: { parcela: number; valor: number; vencimento: string }[] = [];
+    for (let n = 1; n <= qtd; n++) {
+      const v = n === qtd ? Math.round(saldo * 100) / 100 : valor;
+      saldo = Math.round((saldo - v) * 100) / 100;
+      const d = new Date(base);
+      d.setDate(d.getDate() + dias1 + (n - 1) * intervalo);
+      list.push({ parcela: n, valor: v, vencimento: d.toLocaleDateString("pt-BR") });
+    }
+    return list;
+  })();
+
 
 
   const addItem = useMutation({
@@ -227,6 +248,21 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
     onSuccess: () => {
       setItem({ ...emptyItem });
+      queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateItem = useMutation({
+    mutationFn: async (patch: { id: string; values: Record<string, number> }) => {
+      const { error } = await client!
+        .from(config.itemsTable)
+        .update(patch.values)
+        .eq("id", patch.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
@@ -468,9 +504,49 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                     {itens.data!.map((it) => (
                       <TableRow key={String(it["id"])}>
                         <TableCell>{produtoName(it["produto_id"])}</TableCell>
-                        <TableCell className="text-right">{String(it["quantidade"])}</TableCell>
                         <TableCell className="text-right">
-                          {brl(it[config.itemPriceField])}
+                          {doc["status"] === "rascunho" ? (
+                            <Input
+                              type="number"
+                              step="0.001"
+                              min="0"
+                              className="ml-auto h-8 w-24 text-right"
+                              defaultValue={String(it["quantidade"] ?? 0)}
+                              onBlur={(e) => {
+                                const qtd = Number(e.target.value || 0);
+                                if (qtd > 0 && qtd !== Number(it["quantidade"])) {
+                                  updateItem.mutate({
+                                    id: String(it["id"]),
+                                    values: { quantidade: qtd },
+                                  });
+                                }
+                              }}
+                            />
+                          ) : (
+                            String(it["quantidade"])
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {doc["status"] === "rascunho" ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              className="ml-auto h-8 w-28 text-right"
+                              defaultValue={String(it[config.itemPriceField] ?? 0)}
+                              onBlur={(e) => {
+                                const preco = Number(e.target.value || 0);
+                                if (preco !== Number(it[config.itemPriceField])) {
+                                  updateItem.mutate({
+                                    id: String(it["id"]),
+                                    values: { [config.itemPriceField]: preco },
+                                  });
+                                }
+                              }}
+                            />
+                          ) : (
+                            brl(it[config.itemPriceField])
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{brl(it["total"])}</TableCell>
                         <TableCell className="text-right">
@@ -513,16 +589,6 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Parcelas</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    disabled={doc["status"] !== "rascunho"}
-                    value={pagamento["parcelas"] ?? String(doc["parcelas"] ?? 1)}
-                    onChange={(e) => setPagamento((s) => ({ ...s, parcelas: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
                   <Label>Frete (R$)</Label>
                   <Input
                     type="number"
@@ -563,6 +629,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 Salvar pagamento
               </Button>
+
+              {previaParcelas.length > 0 ? (
+                <div className="mt-4 overflow-hidden rounded-md border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-24">Parcela</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previaParcelas.map((p) => (
+                        <TableRow key={p.parcela}>
+                          <TableCell>
+                            {p.parcela}/{previaParcelas.length}
+                          </TableCell>
+                          <TableCell>{p.vencimento}</TableCell>
+                          <TableCell className="text-right">{brl(p.valor)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Escolha a forma de pagamento para ver as parcelas e vencimentos.
+                </p>
+              )}
             </div>
           </>
 
