@@ -142,3 +142,31 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---------- ERP Distribuidora: paleta petróleo + âmbar ---------- */
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.985 0.004 240);
+  --foreground: oklch(0.22 0.03 235);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 235);
+  --primary: oklch(0.42 0.075 220);
+  --primary-foreground: oklch(0.985 0.005 220);
+  --secondary: oklch(0.95 0.012 230);
+  --secondary-foreground: oklch(0.3 0.04 230);
+  --muted: oklch(0.955 0.008 235);
+  --muted-foreground: oklch(0.52 0.025 235);
+  --accent: oklch(0.78 0.15 74);
+  --accent-foreground: oklch(0.25 0.05 60);
+  --border: oklch(0.9 0.012 235);
+  --input: oklch(0.9 0.012 235);
+  --ring: oklch(0.42 0.075 220);
+  --sidebar: oklch(0.26 0.035 232);
+  --sidebar-foreground: oklch(0.93 0.01 230);
+  --sidebar-primary: oklch(0.78 0.15 74);
+  --sidebar-primary-foreground: oklch(0.24 0.05 60);
+  --sidebar-accent: oklch(0.32 0.04 232);
+  --sidebar-accent-foreground: oklch(0.96 0.01 230);
+  --sidebar-border: oklch(0.34 0.035 232);
+  --sidebar-ring: oklch(0.78 0.15 74);
+}
