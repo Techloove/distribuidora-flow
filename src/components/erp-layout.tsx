@@ -6,7 +6,9 @@ import {
   Building2,
   ClipboardList,
   Coins,
+  FileText,
   LayoutDashboard,
+  LineChart,
   LogOut,
   Package,
   Percent,
@@ -43,11 +45,13 @@ const nav = [
       { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
       { to: "/estoque", label: "Estoque", icon: Boxes },
       { to: "/expedicao", label: "Expedição", icon: Truck },
+      { to: "/faturamento", label: "Faturamento", icon: FileText },
     ],
   },
   {
     group: "Financeiro",
     items: [
+      { to: "/fluxo-caixa", label: "Fluxo de caixa", icon: LineChart },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
       { to: "/comissoes", label: "Comissões", icon: UserRound },
