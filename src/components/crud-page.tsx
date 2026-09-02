@@ -112,6 +112,8 @@ export function CrudPage({
   searchColumns,
   onFieldChange,
   decorate,
+  inlineEdit,
+  onInlineSave,
 }: {
   table: string;
   fields: CrudField[];
