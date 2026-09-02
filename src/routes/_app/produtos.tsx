@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { HistoricoProduto } from "@/components/historico-produto";
 import { useSupabase } from "@/lib/supabase-provider";
 
 

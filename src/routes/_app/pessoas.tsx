@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { ComissaoRepresentante } from "@/components/comissao-representante";
 import { CrudPage, type CrudField } from "@/components/crud-page";
+import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/pessoas")({
@@ -95,17 +96,22 @@ function PessoasPage() {
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
-        extraForm={({ form, editing }) =>
-          form["is_representante"] ? (
-            <ComissaoRepresentante
-              representanteId={
-                editing && editing["representante_id"]
-                  ? String(editing["representante_id"])
-                  : null
-              }
-            />
-          ) : null
-        }
+        extraForm={({ form, editing }) => (
+          <div className="space-y-4">
+            {form["is_cliente"] ? (
+              <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
+            ) : null}
+            {form["is_representante"] ? (
+              <ComissaoRepresentante
+                representanteId={
+                  editing && editing["representante_id"]
+                    ? String(editing["representante_id"])
+                    : null
+                }
+              />
+            ) : null}
+          </div>
+        )}
       />
     </ErpLayout>
   );
