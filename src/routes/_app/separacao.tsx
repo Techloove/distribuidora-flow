@@ -142,7 +142,14 @@ function SeparacaoPage() {
   const pedidos = useMemo(() => {
     const map = new Map<
       string,
-      { numero: string; cliente: string; status: string; rota: string; seq: string }
+      {
+        numero: string;
+        cliente: string;
+        status: string;
+        rota: string;
+        seq: string;
+        romaneio: string;
+      }
     >();
     for (const r of rows) {
       const rotaSeq = r["rota_sequencia"];
@@ -152,6 +159,11 @@ function SeparacaoPage() {
         cliente: String(r["cliente"] ?? "—"),
         status: String(r["status"]),
         rota: String(r["rota"] ?? "—"),
+        romaneio: r["romaneio_numero"]
+          ? `#${String(r["romaneio_numero"])}${
+              r["expedicao_status"] ? ` · ${String(r["expedicao_status"]).replace(/_/g, " ")}` : ""
+            }`
+          : "—",
         seq: [
           rotaSeq ? `Sequência da rota: ${rotaSeq}` : null,
           cliSeq ? `Parada: ${cliSeq}` : null,
@@ -367,6 +379,7 @@ function SeparacaoPage() {
                     <th className="px-4 py-2 text-left font-medium">Rota</th>
                     <th className="px-4 py-2 text-left font-medium">Sequência</th>
                     <th className="px-4 py-2 text-left font-medium">Status</th>
+                    <th className="px-4 py-2 text-left font-medium">Expedição</th>
                     <th className="px-4 py-2 text-right font-medium">Itens</th>
                     <th className="no-print px-4 py-2 text-right font-medium">Ações</th>
                   </tr>
@@ -400,6 +413,9 @@ function SeparacaoPage() {
                             >
                               {p.status.replace(/_/g, " ")}
                             </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                            {p.romaneio}
                           </td>
                           <td className="px-4 py-2.5 text-right">
                             {itens.length}
@@ -447,7 +463,7 @@ function SeparacaoPage() {
                           </td>
                         </tr>
                         <tr className={aberto ? "" : "hidden print:table-row"}>
-                          <td colSpan={7} className="bg-muted/20 px-4 py-3">
+                          <td colSpan={8} className="bg-muted/20 px-4 py-3">
                             <Table>
                               <TableHeader>
                                 <TableRow>
