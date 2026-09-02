@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_app/produtos")({
 });
 
 const fields: CrudField[] = [
-  { name: "codigo", label: "Código", inTable: true, required: true },
+  { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
   { name: "ean", label: "EAN" },
   { name: "ncm", label: "NCM" },
