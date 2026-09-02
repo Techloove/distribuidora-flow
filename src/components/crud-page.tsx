@@ -111,6 +111,7 @@ export function CrudPage({
   emptyLabel,
   searchColumns,
   onFieldChange,
+  decorate,
 }: {
   table: string;
   fields: CrudField[];
@@ -123,6 +124,8 @@ export function CrudPage({
     value: string,
     form: Record<string, string | boolean>,
   ) => Record<string, string | boolean> | void;
+  /** Acrescenta colunas calculadas às linhas (ex.: promoção vigente do produto). */
+  decorate?: (rows: Row[]) => Row[];
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
