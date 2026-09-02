@@ -301,6 +301,7 @@ function SeparacaoPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Status: {p.status} · Rota: {p.rota}
+                        {p.seq ? ` · ${p.seq}` : ""}
                       </p>
                     </div>
                     <div className="no-print flex gap-2">
