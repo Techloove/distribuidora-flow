@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
@@ -44,6 +44,7 @@ function SeparacaoPage() {
   const queryClient = useQueryClient();
   const [modo, setModo] = useState<"pedido" | "onda">("pedido");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
