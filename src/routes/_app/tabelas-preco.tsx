@@ -131,20 +131,37 @@ function TabelasPrecoPage() {
 
   const criar = useMutation({
     mutationFn: async () => {
-      if (!head["nome"]!.trim()) throw new Error("Informe o nome da tabela");
-      const { error } = await client!.from("tabelas_preco").insert({
+      if (!head["nome"]!.trim()) throw new Error("Informe o nome da promoção");
+      const payload = {
         nome: head["nome"]!.trim(),
         cliente_id: head["cliente_id"]! || null,
         uf: head["uf"]!.trim().toUpperCase() || null,
         vigencia_inicio: head["vigencia_inicio"]! || new Date().toISOString().slice(0, 10),
         vigencia_fim: head["vigencia_fim"]! || null,
         prioridade: Number(head["prioridade"]! || 0),
-      });
+      };
+      if (editando) {
+        const { error } = await client!
+          .from("tabelas_preco")
+          .update(payload)
+          .eq("id", editando);
+        if (error) throw new Error(error.message);
+        return;
+      }
+      const { error } = await client!.from("tabelas_preco").insert(payload);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Tabela criada");
-      setHead((f) => ({ ...f, nome: "", cliente_id: "", uf: "" }));
+      toast.success(editando ? "Promoção atualizada" : "Promoção criada");
+      setEditando(null);
+      setHead({
+        nome: "",
+        cliente_id: "",
+        uf: "",
+        vigencia_inicio: new Date().toISOString().slice(0, 10),
+        vigencia_fim: "",
+        prioridade: "0",
+      });
       queryClient.invalidateQueries({ queryKey: ["tabelas_preco"] });
     },
     onError: (e: Error) => toast.error(e.message),
