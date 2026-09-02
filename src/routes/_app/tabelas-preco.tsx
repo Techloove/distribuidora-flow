@@ -56,6 +56,7 @@ function TabelasPrecoPage() {
     prioridade: "0",
   });
   const [item, setItem] = useState({ produto_id: "", preco: "0", desconto_maximo: "0" });
+  const [editando, setEditando] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
