@@ -40,7 +40,7 @@ const config: DocumentoConfig = {
 function PedidosPage() {
   return (
     <ErpLayout
-      title="Pedidos de venda"
+      title="Pedidos de Vendas"
       description="Ao confirmar, o sistema baixa o estoque, gera as parcelas do contas a receber e a comissão prevista."
     >
       <DocumentoPage config={config} />
