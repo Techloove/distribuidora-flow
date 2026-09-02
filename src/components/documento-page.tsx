@@ -983,9 +983,14 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   />
                   {promo !== null ? (
                     <p className="text-xs font-medium text-primary">
-                      Promoção vigente: {brl(promo)}
+                      {promo.nome}: {brl(promo.preco)}
+                      <br />
+                      {promo.fim
+                        ? `Válida até ${fmtDate(promo.fim)}`
+                        : "Sem data limite"}
                     </p>
                   ) : null}
+
                 </div>
 
                 {config.itemsTable === "pedido_itens" ? (
