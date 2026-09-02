@@ -4,6 +4,9 @@ import { DocumentoPage, type DocumentoConfig } from "@/components/documento-page
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/pedidos")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    pedido: typeof search["pedido"] === "string" ? search["pedido"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Pedidos de venda — ERP Distribuidora" },
@@ -38,12 +41,13 @@ const config: DocumentoConfig = {
 };
 
 function PedidosPage() {
+  const { pedido } = Route.useSearch();
   return (
     <ErpLayout
       title="Pedidos de Vendas"
       description="Ao confirmar, o sistema baixa o estoque, gera as parcelas do contas a receber e a comissão prevista."
     >
-      <DocumentoPage config={config} />
+      <DocumentoPage config={config} initialDocId={pedido ?? null} />
     </ErpLayout>
   );
 }

@@ -9,6 +9,7 @@ import {
   CalendarClock,
   ClipboardList,
   Coins,
+  Compass,
   CreditCard,
   FileText,
   PackageCheck,
@@ -60,9 +61,19 @@ const nav = [
     ],
   },
   {
+    group: "Comercial",
+    items: [
+      { to: "/pessoas", label: "Clientes", icon: Users },
+      { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
+      { to: "/representantes", label: "Vendedores", icon: UserRound },
+      { to: "/lead-rota", label: "Lead Rota", icon: Compass },
+      { to: "/metas", label: "Metas", icon: Target },
+      { to: "/comissoes", label: "Comissões", icon: Coins },
+    ],
+  },
+  {
     group: "Operação",
     items: [
-      { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
       { to: "/separacao", label: "Separação", icon: PackageCheck },
       { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
       { to: "/planejamento-compras", label: "Planejamento de compras", icon: CalendarClock },
@@ -79,7 +90,6 @@ const nav = [
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
-      { to: "/comissoes", label: "Comissões", icon: UserRound },
     ],
   },
   {
@@ -87,7 +97,6 @@ const nav = [
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
-      { to: "/metas", label: "Metas de vendas", icon: Target },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },
