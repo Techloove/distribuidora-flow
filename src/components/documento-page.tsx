@@ -930,22 +930,16 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
-                  <select
+                  <ProdutoPicker
+                    produtos={produtos.data ?? []}
                     value={item.produto_id}
-                    onChange={(e) => pickProduto(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">—</option>
-                    {produtos.data?.map((p) => (
-                      <option key={String(p["id"])} value={String(p["id"])}>
-                        {String(p["descricao"])} (est. {String(p["estoque_atual"])})
-                      </option>
-                    ))}
-                  </select>
+                    onPick={(id) => pickProduto(id)}
+                  />
                 </div>
+
                 <div className="space-y-1.5">
                   <Label>Qtd</Label>
                   <Input
