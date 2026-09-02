@@ -599,12 +599,43 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
 
+  const statusTone = (s: string) => {
+    const v = s.toLowerCase();
+    if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
+    if (["faturado", "entregue", "liquidado", "recebido"].includes(v))
+      return "bg-primary/15 text-primary";
+    if (["aprovado", "confirmado"].includes(v)) return "bg-emerald-500/15 text-emerald-600";
+    if (["separacao", "separado", "expedicao", "em_rota"].includes(v))
+      return "bg-amber-500/15 text-amber-600";
+    return "bg-secondary text-secondary-foreground";
+  };
+  const fmtDate = (v: unknown) => {
+    const s = String(v ?? "");
+    return s ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString("pt-BR") : "—";
+  };
+  const ticket = docsFiltrados.length ? totalFiltrado / docsFiltrados.length : 0;
+  const abertos = docsFiltrados.filter((d) =>
+    ["rascunho", "digitacao", "aprovado", "confirmado", "separacao", "separado"].includes(
+      String(d["status"]).toLowerCase(),
+    ),
+  ).length;
+  const statusResumo = (() => {
+    const m = new Map<string, number>();
+    for (const d of docsFiltrados) {
+      const k = String(d["status"]);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  })();
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
       <section className="space-y-3">
         <Button onClick={() => setOpenNew(true)} disabled={!canWrite} className="w-full">
           <Plus className="size-4" /> Novo Pedido
         </Button>
+
+
 
         <FilterBar onClear={() => setFiltros({})}>
           <FilterText
