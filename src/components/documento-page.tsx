@@ -858,7 +858,13 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                     value={item.preco}
                     onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                   />
+                  {promo !== null ? (
+                    <p className="text-xs font-medium text-primary">
+                      Promoção vigente: {brl(promo)}
+                    </p>
+                  ) : null}
                 </div>
+
                 {config.itemsTable === "pedido_itens" ? (
                   <div className="space-y-1.5">
                     <Label>Desc. %</Label>
