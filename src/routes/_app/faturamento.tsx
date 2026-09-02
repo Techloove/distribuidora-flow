@@ -60,6 +60,14 @@ const statusLabel: Record<string, string> = {
   erro: "Erro",
 };
 
+function safeJson(v: string) {
+  try {
+    return JSON.parse(v) as unknown;
+  } catch {
+    return { raw: v };
+  }
+}
+
 function dataBr(v: unknown) {
   const s = String(v ?? "");
   if (!s || s === "null") return "—";
@@ -218,8 +226,8 @@ function FaturamentoPage() {
             cidade: String(row["cidade"] ?? ""),
             uf: String(row["uf"] ?? ""),
             cep: String(row["cep"] ?? ""),
-            telefone: String(row["telefone"] ?? "") || undefined,
-            email: String(row["email"] ?? "") || undefined,
+            ...(row["telefone"] ? { telefone: String(row["telefone"]) } : {}),
+            ...(row["email"] ? { email: String(row["email"]) } : {}),
           },
         },
       });
@@ -236,7 +244,7 @@ function FaturamentoPage() {
         codigo_beneficiario: res.beneficiario,
         ambiente: res.ambiente,
         enviado_em: new Date().toISOString(),
-        retorno: res.retorno,
+        retorno: safeJson(res.retorno),
       });
       if (error) throw new Error(error.message);
       return { ok: true as const };
@@ -294,7 +302,7 @@ function FaturamentoPage() {
         .from("boletos")
         .update({
           status: res.baixado ? "baixado" : "registrado",
-          retorno: res.retorno,
+          retorno: safeJson(res.retorno),
         })
         .eq("id", String(b["id"]));
       if (error) throw new Error(error.message);

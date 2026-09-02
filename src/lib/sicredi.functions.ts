@@ -184,7 +184,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       posto: c.posto,
       beneficiario: c.beneficiario,
       ambiente: c.ambiente,
-      retorno: json,
+      retorno: txt.slice(0, 4000),
     };
   });
 
@@ -208,7 +208,7 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
       situacao,
       liquidado: situacao.includes("liquidad"),
       baixado: situacao.includes("baixad") || situacao.includes("cancelad"),
-      retorno: json,
+      retorno: txt.slice(0, 4000),
     };
   });
 

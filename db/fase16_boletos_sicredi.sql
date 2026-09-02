@@ -56,6 +56,7 @@ where cr.status in ('aberto','parcial')
 grant select on public.vw_boletos_pendentes to authenticated;
 
 -- Liquidacao do boleto baixa o titulo correspondente
+drop function if exists public.liquidar_boleto(uuid, numeric, date);
 create or replace function public.liquidar_boleto(_id uuid, _valor numeric default null, _data date default current_date)
 returns void
 language plpgsql
