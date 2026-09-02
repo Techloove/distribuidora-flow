@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/expedicao")({
@@ -62,10 +64,13 @@ const next: Record<string, { status: string; label: string }[]> = {
 
 function ExpedicaoPage() {
   const { client, roles } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statuses)[number]>("todos");
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const canShip =
     roles.includes("admin") ||
@@ -133,10 +138,28 @@ function ExpedicaoPage() {
     },
   });
 
+  const pedidoLabel = (id: unknown) => {
+    const p = pedidos.data?.find((x) => x["id"] === id);
+    if (!p) return "—";
+    const cli = clientes.data?.find((c) => c["id"] === p["cliente_id"]);
+    return `#${String(p["numero"])} · ${String(cli?.["razao_social"] ?? "—")}`;
+  };
+
   const rows = useMemo(() => {
-    const list = expedicoes.data ?? [];
-    return status === "todos" ? list : list.filter((r) => r["status"] === status);
-  }, [expedicoes.data, status]);
+    let list = filtrarCentro(expedicoes.data ?? [], centro);
+    if (status !== "todos") list = list.filter((r) => r["status"] === status);
+    const f = filtros;
+    if (f["rota"]) list = list.filter((r) => String(r["rota_id"] ?? "") === f["rota"]);
+    if (f["de"])
+      list = list.filter((r) => String(r["previsao_entrega"] ?? "") >= f["de"]!);
+    if (f["ate"])
+      list = list.filter((r) => String(r["previsao_entrega"] ?? "") <= f["ate"]!);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((r) => pedidoLabel(r["pedido_id"]).toLowerCase().includes(termo));
+    }
+    return list;
+  }, [expedicoes.data, status, centro, filtros, pedidos.data, clientes.data]);
 
   const totals = useMemo(() => {
     const list = expedicoes.data ?? [];
@@ -189,13 +212,6 @@ function ExpedicaoPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const pedidoLabel = (id: unknown) => {
-    const p = pedidos.data?.find((x) => x["id"] === id);
-    if (!p) return "—";
-    const cli = clientes.data?.find((c) => c["id"] === p["cliente_id"]);
-    return `#${String(p["numero"])} · ${String(cli?.["razao_social"] ?? "—")}`;
-  };
-
   const transportadoraLabel = (id: unknown) =>
     String(transportadoras.data?.find((t) => t["id"] === id)?.["razao_social"] ?? "—");
 
@@ -216,8 +232,42 @@ function ExpedicaoPage() {
     <ErpLayout
       title="Expedição / entregas"
       description="Cada pedido confirmado gera um romaneio: separação, despacho e confirmação de entrega."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
       <div className="space-y-4">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Busca (nº pedido/cliente)"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+          />
+          <FilterSelect
+            label="Rota"
+            value={filtros["rota"] ?? ""}
+            onChange={(v) => setF("rota", v)}
+            options={(rotas.data ?? []).map((r) => ({
+              value: String(r["id"]),
+              label: String(r["nome"]),
+            }))}
+          />
+          <FilterText
+            label="Previsão de"
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label="Previsão até"
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
+        </FilterBar>
+
         <div className="grid gap-4 sm:grid-cols-3">
           <Kpi label="Aguardando separação" value={String(totals.pendentes)} />
           <Kpi label="Em rota" value={String(totals.rota)} />
@@ -237,7 +287,7 @@ function ExpedicaoPage() {
           ))}
         </div>
 
-        <div className="rounded-lg border border-border bg-card">
+        <div className="print-area rounded-lg border border-border bg-card">
           {expedicoes.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -262,7 +312,7 @@ function ExpedicaoPage() {
                   <TableHead>Transportadora</TableHead>
                   <TableHead>Previsão</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="no-print text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -273,7 +323,7 @@ function ExpedicaoPage() {
                     <TableCell>{transportadoraLabel(r["transportadora_id"])}</TableCell>
                     <TableCell>{String(r["previsao_entrega"] ?? "—")}</TableCell>
                     <TableCell>{String(r["status"])}</TableCell>
-                    <TableCell className="space-x-2 text-right">
+                    <TableCell className="no-print space-x-2 text-right">
                       <Button
                         size="sm"
                         variant="outline"

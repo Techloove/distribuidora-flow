@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/estoque")({
@@ -40,7 +42,10 @@ type Row = Record<string, unknown>;
 
 function EstoquePage() {
   const { client, roles } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
   const [form, setForm] = useState({
     produto_id: "",
     tipo: "entrada",
@@ -61,7 +66,9 @@ function EstoquePage() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("produtos")
-        .select("id, codigo, descricao, unidade, estoque_atual, estoque_minimo, custo_medio")
+        .select(
+          "id, codigo, descricao, unidade, estoque_atual, estoque_minimo, custo_medio, centro_id",
+        )
         .order("descricao");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -108,12 +115,84 @@ function EstoquePage() {
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
 
+  const produtosFiltrados = useMemo(() => {
+    let list = filtrarCentro(produtos.data ?? [], centro);
+    const f = filtros;
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (p) =>
+          String(p["descricao"] ?? "").toLowerCase().includes(termo) ||
+          String(p["codigo"] ?? "").toLowerCase().includes(termo),
+      );
+    }
+    if (f["somenteAbaixo"] === "1") {
+      list = list.filter((p) => Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0));
+    }
+    return list;
+  }, [produtos.data, centro, filtros]);
+
+  const movimentosFiltrados = useMemo(() => {
+    let list = filtrarCentro(movimentos.data ?? [], centro);
+    const f = filtros;
+    if (f["tipo"]) list = list.filter((m) => String(m["tipo"]) === f["tipo"]);
+    if (f["de"]) list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) >= f["de"]!);
+    if (f["ate"]) list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) <= f["ate"]!);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((m) => produtoName(m["produto_id"]).toLowerCase().includes(termo));
+    }
+    return list;
+  }, [movimentos.data, centro, filtros]);
+
   return (
     <ErpLayout
       title="Estoque"
       description="Saldos por produto e histórico de movimentos gerados por pedidos, compras e ajustes manuais."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
       <div className="space-y-6">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Busca (código ou descrição)"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+          />
+          <FilterSelect
+            label="Tipo de movimento"
+            value={filtros["tipo"] ?? ""}
+            onChange={(v) => setF("tipo", v)}
+            options={[
+              { value: "entrada", label: "Entrada" },
+              { value: "saida", label: "Saída" },
+              { value: "ajuste", label: "Ajuste" },
+            ]}
+          />
+          <FilterText
+            label="Data de"
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label="Data até"
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
+          <FilterSelect
+            label="Estoque"
+            value={filtros["somenteAbaixo"] ?? ""}
+            onChange={(v) => setF("somenteAbaixo", v)}
+            options={[{ value: "1", label: "Somente abaixo do mínimo" }]}
+            allLabel="Todos os produtos"
+          />
+        </FilterBar>
+
         <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
           <div className="space-y-1.5">
             <Label>Produto</Label>
@@ -174,7 +253,7 @@ function EstoquePage() {
           </p>
         ) : null}
 
-        <div>
+        <div className="print-area">
           <h2 className="mb-2 text-sm font-semibold text-foreground">Saldos por produto</h2>
           <div className="rounded-lg border border-border bg-card">
             {produtos.isLoading ? (
@@ -193,7 +272,7 @@ function EstoquePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {produtos.data!.map((p) => {
+                  {produtosFiltrados.map((p) => {
                     const baixo = Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0);
                     return (
                       <TableRow key={String(p["id"])}>
@@ -213,7 +292,7 @@ function EstoquePage() {
           </div>
         </div>
 
-        <div>
+        <div className="print-area">
           <h2 className="mb-2 text-sm font-semibold text-foreground">Últimos movimentos</h2>
           <div className="rounded-lg border border-border bg-card">
             {movimentos.isLoading ? (
@@ -226,7 +305,7 @@ function EstoquePage() {
                   Supabase.
                 </p>
               </div>
-            ) : (movimentos.data ?? []).length === 0 ? (
+            ) : movimentosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum movimento registrado.
               </p>
@@ -242,7 +321,7 @@ function EstoquePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movimentos.data!.map((m) => (
+                  {movimentosFiltrados.map((m) => (
                     <TableRow key={String(m["id"])}>
                       <TableCell>
                         {new Date(String(m["created_at"])).toLocaleString("pt-BR")}

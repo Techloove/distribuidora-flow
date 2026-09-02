@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +56,8 @@ function TabelasPrecoPage() {
     prioridade: "0",
   });
   const [item, setItem] = useState({ produto_id: "", preco: "0", desconto_maximo: "0" });
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const tabelas = useQuery({
     queryKey: ["tabelas_preco"],
@@ -108,6 +111,18 @@ function TabelasPrecoPage() {
       return (data ?? []) as Row[];
     },
   });
+
+  const tabelasFiltradas = useMemo(() => {
+    let list = tabelas.data ?? [];
+    const termo = (filtros["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((t) => String(t["nome"] ?? "").toLowerCase().includes(termo));
+    }
+    if (filtros["ativo"]) {
+      list = list.filter((t) => String(Boolean(t["ativo"])) === filtros["ativo"]);
+    }
+    return list;
+  }, [tabelas.data, filtros]);
 
   const nomeProduto = (id: unknown) => {
     const p = produtos.data?.find((x) => x["id"] === id);
@@ -183,7 +198,31 @@ function TabelasPrecoPage() {
     <ErpLayout
       title="Tabelas de preço"
       description="A tabela mais específica vence: cliente, depois UF, depois prioridade. Sem tabela vigente, vale o preço do produto."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
+      <div className="mb-4">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Buscar tabela"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+            placeholder="Nome da tabela..."
+          />
+          <FilterSelect
+            label="Status"
+            value={filtros["ativo"] ?? ""}
+            onChange={(v) => setF("ativo", v)}
+            options={[
+              { value: "true", label: "Ativa" },
+              { value: "false", label: "Inativa" },
+            ]}
+          />
+        </FilterBar>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <section className="space-y-4">
           {canManage && (
@@ -259,7 +298,7 @@ function TabelasPrecoPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-border bg-card">
+          <div className="print-area rounded-lg border border-border bg-card">
             {tabelas.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -272,9 +311,9 @@ function TabelasPrecoPage() {
                   Supabase.
                 </p>
               </div>
-            ) : (tabelas.data ?? []).length === 0 ? (
+            ) : tabelasFiltradas.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Nenhuma tabela de preço cadastrada.
+                Nenhuma tabela de preço encontrada.
               </p>
             ) : (
               <Table>
@@ -288,7 +327,7 @@ function TabelasPrecoPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tabelas.data!.map((t) => (
+                  {tabelasFiltradas.map((t) => (
                     <TableRow
                       key={String(t["id"])}
                       onClick={() => setSelected(String(t["id"]))}
@@ -310,7 +349,7 @@ function TabelasPrecoPage() {
                         {String(t["vigencia_inicio"])} → {String(t["vigencia_fim"] ?? "—")}
                       </TableCell>
                       <TableCell className="text-right">{String(t["prioridade"])}</TableCell>
-                      <TableCell>
+                      <TableCell className="no-print">
                         <Button
                           size="sm"
                           variant="outline"
@@ -419,7 +458,7 @@ function TabelasPrecoPage() {
                         <TableCell className="text-right">
                           {Number(i["desconto_maximo"] ?? 0)}%
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="no-print text-right">
                           <Button
                             size="icon"
                             variant="ghost"

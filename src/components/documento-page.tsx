@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const brl = (value: unknown) =>
@@ -62,6 +64,7 @@ const emptyItem = {
 
 export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const { client, roles } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [openNew, setOpenNew] = useState(false);
@@ -170,7 +173,53 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  /** Filtros da listagem de documentos. */
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+
+  const docsFiltrados = useMemo(() => {
+    let list = docs.data ?? [];
+    const f = filtros;
+    if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
+    if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
+    if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
+    if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
+    if (f["forma"])
+      list = list.filter((d) => String(d["forma_pagamento_id"] ?? "") === f["forma"]);
+    if (f["parceiro"])
+      list = list.filter((d) => String(d[config.partnerKey] ?? "") === f["parceiro"]);
+    if (f["de"]) list = list.filter((d) => String(d[config.dateField] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((d) => String(d[config.dateField] ?? "") <= f["ate"]!);
+    if (f["min"]) list = list.filter((d) => Number(d["total_liquido"] ?? 0) >= Number(f["min"]));
+    if (f["max"]) list = list.filter((d) => Number(d["total_liquido"] ?? 0) <= Number(f["max"]));
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((d) => {
+        const parceiro = String(
+          partners.data?.find((p) => p["id"] === d[config.partnerKey])?.["razao_social"] ?? "",
+        ).toLowerCase();
+        return (
+          String(d["numero"] ?? "").includes(termo) ||
+          parceiro.includes(termo) ||
+          String(d["observacoes"] ?? "").toLowerCase().includes(termo)
+        );
+      });
+    }
+    return list;
+  }, [docs.data, filtros, centro, partners.data, config.partnerKey, config.dateField]);
+
+  const statusOptions = useMemo(() => {
+    const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
+    return [...set].sort().map((s) => ({ value: s, label: s }));
+  }, [docs.data]);
+
+  const totalFiltrado = docsFiltrados.reduce(
+    (s, d) => s + Number(d["total_liquido"] ?? 0),
+    0,
+  );
+
   const doc = docs.data?.find((d) => d["id"] === selected) ?? null;
+
 
   /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
   const clienteFoco =
@@ -535,6 +584,88 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
         <Button onClick={() => setOpenNew(true)} disabled={!canWrite} className="w-full">
           <Plus className="size-4" /> Novo Pedido
         </Button>
+
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Buscar"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+            placeholder={`Nº, ${config.partnerLabel.toLowerCase()} ou observação`}
+          />
+          <FilterSelect
+            label="Status"
+            value={filtros["status"] ?? ""}
+            onChange={(v) => setF("status", v)}
+            options={statusOptions}
+          />
+          <FilterSelect
+            label={config.partnerLabel}
+            value={filtros["parceiro"] ?? ""}
+            onChange={(v) => setF("parceiro", v)}
+            options={(partners.data ?? []).map((p) => ({
+              value: String(p["id"]),
+              label: String(p["razao_social"]),
+            }))}
+          />
+          <FilterSelect
+            label="Centro de custo"
+            value={filtros["centro"] ?? ""}
+            onChange={(v) => setF("centro", v)}
+            options={(centros.data ?? []).map((c) => ({
+              value: String(c["id"]),
+              label: String(c["nome"]),
+            }))}
+          />
+          {config.table === "pedidos" ? (
+            <FilterSelect
+              label="Rota"
+              value={filtros["rota"] ?? ""}
+              onChange={(v) => setF("rota", v)}
+              options={(rotas.data ?? []).map((r) => ({
+                value: String(r["id"]),
+                label: String(r["nome"]),
+              }))}
+            />
+          ) : null}
+          <FilterSelect
+            label="Forma de pagamento"
+            value={filtros["forma"] ?? ""}
+            onChange={(v) => setF("forma", v)}
+            options={(formas.data ?? []).map((f) => ({
+              value: String(f["id"]),
+              label: String(f["nome"]),
+            }))}
+          />
+          <FilterText
+            label={`${config.dateLabel} de`}
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label={`${config.dateLabel} até`}
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
+          <FilterText
+            label="Valor mínimo"
+            type="number"
+            value={filtros["min"] ?? ""}
+            onChange={(v) => setF("min", v)}
+          />
+          <FilterText
+            label="Valor máximo"
+            type="number"
+            value={filtros["max"] ?? ""}
+            onChange={(v) => setF("max", v)}
+          />
+        </FilterBar>
+
+        <p className="text-xs text-muted-foreground">
+          {docsFiltrados.length} documento(s) · total {brl(totalFiltrado)}
+        </p>
+
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {docs.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -542,12 +673,12 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
             </div>
           ) : docs.isError ? (
             <p className="p-4 text-sm text-destructive">{(docs.error as Error).message}</p>
-          ) : (docs.data ?? []).length === 0 ? (
+          ) : docsFiltrados.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              Nenhum documento ainda.
+              Nenhum documento neste filtro.
             </p>
           ) : (
-            docs.data!.map((d) => (
+            docsFiltrados.map((d) => (
               <button
                 key={String(d["id"])}
                 onClick={() => setSelected(String(d["id"]))}
@@ -569,6 +700,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
             ))
           )}
         </div>
+
       </section>
 
       <section className="space-y-4">

@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,8 @@ function DevolucoesPage() {
     motivo: "",
   });
   const [item, setItem] = useState({ produto_id: "", quantidade: "1", preco_unitario: "0" });
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const devolucoes = useQuery({
     queryKey: ["devolucoes"],
@@ -140,6 +143,27 @@ function DevolucoesPage() {
   };
   const cliName = (id: unknown) =>
     String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—");
+  const centroName = (id: unknown) =>
+    String(centros.data?.find((c) => c["id"] === id)?.["nome"] ?? "—");
+
+  const rows = useMemo(() => {
+    let list = devolucoes.data ?? [];
+    const f = filtros;
+    if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
+    if (f["centro"]) list = list.filter((d) => d["centro_id"] === f["centro"]);
+    if (f["de"]) list = list.filter((d) => String(d["data_devolucao"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((d) => String(d["data_devolucao"] ?? "") <= f["ate"]!);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (d) =>
+          String(d["numero"] ?? "").toLowerCase().includes(termo) ||
+          cliName(d["cliente_id"]).toLowerCase().includes(termo) ||
+          String(d["motivo"] ?? "").toLowerCase().includes(termo),
+      );
+    }
+    return list;
+  }, [devolucoes.data, filtros, clientes.data]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["devolucoes"] });
@@ -230,9 +254,53 @@ function DevolucoesPage() {
     <ErpLayout
       title="Devoluções de venda"
       description="Confirmar devolve os itens ao estoque e lança um crédito negativo no contas a receber."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <section className="space-y-4">
+          <FilterBar onClear={() => setFiltros({})}>
+            <FilterText
+              label="Buscar (nº/cliente/motivo)"
+              value={filtros["busca"] ?? ""}
+              onChange={(v) => setF("busca", v)}
+            />
+            <FilterSelect
+              label="Status"
+              value={filtros["status"] ?? ""}
+              onChange={(v) => setF("status", v)}
+              options={[
+                { value: "rascunho", label: "Rascunho" },
+                { value: "confirmada", label: "Confirmada" },
+                { value: "cancelada", label: "Cancelada" },
+              ]}
+            />
+            <FilterSelect
+              label="Centro de custo"
+              value={filtros["centro"] ?? ""}
+              onChange={(v) => setF("centro", v)}
+              options={(centros.data ?? []).map((c) => ({
+                value: String(c["id"]),
+                label: String(c["nome"]),
+              }))}
+            />
+            <FilterText
+              label="De"
+              type="date"
+              value={filtros["de"] ?? ""}
+              onChange={(v) => setF("de", v)}
+            />
+            <FilterText
+              label="Até"
+              type="date"
+              value={filtros["ate"] ?? ""}
+              onChange={(v) => setF("ate", v)}
+            />
+          </FilterBar>
+
           {canManage && (
             <div className="rounded-lg border border-border bg-card p-4">
               <h2 className="text-sm font-semibold">Nova devolução</h2>
@@ -313,7 +381,7 @@ function DevolucoesPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-border bg-card">
+          <div className="print-area rounded-lg border border-border bg-card">
             {devolucoes.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -326,9 +394,9 @@ function DevolucoesPage() {
                   Supabase.
                 </p>
               </div>
-            ) : (devolucoes.data ?? []).length === 0 ? (
+            ) : rows.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Nenhuma devolução registrada.
+                Nenhuma devolução neste filtro.
               </p>
             ) : (
               <Table>
@@ -342,7 +410,7 @@ function DevolucoesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {devolucoes.data!.map((d) => (
+                  {rows.map((d) => (
                     <TableRow
                       key={String(d["id"])}
                       onClick={() => setSelected(String(d["id"]))}

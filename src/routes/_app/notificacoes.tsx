@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bell, CheckCircle2, Info, Loader2, XCircle } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, Bell, CheckCircle2, Info, Loader2, Printer, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -39,6 +40,8 @@ function NotificacoesPage() {
   const { client } = useSupabase();
   const queryClient = useQueryClient();
   const [onlyUnread, setOnlyUnread] = useState(false);
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const notificacoes = useQuery({
     queryKey: ["notificacoes"],
@@ -64,25 +67,47 @@ function NotificacoesPage() {
   });
 
   const all = notificacoes.data ?? [];
-  const rows = onlyUnread ? all.filter((r) => !r["lida"]) : all;
   const unread = all.filter((r) => !r["lida"]);
+
+  const rows = useMemo(() => {
+    let list = onlyUnread ? all.filter((r) => !r["lida"]) : all;
+    const f = filtros;
+    if (f["tipo"]) list = list.filter((r) => String(r["tipo"]) === f["tipo"]);
+    if (f["lida"]) list = list.filter((r) => String(!!r["lida"]) === f["lida"]);
+    if (f["de"]) list = list.filter((r) => String(r["created_at"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((r) => String(r["created_at"] ?? "") <= `${f["ate"]}T23:59:59`);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (r) =>
+          String(r["titulo"] ?? "").toLowerCase().includes(termo) ||
+          String(r["mensagem"] ?? "").toLowerCase().includes(termo),
+      );
+    }
+    return list;
+  }, [all, onlyUnread, filtros]);
 
   return (
     <ErpLayout
       title="Notificações"
       description="Eventos gerados automaticamente pelo ERP: vendas, expedição e estoque mínimo."
       actions={
-        <Button
-          size="sm"
-          disabled={unread.length === 0 || marcar.isPending}
-          onClick={() => marcar.mutate(unread.map((r) => String(r["id"])))}
-        >
-          Marcar todas como lidas
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => window.print()}>
+            <Printer className="size-4" /> Imprimir
+          </Button>
+          <Button
+            size="sm"
+            disabled={unread.length === 0 || marcar.isPending}
+            onClick={() => marcar.mutate(unread.map((r) => String(r["id"])))}
+          >
+            Marcar todas como lidas
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="no-print flex flex-wrap gap-2">
           <Button
             size="sm"
             variant={onlyUnread ? "outline" : "default"}
@@ -99,7 +124,47 @@ function NotificacoesPage() {
           </Button>
         </div>
 
-        <div className="rounded-lg border border-border bg-card">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Buscar"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+          />
+          <FilterSelect
+            label="Tipo"
+            value={filtros["tipo"] ?? ""}
+            onChange={(v) => setF("tipo", v)}
+            options={[
+              { value: "info", label: "Info" },
+              { value: "alerta", label: "Alerta" },
+              { value: "erro", label: "Erro" },
+              { value: "sucesso", label: "Sucesso" },
+            ]}
+          />
+          <FilterSelect
+            label="Lida"
+            value={filtros["lida"] ?? ""}
+            onChange={(v) => setF("lida", v)}
+            options={[
+              { value: "true", label: "Lidas" },
+              { value: "false", label: "Não lidas" },
+            ]}
+          />
+          <FilterText
+            label="De"
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label="Até"
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
+        </FilterBar>
+
+        <div className="print-area rounded-lg border border-border bg-card">
           {notificacoes.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -113,7 +178,7 @@ function NotificacoesPage() {
             </div>
           ) : rows.length === 0 ? (
             <p className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Bell className="size-4" /> Nenhuma notificação.
+              <Bell className="size-4" /> Nenhuma notificação neste filtro.
             </p>
           ) : (
             <ul className="divide-y divide-border">
@@ -149,6 +214,7 @@ function NotificacoesPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="no-print"
                         onClick={() => marcar.mutate([String(r["id"])])}
                       >
                         Marcar lida
