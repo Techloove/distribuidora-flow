@@ -170,3 +170,31 @@
   --sidebar-border: oklch(0.34 0.035 232);
   --sidebar-ring: oklch(0.78 0.15 74);
 }
+
+/* Impressão: mostra apenas a área marcada com .print-area */
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-print,
+  aside,
+  header nav {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+  .print-area table {
+    font-size: 11px;
+  }
+}
+.print-only {
+  display: none;
+}
