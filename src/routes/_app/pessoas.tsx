@@ -37,6 +37,7 @@ const fields: CrudField[] = [
       { name: "is_cliente", label: "Cliente" },
       { name: "is_fornecedor", label: "Fornecedor" },
       { name: "is_representante", label: "Representante" },
+      { name: "is_transportadora", label: "Transportadora" },
       { name: "is_usuario", label: "Usuário do sistema" },
     ],
   },
