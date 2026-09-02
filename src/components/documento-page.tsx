@@ -116,6 +116,20 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  const rotas = useQuery({
+    queryKey: ["rotas", "options"],
+    enabled: !!client && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("rotas")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const formas = useQuery({
     queryKey: ["formas_pagamento", "options"],
     enabled: !!client,
