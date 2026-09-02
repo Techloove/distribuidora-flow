@@ -30,8 +30,9 @@ import {
   Users,
   Warehouse,
   Wallet,
+  Menu,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   Select,
@@ -40,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
