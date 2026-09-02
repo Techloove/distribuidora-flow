@@ -254,6 +254,21 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateItem = useMutation({
+    mutationFn: async (patch: { id: string; values: Record<string, number> }) => {
+      const { error } = await client!
+        .from(config.itemsTable)
+        .update(patch.values)
+        .eq("id", patch.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeItem = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await client!.from(config.itemsTable).delete().eq("id", id);
