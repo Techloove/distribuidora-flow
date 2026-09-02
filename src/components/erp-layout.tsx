@@ -9,6 +9,7 @@ import {
   CalendarClock,
   ClipboardList,
   Coins,
+  Compass,
   CreditCard,
   FileText,
   PackageCheck,
