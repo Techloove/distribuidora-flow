@@ -130,3 +130,23 @@ export function useAcesso(): Acesso {
     pode: (path: string) => permitidos.has(path),
   };
 }
+
+/** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
+const ALIASES: Record<string, string> = {
+  "/clientes": "/pessoas",
+  "/fornecedores": "/pessoas",
+  "/transportadoras": "/pessoas",
+  "/regras-comissao": "/comissoes",
+  "/comissao-faixas": "/comissoes",
+};
+
+/** Descobre qual módulo controla a rota atual. */
+export function moduloDaRota(pathname: string): string | null {
+  for (const [alias, destino] of Object.entries(ALIASES)) {
+    if (pathname === alias || pathname.startsWith(`${alias}/`)) return destino;
+  }
+  const achado = MODULOS.map((m) => m.path)
+    .filter((p) => pathname === p || pathname.startsWith(`${p}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  return achado ?? null;
+}
