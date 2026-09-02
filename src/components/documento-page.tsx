@@ -834,12 +834,18 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
       <section className="space-y-4">
         {!doc ? (
-          <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Selecione um documento na lista acima ou crie um novo.
-          </div>
+          listaVisivel ? (
+            <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              Selecione um documento na lista acima ou crie um novo.
+            </div>
+          ) : null
         ) : (
           <>
+            <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
+              ← Voltar à lista
+            </Button>
             <div className="rounded-lg border border-border bg-card p-5">
+
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
