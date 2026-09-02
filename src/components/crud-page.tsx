@@ -427,16 +427,45 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {f.type === "multicheck"
-                        ? (f.checks ?? [])
-                            .filter((c) => row[c.name])
-                            .map((c) => c.label)
-                            .join(", ") || "—"
-                        : f.type === "checkbox"
-                          ? row[f.name]
-                            ? "Sim"
-                            : "Não"
-                          : String(row[f.name] ?? "—")}
+                      {inlineSet.has(f.name) && canManage ? (
+                        <Input
+                          key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
+                          type="number"
+                          step={f.step ?? "0.01"}
+                          aria-label={f.label}
+                          defaultValue={
+                            row[f.name] === null || row[f.name] === undefined
+                              ? ""
+                              : Number(row[f.name]).toFixed(2)
+                          }
+                          className="h-8 w-24"
+                          onBlur={(e) => {
+                            const antes =
+                              row[f.name] === null || row[f.name] === undefined
+                                ? ""
+                                : Number(row[f.name]).toFixed(2);
+                            if (e.target.value === antes) return;
+                            const patch = onInlineSave
+                              ? onInlineSave(row, f.name, e.target.value)
+                              : { [f.name]: e.target.value === "" ? null : Number(e.target.value) };
+                            if (Object.keys(patch).length === 0) return;
+                            inlineUpdate.mutate({ id: row["id"] as string, patch });
+                          }}
+                        />
+                      ) : f.type === "multicheck" ? (
+                        (f.checks ?? [])
+                          .filter((c) => row[c.name])
+                          .map((c) => c.label)
+                          .join(", ") || "—"
+                      ) : f.type === "checkbox" ? (
+                        row[f.name] ? (
+                          "Sim"
+                        ) : (
+                          "Não"
+                        )
+                      ) : (
+                        String(row[f.name] ?? "—")
+                      )}
                     </TableCell>
                   ))}
 
