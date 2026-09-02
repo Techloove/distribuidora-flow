@@ -18,6 +18,8 @@ import {
   LineChart,
   LogOut,
   Package,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Tags,
   Target,
@@ -208,6 +210,7 @@ export function ErpLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -216,7 +219,11 @@ export function ErpLayout({
 
   return (
     <div className="flex min-h-dvh bg-background">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+      <aside
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
+          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+        }`}
+      >
         <SidebarContent
           pathname={pathname}
           onSignOut={handleSignOut}
@@ -255,6 +262,18 @@ export function ErpLayout({
               className="no-print -ml-1 rounded-md border border-border p-2 text-foreground md:hidden"
             >
               <Menu className="size-4" />
+            </button>
+            <button
+              type="button"
+              aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              className="no-print -ml-1 hidden rounded-md border border-border p-2 text-foreground transition-colors hover:bg-accent md:inline-flex"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="size-4" />
+              ) : (
+                <PanelLeftClose className="size-4" />
+              )}
             </button>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
