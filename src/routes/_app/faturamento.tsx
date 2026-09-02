@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/faturamento")({
@@ -43,10 +45,13 @@ type Row = Record<string, unknown>;
 
 function FaturamentoPage() {
   const { client, roles } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const canBill =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
   const [nfNumero, setNfNumero] = useState<Record<string, string>>({});
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const pedidos = useQuery({
     queryKey: ["pedidos", "confirmados"],
@@ -54,7 +59,7 @@ function FaturamentoPage() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedidos")
-        .select("id, numero, cliente_id, data_pedido, total_liquido")
+        .select("id, numero, cliente_id, data_pedido, total_liquido, centro_id")
         .eq("status", "confirmado")
         .order("numero", { ascending: false });
       if (error) throw new Error(error.message);
@@ -90,6 +95,40 @@ function FaturamentoPage() {
 
   const cliName = (id: unknown) =>
     String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—");
+
+  const pedidosFiltrados = useMemo(() => {
+    let list = filtrarCentro(pedidos.data ?? [], centro);
+    const f = filtros;
+    if (f["de"]) list = list.filter((p) => String(p["data_pedido"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((p) => String(p["data_pedido"] ?? "") <= f["ate"]!);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (p) =>
+          String(p["numero"] ?? "").toLowerCase().includes(termo) ||
+          cliName(p["cliente_id"]).toLowerCase().includes(termo),
+      );
+    }
+    return list;
+  }, [pedidos.data, centro, filtros, clientes.data]);
+
+  const notasFiltradas = useMemo(() => {
+    let list = filtrarCentro(notas.data ?? [], centro);
+    const f = filtros;
+    if (f["status"]) list = list.filter((n) => String(n["status"]) === f["status"]);
+    if (f["de"]) list = list.filter((n) => String(n["data_emissao"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((n) => String(n["data_emissao"] ?? "") <= f["ate"]!);
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (n) =>
+          String(n["numero"] ?? "").toLowerCase().includes(termo) ||
+          String(n["nf_numero"] ?? "").toLowerCase().includes(termo) ||
+          cliName(n["cliente_id"]).toLowerCase().includes(termo),
+      );
+    }
+    return list;
+  }, [notas.data, centro, filtros, clientes.data]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["pedidos"] });
@@ -132,14 +171,48 @@ function FaturamentoPage() {
     <ErpLayout
       title="Faturamento"
       description="Pedidos confirmados geram nota de saída; o cancelamento devolve o pedido para confirmado."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
       <div className="space-y-6">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Busca (nº/cliente)"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+          />
+          <FilterSelect
+            label="Status"
+            value={filtros["status"] ?? ""}
+            onChange={(v) => setF("status", v)}
+            options={[
+              { value: "emitida", label: "Emitida" },
+              { value: "cancelada", label: "Cancelada" },
+            ]}
+          />
+          <FilterText
+            label="Data de"
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label="Data até"
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
+        </FilterBar>
+
         <article className="rounded-lg border border-border bg-card p-5">
           <p className="text-sm text-muted-foreground">Total faturado (notas ativas)</p>
           <p className="mt-2 text-2xl font-semibold">{brl(totalFaturado)}</p>
         </article>
 
-        <section className="space-y-2">
+        <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Pedidos aguardando faturamento</h2>
           <div className="rounded-lg border border-border bg-card">
             {pedidos.isLoading ? (
@@ -150,7 +223,7 @@ function FaturamentoPage() {
               <div className="p-6 text-sm text-destructive">
                 {(pedidos.error as Error).message}
               </div>
-            ) : (pedidos.data ?? []).length === 0 ? (
+            ) : pedidosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum pedido confirmado pendente de faturamento.
               </p>
@@ -162,12 +235,12 @@ function FaturamentoPage() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="w-64">Nº da NF (opcional)</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="no-print w-64">Nº da NF (opcional)</TableHead>
+                    <TableHead className="no-print text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pedidos.data!.map((p) => {
+                  {pedidosFiltrados.map((p) => {
                     const id = String(p["id"]);
                     return (
                       <TableRow key={id}>
@@ -175,7 +248,7 @@ function FaturamentoPage() {
                         <TableCell>{cliName(p["cliente_id"])}</TableCell>
                         <TableCell>{String(p["data_pedido"] ?? "—")}</TableCell>
                         <TableCell className="text-right">{brl(p["total_liquido"])}</TableCell>
-                        <TableCell>
+                        <TableCell className="no-print">
                           <Input
                             value={nfNumero[id] ?? ""}
                             onChange={(e) =>
@@ -185,7 +258,7 @@ function FaturamentoPage() {
                             disabled={!canBill}
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="no-print text-right">
                           <Button
                             size="sm"
                             disabled={!canBill || faturar.isPending}
@@ -203,7 +276,7 @@ function FaturamentoPage() {
           </div>
         </section>
 
-        <section className="space-y-2">
+        <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Notas fiscais de saída</h2>
           <div className="rounded-lg border border-border bg-card">
             {notas.isLoading ? (
@@ -217,7 +290,7 @@ function FaturamentoPage() {
                   Rode <code>db/fase6_faturamento_fluxo_caixa.sql</code> no SQL Editor do Supabase.
                 </p>
               </div>
-            ) : (notas.data ?? []).length === 0 ? (
+            ) : notasFiltradas.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhuma nota emitida ainda.
               </p>
@@ -231,11 +304,11 @@ function FaturamentoPage() {
                     <TableHead>Emissão</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="no-print text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {notas.data!.map((n) => (
+                  {notasFiltradas.map((n) => (
                     <TableRow key={String(n["id"])}>
                       <TableCell>#{String(n["numero"])}</TableCell>
                       <TableCell>{String(n["nf_numero"] ?? "—")}</TableCell>
@@ -243,7 +316,7 @@ function FaturamentoPage() {
                       <TableCell>{String(n["data_emissao"] ?? "—")}</TableCell>
                       <TableCell className="text-right">{brl(n["valor_total"])}</TableCell>
                       <TableCell>{String(n["status"])}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="no-print text-right">
                         <Button
                           size="sm"
                           variant="outline"

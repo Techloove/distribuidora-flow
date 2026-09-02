@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Plus, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/metas")({
@@ -45,6 +47,7 @@ const hoje = new Date();
 
 function MetasPage() {
   const { client, canManage } = useSupabase();
+  const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     representante_id: "",
@@ -52,6 +55,8 @@ function MetasPage() {
     mes: String(hoje.getMonth() + 1),
     valor_meta: "0",
   });
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const representantes = useQuery({
     queryKey: ["representantes", "options"],
@@ -76,6 +81,40 @@ function MetasPage() {
       return (data ?? []) as Row[];
     },
   });
+
+  const opcoes = useMemo(() => {
+    const list = metas.data ?? [];
+    const uniq = (key: string) =>
+      [...new Set(list.map((r) => String(r[key] ?? "")).filter(Boolean))]
+        .sort()
+        .map((v) => ({ value: v, label: v }));
+    return {
+      representantes: uniq("representante"),
+      centros: uniq("centro"),
+    };
+  }, [metas.data]);
+
+  const rows = useMemo(() => {
+    let list = metas.data ?? [];
+    if (centro) list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
+    const termo = (filtros["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((r) => String(r["representante"] ?? "").toLowerCase().includes(termo));
+    }
+    if (filtros["representante"]) {
+      list = list.filter((r) => String(r["representante"] ?? "") === filtros["representante"]);
+    }
+    if (filtros["periodo"]) {
+      const [ano, mes] = filtros["periodo"]!.split("-");
+      list = list.filter(
+        (r) => String(r["ano"]) === ano && String(r["mes"]).padStart(2, "0") === mes,
+      );
+    }
+    if (filtros["centro"]) {
+      list = list.filter((r) => String(r["centro"] ?? "") === filtros["centro"]);
+    }
+    return list;
+  }, [metas.data, centro, filtros]);
 
   const salvar = useMutation({
     mutationFn: async () => {
@@ -107,13 +146,18 @@ function MetasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const totalMeta = (metas.data ?? []).reduce((s, m) => s + Number(m["valor_meta"] ?? 0), 0);
-  const totalReal = (metas.data ?? []).reduce((s, m) => s + Number(m["realizado"] ?? 0), 0);
+  const totalMeta = rows.reduce((s, m) => s + Number(m["valor_meta"] ?? 0), 0);
+  const totalReal = rows.reduce((s, m) => s + Number(m["realizado"] ?? 0), 0);
 
   return (
     <ErpLayout
       title="Metas de vendas"
       description="Realizado considera pedidos confirmados e faturados do mês, por representante."
+      actions={
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
+      }
     >
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
@@ -134,7 +178,7 @@ function MetasPage() {
         </div>
 
         {canManage && (
-          <div className="rounded-lg border border-border bg-card p-4">
+          <div className="no-print rounded-lg border border-border bg-card p-4">
             <h2 className="text-sm font-semibold">Definir meta</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-5">
               <div className="sm:col-span-2">
@@ -188,7 +232,33 @@ function MetasPage() {
           </div>
         )}
 
-        <div className="rounded-lg border border-border bg-card">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Buscar representante"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+          />
+          <FilterText
+            label="Período"
+            type="month"
+            value={filtros["periodo"] ?? ""}
+            onChange={(v) => setF("periodo", v)}
+          />
+          <FilterSelect
+            label="Representante"
+            value={filtros["representante"] ?? ""}
+            onChange={(v) => setF("representante", v)}
+            options={opcoes.representantes}
+          />
+          <FilterSelect
+            label="Centro de custo"
+            value={filtros["centro"] ?? ""}
+            onChange={(v) => setF("centro", v)}
+            options={opcoes.centros}
+          />
+        </FilterBar>
+
+        <div className="print-area rounded-lg border border-border bg-card">
           {metas.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -201,7 +271,7 @@ function MetasPage() {
                 Supabase.
               </p>
             </div>
-          ) : (metas.data ?? []).length === 0 ? (
+          ) : rows.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
               Nenhuma meta definida ainda.
             </p>
@@ -214,11 +284,11 @@ function MetasPage() {
                   <TableHead className="text-right">Meta</TableHead>
                   <TableHead className="text-right">Realizado</TableHead>
                   <TableHead className="text-right">Atingimento</TableHead>
-                  <TableHead />
+                  <TableHead className="no-print" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {metas.data!.map((m) => {
+                {rows.map((m) => {
                   const pct = Number(m["atingimento_percentual"] ?? 0);
                   return (
                     <TableRow key={String(m["id"])}>
@@ -233,7 +303,7 @@ function MetasPage() {
                       >
                         {pct.toFixed(1)}%
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="no-print text-right">
                         <Button
                           size="sm"
                           variant="outline"

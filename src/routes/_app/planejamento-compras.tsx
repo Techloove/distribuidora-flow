@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ErpLayout } from "@/components/erp-layout";
-import { Input } from "@/components/ui/input";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -39,7 +40,8 @@ type Row = Record<string, unknown>;
 function PlanejamentoPage() {
   const { client } = useSupabase();
   const { centro } = useCentro();
-  const [busca, setBusca] = useState("");
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
     queryKey: ["vw_sugestao_compras"],
@@ -54,82 +56,134 @@ function PlanejamentoPage() {
     },
   });
 
+  const opcoes = useMemo(() => {
+    const list = lista.data ?? [];
+    const uniq = (key: string) =>
+      [...new Set(list.map((r) => String(r[key] ?? "")).filter(Boolean))]
+        .sort()
+        .map((v) => ({ value: v, label: v }));
+    return {
+      fornecedores: uniq("fornecedor"),
+      centros: uniq("centro"),
+    };
+  }, [lista.data]);
+
   const rows = useMemo(() => {
     let list = lista.data ?? [];
     if (centro) list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
-    const term = busca.trim().toLowerCase();
+    const term = (filtros["busca"] ?? "").trim().toLowerCase();
     if (term) {
       list = list.filter((r) =>
         `${r["codigo"]} ${r["descricao"]}`.toLowerCase().includes(term),
       );
     }
+    if (filtros["fornecedor"]) {
+      list = list.filter((r) => String(r["fornecedor"] ?? "") === filtros["fornecedor"]);
+    }
+    if (filtros["centro"]) {
+      list = list.filter((r) => String(r["centro"] ?? "") === filtros["centro"]);
+    }
+    if (filtros["somenteAbaixo"] === "1") {
+      list = list.filter(
+        (r) => Number(r["estoque_atual"] ?? 0) < Number(r["estoque_minimo"] ?? 0),
+      );
+    }
     return list;
-  }, [lista.data, centro, busca]);
+  }, [lista.data, centro, filtros]);
 
   return (
     <ErpLayout
       title="Planejamento de compras"
       description="Sugestão calculada a partir da média de vendas, estoque atual, estoque mínimo/máximo, pedidos pendentes e mercadoria em trânsito."
       actions={
-        <Input
-          placeholder="Buscar produto..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="max-w-xs bg-card"
-        />
+        <Button variant="secondary" onClick={() => window.print()}>
+          <Printer className="size-4" /> Imprimir
+        </Button>
       }
     >
-      <div className="rounded-lg border border-border bg-card">
-        {lista.isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-14 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Carregando...
-          </div>
-        ) : lista.isError ? (
-          <p className="p-5 text-sm text-destructive">{(lista.error as Error).message}</p>
-        ) : rows.length === 0 ? (
-          <p className="py-14 text-center text-sm text-muted-foreground">Sem produtos ativos.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead className="text-right">Estoque</TableHead>
-                <TableHead className="text-right">Mín.</TableHead>
-                <TableHead className="text-right">30d</TableHead>
-                <TableHead className="text-right">60d</TableHead>
-                <TableHead className="text-right">90d</TableHead>
-                <TableHead className="text-right">Média mês</TableHead>
-                <TableHead className="text-right">Pendentes</TableHead>
-                <TableHead className="text-right">Em trânsito</TableHead>
-                <TableHead className="text-right">Sugestão</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={String(r["produto_id"])}>
-                  <TableCell className="max-w-[16rem] truncate">
-                    {String(r["codigo"])} · {String(r["descricao"])}
-                  </TableCell>
-                  <TableCell className="text-right">{String(r["estoque_atual"])}</TableCell>
-                  <TableCell className="text-right">{String(r["estoque_minimo"])}</TableCell>
-                  <TableCell className="text-right">{String(r["venda_30"])}</TableCell>
-                  <TableCell className="text-right">{String(r["venda_60"])}</TableCell>
-                  <TableCell className="text-right">{String(r["venda_90"])}</TableCell>
-                  <TableCell className="text-right">{String(r["media_mensal"])}</TableCell>
-                  <TableCell className="text-right">{String(r["pedidos_pendentes"])}</TableCell>
-                  <TableCell className="text-right">{String(r["em_transito"])}</TableCell>
-                  <TableCell
-                    className={`text-right font-semibold ${
-                      Number(r["sugestao"]) > 0 ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {String(r["sugestao"])}
-                  </TableCell>
+      <div className="space-y-4">
+        <FilterBar onClear={() => setFiltros({})}>
+          <FilterText
+            label="Buscar produto"
+            value={filtros["busca"] ?? ""}
+            onChange={(v) => setF("busca", v)}
+            placeholder="Código ou descrição..."
+          />
+          {opcoes.fornecedores.length > 0 && (
+            <FilterSelect
+              label="Fornecedor"
+              value={filtros["fornecedor"] ?? ""}
+              onChange={(v) => setF("fornecedor", v)}
+              options={opcoes.fornecedores}
+            />
+          )}
+          <FilterSelect
+            label="Estoque"
+            value={filtros["somenteAbaixo"] ?? ""}
+            onChange={(v) => setF("somenteAbaixo", v)}
+            options={[{ value: "1", label: "Somente abaixo do mínimo" }]}
+            allLabel="Todos os itens"
+          />
+          <FilterSelect
+            label="Centro de custo"
+            value={filtros["centro"] ?? ""}
+            onChange={(v) => setF("centro", v)}
+            options={opcoes.centros}
+          />
+        </FilterBar>
+
+        <div className="print-area rounded-lg border border-border bg-card">
+          {lista.isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-14 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Carregando...
+            </div>
+          ) : lista.isError ? (
+            <p className="p-5 text-sm text-destructive">{(lista.error as Error).message}</p>
+          ) : rows.length === 0 ? (
+            <p className="py-14 text-center text-sm text-muted-foreground">Sem produtos ativos.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead className="text-right">Estoque</TableHead>
+                  <TableHead className="text-right">Mín.</TableHead>
+                  <TableHead className="text-right">30d</TableHead>
+                  <TableHead className="text-right">60d</TableHead>
+                  <TableHead className="text-right">90d</TableHead>
+                  <TableHead className="text-right">Média mês</TableHead>
+                  <TableHead className="text-right">Pendentes</TableHead>
+                  <TableHead className="text-right">Em trânsito</TableHead>
+                  <TableHead className="text-right">Sugestão</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={String(r["produto_id"])}>
+                    <TableCell className="max-w-[16rem] truncate">
+                      {String(r["codigo"])} · {String(r["descricao"])}
+                    </TableCell>
+                    <TableCell className="text-right">{String(r["estoque_atual"])}</TableCell>
+                    <TableCell className="text-right">{String(r["estoque_minimo"])}</TableCell>
+                    <TableCell className="text-right">{String(r["venda_30"])}</TableCell>
+                    <TableCell className="text-right">{String(r["venda_60"])}</TableCell>
+                    <TableCell className="text-right">{String(r["venda_90"])}</TableCell>
+                    <TableCell className="text-right">{String(r["media_mensal"])}</TableCell>
+                    <TableCell className="text-right">{String(r["pedidos_pendentes"])}</TableCell>
+                    <TableCell className="text-right">{String(r["em_transito"])}</TableCell>
+                    <TableCell
+                      className={`text-right font-semibold ${
+                        Number(r["sugestao"]) > 0 ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {String(r["sugestao"])}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
     </ErpLayout>
   );
