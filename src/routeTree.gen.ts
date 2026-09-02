@@ -17,12 +17,15 @@ import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
+import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppDevolucoesRouteImport } from './routes/_app/devolucoes'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFaturamentoRouteImport } from './routes/_app/faturamento'
 import { Route as AppFluxoCaixaRouteImport } from './routes/_app/fluxo-caixa'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
+import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -31,6 +34,7 @@ import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
+import { Route as AppTabelasPrecoRouteImport } from './routes/_app/tabelas-preco'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 
@@ -73,9 +77,19 @@ const AppComprasRoute = AppComprasRouteImport.update({
   path: '/compras',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDevolucoesRoute = AppDevolucoesRouteImport.update({
+  id: '/devolucoes',
+  path: '/devolucoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
@@ -101,6 +115,11 @@ const AppFluxoCaixaRoute = AppFluxoCaixaRouteImport.update({
 const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   id: '/fornecedores',
   path: '/fornecedores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMetasRoute = AppMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
@@ -143,6 +162,11 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
   path: '/representantes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTabelasPrecoRoute = AppTabelasPrecoRouteImport.update({
+  id: '/tabelas-preco',
+  path: '/tabelas-preco',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTransportadorasRoute = AppTransportadorasRouteImport.update({
   id: '/transportadoras',
   path: '/transportadoras',
@@ -162,12 +186,15 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AppClientesRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/configuracoes': typeof AppConfiguracoesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -176,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
 }
@@ -187,12 +215,15 @@ export interface FileRoutesByTo {
   '/clientes': typeof AppClientesRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/configuracoes': typeof AppConfiguracoesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -201,6 +232,7 @@ export interface FileRoutesByTo {
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
 }
@@ -214,12 +246,15 @@ export interface FileRoutesById {
   '/_app/clientes': typeof AppClientesRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
+  '/_app/configuracoes': typeof AppConfiguracoesRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/devolucoes': typeof AppDevolucoesRoute
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/faturamento': typeof AppFaturamentoRoute
   '/_app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
+  '/_app/metas': typeof AppMetasRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -228,6 +263,7 @@ export interface FileRoutesById {
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
+  '/_app/tabelas-preco': typeof AppTabelasPrecoRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
 }
@@ -241,12 +277,15 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/comissoes'
     | '/compras'
+    | '/configuracoes'
     | '/dashboard'
+    | '/devolucoes'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
     | '/fluxo-caixa'
     | '/fornecedores'
+    | '/metas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -255,6 +294,7 @@ export interface FileRouteTypes {
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
@@ -266,12 +306,15 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/comissoes'
     | '/compras'
+    | '/configuracoes'
     | '/dashboard'
+    | '/devolucoes'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
     | '/fluxo-caixa'
     | '/fornecedores'
+    | '/metas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -280,6 +323,7 @@ export interface FileRouteTypes {
     | '/regras-comissao'
     | '/relatorios'
     | '/representantes'
+    | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
   id:
@@ -292,12 +336,15 @@ export interface FileRouteTypes {
     | '/_app/clientes'
     | '/_app/comissoes'
     | '/_app/compras'
+    | '/_app/configuracoes'
     | '/_app/dashboard'
+    | '/_app/devolucoes'
     | '/_app/estoque'
     | '/_app/expedicao'
     | '/_app/faturamento'
     | '/_app/fluxo-caixa'
     | '/_app/fornecedores'
+    | '/_app/metas'
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -306,6 +353,7 @@ export interface FileRouteTypes {
     | '/_app/regras-comissao'
     | '/_app/relatorios'
     | '/_app/representantes'
+    | '/_app/tabelas-preco'
     | '/_app/transportadoras'
     | '/_app/usuarios'
   fileRoutesById: FileRoutesById
@@ -374,11 +422,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppComprasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/configuracoes': {
+      id: '/_app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/devolucoes': {
+      id: '/_app/devolucoes'
+      path: '/devolucoes'
+      fullPath: '/devolucoes'
+      preLoaderRoute: typeof AppDevolucoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/estoque': {
@@ -414,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/fornecedores'
       preLoaderRoute: typeof AppFornecedoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/metas': {
+      id: '/_app/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AppMetasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/notificacoes': {
@@ -472,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRepresentantesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tabelas-preco': {
+      id: '/_app/tabelas-preco'
+      path: '/tabelas-preco'
+      fullPath: '/tabelas-preco'
+      preLoaderRoute: typeof AppTabelasPrecoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/transportadoras': {
       id: '/_app/transportadoras'
       path: '/transportadoras'
@@ -495,12 +571,15 @@ interface AppRouteChildren {
   AppClientesRoute: typeof AppClientesRoute
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDevolucoesRoute: typeof AppDevolucoesRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFaturamentoRoute: typeof AppFaturamentoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppMetasRoute: typeof AppMetasRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -509,6 +588,7 @@ interface AppRouteChildren {
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
+  AppTabelasPrecoRoute: typeof AppTabelasPrecoRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
 }
@@ -519,12 +599,15 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientesRoute: AppClientesRoute,
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDevolucoesRoute: AppDevolucoesRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppExpedicaoRoute: AppExpedicaoRoute,
   AppFaturamentoRoute: AppFaturamentoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
+  AppMetasRoute: AppMetasRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
@@ -533,6 +616,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
+  AppTabelasPrecoRoute: AppTabelasPrecoRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
   AppUsuariosRoute: AppUsuariosRoute,
 }
