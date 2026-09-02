@@ -153,8 +153,8 @@ function SidebarContent({
       <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
         <Warehouse className="size-6 text-sidebar-primary" />
         <div>
-          <p className="text-sm font-semibold tracking-tight">ERP Distribuidora</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Vendas · Estoque · Financeiro</p>
+          <p className="text-sm font-semibold tracking-tight">Caparaó System</p>
+          <p className="text-[11px] text-sidebar-foreground/60">Sistema de Gestão Completa</p>
         </div>
       </div>
       <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-3 py-4">
