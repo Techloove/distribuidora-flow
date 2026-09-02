@@ -84,17 +84,22 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   });
 
   const partners = useQuery({
-    queryKey: [config.partnerTable, "options"],
+    queryKey: [config.partnerTable, "options", config.table],
     enabled: !!client,
     queryFn: async () => {
+      const columns =
+        config.partnerTable === "clientes"
+          ? "id, razao_social, rota_id, limite_credito"
+          : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
-        .select("id, razao_social")
+        .select(columns)
         .order("razao_social");
       if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return (data ?? []) as unknown as Row[];
     },
   });
+
 
   const produtos = useQuery({
     queryKey: ["produtos", "options"],
