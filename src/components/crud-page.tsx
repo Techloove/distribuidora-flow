@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -120,6 +121,8 @@ export function CrudPage({
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
   const [search, setSearch] = useState("");
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const query = useQuery({
     queryKey: [table],
@@ -131,17 +134,51 @@ export function CrudPage({
     },
   });
 
+  /** Campos que geram filtro automático (seleções, caixas e datas exibidas na tabela). */
+  const filterFields = useMemo(
+    () =>
+      fields.filter(
+        (f) =>
+          (f.type === "select" && (f.options ?? []).length > 0) ||
+          f.type === "checkbox" ||
+          f.type === "date" ||
+          (f.type === "multicheck" && (f.checks ?? []).length > 0),
+      ),
+    [fields],
+  );
+
   const rows = useMemo(() => {
     let list = query.data ?? [];
     if (centro && list.some((r) => "centro_id" in r)) {
       list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
+    }
+    for (const f of filterFields) {
+      if (f.type === "date") {
+        const de = filtros[`${f.name}__de`];
+        const ate = filtros[`${f.name}__ate`];
+        if (de) list = list.filter((r) => String(r[f.name] ?? "") >= de);
+        if (ate) list = list.filter((r) => String(r[f.name] ?? "") <= ate);
+        continue;
+      }
+      if (f.type === "multicheck") {
+        const papel = filtros[f.name];
+        if (papel) list = list.filter((r) => Boolean(r[papel]));
+        continue;
+      }
+      const value = filtros[f.name];
+      if (!value) continue;
+      if (f.type === "checkbox") {
+        list = list.filter((r) => String(Boolean(r[f.name])) === value);
+      } else {
+        list = list.filter((r) => String(r[f.name] ?? "") === value);
+      }
     }
     const term = search.trim().toLowerCase();
     if (!term) return list;
     return list.filter((row) =>
       searchColumns.some((col) => String(row[col] ?? "").toLowerCase().includes(term)),
     );
-  }, [query.data, search, searchColumns, centro]);
+  }, [query.data, search, searchColumns, centro, filterFields, filtros]);
 
   function openCreate() {
     setEditing(null);
@@ -249,15 +286,74 @@ export function CrudPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Input
           placeholder="Buscar..."
+          aria-label="Buscar"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs bg-card"
         />
-        <Button onClick={openCreate} disabled={!canManage}>
-          <Plus className="size-4" />
-          Novo
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => window.print()}>
+            <Printer className="size-4" />
+            Imprimir
+          </Button>
+          <Button onClick={openCreate} disabled={!canManage}>
+            <Plus className="size-4" />
+            Novo
+          </Button>
+        </div>
       </div>
+
+      {filterFields.length > 0 ? (
+        <FilterBar onClear={() => setFiltros({})}>
+          {filterFields.map((f) =>
+            f.type === "date" ? (
+              <div key={f.name} className="grid grid-cols-2 gap-2 sm:col-span-2">
+                <FilterText
+                  label={`${f.label} de`}
+                  type="date"
+                  value={filtros[`${f.name}__de`] ?? ""}
+                  onChange={(v) => setF(`${f.name}__de`, v)}
+                />
+                <FilterText
+                  label={`${f.label} até`}
+                  type="date"
+                  value={filtros[`${f.name}__ate`] ?? ""}
+                  onChange={(v) => setF(`${f.name}__ate`, v)}
+                />
+              </div>
+            ) : f.type === "multicheck" ? (
+              <FilterSelect
+                key={f.name}
+                label={f.label}
+                value={filtros[f.name] ?? ""}
+                onChange={(v) => setF(f.name, v)}
+                options={(f.checks ?? []).map((c) => ({ value: c.name, label: c.label }))}
+              />
+            ) : f.type === "checkbox" ? (
+              <FilterSelect
+                key={f.name}
+                label={f.label}
+                value={filtros[f.name] ?? ""}
+                onChange={(v) => setF(f.name, v)}
+                options={[
+                  { value: "true", label: "Sim" },
+                  { value: "false", label: "Não" },
+                ]}
+              />
+            ) : (
+              <FilterSelect
+                key={f.name}
+                label={f.label}
+                value={filtros[f.name] ?? ""}
+                onChange={(v) => setF(f.name, v)}
+                options={f.options ?? []}
+              />
+            ),
+          )}
+        </FilterBar>
+      ) : null}
+
+      <p className="text-xs text-muted-foreground">{rows.length} registro(s)</p>
 
       {!canManage ? (
         <p className="text-xs text-muted-foreground">
@@ -266,7 +362,7 @@ export function CrudPage({
         </p>
       ) : null}
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="print-area rounded-lg border border-border bg-card">
         {query.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-14 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -288,7 +384,7 @@ export function CrudPage({
                 {tableFields.map((f) => (
                   <TableHead key={f.name}>{f.label}</TableHead>
                 ))}
-                <TableHead className="w-24 text-right">Ações</TableHead>
+                <TableHead className="no-print w-24 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -310,7 +406,7 @@ export function CrudPage({
                   ))}
 
 
-                  <TableCell className="text-right">
+                  <TableCell className="no-print text-right">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
