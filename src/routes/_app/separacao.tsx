@@ -139,13 +139,24 @@ function SeparacaoPage() {
   }, [rows]);
 
   const pedidos = useMemo(() => {
-    const map = new Map<string, { numero: string; cliente: string; status: string; rota: string }>();
+    const map = new Map<
+      string,
+      { numero: string; cliente: string; status: string; rota: string; seq: string }
+    >();
     for (const r of rows) {
+      const rotaSeq = r["rota_sequencia"];
+      const cliSeq = r["sequencia_entrega"];
       map.set(String(r["pedido_id"]), {
         numero: String(r["numero"]),
         cliente: String(r["cliente"] ?? "—"),
         status: String(r["status"]),
         rota: String(r["rota"] ?? "—"),
+        seq: [
+          rotaSeq ? `Sequência da rota: ${rotaSeq}` : null,
+          cliSeq ? `Parada: ${cliSeq}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       });
     }
     return [...map.entries()];
