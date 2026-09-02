@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
-import { CrudPage, type CrudField } from "@/components/crud-page";
+import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { useSupabase } from "@/lib/supabase-provider";
+
 
 export const Route = createFileRoute("/_app/produtos")({
   head: () => ({
