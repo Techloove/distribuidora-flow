@@ -62,6 +62,15 @@ const next: Record<string, { status: string; label: string }[]> = {
   em_rota: [{ status: "entregue", label: "Confirmar entrega" }],
 };
 
+const statusTone = (s: string) => {
+  const v = s.toLowerCase();
+  if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
+  if (v === "entregue") return "bg-primary/15 text-primary";
+  if (v === "em_rota") return "bg-emerald-500/15 text-emerald-600";
+  if (v === "separacao") return "bg-amber-500/15 text-amber-600";
+  return "bg-secondary text-secondary-foreground";
+};
+
 function ExpedicaoPage() {
   const { client, roles } = useSupabase();
   const { centro } = useCentro();
@@ -70,6 +79,7 @@ function ExpedicaoPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const canShip =
