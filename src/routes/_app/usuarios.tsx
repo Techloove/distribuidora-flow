@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CentrosPorUsuario } from "@/components/centros-por-usuario";
 import { ErpLayout } from "@/components/erp-layout";
 import { MenusPorPerfil } from "@/components/menus-por-perfil";
+import { PapeisAdmin } from "@/components/papeis-admin";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePapeis } from "@/lib/papeis";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/usuarios")({
@@ -49,16 +51,6 @@ export const Route = createFileRoute("/_app/usuarios")({
   component: UsuariosPage,
 });
 
-const ROLES: AppRole[] = [
-  "admin",
-  "gestor",
-  "financeiro",
-  "comercial",
-  "representante",
-  "estoque",
-  "expedicao",
-];
-
 type Row = Record<string, unknown>;
 type Form = {
   userId: string;
@@ -73,6 +65,7 @@ const vazio: Form = { userId: "", nome: "", email: "", telefone: "", senha: "", 
 
 function UsuariosPage() {
   const { client, roles } = useSupabase();
+  const { papeis } = usePapeis();
   const queryClient = useQueryClient();
   const isAdmin = roles.includes("admin");
   const [form, setForm] = useState<Form | null>(null);
@@ -193,6 +186,7 @@ function UsuariosPage() {
       }
     >
       <div className="space-y-4">
+        <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />
         {!isAdmin ? (
@@ -239,7 +233,8 @@ function UsuariosPage() {
                         <TableCell>{String(p["email"] ?? "—")}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1.5">
-                            {ROLES.map((role) => {
+                            {papeis.map((papel) => {
+                              const role = papel.codigo as AppRole;
                               const active = current.includes(role);
                               return (
                                 <Button
@@ -255,7 +250,7 @@ function UsuariosPage() {
                                     })
                                   }
                                 >
-                                  {role}
+                                  {papel.nome}
                                 </Button>
                               );
                             })}
