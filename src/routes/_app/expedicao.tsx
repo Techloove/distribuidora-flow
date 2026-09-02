@@ -1,0 +1,389 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { ErpLayout } from "@/components/erp-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useSupabase } from "@/lib/supabase-provider";
+
+export const Route = createFileRoute("/_app/expedicao")({
+  head: () => ({
+    meta: [
+      { title: "Expedição e entregas — ERP Distribuidora" },
+      {
+        name: "description",
+        content:
+          "Romaneios de expedição por pedido: separação, saída em rota, entrega confirmada e dados de transporte.",
+      },
+      { property: "og:title", content: "Expedição e entregas — ERP Distribuidora" },
+      { property: "og:description", content: "Controle logístico das entregas de pedidos." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: ExpedicaoPage,
+});
+
+type Row = Record<string, unknown>;
+
+const statuses = ["todos", "pendente", "separacao", "em_rota", "entregue", "cancelada"] as const;
+
+const next: Record<string, { status: string; label: string }[]> = {
+  pendente: [
+    { status: "separacao", label: "Iniciar separação" },
+    { status: "cancelada", label: "Cancelar" },
+  ],
+  separacao: [
+    { status: "em_rota", label: "Despachar" },
+    { status: "cancelada", label: "Cancelar" },
+  ],
+  em_rota: [{ status: "entregue", label: "Confirmar entrega" }],
+};
+
+function ExpedicaoPage() {
+  const { client, roles } = useSupabase();
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<(typeof statuses)[number]>("todos");
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState<Record<string, string>>({});
+
+  const canShip =
+    roles.includes("admin") ||
+    roles.includes("gestor") ||
+    roles.includes("expedicao") ||
+    roles.includes("estoque");
+
+  const expedicoes = useQuery({
+    queryKey: ["expedicoes"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("expedicoes")
+        .select("*")
+        .order("numero", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const pedidos = useQuery({
+    queryKey: ["pedidos", "expedicao"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const clientes = useQuery({
+    queryKey: ["clientes", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("clientes").select("id, razao_social");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const transportadoras = useQuery({
+    queryKey: ["transportadoras", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("transportadoras")
+        .select("id, razao_social")
+        .order("razao_social");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const rows = useMemo(() => {
+    const list = expedicoes.data ?? [];
+    return status === "todos" ? list : list.filter((r) => r["status"] === status);
+  }, [expedicoes.data, status]);
+
+  const totals = useMemo(() => {
+    const list = expedicoes.data ?? [];
+    return {
+      pendentes: list.filter((r) => r["status"] === "pendente").length,
+      rota: list.filter((r) => r["status"] === "em_rota").length,
+      entregues: list.filter((r) => r["status"] === "entregue").length,
+    };
+  }, [expedicoes.data]);
+
+  const avancar = useMutation({
+    mutationFn: async ({ id, novo }: { id: unknown; novo: string }) => {
+      const { error } = await client!.rpc("avancar_expedicao", {
+        _id: id,
+        _status: novo,
+        _data: new Date().toISOString().slice(0, 10),
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Expedição atualizada");
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!
+        .from("expedicoes")
+        .update({
+          transportadora_id: form["transportadora_id"] || null,
+          motorista: form["motorista"] || null,
+          placa: form["placa"] || null,
+          previsao_entrega: form["previsao_entrega"] || null,
+          volumes: Number(form["volumes"] || 1),
+          peso_kg: Number(form["peso_kg"] || 0),
+          observacoes: form["observacoes"] || null,
+        })
+        .eq("id", editing!["id"] as string);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Dados de transporte salvos");
+      setEditing(null);
+      queryClient.invalidateQueries({ queryKey: ["expedicoes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pedidoLabel = (id: unknown) => {
+    const p = pedidos.data?.find((x) => x["id"] === id);
+    if (!p) return "—";
+    const cli = clientes.data?.find((c) => c["id"] === p["cliente_id"]);
+    return `#${String(p["numero"])} · ${String(cli?.["razao_social"] ?? "—")}`;
+  };
+
+  const transportadoraLabel = (id: unknown) =>
+    String(transportadoras.data?.find((t) => t["id"] === id)?.["razao_social"] ?? "—");
+
+  function openEdit(r: Row) {
+    setEditing(r);
+    setForm({
+      transportadora_id: String(r["transportadora_id"] ?? ""),
+      motorista: String(r["motorista"] ?? ""),
+      placa: String(r["placa"] ?? ""),
+      previsao_entrega: String(r["previsao_entrega"] ?? ""),
+      volumes: String(r["volumes"] ?? 1),
+      peso_kg: String(r["peso_kg"] ?? 0),
+      observacoes: String(r["observacoes"] ?? ""),
+    });
+  }
+
+  return (
+    <ErpLayout
+      title="Expedição / entregas"
+      description="Cada pedido confirmado gera um romaneio: separação, despacho e confirmação de entrega."
+    >
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Kpi label="Aguardando separação" value={String(totals.pendentes)} />
+          <Kpi label="Em rota" value={String(totals.rota)} />
+          <Kpi label="Entregues" value={String(totals.entregues)} />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {statuses.map((s) => (
+            <Button
+              key={s}
+              size="sm"
+              variant={status === s ? "default" : "outline"}
+              onClick={() => setStatus(s)}
+            >
+              {s}
+            </Button>
+          ))}
+        </div>
+
+        <div className="rounded-lg border border-border bg-card">
+          {expedicoes.isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Carregando...
+            </div>
+          ) : expedicoes.isError ? (
+            <div className="p-6 text-sm text-destructive">
+              {(expedicoes.error as Error).message}
+              <p className="mt-2 text-xs text-muted-foreground">
+                Rode <code>db/fase4_logistica_relatorios.sql</code> no SQL Editor do Supabase.
+              </p>
+            </div>
+          ) : rows.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              Nenhuma expedição neste filtro. Confirme um pedido para gerar o romaneio.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Romaneio</TableHead>
+                  <TableHead>Pedido</TableHead>
+                  <TableHead>Transportadora</TableHead>
+                  <TableHead>Previsão</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={String(r["id"])}>
+                    <TableCell>#{String(r["numero"])}</TableCell>
+                    <TableCell>{pedidoLabel(r["pedido_id"])}</TableCell>
+                    <TableCell>{transportadoraLabel(r["transportadora_id"])}</TableCell>
+                    <TableCell>{String(r["previsao_entrega"] ?? "—")}</TableCell>
+                    <TableCell>{String(r["status"])}</TableCell>
+                    <TableCell className="space-x-2 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canShip}
+                        onClick={() => openEdit(r)}
+                      >
+                        Transporte
+                      </Button>
+                      {(next[String(r["status"])] ?? []).map((a) => (
+                        <Button
+                          key={a.status}
+                          size="sm"
+                          variant={a.status === "cancelada" ? "outline" : "default"}
+                          disabled={!canShip || avancar.isPending}
+                          onClick={() => avancar.mutate({ id: r["id"], novo: a.status })}
+                        >
+                          {a.label}
+                        </Button>
+                      ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
+        {!canShip ? (
+          <p className="text-xs text-muted-foreground">
+            Somente perfis <strong>expedição</strong>, <strong>estoque</strong>,{" "}
+            <strong>gestor</strong> ou <strong>admin</strong> podem movimentar expedições.
+          </p>
+        ) : null}
+      </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Dados de transporte</DialogTitle>
+            <DialogDescription>
+              Romaneio #{String(editing?.["numero"] ?? "")} — transportadora, motorista e volumes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Transportadora</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={form["transportadora_id"] ?? ""}
+                onChange={(e) => setForm({ ...form, transportadora_id: e.target.value })}
+              >
+                <option value="">—</option>
+                {(transportadoras.data ?? []).map((t) => (
+                  <option key={String(t["id"])} value={String(t["id"])}>
+                    {String(t["razao_social"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motorista</Label>
+              <Input
+                value={form["motorista"] ?? ""}
+                onChange={(e) => setForm({ ...form, motorista: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Placa</Label>
+              <Input
+                value={form["placa"] ?? ""}
+                onChange={(e) => setForm({ ...form, placa: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Previsão de entrega</Label>
+              <Input
+                type="date"
+                value={form["previsao_entrega"] ?? ""}
+                onChange={(e) => setForm({ ...form, previsao_entrega: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Volumes</Label>
+              <Input
+                type="number"
+                value={form["volumes"] ?? ""}
+                onChange={(e) => setForm({ ...form, volumes: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Peso (kg)</Label>
+              <Input
+                type="number"
+                step="0.001"
+                value={form["peso_kg"] ?? ""}
+                onChange={(e) => setForm({ ...form, peso_kg: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Observações</Label>
+              <Input
+                value={form["observacoes"] ?? ""}
+                onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+              {salvar.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </ErpLayout>
+  );
+}
+
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="rounded-lg border border-border bg-card p-5">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+    </article>
+  );
+}
