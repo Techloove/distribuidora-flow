@@ -102,6 +102,34 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  const centros = useQuery({
+    queryKey: ["centros", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("centros")
+        .select("id, codigo, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome, parcelas_padrao")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const itens = useQuery({
     queryKey: [config.itemsTable, selected],
     enabled: !!client && !!selected,
@@ -123,14 +151,10 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       const payload: Record<string, unknown> = {
         [config.partnerKey]: header["partner"] || null,
         [config.dateField]: header["data"] || new Date().toISOString().slice(0, 10),
-        parcelas: Number(header["parcelas"] || 1),
-        frete_valor: Number(header["frete"] || 0),
-        desconto_valor: Number(header["desconto"] || 0),
+        centro_id: header["centro"] || null,
         observacoes: header["observacoes"] || null,
       };
-      if (config.table === "pedidos") {
-        payload["comissao_percentual"] = Number(header["comissao"] || 0);
-      } else {
+      if (config.table === "compras") {
         payload["nf_numero"] = header["nf"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
@@ -139,7 +163,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       return data as Row;
     },
     onSuccess: (data) => {
-      toast.success("Documento criado");
+      toast.success("Documento criado — lance os itens e depois a forma de pagamento");
       setOpenNew(false);
       setHeader({});
       setSelected(String(data["id"]));
@@ -147,6 +171,43 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const [pagamento, setPagamento] = useState<Record<string, string>>({});
+
+  const savePagamento = useMutation({
+    mutationFn: async () => {
+      if (!doc) throw new Error("Selecione um documento");
+      const patch: Record<string, unknown> = {
+        forma_pagamento_id: pagamento["forma"] ?? doc["forma_pagamento_id"] ?? null,
+        parcelas: Number(pagamento["parcelas"] ?? doc["parcelas"] ?? 1),
+        frete_valor: Number(pagamento["frete"] ?? doc["frete_valor"] ?? 0),
+        desconto_valor: Number(pagamento["desconto"] ?? doc["desconto_valor"] ?? 0),
+      };
+      if (config.table === "pedidos") {
+        patch["comissao_percentual"] = Number(
+          pagamento["comissao"] ?? doc["comissao_percentual"] ?? 0,
+        );
+      }
+      const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Forma de pagamento salva");
+      setPagamento({});
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function pickForma(id: string) {
+    const f = formas.data?.find((x) => x["id"] === id);
+    setPagamento((s) => ({
+      ...s,
+      forma: id,
+      parcelas: String(Number(f?.["parcelas_padrao"] ?? s["parcelas"] ?? 1)),
+    }));
+  }
+
 
   const addItem = useMutation({
     mutationFn: async () => {
