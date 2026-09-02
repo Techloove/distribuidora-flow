@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_app/transportadoras")({
 });
 
 const fields: CrudField[] = [
-  { name: "codigo", label: "Código", inTable: true },
+  { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "razao_social", label: "Razão social", span: 2, inTable: true, required: true },
   { name: "cnpj", label: "CNPJ", inTable: true },
   { name: "email", label: "E-mail", type: "email" },

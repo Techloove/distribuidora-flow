@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_app/centros")({
 });
 
 const fields: CrudField[] = [
-  { name: "codigo", label: "Código", inTable: true },
+  { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "nome", label: "Nome", span: 2, inTable: true, required: true },
   { name: "cidade", label: "Cidade", inTable: true },
   { name: "uf", label: "UF", inTable: true },
