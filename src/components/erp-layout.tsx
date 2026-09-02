@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCentro } from "@/lib/centro-store";
+import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
@@ -148,6 +149,7 @@ function SidebarContent({
   email?: string | undefined;
   roles: readonly string[];
 }) {
+  const acesso = useAcesso();
   return (
     <>
       <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
