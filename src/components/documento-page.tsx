@@ -70,7 +70,12 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
   const [item, setItem] = useState({ ...emptyItem });
-  const [promo, setPromo] = useState<number | null>(null);
+  const [promo, setPromo] = useState<{
+    preco: number;
+    nome: string;
+    fim: string | null;
+  } | null>(null);
+
 
 
   const canWrite = roles.length > 0;
