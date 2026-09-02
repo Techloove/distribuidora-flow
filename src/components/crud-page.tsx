@@ -132,6 +132,11 @@ export function CrudPage({
   inlineEdit?: string[];
   /** Converte a edição inline no patch gravado (ex.: markup ↔ preço de venda). */
   onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
+  /** Blocos extras dentro do formulário (ex.: comissão do representante). */
+  extraForm?: (ctx: {
+    form: Record<string, string | boolean>;
+    editing: Row | null;
+  }) => React.ReactNode;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
