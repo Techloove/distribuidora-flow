@@ -150,7 +150,7 @@ function headers(c: Conf, tk: string) {
 /** Status da configuracao — usado pela tela para avisar o usuario. */
 export const sicrediStatus = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const c = conf();
+    const c = await conf();
     return {
       configurado: true,
       ambiente: c.ambiente,
@@ -196,7 +196,7 @@ type EmitirInput = {
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: EmitirInput) => data)
   .handler(async ({ data }) => {
-    const c = conf();
+    const c = await conf();
     const tk = await token(c);
     const payload = {
       tipoCobranca: "HIBRIDO",
@@ -253,7 +253,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    const c = conf();
+    const c = await conf();
     const tk = await token(c);
     const url = `${c.base}/cobranca/boleto/v1/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
@@ -277,7 +277,7 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    const c = conf();
+    const c = await conf();
     const tk = await token(c);
     const res = await fetch(
       `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(data.nossoNumero)}/baixa`,
@@ -292,7 +292,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    const c = conf();
+    const c = await conf();
     const tk = await token(c);
     const res = await fetch(
       `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=&nossoNumero=${encodeURIComponent(
