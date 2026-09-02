@@ -6,6 +6,7 @@ import {
   Building2,
   ClipboardList,
   Coins,
+  CreditCard,
   FileText,
   LayoutDashboard,
   LineChart,
@@ -43,6 +44,7 @@ const nav = [
       { to: "/representantes", label: "Representantes", icon: UserRound },
       { to: "/centros", label: "Centros", icon: Building2 },
       { to: "/transportadoras", label: "Transportadoras", icon: Truck },
+      { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
     ],
   },
   {
