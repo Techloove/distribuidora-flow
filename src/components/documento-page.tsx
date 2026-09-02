@@ -851,7 +851,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               <Label>{config.partnerLabel}</Label>
               <select
                 value={header["partner"] ?? ""}
-                onChange={(e) => setHeader((h) => ({ ...h, partner: e.target.value }))}
+                onChange={(e) => pickPartner(e.target.value)}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">—</option>
@@ -862,6 +862,8 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 ))}
               </select>
             </div>
+            {clienteFoco ? <div className="sm:col-span-2">{creditoPainel}</div> : null}
+
             <div className="space-y-1.5">
               <Label>Centro</Label>
               <select
