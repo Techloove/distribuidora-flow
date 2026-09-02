@@ -179,7 +179,6 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       if (!doc) throw new Error("Selecione um documento");
       const patch: Record<string, unknown> = {
         forma_pagamento_id: pagamento["forma"] ?? doc["forma_pagamento_id"] ?? null,
-        parcelas: Number(pagamento["parcelas"] ?? doc["parcelas"] ?? 1),
         frete_valor: Number(pagamento["frete"] ?? doc["frete_valor"] ?? 0),
         desconto_valor: Number(pagamento["desconto"] ?? doc["desconto_valor"] ?? 0),
       };
@@ -200,13 +199,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   });
 
   function pickForma(id: string) {
-    const f = formas.data?.find((x) => x["id"] === id);
-    setPagamento((s) => ({
-      ...s,
-      forma: id,
-      parcelas: String(Number(f?.["parcelas_padrao"] ?? s["parcelas"] ?? 1)),
-    }));
+    setPagamento((s) => ({ ...s, forma: id }));
   }
+
+  const formaSelecionada =
+    formas.data?.find(
+      (f) => f["id"] === (pagamento["forma"] ?? doc?.["forma_pagamento_id"] ?? ""),
+    ) ?? null;
+
+  /** Prévia das parcelas conforme a forma de pagamento escolhida. */
+  const previaParcelas = (() => {
+    if (!doc || !formaSelecionada) return [];
+    const total = Number(doc["total_liquido"] ?? 0);
+    const qtd = Math.max(1, Number(formaSelecionada["parcelas_padrao"] ?? 1));
+    const dias1 = Number(formaSelecionada["dias_primeira_parcela"] ?? 0);
+    const intervalo = Number(formaSelecionada["intervalo_dias"] ?? 0);
+    const base = new Date(String(doc[config.dateField] ?? new Date().toISOString().slice(0, 10)));
+    const valor = Math.round((total / qtd) * 100) / 100;
+    let saldo = total;
+    const list: { parcela: number; valor: number; vencimento: string }[] = [];
+    for (let n = 1; n <= qtd; n++) {
+      const v = n === qtd ? Math.round(saldo * 100) / 100 : valor;
+      saldo = Math.round((saldo - v) * 100) / 100;
+      const d = new Date(base);
+      d.setDate(d.getDate() + dias1 + (n - 1) * intervalo);
+      list.push({ parcela: n, valor: v, vencimento: d.toLocaleDateString("pt-BR") });
+    }
+    return list;
+  })();
+
 
 
   const addItem = useMutation({
