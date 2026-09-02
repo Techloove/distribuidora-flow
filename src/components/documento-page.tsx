@@ -644,8 +644,9 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                       {previaParcelas.map((p) => (
                         <TableRow key={p.parcela}>
                           <TableCell>
-                            {p.parcela}/{previaParcelas.length}
+                            {String(doc?.["numero"] ?? "")}/{p.parcela}
                           </TableCell>
+
                           <TableCell>{p.vencimento}</TableCell>
                           <TableCell className="text-right">{brl(p.valor)}</TableCell>
                         </TableRow>
