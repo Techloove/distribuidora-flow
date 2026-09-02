@@ -530,6 +530,14 @@ export function CrudPage({
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
+                    onBlur={(e) => {
+                      if (field.type !== "number" || !field.step) return;
+                      const dec = (field.step.split(".")[1] ?? "").length;
+                      const raw = e.target.value;
+                      if (raw === "" || Number.isNaN(Number(raw))) return;
+                      const fixed = Number(raw).toFixed(dec);
+                      if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
+                    }}
                     onChange={(e) =>
                       setForm((f) => {
                         const next = { ...f, [field.name]: e.target.value };
