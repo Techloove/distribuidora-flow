@@ -589,16 +589,6 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Parcelas</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    disabled={doc["status"] !== "rascunho"}
-                    value={pagamento["parcelas"] ?? String(doc["parcelas"] ?? 1)}
-                    onChange={(e) => setPagamento((s) => ({ ...s, parcelas: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
                   <Label>Frete (R$)</Label>
                   <Input
                     type="number"
