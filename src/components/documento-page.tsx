@@ -479,7 +479,83 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 </Table>
               )}
             </div>
+
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h3 className="text-sm font-semibold">Forma de pagamento</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Define as parcelas e os vencimentos gerados no financeiro ao efetivar.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Forma</Label>
+                  <select
+                    value={pagamento["forma"] ?? String(doc["forma_pagamento_id"] ?? "")}
+                    onChange={(e) => pickForma(e.target.value)}
+                    disabled={doc["status"] !== "rascunho"}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {formas.data?.map((f) => (
+                      <option key={String(f["id"])} value={String(f["id"])}>
+                        {String(f["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Parcelas</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["parcelas"] ?? String(doc["parcelas"] ?? 1)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, parcelas: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Frete (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["frete"] ?? String(doc["frete_valor"] ?? 0)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, frete: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Desconto (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["desconto"] ?? String(doc["desconto_valor"] ?? 0)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, desconto: e.target.value }))}
+                  />
+                </div>
+                {config.table === "pedidos" ? (
+                  <div className="space-y-1.5">
+                    <Label>Comissão (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      disabled={doc["status"] !== "rascunho"}
+                      value={pagamento["comissao"] ?? String(doc["comissao_percentual"] ?? 0)}
+                      onChange={(e) => setPagamento((s) => ({ ...s, comissao: e.target.value }))}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <Button
+                className="mt-3"
+                onClick={() => savePagamento.mutate()}
+                disabled={doc["status"] !== "rascunho" || savePagamento.isPending || !canWrite}
+              >
+                {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Salvar pagamento
+              </Button>
+            </div>
           </>
+
         )}
       </section>
 
