@@ -28,12 +28,12 @@ const fields: CrudField[] = [
   { name: "marca", label: "Marca" },
   { name: "unidade", label: "Unidade" },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
-  { name: "preco_custo", label: "Preço de custo", type: "number", step: "0.0001", inTable: true, span: 1 },
-  { name: "custo_medio", label: "Custo médio", type: "number", step: "0.0001", inTable: true, span: 1 },
+  { name: "preco_custo", label: "Preço de custo", type: "number", step: "0.01", inTable: true, span: 1 },
+  { name: "custo_medio", label: "Custo médio", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "markup_percentual", label: "% Markup", type: "number", step: "0.01", inTable: true, span: 1, virtual: true },
-  { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.0001", inTable: true, span: 1 },
-  { name: "ultimo_custo", label: "Último custo", type: "number", step: "0.0001" },
-  { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.0001" },
+  { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.01", inTable: true, span: 1 },
+  { name: "ultimo_custo", label: "Último custo", type: "number", step: "0.01" },
+  { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.01" },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   { name: "estoque_atual", label: "Estoque atual", type: "number", step: "0.001", inTable: true },
@@ -56,12 +56,12 @@ function recalcularPreco(
   const custo = num(form["custo_medio"]);
   if (name === "markup_percentual") {
     if (custo <= 0) return;
-    return { preco_venda: (custo * (1 + num(value) / 100)).toFixed(4) };
+    return { preco_venda: (custo * (1 + num(value) / 100)).toFixed(2) };
   }
   if (name === "custo_medio") {
     const markup = num(form["markup_percentual"]);
     if (num(value) > 0 && markup > 0) {
-      return { preco_venda: (num(value) * (1 + markup / 100)).toFixed(4) };
+      return { preco_venda: (num(value) * (1 + markup / 100)).toFixed(2) };
     }
     return;
   }
