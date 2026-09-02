@@ -98,16 +98,25 @@ function AuthPage() {
         ) : null}
 
         {confirmar ? (
-          <div className="mt-4 space-y-1 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
-            <p className="font-medium">Confirmação de e-mail ativada no Supabase</p>
+          <div className="mt-4 space-y-2 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
+            <p className="font-medium">Confirmação de e-mail ainda ativada no Supabase</p>
             <p>
-              No painel do seu projeto Supabase: <strong>Authentication</strong> →{" "}
-              <strong>Sign In / Providers</strong> → <strong>Email</strong> → desmarque{" "}
-              <strong>Confirm email</strong> e salve. Depois volte e faça login com o mesmo e-mail e
-              senha.
+              O cadastro foi criado, mas o Supabase não libera o login sem confirmar o e-mail. No
+              painel do projeto: <strong>Authentication</strong> → <strong>Sign In / Providers</strong>{" "}
+              → <strong>Email</strong> → desmarque <strong>Confirm email</strong> e clique em{" "}
+              <strong>Save</strong>. Depois volte aqui e entre com o mesmo e-mail e senha.
             </p>
+            <a
+              className="inline-block font-medium underline"
+              href="https://supabase.com/dashboard/project/zviwittrjdwyczhutvjf/auth/providers"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Abrir a configuração no Supabase
+            </a>
           </div>
         ) : null}
+
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {mode === "signup" ? (
