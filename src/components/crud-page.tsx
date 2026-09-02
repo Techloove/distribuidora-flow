@@ -236,13 +236,18 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {f.type === "checkbox"
-                        ? row[f.name]
-                          ? "Sim"
-                          : "Não"
-                        : String(row[f.name] ?? "—")}
+                      {f.type === "multicheck"
+                        ? (f.checks ?? [])
+                            .filter((c) => row[c.name])
+                            .map((c) => c.label)
+                            .join(", ") || "—"
+                        : f.type === "checkbox"
+                          ? row[f.name]
+                            ? "Sim"
+                            : "Não"
+                          : String(row[f.name] ?? "—")}
                     </TableCell>
-                  ))}
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
