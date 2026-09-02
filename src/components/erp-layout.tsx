@@ -18,6 +18,8 @@ import {
   LineChart,
   LogOut,
   Package,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Tags,
   Target,
