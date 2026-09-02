@@ -1319,3 +1319,78 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     </div>
   );
 }
+
+/** Busca de produto por código ou nome, com lista filtrada. */
+function ProdutoPicker({
+  produtos,
+  value,
+  onPick,
+}: {
+  produtos: Row[];
+  value: string;
+  onPick: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [aberto, setAberto] = useState(false);
+  const sel = produtos.find((p) => String(p["id"]) === value);
+  const rotulo = sel
+    ? `${String(sel["codigo"] ?? "")} · ${String(sel["descricao"])}`
+    : "";
+  const termo = q.trim().toLowerCase();
+  const lista = (
+    termo
+      ? produtos.filter(
+          (p) =>
+            String(p["descricao"]).toLowerCase().includes(termo) ||
+            String(p["codigo"] ?? "").toLowerCase().includes(termo),
+        )
+      : produtos
+  ).slice(0, 50);
+
+  return (
+    <div className="relative">
+      <Input
+        className="h-9"
+        value={aberto ? q : rotulo}
+        placeholder="Buscar por código ou nome"
+        onFocus={() => {
+          setQ("");
+          setAberto(true);
+        }}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setAberto(true);
+        }}
+        onBlur={() => window.setTimeout(() => setAberto(false), 150)}
+      />
+      {aberto ? (
+        <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
+          {lista.length === 0 ? (
+            <p className="p-3 text-sm text-muted-foreground">Nenhum produto encontrado.</p>
+          ) : (
+            lista.map((p) => (
+              <button
+                key={String(p["id"])}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onPick(String(p["id"]));
+                  setAberto(false);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent"
+              >
+                <span className="truncate">
+                  <span className="font-semibold">{String(p["codigo"] ?? "—")}</span> ·{" "}
+                  {String(p["descricao"])}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  est. {String(p["estoque_atual"] ?? 0)}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
