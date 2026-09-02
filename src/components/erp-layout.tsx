@@ -1,5 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  BarChart3,
+  Bell,
   Boxes,
   Building2,
   ClipboardList,
@@ -29,6 +31,7 @@ const nav = [
       { to: "/fornecedores", label: "Fornecedores", icon: Truck },
       { to: "/representantes", label: "Representantes", icon: UserRound },
       { to: "/centros", label: "Centros", icon: Building2 },
+      { to: "/transportadoras", label: "Transportadoras", icon: Truck },
     ],
   },
   {
@@ -37,6 +40,7 @@ const nav = [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
       { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
       { to: "/estoque", label: "Estoque", icon: Boxes },
+      { to: "/expedicao", label: "Expedição", icon: Truck },
     ],
   },
   {
@@ -47,7 +51,14 @@ const nav = [
       { to: "/comissoes", label: "Comissões", icon: UserRound },
     ],
   },
-  { group: "Administração", items: [{ to: "/auditoria", label: "Auditoria", icon: ScrollText }] },
+  {
+    group: "Gestão",
+    items: [
+      { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+      { to: "/notificacoes", label: "Notificações", icon: Bell },
+      { to: "/auditoria", label: "Auditoria", icon: ScrollText },
+    ],
+  },
 ] as const;
 
 export function ErpLayout({

@@ -21,6 +21,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
+import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
@@ -88,6 +89,11 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   path: '/fornecedores',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPagarRoute = AppPagarRouteImport.update({
   id: '/pagar',
   path: '/pagar',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
+  '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
   '/_app/produtos': typeof AppProdutosRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/expedicao'
     | '/fornecedores'
+    | '/notificacoes'
     | '/pagar'
     | '/pedidos'
     | '/produtos'
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/expedicao'
     | '/fornecedores'
+    | '/notificacoes'
     | '/pagar'
     | '/pedidos'
     | '/produtos'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/_app/estoque'
     | '/_app/expedicao'
     | '/_app/fornecedores'
+    | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
     | '/_app/produtos'
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFornecedoresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notificacoes': {
+      id: '/_app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/pagar': {
       id: '/_app/pagar'
       path: '/pagar'
@@ -404,6 +423,7 @@ interface AppRouteChildren {
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
   AppProdutosRoute: typeof AppProdutosRoute
@@ -423,6 +443,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEstoqueRoute: AppEstoqueRoute,
   AppExpedicaoRoute: AppExpedicaoRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
+  AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
   AppProdutosRoute: AppProdutosRoute,
