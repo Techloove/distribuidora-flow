@@ -210,6 +210,7 @@ export function ErpLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -218,7 +219,11 @@ export function ErpLayout({
 
   return (
     <div className="flex min-h-dvh bg-background">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+      <aside
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
+          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+        }`}
+      >
         <SidebarContent
           pathname={pathname}
           onSignOut={handleSignOut}
