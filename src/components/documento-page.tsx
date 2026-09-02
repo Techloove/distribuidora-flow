@@ -84,17 +84,22 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   });
 
   const partners = useQuery({
-    queryKey: [config.partnerTable, "options"],
+    queryKey: [config.partnerTable, "options", config.table],
     enabled: !!client,
     queryFn: async () => {
+      const columns =
+        config.partnerTable === "clientes"
+          ? "id, razao_social, rota_id, limite_credito"
+          : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
-        .select("id, razao_social")
+        .select(columns)
         .order("razao_social");
       if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return (data ?? []) as unknown as Row[];
     },
   });
+
 
   const produtos = useQuery({
     queryKey: ["produtos", "options"],
@@ -166,6 +171,44 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   });
 
   const doc = docs.data?.find((d) => d["id"] === selected) ?? null;
+
+  /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
+  const clienteFoco =
+    config.partnerTable === "clientes"
+      ? String((openNew ? header["partner"] : doc?.["cliente_id"]) ?? "")
+      : "";
+
+  const credito = useQuery({
+    queryKey: ["vw_cliente_credito", clienteFoco],
+    enabled: !!client && !!clienteFoco,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("vw_cliente_credito")
+        .select("*")
+        .eq("cliente_id", clienteFoco)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? null) as Row | null;
+    },
+  });
+
+  const titulosAbertos = useQuery({
+    queryKey: ["contas_receber", "abertos", clienteFoco],
+    enabled: !!client && !!clienteFoco,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("contas_receber")
+        .select("id, documento, parcela, valor, valor_pago, vencimento, status")
+        .eq("cliente_id", clienteFoco)
+        .neq("status", "pago")
+        .neq("status", "cancelado")
+        .order("vencimento")
+        .limit(30);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
 
   const createDoc = useMutation({
     mutationFn: async () => {
@@ -397,6 +440,90 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     setItem((s) => ({ ...s, produto_id: id, preco: String(Number(price ?? 0)) }));
   }
 
+  /** Ao escolher o cliente, já traz a rota cadastrada dele. */
+  function pickPartner(id: string) {
+    const p = partners.data?.find((x) => x["id"] === id);
+    setHeader((h) => ({
+      ...h,
+      partner: id,
+      ...(config.table === "pedidos" ? { rota: String(p?.["rota_id"] ?? "") } : {}),
+    }));
+  }
+
+  const creditoPainel = (() => {
+    if (config.partnerTable !== "clientes" || !clienteFoco) return null;
+    const c = credito.data;
+    const limite = Number(c?.["limite_credito"] ?? 0);
+    const aberto = Number(c?.["em_aberto"] ?? 0);
+    const disponivel = Number(c?.["limite_disponivel"] ?? limite - aberto);
+    const vencido = Number(c?.["vencido"] ?? 0);
+    return (
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Situação de crédito do cliente
+        </p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Limite</p>
+            <p className="text-sm font-semibold">{brl(limite)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Em aberto</p>
+            <p className="text-sm font-semibold">{brl(aberto)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Disponível</p>
+            <p className={`text-sm font-semibold ${disponivel < 0 ? "text-destructive" : ""}`}>
+              {brl(disponivel)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Vencido</p>
+            <p className={`text-sm font-semibold ${vencido > 0 ? "text-destructive" : ""}`}>
+              {brl(vencido)}
+            </p>
+          </div>
+        </div>
+        {(titulosAbertos.data ?? []).length > 0 ? (
+          <div className="mt-3 overflow-hidden rounded-md border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Parcela</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead className="text-right">Saldo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {titulosAbertos.data!.map((t) => {
+                  const saldo = Number(t["valor"] ?? 0) - Number(t["valor_pago"] ?? 0);
+                  const venc = String(t["vencimento"] ?? "");
+                  const atrasado = venc < new Date().toISOString().slice(0, 10);
+                  return (
+                    <TableRow key={String(t["id"])}>
+                      <TableCell>
+                        {String(t["documento"] ?? "—")}/{String(t["parcela"] ?? 1)}
+                      </TableCell>
+                      <TableCell className={atrasado ? "text-destructive" : ""}>
+                        {venc ? new Date(`${venc}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">{brl(saldo)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Nenhuma parcela em aberto para este cliente.
+          </p>
+        )}
+      </div>
+    );
+  })();
+
+
   const partnerName = (id: unknown) =>
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
   const produtoName = (id: unknown) =>
@@ -538,6 +665,10 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 </div>
               ) : null}
             </div>
+
+            {creditoPainel}
+
+
 
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
@@ -808,7 +939,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               <Label>{config.partnerLabel}</Label>
               <select
                 value={header["partner"] ?? ""}
-                onChange={(e) => setHeader((h) => ({ ...h, partner: e.target.value }))}
+                onChange={(e) => pickPartner(e.target.value)}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">—</option>
@@ -819,6 +950,8 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 ))}
               </select>
             </div>
+            {clienteFoco ? <div className="sm:col-span-2">{creditoPainel}</div> : null}
+
             <div className="space-y-1.5">
               <Label>Centro</Label>
               <select
