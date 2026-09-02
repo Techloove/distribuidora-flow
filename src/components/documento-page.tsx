@@ -504,9 +504,49 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                     {itens.data!.map((it) => (
                       <TableRow key={String(it["id"])}>
                         <TableCell>{produtoName(it["produto_id"])}</TableCell>
-                        <TableCell className="text-right">{String(it["quantidade"])}</TableCell>
                         <TableCell className="text-right">
-                          {brl(it[config.itemPriceField])}
+                          {doc["status"] === "rascunho" ? (
+                            <Input
+                              type="number"
+                              step="0.001"
+                              min="0"
+                              className="ml-auto h-8 w-24 text-right"
+                              defaultValue={String(it["quantidade"] ?? 0)}
+                              onBlur={(e) => {
+                                const qtd = Number(e.target.value || 0);
+                                if (qtd > 0 && qtd !== Number(it["quantidade"])) {
+                                  updateItem.mutate({
+                                    id: String(it["id"]),
+                                    values: { quantidade: qtd },
+                                  });
+                                }
+                              }}
+                            />
+                          ) : (
+                            String(it["quantidade"])
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {doc["status"] === "rascunho" ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              className="ml-auto h-8 w-28 text-right"
+                              defaultValue={String(it[config.itemPriceField] ?? 0)}
+                              onBlur={(e) => {
+                                const preco = Number(e.target.value || 0);
+                                if (preco !== Number(it[config.itemPriceField])) {
+                                  updateItem.mutate({
+                                    id: String(it["id"]),
+                                    values: { [config.itemPriceField]: preco },
+                                  });
+                                }
+                              }}
+                            />
+                          ) : (
+                            brl(it[config.itemPriceField])
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{brl(it["total"])}</TableCell>
                         <TableCell className="text-right">
