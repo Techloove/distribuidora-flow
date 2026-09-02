@@ -294,6 +294,20 @@ export function CrudPage({
     onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
 
+  const inlineUpdate = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
+      const { error } = await client!.from(table).update(patch).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Atualizado");
+      queryClient.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (error: Error) => toast.error(traduzErro(error.message)),
+  });
+
+  const inlineSet = new Set(inlineEdit ?? []);
+
   const tableFields = fields.filter((f) => f.inTable);
 
   return (
