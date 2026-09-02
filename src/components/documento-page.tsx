@@ -565,16 +565,35 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                     onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Desc. %</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    disabled={config.itemsTable !== "pedido_itens"}
-                    value={item.desconto}
-                    onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
-                  />
-                </div>
+                {config.itemsTable === "pedido_itens" ? (
+                  <div className="space-y-1.5">
+                    <Label>Desc. %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.desconto}
+                      onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Lote</Label>
+                      <Input
+                        value={item.lote}
+                        onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Validade</Label>
+                      <Input
+                        type="date"
+                        value={item.validade}
+                        onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="flex items-end">
                   <Button onClick={() => addItem.mutate()} disabled={addItem.isPending}>
                     <Plus className="size-4" /> Item
