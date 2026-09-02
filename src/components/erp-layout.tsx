@@ -52,7 +52,7 @@ const nav = [
     items: [
       { to: "/pessoas", label: "Cadastro unificado", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
-      { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
+      { to: "/tabelas-preco", label: "Promoção", icon: Tags },
       { to: "/centros", label: "Centros", icon: Building2 },
       { to: "/rotas", label: "Rotas de entrega", icon: Route },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
