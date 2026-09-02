@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
@@ -44,6 +44,7 @@ function SeparacaoPage() {
   const queryClient = useQueryClient();
   const [modo, setModo] = useState<"pedido" | "onda">("pedido");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
@@ -171,6 +172,26 @@ function SeparacaoPage() {
     .filter(Boolean)
     .join(" · ");
 
+  const statusTone = (s: string) => {
+    const v = s.toLowerCase();
+    if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
+    if (["separado", "em_rota", "entregue", "faturado"].includes(v))
+      return "bg-primary/15 text-primary";
+    if (["aprovado", "confirmado"].includes(v)) return "bg-emerald-500/15 text-emerald-600";
+    if (v === "separacao") return "bg-amber-500/15 text-amber-600";
+    return "bg-secondary text-secondary-foreground";
+  };
+
+  const itensFalta = rows.filter(
+    (r) => Number(r["estoque_atual"] ?? 0) < Number(r["quantidade"] ?? 0),
+  ).length;
+
+  const statusResumo = (() => {
+    const m = new Map<string, number>();
+    for (const [, p] of pedidos) m.set(p.status, (m.get(p.status) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  })();
+
   return (
     <ErpLayout
       title="Separação"
@@ -238,6 +259,47 @@ function SeparacaoPage() {
           />
         </FilterBar>
 
+        <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
+          {[
+            { label: "Pedidos", value: String(pedidos.length) },
+            { label: "Itens", value: String(rows.length) },
+            { label: "Em falta", value: String(itensFalta) },
+          ].map((k) => (
+            <div key={k.label} className="rounded-lg border border-border bg-card px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
+              <p className="truncate text-sm font-semibold">{k.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {statusResumo.length > 0 ? (
+          <div className="no-print flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setF("status", "")}
+              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                !filtros["status"]
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              Todos ({pedidos.length})
+            </button>
+            {statusResumo.map(([s, n]) => (
+              <button
+                key={s}
+                onClick={() => setF("status", filtros["status"] === s ? "" : s)}
+                className={`rounded-full px-2.5 py-1 text-[11px] capitalize transition-colors ${
+                  filtros["status"] === s
+                    ? "bg-primary text-primary-foreground"
+                    : `${statusTone(s)} hover:opacity-80`
+                }`}
+              >
+                {s.replace(/_/g, " ")} ({n})
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <div className="print-area space-y-4">
           <div className="print-only mb-2">
             <h2 className="text-base font-semibold">
@@ -254,118 +316,178 @@ function SeparacaoPage() {
           </p>
 
           {lista.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-14 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Carregando...
+            <div className="space-y-2 rounded-lg border border-border bg-card p-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-md bg-muted" />
+              ))}
             </div>
           ) : lista.isError ? (
             <p className="rounded-lg border border-border bg-card p-5 text-sm text-destructive">
               {(lista.error as Error).message}
             </p>
           ) : rows.length === 0 ? (
-            <p className="rounded-lg border border-border bg-card py-14 text-center text-sm text-muted-foreground">
-              Nenhum pedido neste filtro.
-            </p>
+            <div className="rounded-lg border border-border bg-card py-12 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum pedido neste filtro.</p>
+              <Button variant="link" onClick={() => setFiltros({})} className="text-xs">
+                Limpar filtros
+              </Button>
+            </div>
           ) : modo === "onda" ? (
-            <div className="rounded-lg border border-border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead className="text-right">Qtd. total</TableHead>
-                    <TableHead>Pedidos</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <div className="overflow-x-auto rounded-lg border border-border bg-card">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Código</th>
+                    <th className="px-4 py-2 text-left font-medium">Produto</th>
+                    <th className="px-4 py-2 text-right font-medium">Qtd. total</th>
+                    <th className="px-4 py-2 text-left font-medium">Pedidos</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
                   {porProduto.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>{p.codigo}</TableCell>
-                      <TableCell>{p.produto}</TableCell>
-                      <TableCell className="text-right font-medium">{p.quantidade}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                    <tr key={p.id} className="hover:bg-accent/50">
+                      <td className="px-4 py-2.5">{p.codigo}</td>
+                      <td className="px-4 py-2.5">{p.produto}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold">{p.quantidade}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
                         {p.pedidos.join(", ")}
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="space-y-4">
-              {pedidos.map(([id, p]) => (
-                <section key={id} className="rounded-lg border border-border bg-card">
-                  <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Pedido #{p.numero} · {p.cliente}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Status: {p.status} · Rota: {p.rota}
-                        {p.seq ? ` · ${p.seq}` : ""}
-                      </p>
-                    </div>
-                    <div className="no-print flex gap-2">
-                      {p.status === "aprovado" || p.status === "confirmado" ? (
-                        <Button
-                          size="sm"
-                          onClick={() => avancar.mutate({ pedidoId: id, status: "separacao" })}
+            <div className="overflow-x-auto rounded-lg border border-border bg-card">
+              <table className="w-full min-w-[860px] text-sm">
+                <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Nº</th>
+                    <th className="px-4 py-2 text-left font-medium">Cliente</th>
+                    <th className="px-4 py-2 text-left font-medium">Rota</th>
+                    <th className="px-4 py-2 text-left font-medium">Sequência</th>
+                    <th className="px-4 py-2 text-left font-medium">Status</th>
+                    <th className="px-4 py-2 text-right font-medium">Itens</th>
+                    <th className="no-print px-4 py-2 text-right font-medium">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {pedidos.map(([id, p]) => {
+                    const itens = rows.filter((r) => r["pedido_id"] === id);
+                    const aberto = selected === id;
+                    const falta = itens.some(
+                      (r) => Number(r["estoque_atual"] ?? 0) < Number(r["quantidade"] ?? 0),
+                    );
+                    return (
+                      <Fragment key={id}>
+                        <tr
+                          onClick={() => setSelected(aberto ? null : id)}
+                          className={`cursor-pointer border-l-2 transition-colors ${
+                            aberto
+                              ? "border-l-primary bg-accent"
+                              : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                          }`}
                         >
-                          Iniciar separação
-                        </Button>
-                      ) : null}
-                      {p.status === "separacao" ? (
-                        <Button
-                          size="sm"
-                          onClick={() => avancar.mutate({ pedidoId: id, status: "separado" })}
-                        >
-                          Concluir separação
-                        </Button>
-                      ) : null}
-                      {p.status === "separado" ? (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => avancar.mutate({ pedidoId: id, status: "em_rota" })}
-                        >
-                          Enviar para rota
-                        </Button>
-                      ) : null}
-                    </div>
-                  </header>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="text-right">Qtd.</TableHead>
-                        <TableHead className="text-right">Estoque</TableHead>
-                        <TableHead className="w-24">Separado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows
-                        .filter((r) => r["pedido_id"] === id)
-                        .map((r) => (
-                          <TableRow key={String(r["produto_id"])}>
-                            <TableCell>{String(r["produto_codigo"] ?? "—")}</TableCell>
-                            <TableCell>{String(r["produto"])}</TableCell>
-                            <TableCell className="text-right">{String(r["quantidade"])}</TableCell>
-                            <TableCell
-                              className={`text-right ${
-                                Number(r["estoque_atual"] ?? 0) < Number(r["quantidade"] ?? 0)
-                                  ? "text-destructive"
-                                  : ""
-                              }`}
+                          <td className="px-4 py-2.5 font-semibold">#{p.numero}</td>
+                          <td className="max-w-[320px] truncate px-4 py-2.5">{p.cliente}</td>
+                          <td className="px-4 py-2.5">{p.rota}</td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                            {p.seq || "—"}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${statusTone(p.status)}`}
                             >
-                              {String(r["estoque_atual"])}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">______</TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </section>
-              ))}
+                              {p.status.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            {itens.length}
+                            {falta ? (
+                              <span className="ml-1 text-[11px] font-medium text-destructive">
+                                falta
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                            {p.status === "aprovado" || p.status === "confirmado" ? (
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  avancar.mutate({ pedidoId: id, status: "separacao" });
+                                }}
+                              >
+                                Iniciar separação
+                              </Button>
+                            ) : null}
+                            {p.status === "separacao" ? (
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  avancar.mutate({ pedidoId: id, status: "separado" });
+                                }}
+                              >
+                                Concluir separação
+                              </Button>
+                            ) : null}
+                            {p.status === "separado" ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  avancar.mutate({ pedidoId: id, status: "em_rota" });
+                                }}
+                              >
+                                Enviar para rota
+                              </Button>
+                            ) : null}
+                          </td>
+                        </tr>
+                        <tr className={aberto ? "" : "hidden print:table-row"}>
+                          <td colSpan={7} className="bg-muted/20 px-4 py-3">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Código</TableHead>
+                                  <TableHead>Produto</TableHead>
+                                  <TableHead className="text-right">Qtd.</TableHead>
+                                  <TableHead className="text-right">Estoque</TableHead>
+                                  <TableHead className="w-24">Separado</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {itens.map((r) => (
+                                  <TableRow key={String(r["produto_id"])}>
+                                    <TableCell>{String(r["produto_codigo"] ?? "—")}</TableCell>
+                                    <TableCell>{String(r["produto"])}</TableCell>
+                                    <TableCell className="text-right">
+                                      {String(r["quantidade"])}
+                                    </TableCell>
+                                    <TableCell
+                                      className={`text-right ${
+                                        Number(r["estoque_atual"] ?? 0) <
+                                        Number(r["quantidade"] ?? 0)
+                                          ? "text-destructive"
+                                          : ""
+                                      }`}
+                                    >
+                                      {String(r["estoque_atual"])}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">______</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -373,3 +495,4 @@ function SeparacaoPage() {
     </ErpLayout>
   );
 }
+

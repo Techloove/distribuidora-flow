@@ -17,14 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -62,6 +54,15 @@ const next: Record<string, { status: string; label: string }[]> = {
   em_rota: [{ status: "entregue", label: "Confirmar entrega" }],
 };
 
+const statusTone = (s: string) => {
+  const v = s.toLowerCase();
+  if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
+  if (v === "entregue") return "bg-primary/15 text-primary";
+  if (v === "em_rota") return "bg-emerald-500/15 text-emerald-600";
+  if (v === "separacao") return "bg-amber-500/15 text-amber-600";
+  return "bg-secondary text-secondary-foreground";
+};
+
 function ExpedicaoPage() {
   const { client, roles } = useSupabase();
   const { centro } = useCentro();
@@ -70,6 +71,7 @@ function ExpedicaoPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const canShip =
@@ -268,29 +270,49 @@ function ExpedicaoPage() {
           />
         </FilterBar>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Kpi label="Aguardando separação" value={String(totals.pendentes)} />
-          <Kpi label="Em rota" value={String(totals.rota)} />
-          <Kpi label="Entregues" value={String(totals.entregues)} />
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {statuses.map((s) => (
-            <Button
-              key={s}
-              size="sm"
-              variant={status === s ? "default" : "outline"}
-              onClick={() => setStatus(s)}
-            >
-              {s}
-            </Button>
+        <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
+          {[
+            { label: "Aguardando separação", value: String(totals.pendentes) },
+            { label: "Em rota", value: String(totals.rota) },
+            { label: "Entregues", value: String(totals.entregues) },
+          ].map((k) => (
+            <div key={k.label} className="rounded-lg border border-border bg-card px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
+              <p className="truncate text-sm font-semibold">{k.value}</p>
+            </div>
           ))}
         </div>
 
-        <div className="print-area rounded-lg border border-border bg-card">
+        <div className="no-print flex flex-wrap gap-1.5">
+          {statuses.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatus(s)}
+              className={`rounded-full px-2.5 py-1 text-[11px] capitalize transition-colors ${
+                status === s
+                  ? "bg-primary text-primary-foreground"
+                  : s === "todos"
+                    ? "bg-muted text-muted-foreground hover:bg-accent"
+                    : `${statusTone(s)} hover:opacity-80`
+              }`}
+            >
+              {s.replace(/_/g, " ")} (
+              {s === "todos"
+                ? (expedicoes.data ?? []).length
+                : (expedicoes.data ?? []).filter((r) => r["status"] === s).length}
+              )
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-muted-foreground">{rows.length} romaneio(s) no filtro</p>
+
+        <div className="print-area overflow-x-auto rounded-lg border border-border bg-card">
           {expedicoes.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Carregando...
+            <div className="space-y-2 p-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-md bg-muted" />
+              ))}
             </div>
           ) : expedicoes.isError ? (
             <div className="p-6 text-sm text-destructive">
@@ -304,52 +326,84 @@ function ExpedicaoPage() {
               Nenhuma expedição neste filtro. Confirme um pedido para gerar o romaneio.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Romaneio</TableHead>
-                  <TableHead>Pedido</TableHead>
-                  <TableHead>Transportadora</TableHead>
-                  <TableHead>Previsão</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="no-print text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={String(r["id"])}>
-                    <TableCell>#{String(r["numero"])}</TableCell>
-                    <TableCell>{pedidoLabel(r["pedido_id"])}</TableCell>
-                    <TableCell>{transportadoraLabel(r["transportadora_id"])}</TableCell>
-                    <TableCell>{String(r["previsao_entrega"] ?? "—")}</TableCell>
-                    <TableCell>{String(r["status"])}</TableCell>
-                    <TableCell className="no-print space-x-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!canShip}
-                        onClick={() => openEdit(r)}
-                      >
-                        Transporte
-                      </Button>
-                      {(next[String(r["status"])] ?? []).map((a) => (
-                        <Button
-                          key={a.status}
-                          size="sm"
-                          variant={a.status === "cancelada" ? "outline" : "default"}
-                          disabled={!canShip || avancar.isPending}
-                          onClick={() => avancar.mutate({ id: r["id"], novo: a.status })}
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Romaneio</th>
+                  <th className="px-4 py-2 text-left font-medium">Pedido</th>
+                  <th className="px-4 py-2 text-left font-medium">Transportadora</th>
+                  <th className="px-4 py-2 text-left font-medium">Previsão</th>
+                  <th className="px-4 py-2 text-left font-medium">Status</th>
+                  <th className="no-print px-4 py-2 text-right font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((r) => {
+                  const ativo = selected === String(r["id"]);
+                  return (
+                    <tr
+                      key={String(r["id"])}
+                      onClick={() => setSelected(String(r["id"]))}
+                      className={`cursor-pointer border-l-2 transition-colors ${
+                        ativo
+                          ? "border-l-primary bg-accent"
+                          : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 font-semibold">#{String(r["numero"])}</td>
+                      <td className="max-w-[320px] truncate px-4 py-2.5">
+                        {pedidoLabel(r["pedido_id"])}
+                      </td>
+                      <td className="px-4 py-2.5">{transportadoraLabel(r["transportadora_id"])}</td>
+                      <td className="px-4 py-2.5">
+                        {r["previsao_entrega"]
+                          ? new Date(
+                              `${String(r["previsao_entrega"]).slice(0, 10)}T00:00:00`,
+                            ).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${statusTone(String(r["status"]))}`}
                         >
-                          {a.label}
+                          {String(r["status"]).replace(/_/g, " ")}
+                        </span>
+                      </td>
+                      <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!canShip}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(r);
+                          }}
+                        >
+                          Transporte
                         </Button>
-                      ))}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        {(next[String(r["status"])] ?? []).map((a) => (
+                          <Button
+                            key={a.status}
+                            size="sm"
+                            variant={a.status === "cancelada" ? "outline" : "default"}
+                            disabled={!canShip || avancar.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              avancar.mutate({ id: r["id"], novo: a.status });
+                            }}
+                          >
+                            {a.label}
+                          </Button>
+                        ))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
+
 
         {!canShip ? (
           <p className="text-xs text-muted-foreground">
@@ -467,11 +521,3 @@ function ExpedicaoPage() {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="rounded-lg border border-border bg-card p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
-    </article>
-  );
-}
