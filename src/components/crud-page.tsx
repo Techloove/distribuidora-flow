@@ -298,7 +298,31 @@ export function CrudPage({
                     value={String(form[field.name] ?? "")}
                     placeholder="Gerado automaticamente"
                   />
+                ) : field.type === "multicheck" ? (
+                  <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
+                    {(field.checks ?? []).map((c) => (
+                      <label
+                        key={c.name}
+                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                          form[c.name]
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-input text-muted-foreground hover:bg-accent/40"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form[c.name])}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, [c.name]: e.target.checked }))
+                          }
+                          className="size-4 accent-primary"
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
                 ) : field.type === "select" ? (
+
                   <select
                     id={field.name}
                     value={String(form[field.name] ?? "")}
