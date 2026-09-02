@@ -116,14 +116,14 @@ function TabelasPrecoPage() {
 
   const criar = useMutation({
     mutationFn: async () => {
-      if (!head.nome.trim()) throw new Error("Informe o nome da tabela");
+      if (!head["nome"]!.trim()) throw new Error("Informe o nome da tabela");
       const { error } = await client!.from("tabelas_preco").insert({
-        nome: head.nome.trim(),
-        cliente_id: head.cliente_id || null,
-        uf: head.uf.trim().toUpperCase() || null,
-        vigencia_inicio: head.vigencia_inicio || new Date().toISOString().slice(0, 10),
-        vigencia_fim: head.vigencia_fim || null,
-        prioridade: Number(head.prioridade || 0),
+        nome: head["nome"]!.trim(),
+        cliente_id: head["cliente_id"]! || null,
+        uf: head["uf"]!.trim().toUpperCase() || null,
+        vigencia_inicio: head["vigencia_inicio"]! || new Date().toISOString().slice(0, 10),
+        vigencia_fim: head["vigencia_fim"]! || null,
+        prioridade: Number(head["prioridade"]! || 0),
       });
       if (error) throw new Error(error.message);
     },
@@ -193,7 +193,7 @@ function TabelasPrecoPage() {
                 <div className="sm:col-span-2">
                   <Label>Nome</Label>
                   <Input
-                    value={head.nome}
+                    value={head["nome"] ?? ""}
                     onChange={(e) => setHead((f) => ({ ...f, nome: e.target.value }))}
                     placeholder="Tabela padrão 2026"
                   />
@@ -202,7 +202,7 @@ function TabelasPrecoPage() {
                   <Label>Cliente (opcional)</Label>
                   <select
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={head.cliente_id}
+                    value={head["cliente_id"] ?? ""}
                     onChange={(e) => setHead((f) => ({ ...f, cliente_id: e.target.value }))}
                   >
                     <option value="">Todos os clientes</option>
@@ -216,7 +216,7 @@ function TabelasPrecoPage() {
                 <div>
                   <Label>UF (opcional)</Label>
                   <Input
-                    value={head.uf}
+                    value={head["uf"] ?? ""}
                     maxLength={2}
                     onChange={(e) => setHead((f) => ({ ...f, uf: e.target.value }))}
                     placeholder="SP"
@@ -226,7 +226,7 @@ function TabelasPrecoPage() {
                   <Label>Vigência início</Label>
                   <Input
                     type="date"
-                    value={head.vigencia_inicio}
+                    value={head["vigencia_inicio"] ?? ""}
                     onChange={(e) => setHead((f) => ({ ...f, vigencia_inicio: e.target.value }))}
                   />
                 </div>
@@ -234,7 +234,7 @@ function TabelasPrecoPage() {
                   <Label>Vigência fim</Label>
                   <Input
                     type="date"
-                    value={head.vigencia_fim}
+                    value={head["vigencia_fim"] ?? ""}
                     onChange={(e) => setHead((f) => ({ ...f, vigencia_fim: e.target.value }))}
                   />
                 </div>
@@ -242,7 +242,7 @@ function TabelasPrecoPage() {
                   <Label>Prioridade</Label>
                   <Input
                     type="number"
-                    value={head.prioridade}
+                    value={head["prioridade"] ?? ""}
                     onChange={(e) => setHead((f) => ({ ...f, prioridade: e.target.value }))}
                   />
                 </div>

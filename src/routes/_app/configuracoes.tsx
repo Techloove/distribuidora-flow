@@ -105,11 +105,11 @@ function ConfiguracoesPage() {
       if (empresa.data) {
         const { error } = await client!
           .from("empresas")
-          .update(payload)
+          .update(payload as never)
           .eq("id", empresa.data["id"] as string);
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.from("empresas").insert(payload);
+        const { error } = await client!.from("empresas").insert(payload as never);
         if (error) throw new Error(error.message);
       }
     },
