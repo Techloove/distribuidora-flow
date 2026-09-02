@@ -28,6 +28,14 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
@@ -39,6 +47,7 @@ const nav = [
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
       { to: "/centros", label: "Centros", icon: Building2 },
+      { to: "/rotas", label: "Rotas de entrega", icon: Route },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
     ],
   },
@@ -46,7 +55,9 @@ const nav = [
     group: "Operação",
     items: [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
+      { to: "/separacao", label: "Separação", icon: PackageCheck },
       { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
+      { to: "/planejamento-compras", label: "Planejamento de compras", icon: CalendarClock },
       { to: "/estoque", label: "Estoque", icon: Boxes },
       { to: "/expedicao", label: "Expedição", icon: Truck },
       { to: "/faturamento", label: "Faturamento", icon: FileText },
@@ -58,15 +69,18 @@ const nav = [
     items: [
       { to: "/fluxo-caixa", label: "Fluxo de caixa", icon: LineChart },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
+      { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
       { to: "/comissoes", label: "Comissões", icon: UserRound },
       { to: "/regras-comissao", label: "Regras de comissão", icon: Percent },
+      { to: "/comissao-faixas", label: "Comissão escalonada", icon: Layers },
     ],
   },
   {
     group: "Gestão",
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+      { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
       { to: "/metas", label: "Metas de vendas", icon: Target },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
@@ -75,6 +89,36 @@ const nav = [
     ],
   },
 ] as const;
+
+function CentroFiltro() {
+  const { client } = useSupabase();
+  const { centro, setCentro } = useCentro();
+  const centros = useQuery({
+    queryKey: ["centros", "filtro"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("centros").select("id, nome").order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+
+  return (
+    <Select value={centro || "todos"} onValueChange={(v) => setCentro(v === "todos" ? "" : v)}>
+      <SelectTrigger className="w-[13rem] bg-background">
+        <SelectValue placeholder="Centro de custo" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="todos">Todos os centros</SelectItem>
+        {(centros.data ?? []).map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.nome}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 export function ErpLayout({
   title,
