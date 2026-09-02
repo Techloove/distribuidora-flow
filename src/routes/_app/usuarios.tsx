@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { CentrosPorUsuario } from "@/components/centros-por-usuario";
 import { MenusPorPerfil } from "@/components/menus-por-perfil";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,6 +111,7 @@ function UsuariosPage() {
     >
       <div className="space-y-4">
         <MenusPorPerfil />
+        <CentrosPorUsuario />
         {!isAdmin ? (
           <p className="text-xs text-muted-foreground">
             Somente perfis <strong>admin</strong> podem conceder ou remover papéis.

@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -107,26 +108,20 @@ const nav = [
 ] as const;
 
 function CentroFiltro() {
-  const { client } = useSupabase();
-  const { centro, setCentro } = useCentro();
-  const centros = useQuery({
-    queryKey: ["centros", "filtro"],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data, error } = await client!.from("centros").select("id, nome").order("nome");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as { id: string; nome: string }[];
-    },
-  });
+  const { setCentro } = useCentro();
+  const { centro, lista, todos } = useCentroValido();
 
   return (
-    <Select value={centro || "todos"} onValueChange={(v) => setCentro(v === "todos" ? "" : v)}>
+    <Select
+      value={centro || (todos ? "todos" : "")}
+      onValueChange={(v) => setCentro(v === "todos" ? "" : v)}
+    >
       <SelectTrigger className="w-full bg-background sm:w-[13rem]">
         <SelectValue placeholder="Centro de custo" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="todos">Todos os centros</SelectItem>
-        {(centros.data ?? []).map((c) => (
+        {todos ? <SelectItem value="todos">Todos os centros</SelectItem> : null}
+        {lista.map((c) => (
           <SelectItem key={c.id} value={c.id}>
             {c.nome}
           </SelectItem>
