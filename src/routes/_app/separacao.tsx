@@ -90,7 +90,16 @@ function SeparacaoPage() {
     if (f["somenteFalta"] === "1") {
       list = list.filter((r) => Number(r["estoque_atual"] ?? 0) < Number(r["quantidade"] ?? 0));
     }
-    return list;
+    const num = (v: unknown) => (v === null || v === undefined || v === "" ? 9999 : Number(v));
+    return [...list].sort(
+      (a, b) =>
+        num(a["rota_sequencia"]) - num(b["rota_sequencia"]) ||
+        String(a["rota"] ?? "").localeCompare(String(b["rota"] ?? "")) ||
+        num(a["sequencia_entrega"]) - num(b["sequencia_entrega"]) ||
+        String(a["numero"] ?? "").localeCompare(String(b["numero"] ?? ""), "pt-BR", {
+          numeric: true,
+        }),
+    );
   }, [lista.data, centro, filtros]);
 
   const avancar = useMutation({
@@ -130,13 +139,24 @@ function SeparacaoPage() {
   }, [rows]);
 
   const pedidos = useMemo(() => {
-    const map = new Map<string, { numero: string; cliente: string; status: string; rota: string }>();
+    const map = new Map<
+      string,
+      { numero: string; cliente: string; status: string; rota: string; seq: string }
+    >();
     for (const r of rows) {
+      const rotaSeq = r["rota_sequencia"];
+      const cliSeq = r["sequencia_entrega"];
       map.set(String(r["pedido_id"]), {
         numero: String(r["numero"]),
         cliente: String(r["cliente"] ?? "—"),
         status: String(r["status"]),
         rota: String(r["rota"] ?? "—"),
+        seq: [
+          rotaSeq ? `Sequência da rota: ${rotaSeq}` : null,
+          cliSeq ? `Parada: ${cliSeq}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       });
     }
     return [...map.entries()];
@@ -281,6 +301,7 @@ function SeparacaoPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Status: {p.status} · Rota: {p.rota}
+                        {p.seq ? ` · ${p.seq}` : ""}
                       </p>
                     </div>
                     <div className="no-print flex gap-2">
