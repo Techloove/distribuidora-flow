@@ -330,7 +330,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       <section className="space-y-3">
         <Button onClick={() => setOpenNew(true)} disabled={!canWrite} className="w-full">
-          <Plus className="size-4" /> Novo documento
+          <Plus className="size-4" /> Novo Pedido
         </Button>
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {docs.isLoading ? (
