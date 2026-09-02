@@ -78,10 +78,50 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     },
   });
 
+  const isReceber = config.table === "contas_receber";
+
+  const boletos = useQuery({
+    queryKey: ["boletos", "por-conta"],
+    enabled: !!client && isReceber,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("boletos")
+        .select("id, conta_receber_id, status, nosso_numero, linha_digitavel, created_at")
+        .order("created_at");
+      if (error) throw new Error(error.message);
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const boletoPorConta = useMemo(() => {
+    const map = new Map<string, Row>();
+    for (const b of boletos.data ?? []) {
+      const key = String(b["conta_receber_id"] ?? "");
+      if (!key) continue;
+      if (String(b["status"]) === "cancelado" && map.has(key)) continue;
+      map.set(key, b);
+    }
+    return map;
+  }, [boletos.data]);
+
+  const boletoLabel = (r: Row) => {
+    if (!isReceber) return "—";
+    const b = boletoPorConta.get(String(r["id"]));
+    if (!b) return "Sem boleto";
+    return String(b["status"] ?? "—");
+  };
+
   const rows = useMemo(() => {
     let list = titulos.data ?? [];
     if (status !== "todos") list = list.filter((r) => r["status"] === status);
     const f = filtros;
+    if (isReceber && f["boleto"]) {
+      list = list.filter((r) => {
+        const b = boletoPorConta.get(String(r["id"]));
+        if (f["boleto"] === "sem") return !b;
+        return !!b && String(b["status"]) === f["boleto"];
+      });
+    }
     const hoje = new Date().toISOString().slice(0, 10);
     if (f["parceiro"])
       list = list.filter((r) => String(r[config.partnerKey] ?? "") === f["parceiro"]);
@@ -119,7 +159,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       });
     }
     return list;
-  }, [titulos.data, status, filtros, partners.data, config.partnerKey]);
+  }, [titulos.data, status, filtros, partners.data, config.partnerKey, isReceber, boletoPorConta]);
 
   const totalFiltrado = rows.reduce(
     (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
@@ -225,6 +265,23 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           value={filtros["max"] ?? ""}
           onChange={(v) => setF("max", v)}
         />
+        {isReceber ? (
+          <FilterSelect
+            label="Boleto"
+            value={filtros["boleto"] ?? ""}
+            onChange={(v) => setF("boleto", v)}
+            options={[
+              { value: "sem", label: "Sem boleto" },
+              { value: "pendente", label: "Pendente" },
+              { value: "em_processamento", label: "Em processamento" },
+              { value: "registrado", label: "Registrado" },
+              { value: "liquidado", label: "Liquidado" },
+              { value: "baixado", label: "Baixado" },
+              { value: "cancelado", label: "Cancelado" },
+              { value: "erro", label: "Erro" },
+            ]}
+          />
+        ) : null}
       </FilterBar>
 
       <div className="no-print flex flex-wrap gap-2">
@@ -271,6 +328,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Pago</TableHead>
                 <TableHead>Status</TableHead>
+                {isReceber ? <TableHead>Boleto</TableHead> : null}
                 <TableHead className="no-print text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
@@ -284,6 +342,26 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                   <TableCell className="text-right">{brl(r["valor"])}</TableCell>
                   <TableCell className="text-right">{brl(r["valor_pago"])}</TableCell>
                   <TableCell>{String(r["status"])}</TableCell>
+                  {isReceber ? (
+                    <TableCell>
+                      <span
+                        className={
+                          boletoLabel(r) === "Sem boleto"
+                            ? "text-muted-foreground"
+                            : boletoLabel(r) === "erro"
+                              ? "text-destructive"
+                              : undefined
+                        }
+                      >
+                        {boletoLabel(r)}
+                      </span>
+                      {boletoPorConta.get(String(r["id"]))?.["nosso_numero"] ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {String(boletoPorConta.get(String(r["id"]))!["nosso_numero"])}
+                        </span>
+                      ) : null}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="no-print text-right">
                     <Button
                       size="sm"
