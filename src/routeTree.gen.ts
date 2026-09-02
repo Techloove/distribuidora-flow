@@ -29,6 +29,7 @@ import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
+import { Route as AppPessoasRouteImport } from './routes/_app/pessoas'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
@@ -137,6 +138,11 @@ const AppPedidosRoute = AppPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPessoasRoute = AppPessoasRouteImport.update({
+  id: '/pessoas',
+  path: '/pessoas',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProdutosRoute = AppProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
+  '/pessoas': typeof AppPessoasRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
+  '/pessoas': typeof AppPessoasRoute
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
+  '/_app/pessoas': typeof AppPessoasRoute
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
+    | '/pessoas'
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
+    | '/pessoas'
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
+    | '/_app/pessoas'
     | '/_app/produtos'
     | '/_app/receber'
     | '/_app/regras-comissao'
@@ -506,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPedidosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/pessoas': {
+      id: '/_app/pessoas'
+      path: '/pessoas'
+      fullPath: '/pessoas'
+      preLoaderRoute: typeof AppPessoasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/produtos': {
       id: '/_app/produtos'
       path: '/produtos'
@@ -583,6 +602,7 @@ interface AppRouteChildren {
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
+  AppPessoasRoute: typeof AppPessoasRoute
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
@@ -611,6 +631,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
+  AppPessoasRoute: AppPessoasRoute,
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,

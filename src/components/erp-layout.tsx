@@ -34,7 +34,9 @@ const nav = [
   {
     group: "Cadastros",
     items: [
+      { to: "/pessoas", label: "Cadastro unificado", icon: Users },
       { to: "/clientes", label: "Clientes", icon: Users },
+
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
       { to: "/fornecedores", label: "Fornecedores", icon: Truck },

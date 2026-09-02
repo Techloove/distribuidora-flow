@@ -24,13 +24,15 @@ import {
 } from "@/components/ui/table";
 import { useSupabase } from "@/lib/supabase-provider";
 
-export type FieldType = "text" | "email" | "number" | "select" | "checkbox";
+export type FieldType = "text" | "email" | "number" | "select" | "checkbox" | "multicheck";
 
 export type CrudField = {
   name: string;
   label: string;
   type?: FieldType;
   options?: { value: string; label: string }[];
+  /** Colunas booleanas exibidas como grupo de caixas de seleção (type: "multicheck"). */
+  checks?: { name: string; label: string }[];
   required?: boolean;
   step?: string;
   inTable?: boolean;
@@ -38,6 +40,7 @@ export type CrudField = {
   /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
   auto?: boolean;
 };
+
 
 export type Row = Record<string, unknown>;
 
