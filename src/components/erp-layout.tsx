@@ -12,6 +12,10 @@ import {
   LogOut,
   Package,
   Percent,
+  Settings,
+  Tags,
+  Target,
+  Undo2,
   ScrollText,
   ShieldCheck,
   ShoppingCart,
@@ -32,6 +36,7 @@ const nav = [
     items: [
       { to: "/clientes", label: "Clientes", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
+      { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
       { to: "/fornecedores", label: "Fornecedores", icon: Truck },
       { to: "/representantes", label: "Representantes", icon: UserRound },
       { to: "/centros", label: "Centros", icon: Building2 },
@@ -46,6 +51,7 @@ const nav = [
       { to: "/estoque", label: "Estoque", icon: Boxes },
       { to: "/expedicao", label: "Expedição", icon: Truck },
       { to: "/faturamento", label: "Faturamento", icon: FileText },
+      { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
     ],
   },
   {
@@ -62,9 +68,11 @@ const nav = [
     group: "Gestão",
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+      { to: "/metas", label: "Metas de vendas", icon: Target },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },
+      { to: "/configuracoes", label: "Configurações", icon: Settings },
     ],
   },
 ] as const;

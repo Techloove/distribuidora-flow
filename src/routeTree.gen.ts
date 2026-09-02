@@ -17,6 +17,7 @@ import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
+import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDevolucoesRouteImport } from './routes/_app/devolucoes'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
@@ -74,6 +75,11 @@ const AppComissoesRoute = AppComissoesRouteImport.update({
 const AppComprasRoute = AppComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AppClientesRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/configuracoes': typeof AppConfiguracoesRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AppClientesRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/configuracoes': typeof AppConfiguracoesRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/_app/clientes': typeof AppClientesRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
+  '/_app/configuracoes': typeof AppConfiguracoesRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/devolucoes': typeof AppDevolucoesRoute
   '/_app/estoque': typeof AppEstoqueRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/comissoes'
     | '/compras'
+    | '/configuracoes'
     | '/dashboard'
     | '/devolucoes'
     | '/estoque'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/comissoes'
     | '/compras'
+    | '/configuracoes'
     | '/dashboard'
     | '/devolucoes'
     | '/estoque'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_app/clientes'
     | '/_app/comissoes'
     | '/_app/compras'
+    | '/_app/configuracoes'
     | '/_app/dashboard'
     | '/_app/devolucoes'
     | '/_app/estoque'
@@ -408,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/compras'
       fullPath: '/compras'
       preLoaderRoute: typeof AppComprasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/configuracoes': {
+      id: '/_app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -552,6 +571,7 @@ interface AppRouteChildren {
   AppClientesRoute: typeof AppClientesRoute
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDevolucoesRoute: typeof AppDevolucoesRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
@@ -579,6 +599,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientesRoute: AppClientesRoute,
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDevolucoesRoute: AppDevolucoesRoute,
   AppEstoqueRoute: AppEstoqueRoute,
