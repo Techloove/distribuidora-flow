@@ -24,6 +24,7 @@ import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFaturamentoRouteImport } from './routes/_app/faturamento'
 import { Route as AppFluxoCaixaRouteImport } from './routes/_app/fluxo-caixa'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
+import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -110,6 +111,11 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   path: '/fornecedores',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMetasRoute = AppMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/_app/faturamento': typeof AppFaturamentoRoute
   '/_app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
+  '/_app/metas': typeof AppMetasRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/faturamento'
     | '/fluxo-caixa'
     | '/fornecedores'
+    | '/metas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/faturamento'
     | '/fluxo-caixa'
     | '/fornecedores'
+    | '/metas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/_app/faturamento'
     | '/_app/fluxo-caixa'
     | '/_app/fornecedores'
+    | '/_app/metas'
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -447,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFornecedoresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/metas': {
+      id: '/_app/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AppMetasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notificacoes': {
       id: '/_app/notificacoes'
       path: '/notificacoes'
@@ -540,6 +559,7 @@ interface AppRouteChildren {
   AppFaturamentoRoute: typeof AppFaturamentoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppMetasRoute: typeof AppMetasRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -566,6 +586,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFaturamentoRoute: AppFaturamentoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
+  AppMetasRoute: AppMetasRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
