@@ -777,7 +777,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           {abertos} em andamento · {docsFiltrados.length} no filtro
         </p>
 
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <div className="rounded-lg border border-border bg-card sm:overflow-x-auto">
           {docs.isLoading ? (
             <div className="space-y-2 p-3">
               {[0, 1, 2, 3, 4].map((i) => (
@@ -794,55 +794,94 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               </Button>
             </div>
           ) : (
-            <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium">Nº</th>
-                  <th className="px-4 py-2 text-left font-medium">{config.partnerLabel}</th>
-                  <th className="px-4 py-2 text-left font-medium">{config.dateLabel}</th>
-                  <th className="px-4 py-2 text-left font-medium">Status</th>
-                  <th className="px-4 py-2 text-right font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+            <>
+              {/* Mobile: cartões */}
+              <ul className="divide-y divide-border sm:hidden">
                 {docsFiltrados.map((d) => {
                   const ativo = selected === d["id"];
                   return (
-                    <tr
+                    <li
                       key={String(d["id"])}
                       onClick={() => setSelected(String(d["id"]))}
-                      className={`cursor-pointer border-l-2 transition-colors ${
-                        ativo
-                          ? "border-l-primary bg-accent"
-                          : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                      className={`cursor-pointer border-l-2 p-3 transition-colors ${
+                        ativo ? "border-l-primary bg-accent" : "border-l-transparent active:bg-accent/50"
                       }`}
                     >
-                      <td className="px-4 py-2.5 font-semibold">#{String(d["numero"])}</td>
-                      <td className="max-w-[380px] truncate px-4 py-2.5">
-                        {partnerName(d[config.partnerKey])}
-                      </td>
-                      <td className="px-4 py-2.5 text-muted-foreground">
-                        {fmtDate(d[config.dateField])}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
-                            String(d["status"]),
-                          )}`}
-                        >
-                          {String(d["status"]).replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-semibold">
-                        {brl(d["total_liquido"])}
-                      </td>
-                    </tr>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold">#{String(d["numero"])}</p>
+                          <p className="truncate text-sm">{partnerName(d[config.partnerKey])}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {fmtDate(d[config.dateField])}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-semibold">{brl(d["total_liquido"])}</p>
+                          <span
+                            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
+                              String(d["status"]),
+                            )}`}
+                          >
+                            {String(d["status"]).replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
                   );
                 })}
-              </tbody>
-            </table>
+              </ul>
+
+              <table className="hidden w-full min-w-[720px] text-sm sm:table">
+                <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Nº</th>
+                    <th className="px-4 py-2 text-left font-medium">{config.partnerLabel}</th>
+                    <th className="px-4 py-2 text-left font-medium">{config.dateLabel}</th>
+                    <th className="px-4 py-2 text-left font-medium">Status</th>
+                    <th className="px-4 py-2 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {docsFiltrados.map((d) => {
+                    const ativo = selected === d["id"];
+                    return (
+                      <tr
+                        key={String(d["id"])}
+                        onClick={() => setSelected(String(d["id"]))}
+                        className={`cursor-pointer border-l-2 transition-colors ${
+                          ativo
+                            ? "border-l-primary bg-accent"
+                            : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                        }`}
+                      >
+                        <td className="px-4 py-2.5 font-semibold">#{String(d["numero"])}</td>
+                        <td className="max-w-[380px] truncate px-4 py-2.5">
+                          {partnerName(d[config.partnerKey])}
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          {fmtDate(d[config.dateField])}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
+                              String(d["status"]),
+                            )}`}
+                          >
+                            {String(d["status"]).replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-semibold">
+                          {brl(d["total_liquido"])}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
+
 
 
       </section>
