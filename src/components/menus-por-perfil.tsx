@@ -11,15 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePapeis } from "@/lib/papeis";
 import { MENUS_PADRAO, MODULOS, PAPEIS_TOTAIS } from "@/lib/permissoes";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
-
-const PAPEIS: AppRole[] = ["financeiro", "comercial", "representante", "estoque", "expedicao"];
 
 export function MenusPorPerfil() {
   const { client, roles } = useSupabase();
   const queryClient = useQueryClient();
   const isAdmin = roles.includes("admin");
+  const { papeis } = usePapeis();
+  const editaveis = papeis.filter((p) => !PAPEIS_TOTAIS.includes(p.codigo as AppRole));
   const [papel, setPapel] = useState<AppRole>("representante");
   const [selecionados, setSelecionados] = useState<string[]>([]);
 
@@ -71,9 +72,9 @@ export function MenusPorPerfil() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PAPEIS.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
+            {editaveis.map((p) => (
+              <SelectItem key={p.codigo} value={p.codigo}>
+                {p.nome}
               </SelectItem>
             ))}
           </SelectContent>
