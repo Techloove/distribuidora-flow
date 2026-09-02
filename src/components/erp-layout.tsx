@@ -1,13 +1,20 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  Barcode,
   BarChart3,
   Bell,
   Boxes,
   Building2,
+  CalendarClock,
   ClipboardList,
   Coins,
   CreditCard,
   FileText,
+  Layers,
+  PackageCheck,
+  Route,
+  UserMinus,
   LayoutDashboard,
   LineChart,
   LogOut,
@@ -202,7 +209,10 @@ export function ErpLayout({
               <p className="mt-1 text-sm text-muted-foreground">{description}</p>
             ) : null}
           </div>
-          {actions}
+          <div className="flex flex-wrap items-center gap-3">
+            <CentroFiltro />
+            {actions}
+          </div>
         </header>
         <div className="px-6 py-6">{children}</div>
       </main>
