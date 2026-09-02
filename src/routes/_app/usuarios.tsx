@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_app/usuarios")({
       { property: "og:title", content: "Usuários e papéis — ERP Distribuidora" },
       {
         property: "og:description",
-        content: "Controle de acesso por papéis: admin, gestor, financeiro, comercial e operação.",
+        content: "Controle de acesso por papéis: administrador, financeiro, comercial e operação.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -5,8 +5,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 export type Papel = { codigo: string; nome: string; sistema: boolean; ordem: number };
 
 const FALLBACK: Papel[] = [
-  { codigo: "admin", nome: "Administrador", sistema: true, ordem: 1 },
-  { codigo: "gestor", nome: "Gestor", sistema: true, ordem: 2 },
+  { codigo: "admin", nome: "Administrador / Gestor", sistema: true, ordem: 1 },
   { codigo: "financeiro", nome: "Financeiro", sistema: false, ordem: 3 },
   { codigo: "comercial", nome: "Comercial", sistema: false, ordem: 4 },
   { codigo: "representante", nome: "Representante", sistema: false, ordem: 5 },
