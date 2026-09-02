@@ -19,6 +19,7 @@ import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
+import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -76,6 +77,11 @@ const AppEstoqueRoute = AppEstoqueRouteImport.update({
   path: '/estoque',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExpedicaoRoute = AppExpedicaoRouteImport.update({
+  id: '/expedicao',
+  path: '/expedicao',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   id: '/fornecedores',
   path: '/fornecedores',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/compras': typeof AppComprasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/expedicao': typeof AppExpedicaoRoute
   '/fornecedores': typeof AppFornecedoresRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/compras': typeof AppComprasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/expedicao': typeof AppExpedicaoRoute
   '/fornecedores': typeof AppFornecedoresRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/_app/compras': typeof AppComprasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
+  '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/compras'
     | '/dashboard'
     | '/estoque'
+    | '/expedicao'
     | '/fornecedores'
     | '/pagar'
     | '/pedidos'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/compras'
     | '/dashboard'
     | '/estoque'
+    | '/expedicao'
     | '/fornecedores'
     | '/pagar'
     | '/pedidos'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_app/compras'
     | '/_app/dashboard'
     | '/_app/estoque'
+    | '/_app/expedicao'
     | '/_app/fornecedores'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -304,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/expedicao': {
+      id: '/_app/expedicao'
+      path: '/expedicao'
+      fullPath: '/expedicao'
+      preLoaderRoute: typeof AppExpedicaoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/fornecedores': {
       id: '/_app/fornecedores'
       path: '/fornecedores'
@@ -364,6 +383,7 @@ interface AppRouteChildren {
   AppComprasRoute: typeof AppComprasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
+  AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -381,6 +401,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppComprasRoute: AppComprasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
+  AppExpedicaoRoute: AppExpedicaoRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
