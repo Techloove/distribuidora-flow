@@ -48,11 +48,192 @@ const campos = [
   { name: "cep", label: "CEP" },
 ] as const;
 
+type CampoSicredi = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "password";
+  span?: number;
+  hint?: string;
+  options?: { value: string; label: string }[];
+};
+
+/** Campos conforme a API de cobranca do Sicredi. */
+const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
+  {
+    titulo: "Credenciais da API",
+    campos: [
+      { name: "api_key", label: "Chave de API (x-api-key)", span: 2 },
+      { name: "username", label: "Usuário" },
+      { name: "password", label: "Senha", type: "password" },
+      { name: "cooperativa", label: "Cooperativa" },
+      { name: "posto", label: "Posto" },
+      { name: "codigo_beneficiario", label: "Código do beneficiário" },
+      {
+        name: "ambiente",
+        label: "Ambiente",
+        options: [
+          { value: "homologacao", label: "Homologação (sandbox)" },
+          { value: "producao", label: "Produção" },
+        ],
+      },
+    ],
+  },
+  {
+    titulo: "Boleto",
+    campos: [
+      {
+        name: "tipo_cobranca",
+        label: "Tipo de cobrança",
+        options: [
+          { value: "HIBRIDO", label: "Híbrido (boleto + PIX)" },
+          { value: "NORMAL", label: "Normal (só boleto)" },
+        ],
+      },
+      {
+        name: "especie_documento",
+        label: "Espécie do documento",
+        options: [
+          { value: "DUPLICATA_MERCANTIL_INDICACAO", label: "Duplicata mercantil" },
+          { value: "DUPLICATA_SERVICO_INDICACAO", label: "Duplicata de serviço" },
+          { value: "NOTA_PROMISSORIA", label: "Nota promissória" },
+          { value: "OUTROS", label: "Outros" },
+        ],
+      },
+      {
+        name: "validade_apos_vencimento",
+        label: "Validade após vencimento (dias)",
+        type: "number",
+        hint: "0 = padrão do banco",
+      },
+      { name: "informativo", label: "Informativo do boleto", span: 2 },
+      { name: "mensagem", label: "Mensagem ao pagador", span: 2 },
+    ],
+  },
+  {
+    titulo: "Juros e multa",
+    campos: [
+      {
+        name: "tipo_juro",
+        label: "Tipo de juro",
+        options: [
+          { value: "ISENTO", label: "Isento" },
+          { value: "PERCENTUAL", label: "Percentual ao mês" },
+          { value: "VALOR", label: "Valor por dia" },
+        ],
+      },
+      { name: "juros", label: "Juros (% mês ou valor/dia)", type: "number" },
+      { name: "multa", label: "Multa (%)", type: "number" },
+      {
+        name: "dias_multa",
+        label: "Multa após (dias do vencimento)",
+        type: "number",
+      },
+    ],
+  },
+  {
+    titulo: "Desconto",
+    campos: [
+      {
+        name: "tipo_desconto",
+        label: "Tipo de desconto",
+        options: [
+          { value: "NAO_TEM_DESCONTO", label: "Sem desconto" },
+          { value: "VALOR", label: "Valor fixo" },
+          { value: "PERCENTUAL", label: "Percentual" },
+        ],
+      },
+      { name: "valor_desconto1", label: "Valor/percentual do desconto", type: "number" },
+      { name: "dias_desconto1", label: "Desconto até (dias antes do venc.)", type: "number" },
+    ],
+  },
+  {
+    titulo: "Protesto / negativação",
+    campos: [
+      {
+        name: "tipo_protesto",
+        label: "Instrução",
+        options: [
+          { value: "SEM_PROTESTO", label: "Sem protesto" },
+          { value: "PROTESTAR", label: "Protestar" },
+          { value: "NEGATIVAR", label: "Negativar (Serasa)" },
+        ],
+      },
+      { name: "dias_protesto", label: "Protestar após (dias)", type: "number" },
+    ],
+  },
+];
+
+const numericosSicredi = new Set([
+  "juros",
+  "multa",
+  "dias_multa",
+  "valor_desconto1",
+  "dias_desconto1",
+  "dias_protesto",
+  "validade_apos_vencimento",
+]);
+
 function ConfiguracoesPage() {
   const { client, canManage } = useSupabase();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [params, setParams] = useState<Record<string, string>>({});
+  const [sic, setSic] = useState<Record<string, string>>({});
+
+  const sicredi = useQuery({
+    queryKey: ["sicredi_config"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("sicredi_config")
+        .select("*")
+        .order("created_at")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? null) as Row | null;
+    },
+  });
+
+  useEffect(() => {
+    const row = sicredi.data;
+    const next: Record<string, string> = {};
+    for (const g of gruposSicredi) {
+      for (const c of g.campos) {
+        const v = row?.[c.name];
+        next[c.name] = String(v ?? (c.options ? (c.options[0]?.value ?? "") : ""));
+      }
+    }
+    setSic(next);
+  }, [sicredi.data]);
+
+  const salvarSicredi = useMutation({
+    mutationFn: async () => {
+      const payload: Record<string, string | number | null> = {};
+      for (const g of gruposSicredi) {
+        for (const c of g.campos) {
+          const v = (sic[c.name] ?? "").trim();
+          payload[c.name] = numericosSicredi.has(c.name) ? Number(v || 0) : v || null;
+        }
+      }
+      if (sicredi.data) {
+        const { error } = await client!
+          .from("sicredi_config")
+          .update(payload as never)
+          .eq("id", sicredi.data["id"] as string);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.from("sicredi_config").insert(payload as never);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Configuração Sicredi salva");
+      queryClient.invalidateQueries({ queryKey: ["sicredi_config"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const empresa = useQuery({
     queryKey: ["empresas", "principal"],
@@ -214,6 +395,75 @@ function ConfiguracoesPage() {
           )}
         </section>
       </div>
+
+      <section className="mt-6 rounded-lg border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold">Cobrança Sicredi (API de boletos)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
+          aplicadas em todo boleto emitido no Faturamento.
+        </p>
+        {sicredi.isLoading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Carregando...
+          </div>
+        ) : sicredi.isError ? (
+          <div className="py-6 text-sm text-destructive">
+            {(sicredi.error as Error).message}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Rode <code>db/fase18_sicredi_config.sql</code> no banco.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-5">
+            {gruposSicredi.map((g) => (
+              <div key={g.titulo}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {g.titulo}
+                </p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {g.campos.map((c) => (
+                    <div key={c.name} className={c.span === 2 ? "sm:col-span-2" : ""}>
+                      <Label>{c.label}</Label>
+                      {c.options ? (
+                        <select
+                          value={sic[c.name] ?? ""}
+                          disabled={!canManage}
+                          onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          {c.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          type={c.type ?? "text"}
+                          step={c.type === "number" ? "0.0001" : undefined}
+                          value={sic[c.name] ?? ""}
+                          disabled={!canManage}
+                          onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
+                        />
+                      )}
+                      {c.hint ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground">{c.hint}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Button
+              disabled={!canManage || salvarSicredi.isPending}
+              onClick={() => salvarSicredi.mutate()}
+            >
+              <Save className="size-4" /> Salvar configuração Sicredi
+            </Button>
+          </div>
+        )}
+      </section>
     </ErpLayout>
   );
 }
+

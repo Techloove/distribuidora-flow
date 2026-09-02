@@ -48,7 +48,10 @@ export type CrudField = {
   required?: boolean;
   step?: string;
   inTable?: boolean;
+  /** Largura no formulário: 1 = 1/4 da linha, 2 = linha inteira, padrão = metade. */
   span?: 1 | 2;
+  /** Campo editável que não é gravado no banco (ex.: markup calculado). */
+  virtual?: boolean;
   /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
   auto?: boolean;
 };
@@ -107,12 +110,19 @@ export function CrudPage({
   orderBy,
   emptyLabel,
   searchColumns,
+  onFieldChange,
 }: {
   table: string;
   fields: CrudField[];
   orderBy: string;
   emptyLabel: string;
   searchColumns: string[];
+  /** Recalcula outros campos quando um campo muda (ex.: markup ↔ preço de venda). */
+  onFieldChange?: (
+    name: string,
+    value: string,
+    form: Record<string, string | boolean>,
+  ) => Record<string, string | boolean> | void;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
@@ -233,7 +243,7 @@ export function CrudPage({
     mutationFn: async () => {
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
-        if (field.auto) continue;
+        if (field.auto || field.virtual) continue;
         if (field.type === "multicheck") {
           for (const c of field.checks ?? []) payload[c.name] = Boolean(form[c.name]);
           continue;
@@ -439,11 +449,17 @@ export function CrudPage({
             <DialogTitle>{editing ? "Editar registro" : "Novo registro"}</DialogTitle>
             <DialogDescription>Preencha os campos e salve para gravar no banco.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-4">
             {fields.map((field) => (
               <div
                 key={field.name}
-                className={`space-y-1.5 ${field.span === 2 ? "sm:col-span-2" : ""}`}
+                className={`space-y-1.5 ${
+                  field.span === 2
+                    ? "sm:col-span-4"
+                    : field.span === 1
+                      ? "sm:col-span-1"
+                      : "sm:col-span-2"
+                }`}
               >
                 <Label htmlFor={field.name}>{field.label}</Label>
                 {field.auto ? (
@@ -514,7 +530,13 @@ export function CrudPage({
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
-                    onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => {
+                        const next = { ...f, [field.name]: e.target.value };
+                        const patch = onFieldChange?.(field.name, e.target.value, next);
+                        return patch ? { ...next, ...patch } : next;
+                      })
+                    }
                   />
                 )}
               </div>

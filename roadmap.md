@@ -45,3 +45,7 @@
 - [ ] Boletos Sicredi (OAuth2, emitir/consultar/PDF/baixar/alterar vencimento, webhook e conciliação) — exige credenciais e beneficiário no Sicredi
 - [ ] Categorias de despesa no contas a pagar (aluguel, energia, combustível, salários, impostos...)
 - [ ] Exportação PDF/Excel dos relatórios e importação de planilhas
+
+## Novas demandas
+- [x] Configurações: chaves da API Sicredi + juros, multa, desconto e protesto
+- [x] Produtos: preço de custo, custo médio, markup e preço de venda na mesma linha, markup editável sobre o custo médio
