@@ -123,6 +123,75 @@ function CentroFiltro() {
   );
 }
 
+function SidebarContent({
+  pathname,
+  onNavigate,
+  onSignOut,
+  email,
+  roles,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  onSignOut: () => void;
+  email?: string;
+  roles: string[];
+}) {
+  return (
+    <>
+      <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
+        <Warehouse className="size-6 text-sidebar-primary" />
+        <div>
+          <p className="text-sm font-semibold tracking-tight">ERP Distribuidora</p>
+          <p className="text-[11px] text-sidebar-foreground/60">Vendas · Estoque · Financeiro</p>
+        </div>
+      </div>
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+        {nav.map((section) => (
+          <div key={section.group}>
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+              {section.group}
+            </p>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const active = pathname.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={onNavigate}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors md:py-2 ${
+                      active
+                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <item.icon className="size-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="border-t border-sidebar-border px-4 py-4 text-xs">
+        <p className="truncate font-medium">{email}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
+          <Boxes className="size-3" />
+          {roles.length ? roles.join(", ") : "sem papel"}
+        </p>
+        <button
+          onClick={onSignOut}
+          className="mt-3 inline-flex items-center gap-2 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs transition-colors hover:bg-sidebar-accent"
+        >
+          <LogOut className="size-3.5" />
+          Sair
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function ErpLayout({
   title,
   description,
@@ -137,6 +206,7 @@ export function ErpLayout({
   const { user, roles, signOut } = useSupabase();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -146,71 +216,58 @@ export function ErpLayout({
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
-        <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
-          <Warehouse className="size-6 text-sidebar-primary" />
-          <div>
-            <p className="text-sm font-semibold tracking-tight">ERP Distribuidora</p>
-            <p className="text-[11px] text-sidebar-foreground/60">Vendas · Estoque · Financeiro</p>
-          </div>
-        </div>
-        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
-          {nav.map((section) => (
-            <div key={section.group}>
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-                {section.group}
-              </p>
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const active = pathname.startsWith(item.to);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                        active
-                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                      }`}
-                    >
-                      <item.icon className="size-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-        <div className="border-t border-sidebar-border px-4 py-4 text-xs">
-          <p className="truncate font-medium">{user?.email}</p>
-          <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
-            <Boxes className="size-3" />
-            {roles.length ? roles.join(", ") : "sem papel"}
-          </p>
-          <button
-            onClick={handleSignOut}
-            className="mt-3 inline-flex items-center gap-2 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs transition-colors hover:bg-sidebar-accent"
-          >
-            <LogOut className="size-3.5" />
-            Sair
-          </button>
-        </div>
+        <SidebarContent
+          pathname={pathname}
+          onSignOut={handleSignOut}
+          email={user?.email}
+          roles={roles}
+        />
       </aside>
 
-      <main className="flex-1 overflow-x-hidden">
-        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border bg-card px-6 py-5">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
-            {description ? (
-              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-            ) : null}
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent
+          side="left"
+          className="w-[17rem] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground md:hidden"
+        >
+          <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+          <div className="flex h-full flex-col">
+            <SidebarContent
+              pathname={pathname}
+              onNavigate={() => setMenuOpen(false)}
+              onSignOut={handleSignOut}
+              email={user?.email}
+              roles={roles}
+            />
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+        </SheetContent>
+      </Sheet>
+
+      <main className="min-w-0 flex-1 overflow-x-hidden">
+        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:items-end sm:gap-4 sm:px-6 sm:py-5">
+          <div className="flex min-w-0 items-start gap-2">
+            <button
+              type="button"
+              aria-label="Abrir menu"
+              onClick={() => setMenuOpen(true)}
+              className="no-print -ml-1 rounded-md border border-border p-2 text-foreground md:hidden"
+            >
+              <Menu className="size-4" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                {title}
+              </h1>
+              {description ? (
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{description}</p>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             <CentroFiltro />
             {actions}
           </div>
         </header>
-        <div className="px-6 py-6">{children}</div>
+        <div className="px-3 py-4 sm:px-6 sm:py-6">{children}</div>
       </main>
     </div>
   );
