@@ -45,6 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCentro } from "@/lib/centro-store";
+import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
@@ -148,6 +149,7 @@ function SidebarContent({
   email?: string | undefined;
   roles: readonly string[];
 }) {
+  const acesso = useAcesso();
   return (
     <>
       <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
@@ -158,13 +160,20 @@ function SidebarContent({
         </div>
       </div>
       <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-3 py-4">
-        {nav.map((section) => (
+        {nav
+          .map((section) => ({
+            group: section.group,
+            items: section.items.filter((item) => acesso.pode(item.to)),
+          }))
+          .filter((section) => section.items.length > 0)
+          .map((section) => (
           <div key={section.group}>
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
               {section.group}
             </p>
             <div className="space-y-1">
               {section.items.map((item) => {
+
                 const active = pathname.startsWith(item.to);
                 return (
                   <Link

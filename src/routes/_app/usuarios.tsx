@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { MenusPorPerfil } from "@/components/menus-por-perfil";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -108,6 +109,7 @@ function UsuariosPage() {
       description="Cada papel libera módulos específicos. A alteração é validada no banco e registrada na auditoria."
     >
       <div className="space-y-4">
+        <MenusPorPerfil />
         {!isAdmin ? (
           <p className="text-xs text-muted-foreground">
             Somente perfis <strong>admin</strong> podem conceder ou remover papéis.
