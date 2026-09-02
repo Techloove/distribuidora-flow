@@ -154,6 +154,9 @@ function ProdutosPage() {
         decorate={decorate}
         inlineEdit={["markup_percentual", "preco_venda"]}
         onInlineSave={onInlineSave}
+        extraForm={({ editing }) => (
+          <HistoricoProduto produtoId={editing ? String(editing["id"]) : null} />
+        )}
       />
     </ErpLayout>
   );
