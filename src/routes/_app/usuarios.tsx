@@ -1,12 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { ErpLayout } from "@/components/erp-layout";
 import { CentrosPorUsuario } from "@/components/centros-por-usuario";
+import { ErpLayout } from "@/components/erp-layout";
 import { MenusPorPerfil } from "@/components/menus-por-perfil";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -16,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
+import { atualizarUsuario, criarUsuario, excluirUsuario } from "@/lib/usuarios.functions";
 
 export const Route = createFileRoute("/_app/usuarios")({
   head: () => ({
@@ -24,7 +36,7 @@ export const Route = createFileRoute("/_app/usuarios")({
       {
         name: "description",
         content:
-          "Administração de usuários do ERP com concessão e remoção de papéis RBAC validada no servidor.",
+          "Administração de usuários do ERP com cadastro, edição, exclusão e concessão de papéis RBAC validada no servidor.",
       },
       { property: "og:title", content: "Usuários e papéis — ERP Distribuidora" },
       {
@@ -49,11 +61,24 @@ const ROLES: AppRole[] = [
 ];
 
 type Row = Record<string, unknown>;
+type Form = {
+  userId: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  senha: string;
+  ativo: boolean;
+};
+
+const vazio: Form = { userId: "", nome: "", email: "", telefone: "", senha: "", ativo: true };
 
 function UsuariosPage() {
-  const { client, roles } = useSupabase();
+  const { client, session, roles } = useSupabase();
   const queryClient = useQueryClient();
   const isAdmin = roles.includes("admin");
+  const token = session?.access_token ?? "";
+  const [form, setForm] = useState<Form | null>(null);
+  const [excluir, setExcluir] = useState<Row | null>(null);
 
   const profiles = useQuery({
     queryKey: ["profiles", "admin"],
@@ -74,6 +99,11 @@ function UsuariosPage() {
       return (data ?? []) as Row[];
     },
   });
+
+  const recarregar = () => {
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+  };
 
   const toggle = useMutation({
     mutationFn: async ({
@@ -99,22 +129,81 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const salvar = useMutation({
+    mutationFn: async (f: Form) => {
+      if (f.userId) {
+        await atualizarUsuario({
+          data: {
+            token,
+            userId: f.userId,
+            nome: f.nome,
+            email: f.email,
+            telefone: f.telefone,
+            ativo: f.ativo,
+            ...(f.senha ? { senha: f.senha } : {}),
+          },
+        });
+      } else {
+        await criarUsuario({
+          data: {
+            token,
+            email: f.email,
+            senha: f.senha,
+            nome: f.nome,
+            telefone: f.telefone,
+          },
+        });
+      }
+    },
+    onSuccess: (_d, f) => {
+      toast.success(f.userId ? "Usuário atualizado" : "Usuário cadastrado");
+      setForm(null);
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remover = useMutation({
+    mutationFn: async (userId: string) => {
+      await excluirUsuario({ data: { token, userId } });
+    },
+    onSuccess: () => {
+      toast.success("Usuário excluído");
+      setExcluir(null);
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const rolesOf = (userId: unknown) =>
     (userRoles.data ?? [])
       .filter((r) => r["user_id"] === userId)
       .map((r) => String(r["role"]) as AppRole);
 
+  const set = (k: keyof Form, v: string | boolean) =>
+    setForm((prev) => (prev ? { ...prev, [k]: v } : prev));
+
+  const editando = !!form?.userId;
+
   return (
     <ErpLayout
       title="Usuários e papéis"
-      description="Cada papel libera módulos específicos. A alteração é validada no banco e registrada na auditoria."
+      description="Cadastre, edite ou exclua usuários. Cada papel libera módulos específicos e toda alteração é validada no servidor."
+      actions={
+        isAdmin ? (
+          <Button size="sm" onClick={() => setForm({ ...vazio })}>
+            <UserPlus className="mr-2 size-4" /> Novo usuário
+          </Button>
+        ) : null
+      }
     >
       <div className="space-y-4">
         <MenusPorPerfil />
         <CentrosPorUsuario />
         {!isAdmin ? (
           <p className="text-xs text-muted-foreground">
-            Somente perfis <strong>admin</strong> podem conceder ou remover papéis.
+            Somente perfis <strong>admin</strong> podem cadastrar, editar, excluir usuários ou
+            alterar papéis.
           </p>
         ) : null}
 
@@ -131,53 +220,188 @@ function UsuariosPage() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Papéis</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(profiles.data ?? []).map((p) => {
-                  const current = rolesOf(p["id"]);
-                  return (
-                    <TableRow key={String(p["id"])}>
-                      <TableCell>{String(p["nome"] || "—")}</TableCell>
-                      <TableCell>{String(p["email"] ?? "—")}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1.5">
-                          {ROLES.map((role) => {
-                            const active = current.includes(role);
-                            return (
-                              <Button
-                                key={role}
-                                size="sm"
-                                variant={active ? "default" : "outline"}
-                                disabled={!isAdmin || toggle.isPending}
-                                onClick={() =>
-                                  toggle.mutate({
-                                    userId: String(p["id"]),
-                                    role,
-                                    conceder: !active,
-                                  })
-                                }
-                              >
-                                {role}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Papéis</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(profiles.data ?? []).map((p) => {
+                    const current = rolesOf(p["id"]);
+                    return (
+                      <TableRow key={String(p["id"])}>
+                        <TableCell>
+                          {String(p["nome"] || "—")}
+                          {p["ativo"] === false ? (
+                            <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>{String(p["email"] ?? "—")}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ROLES.map((role) => {
+                              const active = current.includes(role);
+                              return (
+                                <Button
+                                  key={role}
+                                  size="sm"
+                                  variant={active ? "default" : "outline"}
+                                  disabled={!isAdmin || toggle.isPending}
+                                  onClick={() =>
+                                    toggle.mutate({
+                                      userId: String(p["id"]),
+                                      role,
+                                      conceder: !active,
+                                    })
+                                  }
+                                >
+                                  {role}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!isAdmin}
+                              onClick={() =>
+                                setForm({
+                                  userId: String(p["id"]),
+                                  nome: String(p["nome"] ?? ""),
+                                  email: String(p["email"] ?? ""),
+                                  telefone: String(p["telefone"] ?? ""),
+                                  senha: "",
+                                  ativo: p["ativo"] !== false,
+                                })
+                              }
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!isAdmin}
+                              onClick={() => setExcluir(p)}
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </div>
       </div>
+
+      <Dialog open={!!form} onOpenChange={(o) => (o ? null : setForm(null))}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editando ? "Editar usuário" : "Novo usuário"}</DialogTitle>
+            <DialogDescription>
+              {editando
+                ? "Altere os dados do perfil. A senha só muda se você preencher o campo."
+                : "O usuário é criado já confirmado e pode entrar imediatamente com o e-mail e a senha."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {form ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Nome</Label>
+                <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>E-mail</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Telefone</Label>
+                <Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{editando ? "Nova senha (opcional)" : "Senha"}</Label>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.senha}
+                  onChange={(e) => set("senha", e.target.value)}
+                />
+              </div>
+              {editando ? (
+                <div className="space-y-1.5">
+                  <Label>Situação</Label>
+                  <Button
+                    type="button"
+                    variant={form.ativo ? "default" : "outline"}
+                    className="w-full"
+                    onClick={() => set("ativo", !form.ativo)}
+                  >
+                    {form.ativo ? "Ativo" : "Inativo"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                salvar.isPending ||
+                !form?.email ||
+                (!editando && (form?.senha ?? "").length < 6)
+              }
+              onClick={() => form && salvar.mutate(form)}
+            >
+              {salvar.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!excluir} onOpenChange={(o) => (o ? null : setExcluir(null))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir usuário</DialogTitle>
+            <DialogDescription>
+              {String(excluir?.["nome"] || excluir?.["email"] || "")} perderá o acesso
+              definitivamente. Os documentos já lançados continuam no histórico.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExcluir(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={remover.isPending}
+              onClick={() => excluir && remover.mutate(String(excluir["id"]))}
+            >
+              {remover.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ErpLayout>
   );
 }
