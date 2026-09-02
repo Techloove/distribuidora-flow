@@ -247,6 +247,8 @@ export function CrudPage({
                             : "Não"
                           : String(row[f.name] ?? "—")}
                     </TableCell>
+                  ))}
+
 
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
