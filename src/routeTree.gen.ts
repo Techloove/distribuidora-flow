@@ -25,6 +25,7 @@ import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
+import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -105,6 +106,11 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
   path: '/representantes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTransportadorasRoute = AppTransportadorasRouteImport.update({
+  id: '/transportadoras',
+  path: '/transportadoras',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/transportadoras': typeof AppTransportadorasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/transportadoras': typeof AppTransportadorasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
   '/_app/representantes': typeof AppRepresentantesRoute
+  '/_app/transportadoras': typeof AppTransportadorasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/receber'
     | '/representantes'
+    | '/transportadoras'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/receber'
     | '/representantes'
+    | '/transportadoras'
   id:
     | '__root__'
     | '/'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/_app/produtos'
     | '/_app/receber'
     | '/_app/representantes'
+    | '/_app/transportadoras'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -334,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRepresentantesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/transportadoras': {
+      id: '/_app/transportadoras'
+      path: '/transportadoras'
+      fullPath: '/transportadoras'
+      preLoaderRoute: typeof AppTransportadorasRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -351,6 +370,7 @@ interface AppRouteChildren {
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
+  AppTransportadorasRoute: typeof AppTransportadorasRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -367,6 +387,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
+  AppTransportadorasRoute: AppTransportadorasRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
