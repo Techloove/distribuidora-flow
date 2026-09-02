@@ -55,7 +55,7 @@ function ProdutosPage() {
         fields={fields}
         orderBy="descricao"
         emptyLabel="Nenhum produto cadastrado ainda."
-        searchColumns={["codigo", "descricao", "ean", "categoria", "marca"]}
+        searchColumns={["codigo", "descricao", "categoria", "marca"]}
       />
     </ErpLayout>
   );
