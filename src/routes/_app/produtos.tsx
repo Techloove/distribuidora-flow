@@ -28,12 +28,12 @@ const fields: CrudField[] = [
   { name: "marca", label: "Marca" },
   { name: "unidade", label: "Unidade" },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
-  { name: "preco_custo", label: "Preço de custo", type: "number", step: "0.0001", inTable: true },
+  { name: "preco_custo", label: "Preço de custo", type: "number", step: "0.0001", inTable: true, span: 1 },
+  { name: "custo_medio", label: "Custo médio", type: "number", step: "0.0001", inTable: true, span: 1 },
+  { name: "markup_percentual", label: "Markup (%) s/ custo médio", type: "number", step: "0.01", inTable: true, span: 1, virtual: true },
+  { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.0001", inTable: true, span: 1 },
   { name: "ultimo_custo", label: "Último custo", type: "number", step: "0.0001" },
-  { name: "custo_medio", label: "Custo médio", type: "number", step: "0.0001", inTable: true },
-  { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.0001", inTable: true },
   { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.0001" },
-  { name: "markup_percentual", label: "Markup (%)", auto: true, inTable: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   { name: "estoque_atual", label: "Estoque atual", type: "number", step: "0.001", inTable: true },
@@ -41,6 +41,35 @@ const fields: CrudField[] = [
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
 
+
+/**
+ * Markup e preço de venda andam juntos, sempre sobre o custo médio:
+ * alterando o markup recalcula o preço de venda; alterando custo médio ou
+ * preço de venda recalcula o markup.
+ */
+function recalcularPreco(
+  name: string,
+  value: string,
+  form: Record<string, string | boolean>,
+): Record<string, string | boolean> | void {
+  const num = (v: unknown) => Number(String(v ?? "").replace(",", ".")) || 0;
+  const custo = num(form["custo_medio"]);
+  if (name === "markup_percentual") {
+    if (custo <= 0) return;
+    return { preco_venda: (custo * (1 + num(value) / 100)).toFixed(4) };
+  }
+  if (name === "custo_medio") {
+    const markup = num(form["markup_percentual"]);
+    if (num(value) > 0 && markup > 0) {
+      return { preco_venda: (num(value) * (1 + markup / 100)).toFixed(4) };
+    }
+    return;
+  }
+  if (name === "preco_venda") {
+    if (custo <= 0) return;
+    return { markup_percentual: (((num(value) - custo) / custo) * 100).toFixed(2) };
+  }
+}
 
 function ProdutosPage() {
   return (
@@ -54,6 +83,7 @@ function ProdutosPage() {
         orderBy="descricao"
         emptyLabel="Nenhum produto cadastrado ainda."
         searchColumns={["codigo", "descricao", "categoria", "marca"]}
+        onFieldChange={recalcularPreco}
       />
     </ErpLayout>
   );
