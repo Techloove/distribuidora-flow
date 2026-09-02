@@ -39,8 +39,6 @@ const nav = [
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
       { to: "/centros", label: "Centros", icon: Building2 },
-
-      { to: "/transportadoras", label: "Transportadoras", icon: Truck },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
     ],
   },
