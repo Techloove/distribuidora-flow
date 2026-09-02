@@ -629,11 +629,13 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   })();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+    <div className="space-y-6">
       <section className="space-y-3">
-        <Button onClick={() => setOpenNew(true)} disabled={!canWrite} className="w-full">
-          <Plus className="size-4" /> Novo Pedido
-        </Button>
+        <div className="flex justify-end">
+          <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
+            <Plus className="size-4" /> Novo Pedido
+          </Button>
+        </div>
 
 
 
