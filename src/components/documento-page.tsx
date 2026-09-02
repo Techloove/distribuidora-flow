@@ -628,9 +628,11 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   })();
 
+  const listaVisivel = !selected && !openNew;
+
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
+      <section className={`space-y-3 ${listaVisivel ? "" : "hidden"}`}>
         <div className="flex justify-end">
           <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
             <Plus className="size-4" /> Novo Pedido
@@ -640,6 +642,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
 
 
         <FilterBar onClear={() => setFiltros({})}>
+
           <FilterText
             label="Buscar"
             value={filtros["busca"] ?? ""}
