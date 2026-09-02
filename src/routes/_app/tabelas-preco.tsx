@@ -531,6 +531,21 @@ function TabelasPrecoPage() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            title="Editar preço"
+                            disabled={!canManage}
+                            onClick={() =>
+                              setItem({
+                                produto_id: String(i["produto_id"] ?? ""),
+                                preco: String(i["preco"] ?? 0),
+                                desconto_maximo: String(i["desconto_maximo"] ?? 0),
+                              })
+                            }
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             disabled={!canManage}
                             onClick={() => removeItem.mutate(String(i["id"]))}
                           >
