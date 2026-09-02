@@ -159,3 +159,5 @@ group by 1;
 grant select on public.vw_fluxo_caixa to authenticated;
 
 -- ---------- fim da fase 6 ----------
+
+alter view public.vw_fluxo_caixa set (security_invoker = on);
