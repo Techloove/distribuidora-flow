@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
+import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,6 +43,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const { client, roles } = useSupabase();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statuses)[number]>("aberto");
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
@@ -76,9 +79,52 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   });
 
   const rows = useMemo(() => {
-    const list = titulos.data ?? [];
-    return status === "todos" ? list : list.filter((r) => r["status"] === status);
-  }, [titulos.data, status]);
+    let list = titulos.data ?? [];
+    if (status !== "todos") list = list.filter((r) => r["status"] === status);
+    const f = filtros;
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (f["parceiro"])
+      list = list.filter((r) => String(r[config.partnerKey] ?? "") === f["parceiro"]);
+    if (f["de"]) list = list.filter((r) => String(r["vencimento"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((r) => String(r["vencimento"] ?? "") <= f["ate"]!);
+    if (f["situacao"] === "vencidos")
+      list = list.filter(
+        (r) =>
+          String(r["vencimento"] ?? "") < hoje &&
+          r["status"] !== "pago" &&
+          r["status"] !== "cancelado",
+      );
+    if (f["situacao"] === "avencer")
+      list = list.filter(
+        (r) =>
+          String(r["vencimento"] ?? "") >= hoje &&
+          r["status"] !== "pago" &&
+          r["status"] !== "cancelado",
+      );
+    if (f["min"])
+      list = list.filter(
+        (r) => Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0) >= Number(f["min"]),
+      );
+    if (f["max"])
+      list = list.filter(
+        (r) => Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0) <= Number(f["max"]),
+      );
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((r) => {
+        const nome = String(
+          partners.data?.find((p) => p["id"] === r[config.partnerKey])?.["razao_social"] ?? "",
+        ).toLowerCase();
+        return String(r["documento"] ?? "").toLowerCase().includes(termo) || nome.includes(termo);
+      });
+    }
+    return list;
+  }, [titulos.data, status, filtros, partners.data, config.partnerKey]);
+
+  const totalFiltrado = rows.reduce(
+    (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
+    0,
+  );
 
   const totals = useMemo(() => {
     const abertos = (titulos.data ?? []).filter((r) => r["status"] !== "pago" && r["status"] !== "cancelado");
@@ -117,13 +163,71 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="no-print grid gap-4 sm:grid-cols-3">
         <Card label="Em aberto" value={brl(totals.aberto)} />
         <Card label="Vencido" value={brl(totals.vencido)} tone />
         <Card label={config.table === "contas_receber" ? "Recebido" : "Pago"} value={brl(totals.pago)} />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <FilterBar
+        onClear={() => setFiltros({})}
+        extra={
+          <Button size="sm" variant="secondary" onClick={() => window.print()}>
+            <Printer className="size-3.5" /> Imprimir
+          </Button>
+        }
+      >
+        <FilterText
+          label="Buscar"
+          value={filtros["busca"] ?? ""}
+          onChange={(v) => setF("busca", v)}
+          placeholder={`Documento ou ${config.partnerLabel.toLowerCase()}`}
+        />
+        <FilterSelect
+          label={config.partnerLabel}
+          value={filtros["parceiro"] ?? ""}
+          onChange={(v) => setF("parceiro", v)}
+          options={(partners.data ?? []).map((p) => ({
+            value: String(p["id"]),
+            label: String(p["razao_social"]),
+          }))}
+        />
+        <FilterSelect
+          label="Situação"
+          value={filtros["situacao"] ?? ""}
+          onChange={(v) => setF("situacao", v)}
+          options={[
+            { value: "vencidos", label: "Vencidos" },
+            { value: "avencer", label: "A vencer" },
+          ]}
+        />
+        <FilterText
+          label="Vencimento de"
+          type="date"
+          value={filtros["de"] ?? ""}
+          onChange={(v) => setF("de", v)}
+        />
+        <FilterText
+          label="Vencimento até"
+          type="date"
+          value={filtros["ate"] ?? ""}
+          onChange={(v) => setF("ate", v)}
+        />
+        <FilterText
+          label="Saldo mínimo"
+          type="number"
+          value={filtros["min"] ?? ""}
+          onChange={(v) => setF("min", v)}
+        />
+        <FilterText
+          label="Saldo máximo"
+          type="number"
+          value={filtros["max"] ?? ""}
+          onChange={(v) => setF("max", v)}
+        />
+      </FilterBar>
+
+      <div className="no-print flex flex-wrap gap-2">
         {statuses.map((s) => (
           <Button
             key={s}
@@ -136,7 +240,11 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         ))}
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
+      <p className="text-xs text-muted-foreground">
+        {rows.length} título(s) · saldo {brl(totalFiltrado)}
+      </p>
+
+      <div className="print-area rounded-lg border border-border bg-card">
         {titulos.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -163,7 +271,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Pago</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ação</TableHead>
+                <TableHead className="no-print text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,7 +284,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                   <TableCell className="text-right">{brl(r["valor"])}</TableCell>
                   <TableCell className="text-right">{brl(r["valor_pago"])}</TableCell>
                   <TableCell>{String(r["status"])}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="no-print text-right">
                     <Button
                       size="sm"
                       variant="outline"
