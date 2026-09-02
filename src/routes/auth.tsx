@@ -98,9 +98,15 @@ function AuthPage() {
         ) : null}
 
         {confirmar ? (
-          <p className="mt-4 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
-            Enviamos um e-mail de confirmação. Após confirmar, volte aqui e faça login.
-          </p>
+          <div className="mt-4 space-y-1 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
+            <p className="font-medium">Confirmação de e-mail ativada no Supabase</p>
+            <p>
+              No painel do seu projeto Supabase: <strong>Authentication</strong> →{" "}
+              <strong>Sign In / Providers</strong> → <strong>Email</strong> → desmarque{" "}
+              <strong>Confirm email</strong> e salve. Depois volte e faça login com o mesmo e-mail e
+              senha.
+            </p>
+          </div>
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
