@@ -1030,7 +1030,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               </div>
             ) : null}
 
-            <div className="rounded-lg border border-border bg-card">
+            <div className="overflow-x-auto rounded-lg border border-border bg-card">
               {itens.isLoading ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
               ) : (itens.data ?? []).length === 0 ? (
