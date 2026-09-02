@@ -597,6 +597,98 @@ function TabelasPrecoPage() {
           )}
         </section>
       </div>
+
+      <section className="print-area mt-6 space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Produtos em promoção</h2>
+            <p className="text-xs text-muted-foreground">
+              Preço normal, preço promocional e data limite de cada promoção.
+            </p>
+          </div>
+          <div className="no-print flex items-end gap-3">
+            <FilterText
+              label="Produto"
+              value={filtros["produto"] ?? ""}
+              onChange={(v) => setF("produto", v)}
+              placeholder="Código ou nome..."
+            />
+            <FilterSelect
+              label="Vigência"
+              value={soVigentes ? "vigentes" : "todas"}
+              onChange={(v) => setSoVigentes(v !== "todas")}
+              options={[
+                { value: "vigentes", label: "Somente vigentes" },
+                { value: "todas", label: "Todas" },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          {promocoes.isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Carregando...
+            </div>
+          ) : promocoes.isError ? (
+            <p className="p-6 text-sm text-destructive">{(promocoes.error as Error).message}</p>
+          ) : promocoesLista.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Nenhum produto em promoção.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Promoção</TableHead>
+                  <TableHead className="text-right">Preço normal</TableHead>
+                  <TableHead className="text-right">Preço promocional</TableHead>
+                  <TableHead className="text-right">Variação</TableHead>
+                  <TableHead>Início</TableHead>
+                  <TableHead>Data limite</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {promocoesLista.map((p) => {
+                  const variacao = Number(p["variacao_percentual"] ?? 0);
+                  return (
+                    <TableRow key={String(p["item_id"])}>
+                      <TableCell className="font-mono text-xs">
+                        {String(p["produto_codigo"] ?? "—")}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {String(p["produto_descricao"])}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {String(p["tabela_nome"])}
+                        {p["vigente"] ? "" : " (fora de vigência)"}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground line-through">
+                        {brl(p["preco_normal"])}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-primary">
+                        {brl(p["preco_promocional"])}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right text-sm ${
+                          variacao < 0 ? "text-emerald-600" : variacao > 0 ? "text-destructive" : ""
+                        }`}
+                      >
+                        {variacao.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-sm">{fmtDate(p["vigencia_inicio"])}</TableCell>
+                      <TableCell className="text-sm">{fmtDate(p["vigencia_fim"])}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </section>
+
     </ErpLayout>
   );
 }
