@@ -214,6 +214,75 @@ function ConfiguracoesPage() {
           )}
         </section>
       </div>
+
+      <section className="mt-6 rounded-lg border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold">Cobrança Sicredi (API de boletos)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
+          aplicadas em todo boleto emitido no Faturamento.
+        </p>
+        {sicredi.isLoading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Carregando...
+          </div>
+        ) : sicredi.isError ? (
+          <div className="py-6 text-sm text-destructive">
+            {(sicredi.error as Error).message}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Rode <code>db/fase18_sicredi_config.sql</code> no banco.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-5">
+            {gruposSicredi.map((g) => (
+              <div key={g.titulo}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {g.titulo}
+                </p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {g.campos.map((c) => (
+                    <div key={c.name} className={c.span === 2 ? "sm:col-span-2" : ""}>
+                      <Label>{c.label}</Label>
+                      {c.options ? (
+                        <select
+                          value={sic[c.name] ?? ""}
+                          disabled={!canManage}
+                          onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          {c.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          type={c.type ?? "text"}
+                          step={c.type === "number" ? "0.0001" : undefined}
+                          value={sic[c.name] ?? ""}
+                          disabled={!canManage}
+                          onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
+                        />
+                      )}
+                      {c.hint ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground">{c.hint}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Button
+              disabled={!canManage || salvarSicredi.isPending}
+              onClick={() => salvarSicredi.mutate()}
+            >
+              <Save className="size-4" /> Salvar configuração Sicredi
+            </Button>
+          </div>
+        )}
+      </section>
     </ErpLayout>
   );
 }
+
