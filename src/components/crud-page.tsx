@@ -610,6 +610,7 @@ export function CrudPage({
               </div>
             ))}
           </div>
+          {extraForm ? <div className="mt-4">{extraForm({ form, editing })}</div> : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
