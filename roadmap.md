@@ -53,3 +53,5 @@
 ## Pedidos
 - [x] Listagem de pedidos em tela cheia, uma linha por pedido
 - [x] Editar dados da promoção + preço promocional no cadastro/listagem de produtos
+- [ ] Produtos: preço promocional vigente + data limite vindos da Promoção na listagem
+- [ ] Produtos: editar % markup e preço de venda direto na listagem
