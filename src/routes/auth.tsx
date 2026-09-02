@@ -56,8 +56,18 @@ function AuthPage() {
         });
         if (err) throw new Error(err.message);
         if (!data.session) {
-          setConfirmar(true);
-          toast.success("Conta criada. Confirme o e-mail para entrar.");
+          // Sem sessão = confirmação de e-mail ativa no Supabase.
+          // Tentamos entrar direto; se o projeto exigir confirmação, orientamos o usuário.
+          const { error: loginErr } = await client.auth.signInWithPassword({
+            email,
+            password: senha,
+          });
+          if (loginErr) {
+            setConfirmar(true);
+            toast.error(
+              "A confirmação de e-mail está ativada no Supabase. Desative em Authentication → Sign In / Providers → Email → Confirm email.",
+            );
+          }
         }
       }
     } catch (err) {
@@ -88,9 +98,15 @@ function AuthPage() {
         ) : null}
 
         {confirmar ? (
-          <p className="mt-4 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
-            Enviamos um e-mail de confirmação. Após confirmar, volte aqui e faça login.
-          </p>
+          <div className="mt-4 space-y-1 rounded-md bg-accent/20 p-3 text-xs text-accent-foreground">
+            <p className="font-medium">Confirmação de e-mail ativada no Supabase</p>
+            <p>
+              No painel do seu projeto Supabase: <strong>Authentication</strong> →{" "}
+              <strong>Sign In / Providers</strong> → <strong>Email</strong> → desmarque{" "}
+              <strong>Confirm email</strong> e salve. Depois volte e faça login com o mesmo e-mail e
+              senha.
+            </p>
+          </div>
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
