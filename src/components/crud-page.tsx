@@ -127,6 +127,7 @@ export function CrudPage({
     mutationFn: async () => {
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
+        if (field.auto) continue;
         const raw = form[field.name];
         if (field.type === "checkbox") {
           payload[field.name] = Boolean(raw);
