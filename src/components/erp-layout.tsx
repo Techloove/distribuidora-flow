@@ -135,8 +135,8 @@ function SidebarContent({
   pathname: string;
   onNavigate?: () => void;
   onSignOut: () => void;
-  email?: string;
-  roles: string[];
+  email?: string | undefined;
+  roles: readonly string[];
 }) {
   return (
     <>
