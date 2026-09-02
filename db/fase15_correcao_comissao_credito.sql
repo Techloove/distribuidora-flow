@@ -37,14 +37,14 @@ select c.id                                        as cliente_id,
   from public.clientes c
   left join (
     select cr.cliente_id,
-           sum(coalesce(cr.saldo, cr.valor - coalesce(cr.valor_pago, 0)))            as em_aberto,
+           sum((cr.valor - coalesce(cr.valor_pago, 0)))            as em_aberto,
            count(*)                                                                  as parcelas_abertas,
            sum(case when cr.vencimento < current_date
-                    then coalesce(cr.saldo, cr.valor - coalesce(cr.valor_pago, 0))
+                    then (cr.valor - coalesce(cr.valor_pago, 0))
                     else 0 end)                                                      as vencido,
            count(*) filter (where cr.vencimento < current_date)                       as parcelas_vencidas
       from public.contas_receber cr
-     where coalesce(cr.saldo, cr.valor - coalesce(cr.valor_pago, 0)) > 0
+     where (cr.valor - coalesce(cr.valor_pago, 0)) > 0
        and coalesce(cr.status, 'aberto') <> 'cancelado'
      group by cr.cliente_id
   ) t on t.cliente_id = c.id;
