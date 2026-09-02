@@ -156,6 +156,11 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       };
       if (config.table === "compras") {
         payload["nf_numero"] = header["nf"] || null;
+        payload["chave_acesso"] = header["chave"] || null;
+        payload["valor_impostos"] = Number(header["impostos"] || 0);
+      } else {
+        payload["rota_id"] = header["rota"] || null;
+        payload["previsao_entrega"] = header["previsao"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
       const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
