@@ -150,7 +150,7 @@ export function CrudPage({
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: [table] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
 
   const remove = useMutation({
@@ -162,7 +162,7 @@ export function CrudPage({
       toast.success("Registro excluído");
       queryClient.invalidateQueries({ queryKey: [table] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
 
   const tableFields = fields.filter((f) => f.inTable);
