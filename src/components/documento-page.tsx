@@ -483,11 +483,30 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
-  function pickProduto(id: string) {
+  /**
+   * Preço do item: em pedidos vale o preço vigente da promoção (tabela de preço
+   * dentro do período de vigência para o cliente/UF). Sem promoção vigente,
+   * cai no preço de venda do produto.
+   */
+  async function pickProduto(id: string) {
     const p = produtos.data?.find((x) => x["id"] === id);
-    const price = config.table === "pedidos" ? p?.["preco_venda"] : p?.["custo_medio"];
-    setItem((s) => ({ ...s, produto_id: id, preco: String(Number(price ?? 0)) }));
+    const base = Number(
+      (config.table === "pedidos" ? p?.["preco_venda"] : p?.["custo_medio"]) ?? 0,
+    );
+    setItem((s) => ({ ...s, produto_id: id, preco: String(base) }));
+    setPromo(null);
+    if (config.table !== "pedidos" || !id || !client) return;
+    const { data, error } = await client.rpc("preco_produto", {
+      _produto_id: id,
+      _cliente_id: clienteFoco || null,
+    });
+    if (error) return;
+    const vigente = Number(data ?? 0);
+    if (!vigente) return;
+    setItem((s) => (s.produto_id === id ? { ...s, preco: String(vigente) } : s));
+    if (vigente !== base) setPromo(vigente);
   }
+
 
   /** Ao escolher o cliente, já traz a rota cadastrada dele. */
   function pickPartner(id: string) {
