@@ -113,7 +113,43 @@ function TabelasPrecoPage() {
     },
   });
 
+  const promocoes = useQuery({
+    queryKey: ["vw_promocoes"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("vw_promocoes")
+        .select("*")
+        .order("produto_descricao");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const [soVigentes, setSoVigentes] = useState(true);
+  const promocoesLista = useMemo(() => {
+    let list = promocoes.data ?? [];
+    if (soVigentes) list = list.filter((p) => Boolean(p["vigente"]));
+    const termo = (filtros["produto"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter(
+        (p) =>
+          String(p["produto_descricao"] ?? "").toLowerCase().includes(termo) ||
+          String(p["produto_codigo"] ?? "").toLowerCase().includes(termo),
+      );
+    }
+    return list;
+  }, [promocoes.data, soVigentes, filtros]);
+
+  const fmtDate = (v: unknown) => {
+    const s = String(v ?? "");
+    return s && s !== "null"
+      ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString("pt-BR")
+      : "sem limite";
+  };
+
   const tabelasFiltradas = useMemo(() => {
+
     let list = tabelas.data ?? [];
     const termo = (filtros["busca"] ?? "").trim().toLowerCase();
     if (termo) {
