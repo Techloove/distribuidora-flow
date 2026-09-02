@@ -795,14 +795,59 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               />
             </div>
             {config.table === "compras" ? (
-              <div className="space-y-1.5">
-                <Label>NF número</Label>
-                <Input
-                  value={header["nf"] ?? ""}
-                  onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
-                />
-              </div>
-            ) : null}
+              <>
+                <div className="space-y-1.5">
+                  <Label>NF número</Label>
+                  <Input
+                    value={header["nf"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Chave de acesso da NF-e</Label>
+                  <Input
+                    value={header["chave"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, chave: e.target.value }))}
+                    placeholder="44 dígitos"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Valor de impostos (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={header["impostos"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, impostos: e.target.value }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Rota de entrega</Label>
+                  <select
+                    value={header["rota"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {rotas.data?.map((r) => (
+                      <option key={String(r["id"])} value={String(r["id"])}>
+                        {String(r["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Previsão de entrega</Label>
+                  <Input
+                    type="date"
+                    value={header["previsao"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, previsao: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Observações</Label>
