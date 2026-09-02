@@ -199,7 +199,10 @@ function ConfiguracoesPage() {
     const row = sicredi.data;
     const next: Record<string, string> = {};
     for (const g of gruposSicredi) {
-      for (const c of g.campos) next[c.name] = String(row?.[c.name] ?? "");
+      for (const c of g.campos) {
+        const v = row?.[c.name];
+        next[c.name] = String(v ?? (c.options ? (c.options[0]?.value ?? "") : ""));
+      }
     }
     setSic(next);
   }, [sicredi.data]);
