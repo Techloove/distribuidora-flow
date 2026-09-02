@@ -269,7 +269,15 @@ export function CrudPage({
                 className={`space-y-1.5 ${field.span === 2 ? "sm:col-span-2" : ""}`}
               >
                 <Label htmlFor={field.name}>{field.label}</Label>
-                {field.type === "select" ? (
+                {field.auto ? (
+                  <Input
+                    id={field.name}
+                    readOnly
+                    disabled
+                    value={String(form[field.name] ?? "")}
+                    placeholder="Gerado automaticamente"
+                  />
+                ) : field.type === "select" ? (
                   <select
                     id={field.name}
                     value={String(form[field.name] ?? "")}
