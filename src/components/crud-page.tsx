@@ -24,13 +24,15 @@ import {
 } from "@/components/ui/table";
 import { useSupabase } from "@/lib/supabase-provider";
 
-export type FieldType = "text" | "email" | "number" | "select" | "checkbox";
+export type FieldType = "text" | "email" | "number" | "select" | "checkbox" | "multicheck";
 
 export type CrudField = {
   name: string;
   label: string;
   type?: FieldType;
   options?: { value: string; label: string }[];
+  /** Colunas booleanas exibidas como grupo de caixas de seleção (type: "multicheck"). */
+  checks?: { name: string; label: string }[];
   required?: boolean;
   step?: string;
   inTable?: boolean;
@@ -38,6 +40,7 @@ export type CrudField = {
   /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
   auto?: boolean;
 };
+
 
 export type Row = Record<string, unknown>;
 
@@ -82,26 +85,32 @@ export function CrudPage({
 
   function openCreate() {
     setEditing(null);
-    setForm(
-      Object.fromEntries(
-        fields.map((f) => [f.name, f.type === "checkbox" ? true : ""]),
-      ) as Record<string, string | boolean>,
-    );
+    const next: Record<string, string | boolean> = {};
+    for (const f of fields) {
+      if (f.type === "multicheck") {
+        for (const c of f.checks ?? []) next[c.name] = false;
+      } else {
+        next[f.name] = f.type === "checkbox" ? true : "";
+      }
+    }
+    setForm(next);
     setOpen(true);
   }
 
   function openEdit(row: Row) {
     setEditing(row);
-    setForm(
-      Object.fromEntries(
-        fields.map((f) => [
-          f.name,
-          f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? ""),
-        ]),
-      ) as Record<string, string | boolean>,
-    );
+    const next: Record<string, string | boolean> = {};
+    for (const f of fields) {
+      if (f.type === "multicheck") {
+        for (const c of f.checks ?? []) next[c.name] = Boolean(row[c.name]);
+      } else {
+        next[f.name] = f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? "");
+      }
+    }
+    setForm(next);
     setOpen(true);
   }
+
 
   function traduzErro(message: string) {
     if (/row-level security|violates row-level/i.test(message)) {
@@ -128,6 +137,10 @@ export function CrudPage({
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
         if (field.auto) continue;
+        if (field.type === "multicheck") {
+          for (const c of field.checks ?? []) payload[c.name] = Boolean(form[c.name]);
+          continue;
+        }
         const raw = form[field.name];
         if (field.type === "checkbox") {
           payload[field.name] = Boolean(raw);
@@ -137,6 +150,7 @@ export function CrudPage({
           payload[field.name] = raw === "" ? null : raw;
         }
       }
+
       if (editing) {
         const { error } = await client!
           .from(table)
@@ -222,13 +236,20 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {f.type === "checkbox"
-                        ? row[f.name]
-                          ? "Sim"
-                          : "Não"
-                        : String(row[f.name] ?? "—")}
+                      {f.type === "multicheck"
+                        ? (f.checks ?? [])
+                            .filter((c) => row[c.name])
+                            .map((c) => c.label)
+                            .join(", ") || "—"
+                        : f.type === "checkbox"
+                          ? row[f.name]
+                            ? "Sim"
+                            : "Não"
+                          : String(row[f.name] ?? "—")}
                     </TableCell>
                   ))}
+
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
@@ -277,7 +298,31 @@ export function CrudPage({
                     value={String(form[field.name] ?? "")}
                     placeholder="Gerado automaticamente"
                   />
+                ) : field.type === "multicheck" ? (
+                  <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
+                    {(field.checks ?? []).map((c) => (
+                      <label
+                        key={c.name}
+                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                          form[c.name]
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-input text-muted-foreground hover:bg-accent/40"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form[c.name])}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, [c.name]: e.target.checked }))
+                          }
+                          className="size-4 accent-primary"
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
                 ) : field.type === "select" ? (
+
                   <select
                     id={field.name}
                     value={String(form[field.name] ?? "")}
