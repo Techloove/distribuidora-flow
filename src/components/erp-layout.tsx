@@ -41,7 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -216,8 +215,8 @@ export function ErpLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+    <div className="flex min-h-dvh bg-background">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <SidebarContent
           pathname={pathname}
           onSignOut={handleSignOut}
@@ -226,13 +225,15 @@ export function ErpLayout({
         />
       </aside>
 
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent
-          side="left"
-          className="w-[17rem] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground md:hidden"
-        >
-          <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
-          <div className="flex h-full flex-col">
+      {menuOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={() => setMenuOpen(false)}
+            className="absolute inset-0 bg-black/50"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-[17rem] max-w-[85%] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl">
             <SidebarContent
               pathname={pathname}
               onNavigate={() => setMenuOpen(false)}
@@ -241,8 +242,8 @@ export function ErpLayout({
               roles={roles}
             />
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      ) : null}
 
       <main className="min-w-0 flex-1 overflow-x-hidden">
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:items-end sm:gap-4 sm:px-6 sm:py-5">
