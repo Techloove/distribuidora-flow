@@ -832,7 +832,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       <section className="space-y-4">
         {!doc ? (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Selecione um documento à esquerda ou crie um novo.
+            Selecione um documento na lista acima ou crie um novo.
           </div>
         ) : (
           <>
