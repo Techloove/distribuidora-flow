@@ -170,7 +170,53 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  /** Filtros da listagem de documentos. */
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+
+  const docsFiltrados = useMemo(() => {
+    let list = docs.data ?? [];
+    const f = filtros;
+    if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
+    if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
+    if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
+    if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
+    if (f["forma"])
+      list = list.filter((d) => String(d["forma_pagamento_id"] ?? "") === f["forma"]);
+    if (f["parceiro"])
+      list = list.filter((d) => String(d[config.partnerKey] ?? "") === f["parceiro"]);
+    if (f["de"]) list = list.filter((d) => String(d[config.dateField] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((d) => String(d[config.dateField] ?? "") <= f["ate"]!);
+    if (f["min"]) list = list.filter((d) => Number(d["total_liquido"] ?? 0) >= Number(f["min"]));
+    if (f["max"]) list = list.filter((d) => Number(d["total_liquido"] ?? 0) <= Number(f["max"]));
+    const termo = (f["busca"] ?? "").trim().toLowerCase();
+    if (termo) {
+      list = list.filter((d) => {
+        const parceiro = String(
+          partners.data?.find((p) => p["id"] === d[config.partnerKey])?.["razao_social"] ?? "",
+        ).toLowerCase();
+        return (
+          String(d["numero"] ?? "").includes(termo) ||
+          parceiro.includes(termo) ||
+          String(d["observacoes"] ?? "").toLowerCase().includes(termo)
+        );
+      });
+    }
+    return list;
+  }, [docs.data, filtros, centro, partners.data, config.partnerKey, config.dateField]);
+
+  const statusOptions = useMemo(() => {
+    const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
+    return [...set].sort().map((s) => ({ value: s, label: s }));
+  }, [docs.data]);
+
+  const totalFiltrado = docsFiltrados.reduce(
+    (s, d) => s + Number(d["total_liquido"] ?? 0),
+    0,
+  );
+
   const doc = docs.data?.find((d) => d["id"] === selected) ?? null;
+
 
   /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
   const clienteFoco =
