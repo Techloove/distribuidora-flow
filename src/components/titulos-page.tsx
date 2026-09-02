@@ -265,6 +265,23 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           value={filtros["max"] ?? ""}
           onChange={(v) => setF("max", v)}
         />
+        {isReceber ? (
+          <FilterSelect
+            label="Boleto"
+            value={filtros["boleto"] ?? ""}
+            onChange={(v) => setF("boleto", v)}
+            options={[
+              { value: "sem", label: "Sem boleto" },
+              { value: "pendente", label: "Pendente" },
+              { value: "em_processamento", label: "Em processamento" },
+              { value: "registrado", label: "Registrado" },
+              { value: "liquidado", label: "Liquidado" },
+              { value: "baixado", label: "Baixado" },
+              { value: "cancelado", label: "Cancelado" },
+              { value: "erro", label: "Erro" },
+            ]}
+          />
+        ) : null}
       </FilterBar>
 
       <div className="no-print flex flex-wrap gap-2">
