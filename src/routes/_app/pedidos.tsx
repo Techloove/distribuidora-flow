@@ -4,6 +4,9 @@ import { DocumentoPage, type DocumentoConfig } from "@/components/documento-page
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/pedidos")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    pedido: typeof search["pedido"] === "string" ? search["pedido"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Pedidos de venda — ERP Distribuidora" },
