@@ -146,7 +146,7 @@ function SidebarContent({
           <p className="text-[11px] text-sidebar-foreground/60">Vendas · Estoque · Financeiro</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+      <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-3 py-4">
         {nav.map((section) => (
           <div key={section.group}>
             <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
@@ -245,7 +245,7 @@ export function ErpLayout({
         </div>
       ) : null}
 
-      <main className="min-w-0 flex-1 overflow-x-hidden">
+      <main className="min-w-0 flex-1">
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:items-end sm:gap-4 sm:px-6 sm:py-5">
           <div className="flex min-w-0 items-start gap-2">
             <button
