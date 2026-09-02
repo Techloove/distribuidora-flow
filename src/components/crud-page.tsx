@@ -137,6 +137,10 @@ export function CrudPage({
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
         if (field.auto) continue;
+        if (field.type === "multicheck") {
+          for (const c of field.checks ?? []) payload[c.name] = Boolean(form[c.name]);
+          continue;
+        }
         const raw = form[field.name];
         if (field.type === "checkbox") {
           payload[field.name] = Boolean(raw);
@@ -146,6 +150,7 @@ export function CrudPage({
           payload[field.name] = raw === "" ? null : raw;
         }
       }
+
       if (editing) {
         const { error } = await client!
           .from(table)
