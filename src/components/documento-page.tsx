@@ -102,6 +102,34 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
   });
 
+  const centros = useQuery({
+    queryKey: ["centros", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("centros")
+        .select("id, codigo, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "options"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome, parcelas_padrao")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const itens = useQuery({
     queryKey: [config.itemsTable, selected],
     enabled: !!client && !!selected,
@@ -123,14 +151,10 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       const payload: Record<string, unknown> = {
         [config.partnerKey]: header["partner"] || null,
         [config.dateField]: header["data"] || new Date().toISOString().slice(0, 10),
-        parcelas: Number(header["parcelas"] || 1),
-        frete_valor: Number(header["frete"] || 0),
-        desconto_valor: Number(header["desconto"] || 0),
+        centro_id: header["centro"] || null,
         observacoes: header["observacoes"] || null,
       };
-      if (config.table === "pedidos") {
-        payload["comissao_percentual"] = Number(header["comissao"] || 0);
-      } else {
+      if (config.table === "compras") {
         payload["nf_numero"] = header["nf"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
@@ -139,7 +163,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       return data as Row;
     },
     onSuccess: (data) => {
-      toast.success("Documento criado");
+      toast.success("Documento criado — lance os itens e depois a forma de pagamento");
       setOpenNew(false);
       setHeader({});
       setSelected(String(data["id"]));
@@ -147,6 +171,43 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const [pagamento, setPagamento] = useState<Record<string, string>>({});
+
+  const savePagamento = useMutation({
+    mutationFn: async () => {
+      if (!doc) throw new Error("Selecione um documento");
+      const patch: Record<string, unknown> = {
+        forma_pagamento_id: pagamento["forma"] ?? doc["forma_pagamento_id"] ?? null,
+        parcelas: Number(pagamento["parcelas"] ?? doc["parcelas"] ?? 1),
+        frete_valor: Number(pagamento["frete"] ?? doc["frete_valor"] ?? 0),
+        desconto_valor: Number(pagamento["desconto"] ?? doc["desconto_valor"] ?? 0),
+      };
+      if (config.table === "pedidos") {
+        patch["comissao_percentual"] = Number(
+          pagamento["comissao"] ?? doc["comissao_percentual"] ?? 0,
+        );
+      }
+      const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Forma de pagamento salva");
+      setPagamento({});
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function pickForma(id: string) {
+    const f = formas.data?.find((x) => x["id"] === id);
+    setPagamento((s) => ({
+      ...s,
+      forma: id,
+      parcelas: String(Number(f?.["parcelas_padrao"] ?? s["parcelas"] ?? 1)),
+    }));
+  }
+
 
   const addItem = useMutation({
     mutationFn: async () => {
@@ -289,7 +350,17 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {config.dateLabel}: {String(doc[config.dateField] ?? "—")} ·{" "}
-                    {String(doc["parcelas"])}x
+                    {String(doc["parcelas"])}x ·{" "}
+                    {String(
+                      formas.data?.find((f) => f["id"] === doc["forma_pagamento_id"])?.["nome"] ??
+                        "sem forma de pagamento",
+                    )}{" "}
+                    ·{" "}
+                    {String(
+                      centros.data?.find((c) => c["id"] === doc["centro_id"])?.["nome"] ??
+                        "sem centro",
+                    )}
+
                   </p>
                 </div>
                 <div className="text-right">
@@ -418,7 +489,83 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 </Table>
               )}
             </div>
+
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h3 className="text-sm font-semibold">Forma de pagamento</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Define as parcelas e os vencimentos gerados no financeiro ao efetivar.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Forma</Label>
+                  <select
+                    value={pagamento["forma"] ?? String(doc["forma_pagamento_id"] ?? "")}
+                    onChange={(e) => pickForma(e.target.value)}
+                    disabled={doc["status"] !== "rascunho"}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {formas.data?.map((f) => (
+                      <option key={String(f["id"])} value={String(f["id"])}>
+                        {String(f["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Parcelas</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["parcelas"] ?? String(doc["parcelas"] ?? 1)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, parcelas: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Frete (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["frete"] ?? String(doc["frete_valor"] ?? 0)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, frete: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Desconto (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    disabled={doc["status"] !== "rascunho"}
+                    value={pagamento["desconto"] ?? String(doc["desconto_valor"] ?? 0)}
+                    onChange={(e) => setPagamento((s) => ({ ...s, desconto: e.target.value }))}
+                  />
+                </div>
+                {config.table === "pedidos" ? (
+                  <div className="space-y-1.5">
+                    <Label>Comissão (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      disabled={doc["status"] !== "rascunho"}
+                      value={pagamento["comissao"] ?? String(doc["comissao_percentual"] ?? 0)}
+                      onChange={(e) => setPagamento((s) => ({ ...s, comissao: e.target.value }))}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <Button
+                className="mt-3"
+                onClick={() => savePagamento.mutate()}
+                disabled={doc["status"] !== "rascunho" || savePagamento.isPending || !canWrite}
+              >
+                {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Salvar pagamento
+              </Button>
+            </div>
           </>
+
         )}
       </section>
 
@@ -427,7 +574,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           <DialogHeader>
             <DialogTitle>Novo documento</DialogTitle>
             <DialogDescription>
-              Informe os dados do cabeçalho; os itens são lançados em seguida.
+              1) {config.partnerLabel} e centro · 2) itens · 3) forma de pagamento.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -447,6 +594,21 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               </select>
             </div>
             <div className="space-y-1.5">
+              <Label>Centro</Label>
+              <select
+                value={header["centro"] ?? ""}
+                onChange={(e) => setHeader((h) => ({ ...h, centro: e.target.value }))}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">—</option>
+                {centros.data?.map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label>{config.dateLabel}</Label>
               <Input
                 type="date"
@@ -454,44 +616,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                 onChange={(e) => setHeader((h) => ({ ...h, data: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Parcelas</Label>
-              <Input
-                type="number"
-                min="1"
-                value={header["parcelas"] ?? "1"}
-                onChange={(e) => setHeader((h) => ({ ...h, parcelas: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Frete (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={header["frete"] ?? "0"}
-                onChange={(e) => setHeader((h) => ({ ...h, frete: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Desconto (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={header["desconto"] ?? "0"}
-                onChange={(e) => setHeader((h) => ({ ...h, desconto: e.target.value }))}
-              />
-            </div>
-            {config.table === "pedidos" ? (
-              <div className="space-y-1.5">
-                <Label>Comissão (%)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={header["comissao"] ?? "0"}
-                  onChange={(e) => setHeader((h) => ({ ...h, comissao: e.target.value }))}
-                />
-              </div>
-            ) : (
+            {config.table === "compras" ? (
               <div className="space-y-1.5">
                 <Label>NF número</Label>
                 <Input
@@ -499,7 +624,8 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
                   onChange={(e) => setHeader((h) => ({ ...h, nf: e.target.value }))}
                 />
               </div>
-            )}
+            ) : null}
+
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Observações</Label>
               <Input

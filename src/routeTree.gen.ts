@@ -24,6 +24,7 @@ import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFaturamentoRouteImport } from './routes/_app/faturamento'
 import { Route as AppFluxoCaixaRouteImport } from './routes/_app/fluxo-caixa'
+import { Route as AppFormasPagamentoRouteImport } from './routes/_app/formas-pagamento'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
 import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
@@ -113,6 +114,11 @@ const AppFluxoCaixaRoute = AppFluxoCaixaRouteImport.update({
   path: '/fluxo-caixa',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFormasPagamentoRoute = AppFormasPagamentoRouteImport.update({
+  id: '/formas-pagamento',
+  path: '/formas-pagamento',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   id: '/fornecedores',
   path: '/fornecedores',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
+  '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
   '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
+  '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
   '/metas': typeof AppMetasRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/faturamento': typeof AppFaturamentoRoute
   '/_app/fluxo-caixa': typeof AppFluxoCaixaRoute
+  '/_app/formas-pagamento': typeof AppFormasPagamentoRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
   '/_app/metas': typeof AppMetasRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/expedicao'
     | '/faturamento'
     | '/fluxo-caixa'
+    | '/formas-pagamento'
     | '/fornecedores'
     | '/metas'
     | '/notificacoes'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/expedicao'
     | '/faturamento'
     | '/fluxo-caixa'
+    | '/formas-pagamento'
     | '/fornecedores'
     | '/metas'
     | '/notificacoes'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/_app/expedicao'
     | '/_app/faturamento'
     | '/_app/fluxo-caixa'
+    | '/_app/formas-pagamento'
     | '/_app/fornecedores'
     | '/_app/metas'
     | '/_app/notificacoes'
@@ -483,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFluxoCaixaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/formas-pagamento': {
+      id: '/_app/formas-pagamento'
+      path: '/formas-pagamento'
+      fullPath: '/formas-pagamento'
+      preLoaderRoute: typeof AppFormasPagamentoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/fornecedores': {
       id: '/_app/fornecedores'
       path: '/fornecedores'
@@ -597,6 +616,7 @@ interface AppRouteChildren {
   AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFaturamentoRoute: typeof AppFaturamentoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
+  AppFormasPagamentoRoute: typeof AppFormasPagamentoRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppMetasRoute: typeof AppMetasRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
@@ -626,6 +646,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpedicaoRoute: AppExpedicaoRoute,
   AppFaturamentoRoute: AppFaturamentoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
+  AppFormasPagamentoRoute: AppFormasPagamentoRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppMetasRoute: AppMetasRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
