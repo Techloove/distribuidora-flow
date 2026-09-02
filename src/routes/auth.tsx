@@ -56,8 +56,18 @@ function AuthPage() {
         });
         if (err) throw new Error(err.message);
         if (!data.session) {
-          setConfirmar(true);
-          toast.success("Conta criada. Confirme o e-mail para entrar.");
+          // Sem sessão = confirmação de e-mail ativa no Supabase.
+          // Tentamos entrar direto; se o projeto exigir confirmação, orientamos o usuário.
+          const { error: loginErr } = await client.auth.signInWithPassword({
+            email,
+            password: senha,
+          });
+          if (loginErr) {
+            setConfirmar(true);
+            toast.error(
+              "A confirmação de e-mail está ativada no Supabase. Desative em Authentication → Sign In / Providers → Email → Confirm email.",
+            );
+          }
         }
       }
     } catch (err) {
