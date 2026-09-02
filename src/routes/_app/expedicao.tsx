@@ -160,6 +160,8 @@ function ExpedicaoPage() {
           previsao_entrega: form["previsao_entrega"] || null,
           volumes: Number(form["volumes"] || 1),
           peso_kg: Number(form["peso_kg"] || 0),
+          rota_id: form["rota_id"] || null,
+          romaneio: form["romaneio"] || null,
           observacoes: form["observacoes"] || null,
         })
         .eq("id", editing!["id"] as string);
@@ -316,6 +318,28 @@ function ExpedicaoPage() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Rota</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={form["rota_id"] ?? ""}
+                onChange={(e) => setForm({ ...form, rota_id: e.target.value })}
+              >
+                <option value="">—</option>
+                {(rotas.data ?? []).map((r) => (
+                  <option key={String(r["id"])} value={String(r["id"])}>
+                    {String(r["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nº do romaneio</Label>
+              <Input
+                value={form["romaneio"] ?? ""}
+                onChange={(e) => setForm({ ...form, romaneio: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Motorista</Label>
