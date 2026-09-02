@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { HistoricoProduto } from "@/components/historico-produto";
 import { useSupabase } from "@/lib/supabase-provider";
 
 
@@ -153,6 +154,9 @@ function ProdutosPage() {
         decorate={decorate}
         inlineEdit={["markup_percentual", "preco_venda"]}
         onInlineSave={onInlineSave}
+        extraForm={({ editing }) => (
+          <HistoricoProduto produtoId={editing ? String(editing["id"]) : null} />
+        )}
       />
     </ErpLayout>
   );
