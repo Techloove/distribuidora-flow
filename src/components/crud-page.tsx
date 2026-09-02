@@ -126,6 +126,10 @@ export function CrudPage({
   ) => Record<string, string | boolean> | void;
   /** Acrescenta colunas calculadas às linhas (ex.: promoção vigente do produto). */
   decorate?: (rows: Row[]) => Row[];
+  /** Campos editáveis direto na listagem. */
+  inlineEdit?: string[];
+  /** Converte a edição inline no patch gravado (ex.: markup ↔ preço de venda). */
+  onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
