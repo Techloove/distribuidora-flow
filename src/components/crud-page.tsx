@@ -101,7 +101,27 @@ export function CrudPage({
     setOpen(true);
   }
 
+  function traduzErro(message: string) {
+    if (/row-level security|violates row-level/i.test(message)) {
+      return "Seu usuário não tem permissão para gravar aqui. É necessário o papel admin ou gestor (tela Usuários e papéis).";
+    }
+    if (/duplicate key|already exists/i.test(message)) {
+      return "Já existe um registro com esse código/documento.";
+    }
+    if (/permission denied/i.test(message)) {
+      return "Permissão negada pelo banco de dados. Verifique se o SQL das fases foi executado por completo.";
+    }
+    if (/violates foreign key/i.test(message)) {
+      return "Há um vínculo inválido: selecione um registro relacionado existente.";
+    }
+    if (/not-null|null value in column/i.test(message)) {
+      return "Preencha todos os campos obrigatórios.";
+    }
+    return message;
+  }
+
   const save = useMutation({
+
     mutationFn: async () => {
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
