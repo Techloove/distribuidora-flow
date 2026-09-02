@@ -36,13 +36,10 @@ const nav = [
     group: "Cadastros",
     items: [
       { to: "/pessoas", label: "Cadastro unificado", icon: Users },
-      { to: "/clientes", label: "Clientes", icon: Users },
-
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/tabelas-preco", label: "Tabelas de preço", icon: Tags },
-      { to: "/fornecedores", label: "Fornecedores", icon: Truck },
-      { to: "/representantes", label: "Representantes", icon: UserRound },
       { to: "/centros", label: "Centros", icon: Building2 },
+
       { to: "/transportadoras", label: "Transportadoras", icon: Truck },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
     ],
