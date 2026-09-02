@@ -12,9 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
+import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
+import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
+import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
+import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
+import { Route as AppPagarRouteImport } from './routes/_app/pagar'
+import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
+import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
 
 const IndexRoute = IndexRouteImport.update({
@@ -31,9 +40,29 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCentrosRoute = AppCentrosRouteImport.update({
+  id: '/centros',
+  path: '/centros',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientesRoute = AppClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppComissoesRoute = AppComissoesRouteImport.update({
+  id: '/comissoes',
+  path: '/comissoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppComprasRoute = AppComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -41,9 +70,34 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEstoqueRoute = AppEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
+  id: '/fornecedores',
+  path: '/fornecedores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPagarRoute = AppPagarRouteImport.update({
+  id: '/pagar',
+  path: '/pagar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPedidosRoute = AppPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProdutosRoute = AppProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReceberRoute = AppReceberRouteImport.update({
+  id: '/receber',
+  path: '/receber',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
@@ -55,17 +109,35 @@ const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/auditoria': typeof AppAuditoriaRoute
+  '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
+  '/comissoes': typeof AppComissoesRoute
+  '/compras': typeof AppComprasRoute
   '/dashboard': typeof AppDashboardRoute
+  '/estoque': typeof AppEstoqueRoute
+  '/fornecedores': typeof AppFornecedoresRoute
+  '/pagar': typeof AppPagarRoute
+  '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
+  '/receber': typeof AppReceberRoute
   '/representantes': typeof AppRepresentantesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/auditoria': typeof AppAuditoriaRoute
+  '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
+  '/comissoes': typeof AppComissoesRoute
+  '/compras': typeof AppComprasRoute
   '/dashboard': typeof AppDashboardRoute
+  '/estoque': typeof AppEstoqueRoute
+  '/fornecedores': typeof AppFornecedoresRoute
+  '/pagar': typeof AppPagarRoute
+  '/pedidos': typeof AppPedidosRoute
   '/produtos': typeof AppProdutosRoute
+  '/receber': typeof AppReceberRoute
   '/representantes': typeof AppRepresentantesRoute
 }
 export interface FileRoutesById {
@@ -73,26 +145,72 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_app/auditoria': typeof AppAuditoriaRoute
+  '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
+  '/_app/comissoes': typeof AppComissoesRoute
+  '/_app/compras': typeof AppComprasRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/estoque': typeof AppEstoqueRoute
+  '/_app/fornecedores': typeof AppFornecedoresRoute
+  '/_app/pagar': typeof AppPagarRoute
+  '/_app/pedidos': typeof AppPedidosRoute
   '/_app/produtos': typeof AppProdutosRoute
+  '/_app/receber': typeof AppReceberRoute
   '/_app/representantes': typeof AppRepresentantesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/clientes' | '/dashboard' | '/produtos' | '/representantes'
+    | '/'
+    | '/auth'
+    | '/auditoria'
+    | '/centros'
+    | '/clientes'
+    | '/comissoes'
+    | '/compras'
+    | '/dashboard'
+    | '/estoque'
+    | '/fornecedores'
+    | '/pagar'
+    | '/pedidos'
+    | '/produtos'
+    | '/receber'
+    | '/representantes'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/clientes' | '/dashboard' | '/produtos' | '/representantes'
+    | '/'
+    | '/auth'
+    | '/auditoria'
+    | '/centros'
+    | '/clientes'
+    | '/comissoes'
+    | '/compras'
+    | '/dashboard'
+    | '/estoque'
+    | '/fornecedores'
+    | '/pagar'
+    | '/pedidos'
+    | '/produtos'
+    | '/receber'
+    | '/representantes'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/auth'
+    | '/_app/auditoria'
+    | '/_app/centros'
     | '/_app/clientes'
+    | '/_app/comissoes'
+    | '/_app/compras'
     | '/_app/dashboard'
+    | '/_app/estoque'
+    | '/_app/fornecedores'
+    | '/_app/pagar'
+    | '/_app/pedidos'
     | '/_app/produtos'
+    | '/_app/receber'
     | '/_app/representantes'
   fileRoutesById: FileRoutesById
 }
@@ -125,11 +243,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/auditoria': {
+      id: '/_app/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AppAuditoriaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/centros': {
+      id: '/_app/centros'
+      path: '/centros'
+      fullPath: '/centros'
+      preLoaderRoute: typeof AppCentrosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/clientes': {
       id: '/_app/clientes'
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof AppClientesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/comissoes': {
+      id: '/_app/comissoes'
+      path: '/comissoes'
+      fullPath: '/comissoes'
+      preLoaderRoute: typeof AppComissoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/compras': {
+      id: '/_app/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof AppComprasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -139,11 +285,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/estoque': {
+      id: '/_app/estoque'
+      path: '/estoque'
+      fullPath: '/estoque'
+      preLoaderRoute: typeof AppEstoqueRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/fornecedores': {
+      id: '/_app/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/fornecedores'
+      preLoaderRoute: typeof AppFornecedoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pagar': {
+      id: '/_app/pagar'
+      path: '/pagar'
+      fullPath: '/pagar'
+      preLoaderRoute: typeof AppPagarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pedidos': {
+      id: '/_app/pedidos'
+      path: '/pedidos'
+      fullPath: '/pedidos'
+      preLoaderRoute: typeof AppPedidosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/produtos': {
       id: '/_app/produtos'
       path: '/produtos'
       fullPath: '/produtos'
       preLoaderRoute: typeof AppProdutosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/receber': {
+      id: '/_app/receber'
+      path: '/receber'
+      fullPath: '/receber'
+      preLoaderRoute: typeof AppReceberRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/representantes': {
@@ -157,16 +338,34 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAuditoriaRoute: typeof AppAuditoriaRoute
+  AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
+  AppComissoesRoute: typeof AppComissoesRoute
+  AppComprasRoute: typeof AppComprasRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppEstoqueRoute: typeof AppEstoqueRoute
+  AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppPagarRoute: typeof AppPagarRoute
+  AppPedidosRoute: typeof AppPedidosRoute
   AppProdutosRoute: typeof AppProdutosRoute
+  AppReceberRoute: typeof AppReceberRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAuditoriaRoute: AppAuditoriaRoute,
+  AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
+  AppComissoesRoute: AppComissoesRoute,
+  AppComprasRoute: AppComprasRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppEstoqueRoute: AppEstoqueRoute,
+  AppFornecedoresRoute: AppFornecedoresRoute,
+  AppPagarRoute: AppPagarRoute,
+  AppPedidosRoute: AppPedidosRoute,
   AppProdutosRoute: AppProdutosRoute,
+  AppReceberRoute: AppReceberRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
 }
 
