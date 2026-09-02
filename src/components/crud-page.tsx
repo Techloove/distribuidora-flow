@@ -193,7 +193,7 @@ export function CrudPage({
     return list.filter((row) =>
       searchColumns.some((col) => String(row[col] ?? "").toLowerCase().includes(term)),
     );
-  }, [query.data, search, searchColumns, centro, filterFields, filtros]);
+  }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate]);
 
   function openCreate() {
     setEditing(null);
