@@ -311,6 +311,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Pago</TableHead>
                 <TableHead>Status</TableHead>
+                {isReceber ? <TableHead>Boleto</TableHead> : null}
                 <TableHead className="no-print text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
