@@ -503,16 +503,26 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     setItem((s) => ({ ...s, produto_id: id, preco: String(base) }));
     setPromo(null);
     if (config.table !== "pedidos" || !id || !client) return;
-    const { data, error } = await client.rpc("preco_produto", {
+    const { data, error } = await client.rpc("preco_produto_info", {
       _produto_id: id,
       _cliente_id: clienteFoco || null,
     });
     if (error) return;
-    const vigente = Number(data ?? 0);
+    const info = (Array.isArray(data) ? data[0] : data) as
+      | { preco: number; tabela_nome: string | null; vigencia_fim: string | null; promocao: boolean }
+      | undefined;
+    const vigente = Number(info?.preco ?? 0);
     if (!vigente) return;
     setItem((s) => (s.produto_id === id ? { ...s, preco: String(vigente) } : s));
-    if (vigente !== base) setPromo(vigente);
+    if (info?.promocao && vigente !== base) {
+      setPromo({
+        preco: vigente,
+        nome: String(info.tabela_nome ?? "Promoção"),
+        fim: info.vigencia_fim ?? null,
+      });
+    }
   }
+
 
 
   /** Ao escolher o cliente, já traz a rota cadastrada dele. */
