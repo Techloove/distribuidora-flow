@@ -159,7 +159,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       });
     }
     return list;
-  }, [titulos.data, status, filtros, partners.data, config.partnerKey]);
+  }, [titulos.data, status, filtros, partners.data, config.partnerKey, isReceber, boletoPorConta]);
 
   const totalFiltrado = rows.reduce(
     (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
