@@ -162,9 +162,11 @@ export function CrudPage({
 
   const rows = useMemo(() => {
     let list = query.data ?? [];
+    if (decorate) list = decorate(list);
     if (centro && list.some((r) => "centro_id" in r)) {
       list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
     }
+
     for (const f of filterFields) {
       if (f.type === "date") {
         const de = filtros[`${f.name}__de`];
