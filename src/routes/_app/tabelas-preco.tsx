@@ -396,17 +396,40 @@ function TabelasPrecoPage() {
                       </TableCell>
                       <TableCell className="text-right">{String(t["prioridade"])}</TableCell>
                       <TableCell className="no-print">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={!canManage}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleAtivo.mutate(t);
-                          }}
-                        >
-                          {t["ativo"] ? "Sim" : "Não"}
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!canManage}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleAtivo.mutate(t);
+                            }}
+                          >
+                            {t["ativo"] ? "Sim" : "Não"}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Editar promoção"
+                            disabled={!canManage}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelected(String(t["id"]));
+                              setEditando(String(t["id"]));
+                              setHead({
+                                nome: String(t["nome"] ?? ""),
+                                cliente_id: String(t["cliente_id"] ?? ""),
+                                uf: String(t["uf"] ?? ""),
+                                vigencia_inicio: String(t["vigencia_inicio"] ?? ""),
+                                vigencia_fim: String(t["vigencia_fim"] ?? ""),
+                                prioridade: String(t["prioridade"] ?? 0),
+                              });
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
