@@ -35,6 +35,8 @@ export type CrudField = {
   step?: string;
   inTable?: boolean;
   span?: 1 | 2;
+  /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
+  auto?: boolean;
 };
 
 export type Row = Record<string, unknown>;
