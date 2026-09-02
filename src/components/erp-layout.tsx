@@ -110,7 +110,7 @@ function CentroFiltro() {
 
   return (
     <Select value={centro || "todos"} onValueChange={(v) => setCentro(v === "todos" ? "" : v)}>
-      <SelectTrigger className="w-[13rem] bg-background">
+      <SelectTrigger className="w-full bg-background sm:w-[13rem]">
         <SelectValue placeholder="Centro de custo" />
       </SelectTrigger>
       <SelectContent>
