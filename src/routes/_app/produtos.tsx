@@ -33,7 +33,7 @@ const fields: CrudField[] = [
   { name: "markup_percentual", label: "% Markup", type: "number", step: "0.01", inTable: true, span: 1, virtual: true },
   { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "ultimo_custo", label: "Último custo", type: "number", step: "0.01" },
-  { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.01" },
+  { name: "preco_promocional", label: "Preço promocional", type: "number", step: "0.01", inTable: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   { name: "estoque_atual", label: "Estoque atual", type: "number", step: "0.001", inTable: true },

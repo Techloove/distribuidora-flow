@@ -629,11 +629,13 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
   })();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+    <div className="space-y-6">
       <section className="space-y-3">
-        <Button onClick={() => setOpenNew(true)} disabled={!canWrite} className="w-full">
-          <Plus className="size-4" /> Novo Pedido
-        </Button>
+        <div className="flex justify-end">
+          <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
+            <Plus className="size-4" /> Novo Pedido
+          </Button>
+        </div>
 
 
 
@@ -714,7 +716,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           />
         </FilterBar>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
           {[
             { label: "Documentos", value: String(docsFiltrados.length) },
             { label: "Total", value: brl(totalFiltrado) },
@@ -757,11 +759,11 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
           {abertos} em andamento · {docsFiltrados.length} no filtro
         </p>
 
-        <div className="max-h-[calc(100vh-360px)] divide-y divide-border overflow-y-auto rounded-lg border border-border bg-card">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           {docs.isLoading ? (
             <div className="space-y-2 p-3">
               {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
+                <div key={i} className="h-10 animate-pulse rounded-md bg-muted" />
               ))}
             </div>
           ) : docs.isError ? (
@@ -774,38 +776,53 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
               </Button>
             </div>
           ) : (
-            docsFiltrados.map((d) => {
-              const ativo = selected === d["id"];
-              return (
-                <button
-                  key={String(d["id"])}
-                  onClick={() => setSelected(String(d["id"]))}
-                  className={`block w-full border-l-2 px-4 py-3 text-left text-sm transition-all ${
-                    ativo
-                      ? "border-l-primary bg-accent"
-                      : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">#{String(d["numero"])}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
-                        String(d["status"]),
-                      )}`}
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Nº</th>
+                  <th className="px-4 py-2 text-left font-medium">{config.partnerLabel}</th>
+                  <th className="px-4 py-2 text-left font-medium">{config.dateLabel}</th>
+                  <th className="px-4 py-2 text-left font-medium">Status</th>
+                  <th className="px-4 py-2 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {docsFiltrados.map((d) => {
+                  const ativo = selected === d["id"];
+                  return (
+                    <tr
+                      key={String(d["id"])}
+                      onClick={() => setSelected(String(d["id"]))}
+                      className={`cursor-pointer border-l-2 transition-colors ${
+                        ativo
+                          ? "border-l-primary bg-accent"
+                          : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
+                      }`}
                     >
-                      {String(d["status"]).replace(/_/g, " ")}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-xs font-medium">
-                    {partnerName(d[config.partnerKey])}
-                  </p>
-                  <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>{fmtDate(d[config.dateField])}</span>
-                    <span className="font-semibold text-foreground">{brl(d["total_liquido"])}</span>
-                  </div>
-                </button>
-              );
-            })
+                      <td className="px-4 py-2.5 font-semibold">#{String(d["numero"])}</td>
+                      <td className="max-w-[380px] truncate px-4 py-2.5">
+                        {partnerName(d[config.partnerKey])}
+                      </td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        {fmtDate(d[config.dateField])}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
+                            String(d["status"]),
+                          )}`}
+                        >
+                          {String(d["status"]).replace(/_/g, " ")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold">
+                        {brl(d["total_liquido"])}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
 
@@ -815,7 +832,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
       <section className="space-y-4">
         {!doc ? (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Selecione um documento à esquerda ou crie um novo.
+            Selecione um documento na lista acima ou crie um novo.
           </div>
         ) : (
           <>

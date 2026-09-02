@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -56,6 +56,7 @@ function TabelasPrecoPage() {
     prioridade: "0",
   });
   const [item, setItem] = useState({ produto_id: "", preco: "0", desconto_maximo: "0" });
+  const [editando, setEditando] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
@@ -131,20 +132,37 @@ function TabelasPrecoPage() {
 
   const criar = useMutation({
     mutationFn: async () => {
-      if (!head["nome"]!.trim()) throw new Error("Informe o nome da tabela");
-      const { error } = await client!.from("tabelas_preco").insert({
+      if (!head["nome"]!.trim()) throw new Error("Informe o nome da promoção");
+      const payload = {
         nome: head["nome"]!.trim(),
         cliente_id: head["cliente_id"]! || null,
         uf: head["uf"]!.trim().toUpperCase() || null,
         vigencia_inicio: head["vigencia_inicio"]! || new Date().toISOString().slice(0, 10),
         vigencia_fim: head["vigencia_fim"]! || null,
         prioridade: Number(head["prioridade"]! || 0),
-      });
+      };
+      if (editando) {
+        const { error } = await client!
+          .from("tabelas_preco")
+          .update(payload)
+          .eq("id", editando);
+        if (error) throw new Error(error.message);
+        return;
+      }
+      const { error } = await client!.from("tabelas_preco").insert(payload);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Tabela criada");
-      setHead((f) => ({ ...f, nome: "", cliente_id: "", uf: "" }));
+      toast.success(editando ? "Promoção atualizada" : "Promoção criada");
+      setEditando(null);
+      setHead({
+        nome: "",
+        cliente_id: "",
+        uf: "",
+        vigencia_inicio: new Date().toISOString().slice(0, 10),
+        vigencia_fim: "",
+        prioridade: "0",
+      });
       queryClient.invalidateQueries({ queryKey: ["tabelas_preco"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -227,7 +245,9 @@ function TabelasPrecoPage() {
         <section className="space-y-4">
           {canManage && (
             <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="text-sm font-semibold">Nova tabela</h2>
+              <h2 className="text-sm font-semibold">
+                {editando ? "Editar promoção" : "Nova promoção"}
+              </h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Label>Nome</Label>
@@ -285,14 +305,40 @@ function TabelasPrecoPage() {
                     onChange={(e) => setHead((f) => ({ ...f, prioridade: e.target.value }))}
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end gap-2">
                   <Button
-                    className="w-full"
+                    className="flex-1"
                     disabled={criar.isPending}
                     onClick={() => criar.mutate()}
                   >
-                    <Plus className="size-4" /> Criar tabela
+                    {editando ? (
+                      <>
+                        <Pencil className="size-4" /> Salvar alterações
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="size-4" /> Criar promoção
+                      </>
+                    )}
                   </Button>
+                  {editando && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditando(null);
+                        setHead({
+                          nome: "",
+                          cliente_id: "",
+                          uf: "",
+                          vigencia_inicio: new Date().toISOString().slice(0, 10),
+                          vigencia_fim: "",
+                          prioridade: "0",
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -350,17 +396,40 @@ function TabelasPrecoPage() {
                       </TableCell>
                       <TableCell className="text-right">{String(t["prioridade"])}</TableCell>
                       <TableCell className="no-print">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={!canManage}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleAtivo.mutate(t);
-                          }}
-                        >
-                          {t["ativo"] ? "Sim" : "Não"}
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!canManage}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleAtivo.mutate(t);
+                            }}
+                          >
+                            {t["ativo"] ? "Sim" : "Não"}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Editar promoção"
+                            disabled={!canManage}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelected(String(t["id"]));
+                              setEditando(String(t["id"]));
+                              setHead({
+                                nome: String(t["nome"] ?? ""),
+                                cliente_id: String(t["cliente_id"] ?? ""),
+                                uf: String(t["uf"] ?? ""),
+                                vigencia_inicio: String(t["vigencia_inicio"] ?? ""),
+                                vigencia_fim: String(t["vigencia_fim"] ?? ""),
+                                prioridade: String(t["prioridade"] ?? 0),
+                              });
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -459,6 +528,21 @@ function TabelasPrecoPage() {
                           {Number(i["desconto_maximo"] ?? 0)}%
                         </TableCell>
                         <TableCell className="no-print text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Editar preço"
+                            disabled={!canManage}
+                            onClick={() =>
+                              setItem({
+                                produto_id: String(i["produto_id"] ?? ""),
+                                preco: String(i["preco"] ?? 0),
+                                desconto_maximo: String(i["desconto_maximo"] ?? 0),
+                              })
+                            }
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
                           <Button
                             size="icon"
                             variant="ghost"
