@@ -122,7 +122,7 @@ export function DocumentoPage({ config }: { config: DocumentoConfig }) {
     queryFn: async () => {
       const { data, error } = await client!
         .from("formas_pagamento")
-        .select("id, nome, parcelas_padrao")
+        .select("id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias")
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
