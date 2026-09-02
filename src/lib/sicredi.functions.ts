@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 
 /**
  * Integracao com a API de Cobranca do Sicredi (portal de parceiros).
- * As credenciais ficam em variaveis de ambiente do servidor:
+ * As credenciais e os parametros do boleto (juros, multa, desconto, protesto)
+ * sao cadastrados na tela de Configuracoes (tabela public.sicredi_config).
+ * Se a tabela estiver vazia, caem nas variaveis de ambiente:
  *   SICREDI_API_KEY, SICREDI_USERNAME, SICREDI_PASSWORD,
  *   SICREDI_COOPERATIVA, SICREDI_POSTO, SICREDI_CODIGO_BENEFICIARIO,
  *   SICREDI_AMBIENTE ("homologacao" | "producao")
@@ -17,41 +19,100 @@ type Conf = {
   beneficiario: string;
   ambiente: string;
   base: string;
+  tipoCobranca: string;
+  especieDocumento: string;
+  tipoJuro: string;
+  juros: number;
+  multa: number;
+  diasMulta: number;
+  tipoDesconto: string;
+  valorDesconto1: number;
+  diasDesconto1: number;
+  tipoProtesto: string;
+  diasProtesto: number;
+  validadeAposVencimento: number;
+  informativo: string;
+  mensagem: string;
 };
 
-function conf(): Conf {
-  const ambiente = (process.env["SICREDI_AMBIENTE"] ?? "homologacao").toLowerCase();
+type DbRow = Record<string, unknown>;
+
+/** Le a linha de configuracao no Supabase externo com a service role key. */
+async function dbConfig(): Promise<DbRow | null> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(`${url}/rest/v1/sicredi_config?select=*&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as DbRow[];
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const txt = (v: unknown, fb = "") => (v === null || v === undefined ? fb : String(v));
+const nmb = (v: unknown, fb = 0) => (v === null || v === undefined ? fb : Number(v) || fb);
+
+async function conf(): Promise<Conf> {
+  const row = await dbConfig();
+  const ambiente = (
+    txt(row?.["ambiente"]) ||
+    process.env["SICREDI_AMBIENTE"] ||
+    "homologacao"
+  ).toLowerCase();
   const base =
     ambiente === "producao"
       ? "https://api-parceiro.sicredi.com.br"
       : "https://api-parceiro.sicredi.com.br/sb";
   const c: Conf = {
-    apiKey: process.env["SICREDI_API_KEY"] ?? "",
-    username: process.env["SICREDI_USERNAME"] ?? "",
-    password: process.env["SICREDI_PASSWORD"] ?? "",
-    cooperativa: process.env["SICREDI_COOPERATIVA"] ?? "",
-    posto: process.env["SICREDI_POSTO"] ?? "",
-    beneficiario: process.env["SICREDI_CODIGO_BENEFICIARIO"] ?? "",
+    apiKey: txt(row?.["api_key"]) || process.env["SICREDI_API_KEY"] || "",
+    username: txt(row?.["username"]) || process.env["SICREDI_USERNAME"] || "",
+    password: txt(row?.["password"]) || process.env["SICREDI_PASSWORD"] || "",
+    cooperativa: txt(row?.["cooperativa"]) || process.env["SICREDI_COOPERATIVA"] || "",
+    posto: txt(row?.["posto"]) || process.env["SICREDI_POSTO"] || "",
+    beneficiario:
+      txt(row?.["codigo_beneficiario"]) || process.env["SICREDI_CODIGO_BENEFICIARIO"] || "",
     ambiente,
     base,
+    tipoCobranca: txt(row?.["tipo_cobranca"], "HIBRIDO") || "HIBRIDO",
+    especieDocumento:
+      txt(row?.["especie_documento"], "DUPLICATA_MERCANTIL_INDICACAO") ||
+      "DUPLICATA_MERCANTIL_INDICACAO",
+    tipoJuro: txt(row?.["tipo_juro"], "ISENTO") || "ISENTO",
+    juros: nmb(row?.["juros"]),
+    multa: nmb(row?.["multa"]),
+    diasMulta: nmb(row?.["dias_multa"]),
+    tipoDesconto: txt(row?.["tipo_desconto"], "NAO_TEM_DESCONTO") || "NAO_TEM_DESCONTO",
+    valorDesconto1: nmb(row?.["valor_desconto1"]),
+    diasDesconto1: nmb(row?.["dias_desconto1"]),
+    tipoProtesto: txt(row?.["tipo_protesto"], "SEM_PROTESTO") || "SEM_PROTESTO",
+    diasProtesto: nmb(row?.["dias_protesto"]),
+    validadeAposVencimento: nmb(row?.["validade_apos_vencimento"]),
+    informativo: txt(row?.["informativo"]),
+    mensagem: txt(row?.["mensagem"]),
   };
   const faltando = Object.entries({
-    SICREDI_API_KEY: c.apiKey,
-    SICREDI_USERNAME: c.username,
-    SICREDI_PASSWORD: c.password,
-    SICREDI_COOPERATIVA: c.cooperativa,
-    SICREDI_POSTO: c.posto,
-    SICREDI_CODIGO_BENEFICIARIO: c.beneficiario,
+    "Chave de API": c.apiKey,
+    Usuário: c.username,
+    Senha: c.password,
+    Cooperativa: c.cooperativa,
+    Posto: c.posto,
+    "Código do beneficiário": c.beneficiario,
   })
     .filter(([, v]) => !v)
     .map(([k]) => k);
   if (faltando.length > 0) {
     throw new Error(
-      `Credenciais do Sicredi ausentes: ${faltando.join(", ")}. Cadastre os segredos e publique o app.`,
+      `Credenciais do Sicredi ausentes: ${faltando.join(", ")}. Cadastre em Configurações → Sicredi.`,
     );
   }
   return c;
 }
+
 
 async function token(c: Conf): Promise<string> {
   const body = new URLSearchParams({
