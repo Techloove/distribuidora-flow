@@ -305,14 +305,40 @@ function TabelasPrecoPage() {
                     onChange={(e) => setHead((f) => ({ ...f, prioridade: e.target.value }))}
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end gap-2">
                   <Button
-                    className="w-full"
+                    className="flex-1"
                     disabled={criar.isPending}
                     onClick={() => criar.mutate()}
                   >
-                    <Plus className="size-4" /> Criar tabela
+                    {editando ? (
+                      <>
+                        <Pencil className="size-4" /> Salvar alterações
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="size-4" /> Criar promoção
+                      </>
+                    )}
                   </Button>
+                  {editando && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditando(null);
+                        setHead({
+                          nome: "",
+                          cliente_id: "",
+                          uf: "",
+                          vigencia_inicio: new Date().toISOString().slice(0, 10),
+                          vigencia_fim: "",
+                          prioridade: "0",
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
