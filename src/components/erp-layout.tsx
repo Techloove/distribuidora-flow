@@ -263,6 +263,18 @@ export function ErpLayout({
             >
               <Menu className="size-4" />
             </button>
+            <button
+              type="button"
+              aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              className="no-print -ml-1 hidden rounded-md border border-border p-2 text-foreground transition-colors hover:bg-accent md:inline-flex"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="size-4" />
+              ) : (
+                <PanelLeftClose className="size-4" />
+              )}
+            </button>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                 {title}
