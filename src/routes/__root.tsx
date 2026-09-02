@@ -36,12 +36,31 @@ function NotFoundComponent() {
   );
 }
 
+function isChunkLoadError(error: Error) {
+  const msg = `${error?.message ?? ""} ${error?.name ?? ""}`;
+  return /dynamically imported module|Importing a module script failed|Failed to fetch|ChunkLoadError|Loading chunk|error loading dynamically imported/i.test(
+    msg,
+  );
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    // Falha ao baixar o código da página (comum em conexões móveis instáveis):
+    // recarrega automaticamente uma única vez em vez de mostrar erro.
+    if (typeof window !== "undefined" && isChunkLoadError(error)) {
+      const key = "chunk-reload-at";
+      const last = Number(sessionStorage.getItem(key) ?? 0);
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+        return;
+      }
+    }
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
