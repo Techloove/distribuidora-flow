@@ -1,22 +1,53 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Boxes,
+  Building2,
+  ClipboardList,
+  Coins,
   LayoutDashboard,
   LogOut,
   Package,
+  ScrollText,
+  ShoppingCart,
+  Truck,
   UserRound,
   Users,
   Warehouse,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/produtos", label: "Produtos", icon: Package },
-  { to: "/representantes", label: "Representantes", icon: UserRound },
+  { group: "Visão geral", items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  {
+    group: "Cadastros",
+    items: [
+      { to: "/clientes", label: "Clientes", icon: Users },
+      { to: "/produtos", label: "Produtos", icon: Package },
+      { to: "/fornecedores", label: "Fornecedores", icon: Truck },
+      { to: "/representantes", label: "Representantes", icon: UserRound },
+      { to: "/centros", label: "Centros", icon: Building2 },
+    ],
+  },
+  {
+    group: "Operação",
+    items: [
+      { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
+      { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
+      { to: "/estoque", label: "Estoque", icon: Boxes },
+    ],
+  },
+  {
+    group: "Financeiro",
+    items: [
+      { to: "/receber", label: "Contas a receber", icon: Wallet },
+      { to: "/pagar", label: "Contas a pagar", icon: Coins },
+      { to: "/comissoes", label: "Comissões", icon: UserRound },
+    ],
+  },
+  { group: "Administração", items: [{ to: "/auditoria", label: "Auditoria", icon: ScrollText }] },
 ] as const;
 
 export function ErpLayout({
@@ -46,27 +77,36 @@ export function ErpLayout({
           <Warehouse className="size-6 text-sidebar-primary" />
           <div>
             <p className="text-sm font-semibold tracking-tight">ERP Distribuidora</p>
-            <p className="text-[11px] text-sidebar-foreground/60">Fase 1 — Cadastros</p>
+            <p className="text-[11px] text-sidebar-foreground/60">Vendas · Estoque · Financeiro</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {nav.map((item) => {
-            const active = pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <item.icon className="size-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+          {nav.map((section) => (
+            <div key={section.group}>
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                {section.group}
+              </p>
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const active = pathname.startsWith(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                        active
+                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      <item.icon className="size-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="border-t border-sidebar-border px-4 py-4 text-xs">
           <p className="truncate font-medium">{user?.email}</p>
