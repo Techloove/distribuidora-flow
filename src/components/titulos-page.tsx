@@ -324,6 +324,26 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                   <TableCell className="text-right">{brl(r["valor"])}</TableCell>
                   <TableCell className="text-right">{brl(r["valor_pago"])}</TableCell>
                   <TableCell>{String(r["status"])}</TableCell>
+                  {isReceber ? (
+                    <TableCell>
+                      <span
+                        className={
+                          boletoLabel(r) === "Sem boleto"
+                            ? "text-muted-foreground"
+                            : boletoLabel(r) === "erro"
+                              ? "text-destructive"
+                              : undefined
+                        }
+                      >
+                        {boletoLabel(r)}
+                      </span>
+                      {boletoPorConta.get(String(r["id"]))?.["nosso_numero"] ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {String(boletoPorConta.get(String(r["id"]))!["nosso_numero"])}
+                        </span>
+                      ) : null}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="no-print text-right">
                     <Button
                       size="sm"
