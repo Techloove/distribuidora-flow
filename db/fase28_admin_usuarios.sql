@@ -54,7 +54,8 @@ begin
     jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
     jsonb_build_object('nome', coalesce(_nome, '')),
     now(),
-    now()
+    now(),
+    '', '', '', '', '', '', '', ''
   );
 
   insert into auth.identities (
