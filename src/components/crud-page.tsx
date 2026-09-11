@@ -137,6 +137,10 @@ export function CrudPage({
   extraForm?: (ctx: {
     form: Record<string, string | boolean>;
     editing: Row | null;
+    /** Preenche campos do formulário sem gravar (ex.: consulta cadastral). */
+    patch: (values: Record<string, string>) => void;
+    /** Abre o formulário de um registro já existente. */
+    openRow: (row: Row) => void;
   }) => React.ReactNode;
 }) {
   const { client, canManage } = useSupabase();
