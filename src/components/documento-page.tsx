@@ -230,9 +230,18 @@ export function DocumentoPage({
     return d.toISOString().slice(0, 10);
   };
 
+  /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
+  const soMeusPedidos =
+    config.table === "pedidos" &&
+    !!meuRepresentante &&
+    !roles.includes("admin") &&
+    !roles.includes("gestor");
+
   const docsFiltrados = useMemo(() => {
     let list = docs.data ?? [];
     const f = filtros;
+    if (soMeusPedidos)
+      list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
     if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
     if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
     if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
