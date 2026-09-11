@@ -1,9 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ConsultaCadastral } from "@/components/consulta-cadastral";
 import { ConsultaIe } from "@/components/consulta-ie";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/clientes")({
   head: () => ({
@@ -76,6 +78,35 @@ const fields: CrudField[] = [
 ];
 
 function ClientesPage() {
+  const { client } = useSupabase();
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "clientes"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((f) => f["ativo"] !== false);
+    },
+  });
+
+  const camposComFormas: CrudField[] = fields.map((f) =>
+    f.name === "condicao_pagamento"
+      ? {
+          ...f,
+          label: "Condição de pagamento (formas cadastradas)",
+          type: "select",
+          options: (formas.data ?? []).map((forma) => ({
+            value: String(forma["nome"]),
+            label: String(forma["nome"]),
+          })),
+        }
+      : f,
+  );
+
   return (
     <ErpLayout
       title="Clientes"
@@ -83,7 +114,7 @@ function ClientesPage() {
     >
       <CrudPage
         table="clientes"
-        fields={fields}
+        fields={camposComFormas}
         orderBy="razao_social"
         emptyLabel="Nenhum cliente cadastrado ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade"]}
