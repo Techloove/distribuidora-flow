@@ -190,7 +190,7 @@ function mapCpf(j: Record<string, unknown>): DadosCadastrais {
     cnpj_cpf: g("cpf", "documento", "document"),
     razao_social: g("nome", "name", "nome_completo"),
     situacao_cadastral: g("situacao", "situacao_cadastral", "status"),
-    data_nascimento: g("data_nascimento", "nascimento", "birthdate"),
+    data_nascimento: dataIso(g("data_nascimento", "nascimento", "birthdate")),
     cep: g("cep", "zip"),
     logradouro: g("logradouro", "endereco", "street"),
     numero: g("numero", "number"),
