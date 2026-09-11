@@ -1329,7 +1329,8 @@ export function DocumentoPage({
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
+                          {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                          podeAlterarPreco ? (
                             <Input
                               type="number"
                               step="0.01"
