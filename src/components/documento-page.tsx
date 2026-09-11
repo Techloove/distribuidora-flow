@@ -1299,7 +1299,7 @@ export function DocumentoPage({
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Define as parcelas e os vencimentos gerados no financeiro ao efetivar.
+                Define as parcelas, os vencimentos e o acréscimo ou desconto aplicado no total.
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="space-y-1.5 sm:col-span-2">
@@ -1313,7 +1313,7 @@ export function DocumentoPage({
                     <option value="">—</option>
                     {formas.data?.map((f) => (
                       <option key={String(f["id"])} value={String(f["id"])}>
-                        {String(f["nome"])}
+                        {formaLabel(f)}
                       </option>
                     ))}
                   </select>
