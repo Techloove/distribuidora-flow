@@ -137,6 +137,10 @@ export function CrudPage({
   extraForm?: (ctx: {
     form: Record<string, string | boolean>;
     editing: Row | null;
+    /** Preenche campos do formulário sem gravar (ex.: consulta cadastral). */
+    patch: (values: Record<string, string>) => void;
+    /** Abre o formulário de um registro já existente. */
+    openRow: (row: Row) => void;
   }) => React.ReactNode;
 }) {
   const { client, canManage } = useSupabase();
@@ -610,7 +614,16 @@ export function CrudPage({
               </div>
             ))}
           </div>
-          {extraForm ? <div className="mt-4">{extraForm({ form, editing })}</div> : null}
+          {extraForm ? (
+            <div className="mt-4">
+              {extraForm({
+                form,
+                editing,
+                patch: (values) => setForm((f) => ({ ...f, ...values })),
+                openRow: (row) => openEdit(row),
+              })}
+            </div>
+          ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
