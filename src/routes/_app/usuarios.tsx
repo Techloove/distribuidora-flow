@@ -244,6 +244,7 @@ function UsuariosPage() {
                   <TableRow>
                     <TableHead>Usuário</TableHead>
                     <TableHead>E-mail</TableHead>
+                    <TableHead>Representante / vendedor</TableHead>
                     <TableHead>Papéis</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -260,6 +261,31 @@ function UsuariosPage() {
                           ) : null}
                         </TableCell>
                         <TableCell>{String(p["email"] ?? "—")}</TableCell>
+                        <TableCell>
+                          <select
+                            value={String(
+                              representantes.data?.find((r) => r["profile_id"] === p["id"])?.[
+                                "id"
+                              ] ?? "",
+                            )}
+                            disabled={!isAdmin || vincular.isPending}
+                            onChange={(e) =>
+                              vincular.mutate({ userId: String(p["id"]), repId: e.target.value })
+                            }
+                            className="h-9 w-full min-w-44 rounded-md border border-input bg-background px-2 text-sm"
+                          >
+                            <option value="">Sem vínculo</option>
+                            {(representantes.data ?? [])
+                              .filter(
+                                (r) => !r["profile_id"] || r["profile_id"] === p["id"],
+                              )
+                              .map((r) => (
+                                <option key={String(r["id"])} value={String(r["id"])}>
+                                  {String(r["nome"])}
+                                </option>
+                              ))}
+                          </select>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1.5">
                             {papeis.map((papel) => {
