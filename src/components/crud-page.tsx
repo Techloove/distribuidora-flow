@@ -54,6 +54,8 @@ export type CrudField = {
   virtual?: boolean;
   /** Campo gerado pelo banco (ex.: código sequencial): somente leitura e não enviado. */
   auto?: boolean;
+  /** Gravado normalmente, mas não exibido na grade do formulário (ex.: preenchido por um bloco próprio). */
+  hiddenInForm?: boolean;
 };
 
 /** Opções de um campo de referência (FK). */
@@ -115,6 +117,7 @@ export function CrudPage({
   inlineEdit,
   onInlineSave,
   extraForm,
+  extraFormTop,
 }: {
   table: string;
   fields: CrudField[];
@@ -142,6 +145,8 @@ export function CrudPage({
     /** Abre o formulário de um registro já existente. */
     openRow: (row: Row) => void;
   }) => React.ReactNode;
+  /** Exibe o bloco extra antes dos campos (ex.: escolher tipo de pessoa e pesquisar o documento). */
+  extraFormTop?: boolean;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
@@ -513,8 +518,20 @@ export function CrudPage({
             <DialogTitle>{editing ? "Editar registro" : "Novo registro"}</DialogTitle>
             <DialogDescription>Preencha os campos e salve para gravar no banco.</DialogDescription>
           </DialogHeader>
+          {extraForm && extraFormTop ? (
+            <div className="mb-4">
+              {extraForm({
+                form,
+                editing,
+                patch: (values) => setForm((f) => ({ ...f, ...values })),
+                openRow: (row) => openEdit(row),
+              })}
+            </div>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-4">
-            {fields.map((field) => (
+            {fields
+              .filter((f) => !f.hiddenInForm)
+              .map((field) => (
               <div
                 key={field.name}
                 className={`space-y-1.5 ${
@@ -614,7 +631,7 @@ export function CrudPage({
               </div>
             ))}
           </div>
-          {extraForm ? (
+          {extraForm && !extraFormTop ? (
             <div className="mt-4">
               {extraForm({
                 form,
