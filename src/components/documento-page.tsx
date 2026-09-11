@@ -682,6 +682,12 @@ export function DocumentoPage({
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
+  const produtoPeso = (id: unknown) =>
+    Number(produtos.data?.find((p) => p["id"] === id)?.["peso_kg"] ?? 0);
+  const pesoItem = (it: Row) => produtoPeso(it["produto_id"]) * Number(it["quantidade"] ?? 0);
+  const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
+  const kg = (v: number) =>
+    `${v.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
 
   const statusTone = (s: string) => {
     const v = s.toLowerCase();
