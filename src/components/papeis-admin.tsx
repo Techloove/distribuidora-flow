@@ -71,6 +71,21 @@ export function PapeisAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const definirPreco = useMutation({
+    mutationFn: async ({ codigo, pode }: { codigo: string; pode: boolean }) => {
+      const { error } = await client!.rpc("papel_definir_preco", {
+        _codigo: codigo,
+        _pode: pode,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Permissão de preço atualizada");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div>
@@ -118,6 +133,18 @@ export function PapeisAdmin() {
                   {p.codigo}
                   {p.sistema ? " · perfil do sistema" : ""}
                 </p>
+                <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-primary"
+                    checked={p.pode_alterar_preco !== false}
+                    disabled={!isAdmin || definirPreco.isPending}
+                    onChange={(e) =>
+                      definirPreco.mutate({ codigo: p.codigo, pode: e.target.checked })
+                    }
+                  />
+                  Pode alterar o preço unitário dos itens
+                </label>
               </div>
               {isAdmin ? (
                 <div className="flex gap-2">
