@@ -1194,6 +1194,45 @@ export function DocumentoPage({
               )}
             </div>
 
+            {config.table === "pedidos" && descontoPeso.data ? (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold">Desconto por peso (kg)</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Somamos o peso dos itens e comparamos com as faixas cadastradas em Descontos por
+                  peso (kg).
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-4">
+                  <Resumo
+                    label="Peso total"
+                    value={`${Number(descontoPeso.data.peso_total ?? 0).toLocaleString("pt-BR", {
+                      maximumFractionDigits: 3,
+                    })} kg`}
+                  />
+                  <Resumo label="Faixa" value={descontoPeso.data.faixa_nome ?? "Nenhuma faixa"} />
+                  <Resumo
+                    label="Desconto"
+                    value={`${Number(descontoPeso.data.percentual ?? 0).toLocaleString("pt-BR")}%`}
+                  />
+                  <Resumo label="Valor" value={brl(descontoPeso.data.desconto_valor)} />
+                </div>
+                <Button
+                  className="mt-3"
+                  variant="secondary"
+                  onClick={() => aplicarDescontoPeso.mutate()}
+                  disabled={
+                    !["rascunho", "digitacao"].includes(String(doc["status"])) ||
+                    aplicarDescontoPeso.isPending ||
+                    !canWrite
+                  }
+                >
+                  {aplicarDescontoPeso.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
+                  Aplicar desconto no pedido
+                </Button>
+              </div>
+            ) : null}
+
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
