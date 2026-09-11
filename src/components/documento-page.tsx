@@ -496,6 +496,41 @@ export function DocumentoPage({
     },
   });
 
+  /** Desconto escalonado por peso (kg) dos itens do pedido. */
+  const descontoPeso = useQuery({
+    queryKey: ["desconto_peso_pedido", selected],
+    enabled: !!client && !!selected && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("desconto_peso_pedido", { _pedido_id: selected });
+      if (error) throw new Error(error.message);
+      const info = (Array.isArray(data) ? data[0] : data) as
+        | {
+            peso_total: number;
+            faixa_nome: string | null;
+            percentual: number;
+            desconto_valor: number;
+          }
+        | undefined;
+      return info ?? null;
+    },
+  });
+
+  const aplicarDescontoPeso = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!.rpc("aplicar_desconto_peso", { _pedido_id: selected });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Desconto por peso aplicado ao pedido");
+      setPagamento((s) => {
+        const { desconto: _ignored, ...rest } = s;
+        return rest;
+      });
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   /**
    * Preço do item: em pedidos vale o preço vigente da promoção (tabela de preço
    * dentro do período de vigência para o cliente/UF). Sem promoção vigente,
