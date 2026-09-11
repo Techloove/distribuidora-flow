@@ -24,6 +24,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Percent,
   Settings,
   Tags,
   Target,
