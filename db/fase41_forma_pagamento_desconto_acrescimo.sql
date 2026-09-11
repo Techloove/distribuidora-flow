@@ -71,3 +71,21 @@ begin
     perform public.recalcular_pedido(r.id);
   end loop;
 end $$;
+
+-- recalcula o pedido quando muda forma de pagamento, desconto ou frete
+create or replace function public.trg_recalcular_pedido_cabecalho()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.recalcular_pedido(new.id);
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_recalc_cabecalho_pedidos on public.pedidos;
+create trigger trg_recalc_cabecalho_pedidos
+after update of forma_pagamento_id, desconto_valor, frete_valor on public.pedidos
+for each row execute function public.trg_recalcular_pedido_cabecalho();
