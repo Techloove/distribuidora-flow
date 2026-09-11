@@ -29,6 +29,7 @@ const config: TitulosConfig = {
   partnerKey: "fornecedor_id",
   partnerLabel: "Fornecedor",
   rpc: "baixar_pagar",
+  rpcCriar: "criar_despesa",
   baixaLabel: "Pagar",
 };
 

@@ -29,6 +29,7 @@ const config: TitulosConfig = {
   partnerKey: "cliente_id",
   partnerLabel: "Cliente",
   rpc: "baixar_receber",
+  rpcCriar: "criar_receita",
   baixaLabel: "Receber",
 };
 
