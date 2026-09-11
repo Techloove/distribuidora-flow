@@ -27,7 +27,8 @@ alter table public.notas_saida
   add column if not exists retorno jsonb,
   add column if not exists mensagem_retorno text,
   add column if not exists autorizada_em timestamptz,
-  add column if not exists rejeitada_em timestamptz;
+  add column if not exists rejeitada_em timestamptz,
+  add column if not exists centro_id uuid references public.centros(id) on delete set null;
 
 -- parâmetro: exigir NF autorizada antes do boleto
 insert into public.parametros (chave, valor)
@@ -626,96 +627,6 @@ begin
   return ped;
 end $$;
 grant execute on function public.avancar_pedido(uuid, text) to authenticated;
-
--- pedido só é confirmado (reserva estoque / gera títulos) se aprovado
-create or replace function public.confirmar_pedido(_pedido_id uuid)
-returns public.pedidos language plpgsql security definer set search_path to 'public' as $$
-declare
-  ped public.pedidos;
-  fp public.formas_pagamento;
-  item record;
-  n int;
-  valor_parcela numeric(14,2);
-  saldo numeric(14,2);
-  dias_1 int := 30;
-  intervalo int := 30;
-  bloqueios jsonb;
-begin
-  if not public.can_operate(auth.uid()) then
-    raise exception 'Sem permissão para confirmar pedidos';
-  end if;
-
-  select * into ped from public.pedidos where id = _pedido_id for update;
-  if ped is null then raise exception 'Pedido não encontrado'; end if;
-  if ped.status not in ('rascunho','digitacao','aprovado') then
-    raise exception 'Pedido já foi confirmado ou cancelado';
-  end if;
-  if ped.status in ('rascunho','digitacao') and not public.can_manage(auth.uid()) then
-    raise exception 'Envie o pedido para aprovação. Somente admin/gestor confirma pedidos ainda não aprovados';
-  end if;
-  if not exists (select 1 from public.pedido_itens where pedido_id = _pedido_id) then
-    raise exception 'Inclua ao menos um item no pedido';
-  end if;
-  if ped.forma_pagamento_id is null then
-    raise exception 'Selecione a forma de pagamento do pedido';
-  end if;
-  if ped.centro_id is null then raise exception 'Informe o centro de custo do pedido'; end if;
-  if ped.rota_id is null then raise exception 'Informe a rota de entrega do pedido'; end if;
-
-  select jsonb_agg(a) into bloqueios
-    from jsonb_array_elements(public.validar_pedido(_pedido_id)) a
-   where a->>'nivel' = 'bloqueio';
-  if bloqueios is not null and ped.status <> 'aprovado' then
-    raise exception 'Pedido bloqueado para aprovação: %',
-      (select string_agg(b->>'mensagem', ' | ') from jsonb_array_elements(bloqueios) b);
-  end if;
-
-  select * into fp from public.formas_pagamento where id = ped.forma_pagamento_id;
-  if fp.id is not null then
-    dias_1 := fp.dias_primeira_parcela;
-    intervalo := fp.intervalo_dias;
-  end if;
-
-  perform public.recalcular_pedido(_pedido_id);
-  select * into ped from public.pedidos where id = _pedido_id;
-
-  for item in select produto_id, sum(quantidade) as qtd
-                from public.pedido_itens where pedido_id = _pedido_id group by produto_id loop
-    insert into public.estoque_movimentos
-      (produto_id, centro_id, tipo, quantidade, origem, documento_id, observacao, created_by)
-    values (item.produto_id, ped.centro_id, 'saida', item.qtd, 'pedido', _pedido_id,
-            'Baixa por confirmação de pedido', auth.uid());
-  end loop;
-
-  if not exists (select 1 from public.contas_receber where pedido_id = _pedido_id) then
-    valor_parcela := round(ped.total_liquido / greatest(ped.parcelas, 1), 2);
-    saldo := ped.total_liquido;
-    for n in 1..greatest(ped.parcelas, 1) loop
-      if n = ped.parcelas then valor_parcela := saldo; end if;
-      insert into public.contas_receber
-        (cliente_id, pedido_id, documento, parcela, valor, vencimento)
-      values (ped.cliente_id, ped.id, 'PED-' || ped.numero, n, valor_parcela,
-              ped.data_pedido + (dias_1 + (n - 1) * intervalo));
-      saldo := saldo - valor_parcela;
-    end loop;
-  end if;
-
-  if ped.representante_id is not null and ped.comissao_valor > 0
-     and not exists (select 1 from public.comissoes where pedido_id = _pedido_id) then
-    insert into public.comissoes
-      (representante_id, pedido_id, base_calculo, percentual, valor)
-    values (ped.representante_id, ped.id, ped.total_itens, ped.comissao_percentual, ped.comissao_valor);
-  end if;
-
-  update public.pedidos set status = 'confirmado' where id = _pedido_id returning * into ped;
-
-  insert into public.auditoria (tabela, registro_id, acao, detalhe, user_id)
-  values ('pedidos', _pedido_id, 'confirmar',
-          jsonb_build_object('total', ped.total_liquido, 'parcelas', ped.parcelas), auth.uid());
-
-  return ped;
-end $$;
-grant execute on function public.confirmar_pedido(uuid) to authenticated;
 
 -- itens não podem mudar depois da conferência
 create or replace function public.trg_itens_pos_conferencia()
