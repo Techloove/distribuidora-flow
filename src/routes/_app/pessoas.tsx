@@ -100,6 +100,35 @@ const fields: CrudField[] = [
 ];
 
 function PessoasPage() {
+  const { client } = useSupabase();
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "pessoas"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((f) => f["ativo"] !== false);
+    },
+  });
+
+  const camposComFormas: CrudField[] = fields.map((f) =>
+    f.name === "condicao_pagamento"
+      ? {
+          ...f,
+          label: "Condição de pagamento (formas cadastradas)",
+          type: "select",
+          options: (formas.data ?? []).map((forma) => ({
+            value: String(forma["nome"]),
+            label: String(forma["nome"]),
+          })),
+        }
+      : f,
+  );
+
   return (
     <ErpLayout
       title="Cadastro unificado"
@@ -107,12 +136,21 @@ function PessoasPage() {
     >
       <CrudPage
         table="pessoas"
-        fields={fields}
+        fields={camposComFormas}
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
-        extraForm={({ form, editing }) => (
+        extraFormTop
+        extraForm={({ form, editing, patch, openRow }) => (
           <div className="space-y-4">
+            <ConsultaCadastral
+              form={form}
+              editing={editing}
+              patch={patch}
+              openRow={openRow}
+              escopo="pessoas"
+            />
+            <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
             {form["is_cliente"] ? (
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
