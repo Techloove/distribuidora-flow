@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
+import { Route as AppCargasRouteImport } from './routes/_app/cargas'
 import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
@@ -37,6 +38,7 @@ import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
 import { Route as AppLeadRotaRouteImport } from './routes/_app/lead-rota'
 import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
+import { Route as AppNotasRouteImport } from './routes/_app/notas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -77,6 +79,11 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
 const AppBoletosRoute = AppBoletosRouteImport.update({
   id: '/boletos',
   path: '/boletos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCargasRoute = AppCargasRouteImport.update({
+  id: '/cargas',
+  path: '/cargas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCategoriasFinanceirasRoute =
@@ -195,6 +202,11 @@ const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
   path: '/movimentacoes',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppNotasRoute = AppNotasRouteImport.update({
+  id: '/notas',
+  path: '/notas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -287,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
@@ -310,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
+  '/notas': typeof AppNotasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -333,6 +347,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
@@ -356,6 +371,7 @@ export interface FileRoutesByTo {
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
+  '/notas': typeof AppNotasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -381,6 +397,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
+  '/_app/cargas': typeof AppCargasRoute
   '/_app/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
@@ -404,6 +421,7 @@ export interface FileRoutesById {
   '/_app/lead-rota': typeof AppLeadRotaRoute
   '/_app/metas': typeof AppMetasRoute
   '/_app/movimentacoes': typeof AppMovimentacoesRoute
+  '/_app/notas': typeof AppNotasRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -429,6 +447,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
@@ -452,6 +471,7 @@ export interface FileRouteTypes {
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
+    | '/notas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -475,6 +495,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
@@ -498,6 +519,7 @@ export interface FileRouteTypes {
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
+    | '/notas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -522,6 +544,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/auditoria'
     | '/_app/boletos'
+    | '/_app/cargas'
     | '/_app/categorias-financeiras'
     | '/_app/centros'
     | '/_app/clientes'
@@ -545,6 +568,7 @@ export interface FileRouteTypes {
     | '/_app/lead-rota'
     | '/_app/metas'
     | '/_app/movimentacoes'
+    | '/_app/notas'
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -605,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/boletos'
       fullPath: '/boletos'
       preLoaderRoute: typeof AppBoletosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/cargas': {
+      id: '/_app/cargas'
+      path: '/cargas'
+      fullPath: '/cargas'
+      preLoaderRoute: typeof AppCargasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/categorias-financeiras': {
@@ -768,6 +799,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMovimentacoesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/notas': {
+      id: '/_app/notas'
+      path: '/notas'
+      fullPath: '/notas'
+      preLoaderRoute: typeof AppNotasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/notificacoes': {
       id: '/_app/notificacoes'
       path: '/notificacoes'
@@ -893,6 +931,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
+  AppCargasRoute: typeof AppCargasRoute
   AppCategoriasFinanceirasRoute: typeof AppCategoriasFinanceirasRoute
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
@@ -916,6 +955,7 @@ interface AppRouteRouteChildren {
   AppLeadRotaRoute: typeof AppLeadRotaRoute
   AppMetasRoute: typeof AppMetasRoute
   AppMovimentacoesRoute: typeof AppMovimentacoesRoute
+  AppNotasRoute: typeof AppNotasRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -938,6 +978,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
+  AppCargasRoute: AppCargasRoute,
   AppCategoriasFinanceirasRoute: AppCategoriasFinanceirasRoute,
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
@@ -961,6 +1002,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppLeadRotaRoute: AppLeadRotaRoute,
   AppMetasRoute: AppMetasRoute,
   AppMovimentacoesRoute: AppMovimentacoesRoute,
+  AppNotasRoute: AppNotasRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
