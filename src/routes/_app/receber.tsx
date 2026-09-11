@@ -23,6 +23,8 @@ export const Route = createFileRoute("/_app/receber")({
 
 const config: TitulosConfig = {
   table: "contas_receber",
+  view: "vw_titulos_receber",
+  rpcBaixa: "receber_titulo",
   partnerTable: "clientes",
   partnerKey: "cliente_id",
   partnerLabel: "Cliente",
