@@ -37,6 +37,7 @@ import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
 import { Route as AppLeadRotaRouteImport } from './routes/_app/lead-rota'
 import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
+import { Route as AppNotasRouteImport } from './routes/_app/notas'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -195,6 +196,11 @@ const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
   path: '/movimentacoes',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppNotasRoute = AppNotasRouteImport.update({
+  id: '/notas',
+  path: '/notas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
+  '/notas': typeof AppNotasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
+  '/notas': typeof AppNotasRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/_app/lead-rota': typeof AppLeadRotaRoute
   '/_app/metas': typeof AppMetasRoute
   '/_app/movimentacoes': typeof AppMovimentacoesRoute
+  '/_app/notas': typeof AppNotasRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -452,6 +461,7 @@ export interface FileRouteTypes {
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
+    | '/notas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
+    | '/notas'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/_app/lead-rota'
     | '/_app/metas'
     | '/_app/movimentacoes'
+    | '/_app/notas'
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -768,6 +780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMovimentacoesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/notas': {
+      id: '/_app/notas'
+      path: '/notas'
+      fullPath: '/notas'
+      preLoaderRoute: typeof AppNotasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/notificacoes': {
       id: '/_app/notificacoes'
       path: '/notificacoes'
@@ -916,6 +935,7 @@ interface AppRouteRouteChildren {
   AppLeadRotaRoute: typeof AppLeadRotaRoute
   AppMetasRoute: typeof AppMetasRoute
   AppMovimentacoesRoute: typeof AppMovimentacoesRoute
+  AppNotasRoute: typeof AppNotasRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -961,6 +981,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppLeadRotaRoute: AppLeadRotaRoute,
   AppMetasRoute: AppMetasRoute,
   AppMovimentacoesRoute: AppMovimentacoesRoute,
+  AppNotasRoute: AppNotasRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
