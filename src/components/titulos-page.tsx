@@ -39,6 +39,24 @@ export type TitulosConfig = {
   partnerLabel: string;
   rpc: "baixar_receber" | "baixar_pagar";
   baixaLabel: string;
+  /** RPC de lançamento manual do título (com parcelamento). */
+  rpcCriar: "criar_receita" | "criar_despesa";
+};
+
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+const novoTituloVazio = {
+  parceiro: "",
+  documento: "",
+  descricao: "",
+  valor: "",
+  parcelas: "1",
+  vencimento: hoje(),
+  intervalo: "30",
+  categoria: "",
+  centro: "",
+  conta: "",
+  forma: "",
 };
 
 const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
@@ -58,6 +76,10 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [multa, setMulta] = useState("");
   const [descontoBaixa, setDescontoBaixa] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [openNovo, setOpenNovo] = useState(false);
+  const [novo, setNovo] = useState({ ...novoTituloVazio });
+  const setN = (k: keyof typeof novoTituloVazio, v: string) =>
+    setNovo((s) => ({ ...s, [k]: v }));
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
@@ -124,6 +146,22 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       const { data: rows, error } = await client!.from("centros").select("id, nome").order("nome");
       if (error) return [] as Row[];
       return (rows ?? []) as Row[];
+    },
+  });
+
+  const categorias = useQuery({
+    queryKey: ["categorias_financeiras", "titulos", isReceber],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("categorias_financeiras")
+        .select("id, nome, tipo, parent_id, ativo")
+        .eq("ativo", true)
+        .order("ordem");
+      if (error) return [] as Row[];
+      return (rows ?? []).filter(
+        (c) => String((c as Row)["tipo"]) === (isReceber ? "receita" : "despesa"),
+      ) as Row[];
     },
   });
 
@@ -281,6 +319,36 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     onSuccess: () => {
       toast.success(`${selecionados.length} título(s) baixado(s)`);
       setSelecionados([]);
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const criar = useMutation({
+    mutationFn: async () => {
+      if (!novo.parceiro) throw new Error(`Selecione o ${config.partnerLabel.toLowerCase()}`);
+      if (Number(novo.valor || 0) <= 0) throw new Error("Informe o valor do título");
+      const args: Record<string, unknown> = {
+        _categoria_id: novo.categoria || null,
+        _centro_id: novo.centro || null,
+        _descricao: novo.descricao || null,
+        _documento: novo.documento || null,
+        _valor: Number(novo.valor),
+        _parcelas: Math.max(1, Number(novo.parcelas || 1)),
+        _primeiro_vencimento: novo.vencimento || hoje(),
+        _intervalo_dias: Number(novo.intervalo || 30),
+        _forma_id: novo.forma || null,
+        _conta_id: novo.conta || null,
+      };
+      if (isReceber) args["_cliente_id"] = novo.parceiro;
+      else args["_fornecedor_id"] = novo.parceiro;
+      const { error } = await client!.rpc(config.rpcCriar, args);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Título lançado");
+      setOpenNovo(false);
+      setNovo({ ...novoTituloVazio });
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),

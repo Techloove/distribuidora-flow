@@ -24,6 +24,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Percent,
   Settings,
   Tags,
   Target,
@@ -63,6 +64,7 @@ const nav = [
       { to: "/centros", label: "Centros", icon: Building2 },
       { to: "/rotas", label: "Rotas de entrega", icon: Route },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
+      { to: "/descontos-peso", label: "Descontos por peso (kg)", icon: Percent },
     ],
   },
   {
