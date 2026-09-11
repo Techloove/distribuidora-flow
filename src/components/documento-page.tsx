@@ -289,8 +289,19 @@ export function DocumentoPage({
       } else {
         payload["rota_id"] = header["rota"] || null;
         payload["previsao_entrega"] = header["previsao"] || null;
+        payload["forma_pagamento_id"] = header["forma"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
+      if (config.table === "pedidos") {
+        if (!payload["centro_id"])
+          throw new Error("Informe o centro de custo (cadastre no cliente para vir automático)");
+        if (!payload["rota_id"])
+          throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
+        if (!payload["forma_pagamento_id"])
+          throw new Error(
+            "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
+          );
+      }
       const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
       if (error) throw new Error(error.message);
       return data as Row;
