@@ -54,7 +54,7 @@ const nav = [
   {
     group: "Cadastros",
     items: [
-      { to: "/pessoas", label: "Cadastro unificado", icon: Users },
+      { to: "/pessoas", label: "Cadastro Unificado", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/tabelas-preco", label: "Promoção", icon: Tags },
       { to: "/centros", label: "Centros", icon: Building2 },
