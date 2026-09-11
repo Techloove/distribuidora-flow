@@ -52,6 +52,12 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [contaId, setContaId] = useState("");
+  const [formaId, setFormaId] = useState("");
+  const [juros, setJuros] = useState("");
+  const [multa, setMulta] = useState("");
+  const [descontoBaixa, setDescontoBaixa] = useState("");
+  const [selecionados, setSelecionados] = useState<string[]>([]);
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
@@ -83,6 +89,43 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   });
 
   const isReceber = config.table === "contas_receber";
+
+  const contas = useQuery({
+    queryKey: ["contas_financeiras", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("contas_financeiras")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome")
+        .order("nome");
+      if (error) return [] as Row[];
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const centros = useQuery({
+    queryKey: ["centros", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!.from("centros").select("id, nome").order("nome");
+      if (error) return [] as Row[];
+      return (rows ?? []) as Row[];
+    },
+  });
 
   const boletos = useQuery({
     queryKey: ["boletos", "por-conta"],
@@ -212,6 +255,26 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       toast.success("Baixa registrada");
       setTarget(null);
       setValor("");
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const baixarLote = useMutation({
+    mutationFn: async () => {
+      if (selecionados.length === 0) throw new Error("Selecione os títulos");
+      const { error } = await client!.rpc("baixar_titulos_lote", {
+        _tabela: config.table,
+        _ids: selecionados,
+        _data: data,
+        _conta_id: contaId || null,
+        _forma_id: formaId || null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success(`${selecionados.length} título(s) baixado(s)`);
+      setSelecionados([]);
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
