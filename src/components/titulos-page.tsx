@@ -324,6 +324,36 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const criar = useMutation({
+    mutationFn: async () => {
+      if (!novo.parceiro) throw new Error(`Selecione o ${config.partnerLabel.toLowerCase()}`);
+      if (Number(novo.valor || 0) <= 0) throw new Error("Informe o valor do título");
+      const args: Record<string, unknown> = {
+        _categoria_id: novo.categoria || null,
+        _centro_id: novo.centro || null,
+        _descricao: novo.descricao || null,
+        _documento: novo.documento || null,
+        _valor: Number(novo.valor),
+        _parcelas: Math.max(1, Number(novo.parcelas || 1)),
+        _primeiro_vencimento: novo.vencimento || hoje(),
+        _intervalo_dias: Number(novo.intervalo || 30),
+        _forma_id: novo.forma || null,
+        _conta_id: novo.conta || null,
+      };
+      if (isReceber) args["_cliente_id"] = novo.parceiro;
+      else args["_fornecedor_id"] = novo.parceiro;
+      const { error } = await client!.rpc(config.rpcCriar, args);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Título lançado");
+      setOpenNovo(false);
+      setNovo({ ...novoTituloVazio });
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const partnerName = (id: unknown) =>
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
 
