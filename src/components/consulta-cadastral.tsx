@@ -240,9 +240,9 @@ export function ConsultaCadastral({
 
   async function abrirExistente(id: string) {
     if (!client) return;
-    const { data, error } = await client.from("clientes").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await client.from(escopo).select("*").eq("id", id).maybeSingle();
     if (error || !data) {
-      toast.error("Não foi possível abrir o cliente.");
+      toast.error("Não foi possível abrir o cadastro.");
       return;
     }
     setResultado(null);
