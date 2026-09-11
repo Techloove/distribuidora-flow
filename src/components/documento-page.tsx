@@ -1171,7 +1171,9 @@ export function DocumentoPage({
                 <Button
                   onClick={() => efetivar.mutate()}
                   disabled={
-                    !["rascunho", "digitacao", "aprovado"].includes(String(doc["status"])) ||
+                    !["rascunho", "digitacao", "aprovado", "comprado"].includes(
+                      String(doc["status"]),
+                    ) ||
                     efetivar.isPending ||
                     !canWrite
                   }
@@ -1179,6 +1181,18 @@ export function DocumentoPage({
                   {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                   {config.rpcLabel}
                 </Button>
+                {config.table === "compras" && String(doc["status"]) === "rascunho" ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => marcarComprado.mutate()}
+                    disabled={marcarComprado.isPending || !canWrite}
+                  >
+                    {marcarComprado.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : null}
+                    Marcar como comprado
+                  </Button>
+                ) : null}
                 {config.table === "pedidos"
                   ? (proximosStatus[String(doc["status"])] ?? []).map((s) => (
                       <Button
@@ -1232,6 +1246,7 @@ export function DocumentoPage({
                   <Label>Produto</Label>
                   <ProdutoPicker
                     produtos={produtos.data ?? []}
+                    comprados={comprados.data ?? new Map()}
                     value={item.produto_id}
                     onPick={(id) => pickProduto(id)}
                   />
@@ -1716,10 +1731,12 @@ export function DocumentoPage({
 /** Busca de produto por código ou nome, com lista filtrada. */
 function ProdutoPicker({
   produtos,
+  comprados,
   value,
   onPick,
 }: {
   produtos: Row[];
+  comprados: Map<string, number>;
   value: string;
   onPick: (id: string) => void;
 }) {
