@@ -5,6 +5,8 @@ import { ConsultaCadastral } from "@/components/consulta-cadastral";
 import { ConsultaIe } from "@/components/consulta-ie";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { HistoricoCliente } from "@/components/historico-cliente";
+
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/clientes")({
@@ -128,7 +130,9 @@ function ClientesPage() {
               openRow={ctx.openRow}
             />
             <ConsultaIe form={ctx.form} editing={ctx.editing} patch={ctx.patch} />
+            <HistoricoCliente clienteId={ctx.editing ? String(ctx.editing["id"]) : null} />
           </div>
+
         )}
       />
     </ErpLayout>
