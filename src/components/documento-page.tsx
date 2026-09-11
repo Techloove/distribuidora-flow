@@ -220,6 +220,8 @@ export function DocumentoPage({
     if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
     if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
     if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
+    if (f["representante"])
+      list = list.filter((d) => String(d["representante_id"] ?? "") === f["representante"]);
     if (f["forma"])
       list = list.filter((d) => String(d["forma_pagamento_id"] ?? "") === f["forma"]);
     if (f["parceiro"])
@@ -311,6 +313,7 @@ export function DocumentoPage({
         payload["rota_id"] = header["rota"] || null;
         payload["previsao_entrega"] = header["previsao"] || null;
         payload["forma_pagamento_id"] = header["forma"] || null;
+        payload["representante_id"] = header["representante"] || meuRepresentante || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
       if (config.table === "pedidos") {
@@ -620,6 +623,9 @@ export function DocumentoPage({
             rota: String(p?.["rota_id"] ?? ""),
             centro: String(p?.["centro_id"] ?? h["centro"] ?? ""),
             forma: String(formaCliente?.["id"] ?? ""),
+            representante: String(
+              meuRepresentante || p?.["representante_id"] || h["representante"] || "",
+            ),
           }
         : {}),
     }));
