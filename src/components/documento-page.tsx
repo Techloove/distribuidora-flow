@@ -69,7 +69,7 @@ export function DocumentoPage({
   config: DocumentoConfig;
   initialDocId?: string | null;
 }) {
-  const { client, roles } = useSupabase();
+  const { client, roles, user } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(initialDocId);
@@ -105,7 +105,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito"
+          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id"
           : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
@@ -157,6 +157,27 @@ export function DocumentoPage({
       return (data ?? []) as Row[];
     },
   });
+
+  const representantes = useQuery({
+    queryKey: ["representantes", "options"],
+    enabled: !!client && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, profile_id, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  /** Representante vinculado ao login atual (usado como padrão nos pedidos). */
+  const meuRepresentante = String(
+    representantes.data?.find((r) => r["profile_id"] && r["profile_id"] === user?.id)?.["id"] ?? "",
+  );
+
+  const representanteNome = (id: unknown) =>
+    String(representantes.data?.find((r) => r["id"] === id)?.["nome"] ?? "—");
 
   const formas = useQuery({
     queryKey: ["formas_pagamento", "options"],
