@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { useCentro } from "@/lib/centro-store";
+import { usePodeAlterarPreco } from "@/lib/papeis";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const brl = (value: unknown) =>
