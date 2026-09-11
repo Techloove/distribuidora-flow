@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ConsultaCadastral } from "@/components/consulta-cadastral";
+import { ConsultaIe } from "@/components/consulta-ie";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 
@@ -37,6 +38,9 @@ const fields: CrudField[] = [
   },
   { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true },
   { name: "inscricao_estadual", label: "Inscrição estadual" },
+  { name: "uf_inscricao_estadual", label: "UF da inscrição estadual" },
+  { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual" },
+  { name: "indicador_contribuinte_icms", label: "Contribuinte de ICMS" },
   { name: "situacao_cadastral", label: "Situação cadastral" },
   { name: "data_abertura", label: "Data de abertura", type: "date" },
   { name: "data_nascimento", label: "Data de nascimento", type: "date" },
@@ -83,12 +87,15 @@ function ClientesPage() {
         emptyLabel="Nenhum cliente cadastrado ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade"]}
         extraForm={(ctx) => (
-          <ConsultaCadastral
-            form={ctx.form}
-            editing={ctx.editing}
-            patch={ctx.patch}
-            openRow={ctx.openRow}
-          />
+          <div className="space-y-4">
+            <ConsultaCadastral
+              form={ctx.form}
+              editing={ctx.editing}
+              patch={ctx.patch}
+              openRow={ctx.openRow}
+            />
+            <ConsultaIe form={ctx.form} editing={ctx.editing} patch={ctx.patch} />
+          </div>
         )}
       />
     </ErpLayout>
