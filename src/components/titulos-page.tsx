@@ -371,6 +371,9 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         onClear={() => setFiltros({})}
         extra={
           <div className="flex gap-2">
+            <Button size="sm" disabled={!canFinance} onClick={() => setOpenNovo(true)}>
+              <Plus className="size-3.5" /> Novo título
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => window.print()}>
               <Printer className="size-3.5" /> Imprimir
             </Button>
