@@ -71,6 +71,21 @@ export function PapeisAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const definirPreco = useMutation({
+    mutationFn: async ({ codigo, pode }: { codigo: string; pode: boolean }) => {
+      const { error } = await client!.rpc("papel_definir_preco", {
+        _codigo: codigo,
+        _pode: pode,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Permissão de preço atualizada");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div>
