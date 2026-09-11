@@ -25,9 +25,11 @@ import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoe
 import { Route as AppContasRouteImport } from './routes/_app/contas'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDevolucoesRouteImport } from './routes/_app/devolucoes'
+import { Route as AppDreRouteImport } from './routes/_app/dre'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFaturamentoRouteImport } from './routes/_app/faturamento'
+import { Route as AppFinanceiroRouteImport } from './routes/_app/financeiro'
 import { Route as AppFluxoCaixaRouteImport } from './routes/_app/fluxo-caixa'
 import { Route as AppFormasPagamentoRouteImport } from './routes/_app/formas-pagamento'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
@@ -130,6 +132,11 @@ const AppDevolucoesRoute = AppDevolucoesRouteImport.update({
   path: '/devolucoes',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDreRoute = AppDreRouteImport.update({
+  id: '/dre',
+  path: '/dre',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
@@ -143,6 +150,11 @@ const AppExpedicaoRoute = AppExpedicaoRouteImport.update({
 const AppFaturamentoRoute = AppFaturamentoRouteImport.update({
   id: '/faturamento',
   path: '/faturamento',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppFluxoCaixaRoute = AppFluxoCaixaRouteImport.update({
@@ -267,9 +279,11 @@ export interface FileRoutesByFullPath {
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
+  '/dre': typeof AppDreRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
@@ -308,9 +322,11 @@ export interface FileRoutesByTo {
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
+  '/dre': typeof AppDreRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
@@ -351,9 +367,11 @@ export interface FileRoutesById {
   '/_app/contas': typeof AppContasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/devolucoes': typeof AppDevolucoesRoute
+  '/_app/dre': typeof AppDreRoute
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/faturamento': typeof AppFaturamentoRoute
+  '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/_app/formas-pagamento': typeof AppFormasPagamentoRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
@@ -394,9 +412,11 @@ export interface FileRouteTypes {
     | '/contas'
     | '/dashboard'
     | '/devolucoes'
+    | '/dre'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
+    | '/financeiro'
     | '/fluxo-caixa'
     | '/formas-pagamento'
     | '/fornecedores'
@@ -435,9 +455,11 @@ export interface FileRouteTypes {
     | '/contas'
     | '/dashboard'
     | '/devolucoes'
+    | '/dre'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
+    | '/financeiro'
     | '/fluxo-caixa'
     | '/formas-pagamento'
     | '/fornecedores'
@@ -477,9 +499,11 @@ export interface FileRouteTypes {
     | '/_app/contas'
     | '/_app/dashboard'
     | '/_app/devolucoes'
+    | '/_app/dre'
     | '/_app/estoque'
     | '/_app/expedicao'
     | '/_app/faturamento'
+    | '/_app/financeiro'
     | '/_app/fluxo-caixa'
     | '/_app/formas-pagamento'
     | '/_app/fornecedores'
@@ -623,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDevolucoesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/dre': {
+      id: '/_app/dre'
+      path: '/dre'
+      fullPath: '/dre'
+      preLoaderRoute: typeof AppDreRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/estoque': {
       id: '/_app/estoque'
       path: '/estoque'
@@ -642,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/faturamento'
       fullPath: '/faturamento'
       preLoaderRoute: typeof AppFaturamentoRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/fluxo-caixa': {
@@ -808,9 +846,11 @@ interface AppRouteRouteChildren {
   AppContasRoute: typeof AppContasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDevolucoesRoute: typeof AppDevolucoesRoute
+  AppDreRoute: typeof AppDreRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFaturamentoRoute: typeof AppFaturamentoRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFormasPagamentoRoute: typeof AppFormasPagamentoRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
@@ -848,9 +888,11 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppContasRoute: AppContasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDevolucoesRoute: AppDevolucoesRoute,
+  AppDreRoute: AppDreRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppExpedicaoRoute: AppExpedicaoRoute,
   AppFaturamentoRoute: AppFaturamentoRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFormasPagamentoRoute: AppFormasPagamentoRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,

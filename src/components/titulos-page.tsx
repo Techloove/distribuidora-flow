@@ -30,6 +30,10 @@ type Row = Record<string, unknown>;
 
 export type TitulosConfig = {
   table: "contas_receber" | "contas_pagar";
+  /** View com saldo e status efetivo (vencido/parcial) calculados no banco. */
+  view: "vw_titulos_receber" | "vw_titulos_pagar";
+  /** RPC completa de baixa (conta, forma de pagamento, juros, multa, desconto). */
+  rpcBaixa: "receber_titulo" | "pagar_titulo";
   partnerTable: "clientes" | "fornecedores";
   partnerKey: "cliente_id" | "fornecedor_id";
   partnerLabel: string;
@@ -37,7 +41,7 @@ export type TitulosConfig = {
   baixaLabel: string;
 };
 
-const statuses = ["todos", "aberto", "parcial", "pago", "cancelado"] as const;
+const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
 
 export function TitulosPage({ config }: { config: TitulosConfig }) {
   const { client, roles } = useSupabase();
@@ -53,11 +57,11 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
 
   const titulos = useQuery({
-    queryKey: [config.table],
+    queryKey: [config.view],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
-        .from(config.table)
+        .from(config.view)
         .select("*")
         .order("vencimento");
       if (error) throw new Error(error.message);
@@ -113,7 +117,16 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
 
   const rows = useMemo(() => {
     let list = titulos.data ?? [];
-    if (status !== "todos") list = list.filter((r) => r["status"] === status);
+    if (status !== "todos")
+      list = list.filter((r) => (r["status_efetivo"] ?? r["status"]) === status);
+    if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
+    if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
+    if (filtros["forma"]) list = list.filter((r) => r["forma_pagamento_id"] === filtros["forma"]);
+    if (filtros["pgde"]) list = list.filter((r) => String(r["data_pagamento"] ?? "") >= filtros["pgde"]!);
+    if (filtros["pgate"])
+      list = list.filter(
+        (r) => !!r["data_pagamento"] && String(r["data_pagamento"]) <= filtros["pgate"]!,
+      );
     const f = filtros;
     if (isReceber && f["boleto"]) {
       list = list.filter((r) => {
@@ -182,10 +195,16 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     mutationFn: async () => {
       const v = Number(valor || 0);
       if (v <= 0) throw new Error("Informe o valor da baixa");
-      const { error } = await client!.rpc(config.rpc, {
+      const { error } = await client!.rpc(config.rpcBaixa, {
         _id: target!["id"],
         _valor: v,
         _data: data,
+        _conta_id: contaId || null,
+        _forma_id: formaId || null,
+        _juros: Number(juros || 0),
+        _multa: Number(multa || 0),
+        _desconto: Number(descontoBaixa || 0),
+        _observacao: null,
       });
       if (error) throw new Error(error.message);
     },
