@@ -147,7 +147,7 @@ function CargasPage() {
   return (
     <ErpLayout
       title="Cargas de entrega"
-      description="Monte a carga por rota. Só entram pedidos faturados com nota fiscal autorizada."
+      description="Monte a carga por rota. Pedidos faturados entram conforme a configuração de nota fiscal."
       actions={
         <Button disabled={!podeExpedir} onClick={() => setNova(true)}>
           Gerar carga
