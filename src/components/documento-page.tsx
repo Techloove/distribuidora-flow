@@ -133,6 +133,23 @@ export function DocumentoPage({
     },
   });
 
+  /** Quantidades já compradas (NF de entrada pendente de recebimento). */
+  const comprados = useQuery({
+    queryKey: ["vw_produto_comprado"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("vw_produto_comprado")
+        .select("produto_id, quantidade_comprada");
+      if (error) throw new Error(error.message);
+      const mapa = new Map<string, number>();
+      for (const r of (data ?? []) as Row[]) {
+        mapa.set(String(r["produto_id"]), Number(r["quantidade_comprada"] ?? 0));
+      }
+      return mapa;
+    },
+  });
+
   const centros = useQuery({
     queryKey: ["centros", "options"],
     enabled: !!client,
@@ -504,6 +521,19 @@ export function DocumentoPage({
     },
     onSuccess: () => {
       toast.success(`${config.rpcLabel} concluído — estoque e financeiro atualizados`);
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  /** Compra feita, mercadoria ainda não recebida. */
+  const marcarComprado = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!.rpc("marcar_compra_comprada", { _compra_id: selected });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Compra marcada como comprada — aguardando o recebimento");
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1154,7 +1184,9 @@ export function DocumentoPage({
                 <Button
                   onClick={() => efetivar.mutate()}
                   disabled={
-                    !["rascunho", "digitacao", "aprovado"].includes(String(doc["status"])) ||
+                    !["rascunho", "digitacao", "aprovado", "comprado"].includes(
+                      String(doc["status"]),
+                    ) ||
                     efetivar.isPending ||
                     !canWrite
                   }
@@ -1162,6 +1194,18 @@ export function DocumentoPage({
                   {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                   {config.rpcLabel}
                 </Button>
+                {config.table === "compras" && String(doc["status"]) === "rascunho" ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => marcarComprado.mutate()}
+                    disabled={marcarComprado.isPending || !canWrite}
+                  >
+                    {marcarComprado.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : null}
+                    Marcar como comprado
+                  </Button>
+                ) : null}
                 {config.table === "pedidos"
                   ? (proximosStatus[String(doc["status"])] ?? []).map((s) => (
                       <Button
@@ -1215,6 +1259,7 @@ export function DocumentoPage({
                   <Label>Produto</Label>
                   <ProdutoPicker
                     produtos={produtos.data ?? []}
+                    comprados={comprados.data ?? new Map()}
                     value={item.produto_id}
                     onPick={(id) => pickProduto(id)}
                   />
@@ -1699,10 +1744,12 @@ export function DocumentoPage({
 /** Busca de produto por código ou nome, com lista filtrada. */
 function ProdutoPicker({
   produtos,
+  comprados,
   value,
   onPick,
 }: {
   produtos: Row[];
+  comprados: Map<string, number>;
   value: string;
   onPick: (id: string) => void;
 }) {
@@ -1761,6 +1808,11 @@ function ProdutoPicker({
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   est. {String(p["estoque_atual"] ?? 0)}
+                  {(comprados.get(String(p["id"])) ?? 0) > 0 ? (
+                    <span className="ml-2 font-semibold text-primary">
+                      C {comprados.get(String(p["id"]))}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             ))
