@@ -373,14 +373,32 @@ function ConfiguracoesPage() {
             <div className="mt-3 space-y-3">
               {parametros.data!.map((p) => {
                 const chave = String(p["chave"]);
+                const isBool =
+                  chave === "exigir_nf_carga" || chave === "exigir_nf_boleto";
                 return (
                   <div key={chave}>
                     <Label>{String(p["descricao"] ?? chave)}</Label>
-                    <Input
-                      value={params[chave] ?? ""}
-                      disabled={!canManage}
-                      onChange={(e) => setParams((f) => ({ ...f, [chave]: e.target.value }))}
-                    />
+                    {isBool ? (
+                      <select
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={params[chave] ?? "true"}
+                        disabled={!canManage}
+                        onChange={(e) =>
+                          setParams((f) => ({ ...f, [chave]: e.target.value }))
+                        }
+                      >
+                        <option value="true">Sim</option>
+                        <option value="false">Não</option>
+                      </select>
+                    ) : (
+                      <Input
+                        value={params[chave] ?? ""}
+                        disabled={!canManage}
+                        onChange={(e) =>
+                          setParams((f) => ({ ...f, [chave]: e.target.value }))
+                        }
+                      />
+                    )}
                     <p className="mt-1 text-[11px] text-muted-foreground">{chave}</p>
                   </div>
                 );
