@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
+import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-inativos'
@@ -71,6 +72,12 @@ const AppBoletosRoute = AppBoletosRouteImport.update({
   path: '/boletos',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCategoriasFinanceirasRoute =
+  AppCategoriasFinanceirasRouteImport.update({
+    id: '/categorias-financeiras',
+    path: '/categorias-financeiras',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 const AppCentrosRoute = AppCentrosRouteImport.update({
   id: '/centros',
   path: '/centros',
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
@@ -275,6 +283,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
@@ -315,6 +324,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
+  '/_app/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
   '/_app/clientes-inativos': typeof AppClientesInativosRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
@@ -432,6 +444,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/auditoria'
     | '/_app/boletos'
+    | '/_app/categorias-financeiras'
     | '/_app/centros'
     | '/_app/clientes'
     | '/_app/clientes-inativos'
@@ -507,6 +520,13 @@ declare module '@tanstack/react-router' {
       path: '/boletos'
       fullPath: '/boletos'
       preLoaderRoute: typeof AppBoletosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/categorias-financeiras': {
+      id: '/_app/categorias-financeiras'
+      path: '/categorias-financeiras'
+      fullPath: '/categorias-financeiras'
+      preLoaderRoute: typeof AppCategoriasFinanceirasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/centros': {
@@ -739,6 +759,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
+  AppCategoriasFinanceirasRoute: typeof AppCategoriasFinanceirasRoute
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
   AppClientesInativosRoute: typeof AppClientesInativosRoute
@@ -776,6 +797,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
+  AppCategoriasFinanceirasRoute: AppCategoriasFinanceirasRoute,
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
   AppClientesInativosRoute: AppClientesInativosRoute,
