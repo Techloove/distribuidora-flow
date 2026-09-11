@@ -1002,9 +1002,24 @@ export function DocumentoPage({
                   <p className="text-xs text-muted-foreground">Itens {brl(doc["total_itens"])}</p>
                   <p className="text-xl font-semibold">{brl(doc["total_liquido"])}</p>
                   {config.table === "pedidos" ? (
-                    <p className="text-xs text-muted-foreground">
-                      Comissão {brl(doc["comissao_valor"])}
-                    </p>
+                    <>
+                      {Number(doc["forma_acrescimo_valor"] ?? 0) > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Acréscimo da forma {brl(doc["forma_acrescimo_valor"])}
+                        </p>
+                      ) : null}
+                      {Number(doc["forma_desconto_valor"] ?? 0) > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Desconto da forma −{brl(doc["forma_desconto_valor"])}
+                        </p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        Peso total {kg(pesoTotal)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Comissão {brl(doc["comissao_valor"])}
+                      </p>
+                    </>
                   ) : null}
                 </div>
               </div>
