@@ -688,6 +688,16 @@ export function DocumentoPage({
   const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
   const kg = (v: number) =>
     `${v.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
+  /** Nome da forma com o acréscimo/desconto configurado. */
+  const formaLabel = (f: Row) => {
+    const acr = Number(f["taxa_percentual"] ?? 0);
+    const desc = Number(f["desconto_percentual"] ?? 0);
+    const extras = [
+      acr > 0 ? `+${acr.toLocaleString("pt-BR")}%` : "",
+      desc > 0 ? `−${desc.toLocaleString("pt-BR")}%` : "",
+    ].filter(Boolean);
+    return extras.length ? `${String(f["nome"])} (${extras.join(" ")})` : String(f["nome"]);
+  };
 
   const statusTone = (s: string) => {
     const v = s.toLowerCase();
