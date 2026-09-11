@@ -85,6 +85,8 @@ const nav = [
       { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
       { to: "/planejamento-compras", label: "Planejamento de compras", icon: CalendarClock },
       { to: "/estoque", label: "Estoque", icon: Boxes },
+      { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
+      { to: "/cargas", label: "Cargas de entrega", icon: Truck },
       { to: "/expedicao", label: "Expedição", icon: Truck },
       { to: "/faturamento", label: "Faturamento (boletos)", icon: FileText },
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },

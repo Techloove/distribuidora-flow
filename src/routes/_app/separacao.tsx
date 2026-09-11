@@ -204,7 +204,7 @@ function SeparacaoPage() {
   const statusTone = (s: string) => {
     const v = s.toLowerCase();
     if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
-    if (["separado", "em_rota", "entregue", "faturado"].includes(v))
+    if (["separado", "conferido", "em_rota", "entregue", "faturado", "nf_emitida", "em_carga"].includes(v))
       return "bg-primary/15 text-primary";
     if (["aprovado", "confirmado"].includes(v)) return "bg-emerald-500/15 text-emerald-600";
     if (v === "separacao") return "bg-amber-500/15 text-amber-600";

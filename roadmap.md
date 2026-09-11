@@ -67,3 +67,12 @@
 - [x] Fluxo de caixa realizado x previsto, CPV, DRE gerencial e dashboard financeiro com gráficos
 - [x] Rentabilidade por produto/pedido/cliente/vendedor/rota e custos configuráveis de rota
 - [x] Permissões financeiras granulares (role_permissoes) e relatórios exportáveis em CSV/PDF
+
+## Fase 42 — auditoria do fluxo operacional (concluída)
+- Status do pedido completos: conferido, nf_emitida, em_carga (nada removido).
+- Separação com quantidade separada, divergência e conferência obrigatória (`pedido_separacoes`, RPCs iniciar/registrar/concluir/conferir).
+- Travas de banco: `bloqueio_faturamento`, `bloqueio_boleto`, trigger em `boletos`, itens travados após conferência.
+- Nota fiscal com protocolo/chave/retorno e RPCs `faturar_pedido`, `autorizar_nota`, `rejeitar_nota`.
+- Cargas por rota (`cargas`, `carga_pedidos`) só com pedido faturado + NF autorizada.
+- Histórico de status (`pedido_status_historico`), views de rastreabilidade e painel do fluxo no dashboard.
+- Telas novas: /notas e /cargas; /separacao reescrita.

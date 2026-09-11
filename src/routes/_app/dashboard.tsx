@@ -121,7 +121,10 @@ function Dashboard() {
         <Kpi label="Produtos" value={d ? String(d.produtos) : "—"} icon={Package} to="/produtos" />
       </div>
 
+      <FluxoOperacional />
+
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
+
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <AlertTriangle className="size-4 text-destructive" />
           Alertas de estoque mínimo
@@ -181,5 +184,58 @@ function Kpi({
       <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{hint ?? "\u00a0"}</p>
     </Link>
+  );
+}
+
+const ETAPAS: { campo: string; label: string; to: string }[] = [
+  { campo: "aguardando_aprovacao", label: "Aguardando aprovação", to: "/pedidos" },
+  { campo: "aprovados", label: "Aprovados", to: "/separacao" },
+  { campo: "em_separacao", label: "Em separação", to: "/separacao" },
+  { campo: "com_divergencia", label: "Com divergência", to: "/separacao" },
+  { campo: "separados", label: "Separados", to: "/separacao" },
+  { campo: "prontos_faturamento", label: "Prontos p/ faturar", to: "/notas" },
+  { campo: "faturados", label: "Faturados (NF pendente)", to: "/notas" },
+  { campo: "nf_emitidas", label: "NF autorizada", to: "/notas" },
+  { campo: "em_carga", label: "Em carga", to: "/cargas" },
+  { campo: "em_rota", label: "Em rota", to: "/cargas" },
+  { campo: "entregues", label: "Entregues", to: "/cargas" },
+];
+
+/** Painel do fluxo operacional: pedido → separação → faturamento → carga → entrega. */
+function FluxoOperacional() {
+  const { client } = useSupabase();
+  const fluxo = useQuery({
+    queryKey: ["vw_fluxo_operacional"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("vw_fluxo_operacional").select("*").maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? {}) as Row;
+    },
+  });
+
+  if (fluxo.isError) return null;
+
+  return (
+    <section className="mt-6 rounded-lg border border-border bg-card p-5">
+      <h2 className="text-sm font-semibold text-foreground">Fluxo operacional</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Pedido → aprovação → separação → conferência → faturamento → nota fiscal → carga → entrega.
+      </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-4">
+        {ETAPAS.map((e) => (
+          <Link
+            key={e.campo}
+            to={e.to}
+            className="rounded-lg border border-border px-3 py-2 transition-colors hover:border-primary/50"
+          >
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{e.label}</p>
+            <p className="text-lg font-semibold">
+              {fluxo.data ? String(fluxo.data[e.campo] ?? 0) : "—"}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
