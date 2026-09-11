@@ -120,7 +120,7 @@ function mapBrasilApi(j: Record<string, unknown>): DadosCadastrais {
     razao_social: txt(j["razao_social"]),
     nome_fantasia: txt(j["nome_fantasia"]),
     situacao_cadastral: txt(j["descricao_situacao_cadastral"]),
-    data_abertura: txt(j["data_inicio_atividade"]),
+    data_abertura: dataIso(j["data_inicio_atividade"]),
     natureza_juridica: txt(j["natureza_juridica"]),
     porte: txt(j["porte"]),
     cnae_principal: [txt(j["cnae_fiscal"]), txt(j["cnae_fiscal_descricao"])]
@@ -157,7 +157,7 @@ function mapReceitaWs(j: Record<string, unknown>): DadosCadastrais {
     razao_social: txt(j["nome"]),
     nome_fantasia: txt(j["fantasia"]),
     situacao_cadastral: txt(j["situacao"]),
-    data_abertura: txt(j["abertura"]),
+    data_abertura: dataIso(j["abertura"]),
     natureza_juridica: txt(j["natureza_juridica"]),
     porte: txt(j["porte"]),
     cnae_principal: atividade
