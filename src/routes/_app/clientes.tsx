@@ -64,6 +64,7 @@ const fields: CrudField[] = [
   { name: "cep", label: "CEP" },
   { name: "limite_credito", label: "Limite de crédito", type: "number", step: "0.01" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
+  { name: "representante_id", label: "Representante / vendedor", type: "select", options: [] },
   { name: "tabela_preco", label: "Tabela de preço" },
   {
     name: "status",
