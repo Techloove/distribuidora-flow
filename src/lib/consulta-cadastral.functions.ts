@@ -19,26 +19,26 @@ import { createServerFn } from "@tanstack/react-start";
  */
 
 export type DadosCadastrais = {
-  cnpj_cpf?: string;
-  razao_social?: string;
-  nome_fantasia?: string;
-  situacao_cadastral?: string;
-  data_abertura?: string;
-  data_nascimento?: string;
-  natureza_juridica?: string;
-  porte?: string;
-  cnae_principal?: string;
-  cnae_secundarios?: string;
-  inscricao_estadual?: string;
-  cep?: string;
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  uf?: string;
-  telefone?: string;
-  email?: string;
+  cnpj_cpf?: string | undefined;
+  razao_social?: string | undefined;
+  nome_fantasia?: string | undefined;
+  situacao_cadastral?: string | undefined;
+  data_abertura?: string | undefined;
+  data_nascimento?: string | undefined;
+  natureza_juridica?: string | undefined;
+  porte?: string | undefined;
+  cnae_principal?: string | undefined;
+  cnae_secundarios?: string | undefined;
+  inscricao_estadual?: string | undefined;
+  cep?: string | undefined;
+  logradouro?: string | undefined;
+  numero?: string | undefined;
+  complemento?: string | undefined;
+  bairro?: string | undefined;
+  cidade?: string | undefined;
+  uf?: string | undefined;
+  telefone?: string | undefined;
+  email?: string | undefined;
 };
 
 export type ConsultaResultado =
@@ -48,7 +48,6 @@ export type ConsultaResultado =
       tipo: "PJ" | "PF";
       provedor: string;
       dados: DadosCadastrais;
-      extras: Record<string, unknown>;
       /** Dias de validade sugeridos para o cache. */
       validadeDias: number;
     }
@@ -222,7 +221,6 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
         tipo: "PJ",
         provedor: "brasilapi",
         dados: mapBrasilApi(j),
-        extras: j,
         validadeDias: 30,
       };
     }
@@ -258,7 +256,6 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
         tipo: "PJ",
         provedor: "receitaws",
         dados: mapReceitaWs(j),
-        extras: j,
         validadeDias: 30,
       };
     }
@@ -340,7 +337,6 @@ async function consultarCpf(doc: string): Promise<ConsultaResultado> {
       tipo: "PF",
       provedor: txt(process.env["CPF_API_NOME"]) ?? "provedor_cpf",
       dados: mapCpf(j),
-      extras: {},
       validadeDias: 7,
     };
   } catch {
