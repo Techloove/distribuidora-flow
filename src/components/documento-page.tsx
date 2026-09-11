@@ -1432,7 +1432,7 @@ export function DocumentoPage({
             {clienteFoco ? <div className="sm:col-span-2">{creditoPainel}</div> : null}
 
             <div className="space-y-1.5">
-              <Label>Centro</Label>
+              <Label>Centro{config.table === "pedidos" ? " *" : ""}</Label>
               <select
                 value={header["centro"] ?? ""}
                 onChange={(e) => setHeader((h) => ({ ...h, centro: e.target.value }))}
@@ -1484,7 +1484,7 @@ export function DocumentoPage({
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <Label>Rota de entrega</Label>
+                  <Label>Rota de entrega *</Label>
                   <select
                     value={header["rota"] ?? ""}
                     onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
@@ -1494,6 +1494,21 @@ export function DocumentoPage({
                     {rotas.data?.map((r) => (
                       <option key={String(r["id"])} value={String(r["id"])}>
                         {String(r["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Forma de pagamento *</Label>
+                  <select
+                    value={header["forma"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, forma: e.target.value }))}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {formas.data?.map((f) => (
+                      <option key={String(f["id"])} value={String(f["id"])}>
+                        {formaLabel(f)}
                       </option>
                     ))}
                   </select>
