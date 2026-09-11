@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -247,21 +249,62 @@ export function ConsultaCadastral({
     ? CAMPOS.filter((c) => String(resultado.dados[c.name] ?? "").trim() !== "")
     : [];
 
+  const tipo = String(form["tipo_pessoa"] ?? "");
+  const tamanhoEsperado = tipo === "PF" ? 11 : 14;
+  const docCompleto = doc.length === tamanhoEsperado;
+
   return (
     <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold">Consulta cadastral (CNPJ / CPF)</h3>
-          <p className="text-xs text-muted-foreground">
-            Busca os dados na fonte oficial e preenche apenas os campos cadastrais. Limite de
-            crédito, rota, tabela de preço e demais dados comerciais não são alterados.
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <div>
+        <h3 className="text-sm font-semibold">Identificação do cliente</h3>
+        <p className="text-xs text-muted-foreground">
+          Escolha o tipo de documento, informe o número e pesquise para preencher os dados
+          cadastrais. Limite de crédito, rota, tabela de preço e demais dados comerciais não são
+          alterados.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={tipo === "PJ" ? "default" : "outline"}
+          onClick={() => {
+            setResultado(null);
+            patch({ tipo_pessoa: "PJ", ...(tipo === "PF" ? { cnpj_cpf: "" } : {}) });
+          }}
+        >
+          CNPJ (pessoa jurídica)
+        </Button>
+        <Button
+          size="sm"
+          variant={tipo === "PF" ? "default" : "outline"}
+          onClick={() => {
+            setResultado(null);
+            patch({ tipo_pessoa: "PF", ...(tipo === "PJ" ? { cnpj_cpf: "" } : {}) });
+          }}
+        >
+          CPF (pessoa física)
+        </Button>
+      </div>
+
+      {tipo ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-56 flex-1 space-y-1.5">
+            <Label htmlFor="documento-consulta">{tipo === "PF" ? "CPF" : "CNPJ"}</Label>
+            <Input
+              id="documento-consulta"
+              inputMode="numeric"
+              placeholder={tipo === "PF" ? "000.000.000-00" : "00.000.000/0000-00"}
+              value={documento}
+              onChange={(e) => {
+                const d = digitos(e.target.value).slice(0, tamanhoEsperado);
+                patch({ cnpj_cpf: d.length === tamanhoEsperado ? formatarDoc(d) : d });
+              }}
+            />
+          </div>
           <Button
             size="sm"
-            variant="secondary"
-            disabled={buscar.isPending || !canManage}
+            disabled={buscar.isPending || !canManage || !docCompleto}
             onClick={() => buscar.mutate(false)}
           >
             {buscar.isPending ? (
@@ -269,18 +312,23 @@ export function ConsultaCadastral({
             ) : (
               <Search className="size-3.5" />
             )}
-            {editing ? "Atualizar dados cadastrais" : "Consultar dados"}
+            {editing ? "Atualizar dados" : "Pesquisar"}
           </Button>
           <Button
             size="sm"
             variant="outline"
-            disabled={buscar.isPending || !canManage}
+            disabled={buscar.isPending || !canManage || !docCompleto}
             onClick={() => buscar.mutate(true)}
           >
-            <RefreshCw className="size-3.5" /> Atualizar consulta
+            <RefreshCw className="size-3.5" /> Consultar novamente
           </Button>
         </div>
-      </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Selecione CNPJ ou CPF para liberar o campo do documento.
+        </p>
+      )}
+
 
       {(duplicado.data ?? []).length > 0 ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
