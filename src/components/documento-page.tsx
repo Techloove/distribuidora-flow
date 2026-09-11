@@ -209,9 +209,26 @@ export function DocumentoPage({
     },
   });
 
-  /** Filtros da listagem de documentos. */
-  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  /** Data de hoje (fuso local) usada como filtro inicial dos pedidos. */
+  const hoje = useMemo(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  }, []);
+
+  /** Filtros da listagem de documentos: pedidos abrem já no dia atual. */
+  const [filtros, setFiltros] = useState<Record<string, string>>(() =>
+    config.table === "pedidos" ? { de: hoje, ate: hoje } : {},
+  );
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+
+  /** Presets rápidos de período. */
+  const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
+  const diasAtras = (n: number) => {
+    const d = new Date(`${hoje}T00:00:00`);
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
 
   const docsFiltrados = useMemo(() => {
     let list = docs.data ?? [];
