@@ -138,14 +138,16 @@ function ProdutosPage() {
       return rows.map((r) => {
         const p = mapa.get(String(r["id"]));
         const promoBase = p ? Number(p["preco_promocional"] ?? 0) : Number(r["preco_promocional"] ?? 0);
+        const comprado = comprados.data?.get(String(r["id"])) ?? 0;
         return {
           ...r,
           promo_preco: promoBase > 0 ? brl(promoBase) : "—",
           promo_fim: promoBase > 0 ? (p ? fmtDate(p["vigencia_fim"]) : "sem limite") : "—",
+          comprado_qtd: comprado > 0 ? `C ${comprado}` : "—",
         };
       });
     },
-    [promocoes.data],
+    [promocoes.data, comprados.data],
   );
 
   /** Alteração direta na listagem: markup e preço de venda sempre sobre o custo médio. */
