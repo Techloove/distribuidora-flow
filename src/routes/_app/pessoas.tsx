@@ -82,6 +82,23 @@ const fields: CrudField[] = [
   { name: "cep", label: "CEP" },
   { name: "rota_id", label: "Rota de entrega", type: "ref", ref: { table: "rotas", labelField: "nome" } },
   { name: "limite_credito", label: "Limite de crédito (cliente)", type: "number", step: "0.01" },
+  { name: "regiao", label: "Região de atuação (vendedor)" },
+  {
+    name: "comissao_percentual",
+    label: "Comissão (%) do vendedor",
+    type: "number",
+    step: "0.01",
+  },
+  {
+    name: "tipo_representante",
+    label: "Tipo de vendedor",
+    type: "select",
+    options: [
+      { value: "interno", label: "Interno" },
+      { value: "externo", label: "Externo / representante" },
+    ],
+  },
+  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
   { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
   {
@@ -155,17 +172,31 @@ function PessoasPage() {
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
             {form["is_representante"] ? (
-              <ComissaoRepresentante
-                representanteId={
-                  editing && editing["representante_id"]
-                    ? String(editing["representante_id"])
-                    : null
-                }
-              />
+              <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
           </div>
         )}
       />
     </ErpLayout>
   );
+}
+
+/** Comissões do vendedor: busca o vínculo comercial da própria pessoa. */
+function ComissaoDaPessoa({ pessoaId }: { pessoaId: string | null }) {
+  const { client } = useSupabase();
+  const vinculo = useQuery({
+    queryKey: ["representante_da_pessoa", pessoaId],
+    enabled: !!client && !!pessoaId,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id")
+        .eq("pessoa_id", pessoaId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? String(data["id"]) : null;
+    },
+  });
+
+  return <ComissaoRepresentante representanteId={vinculo.data ?? null} />;
 }
