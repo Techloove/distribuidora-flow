@@ -51,7 +51,8 @@ const fields: CrudField[] = [
     inTable: true,
   },
   { name: "intervalo_dias", label: "Intervalo (dias)", type: "number", inTable: true },
-  { name: "taxa_percentual", label: "Taxa (%)", type: "number", step: "0.01" },
+  { name: "taxa_percentual", label: "Acréscimo (%)", type: "number", step: "0.01", inTable: true },
+  { name: "desconto_percentual", label: "Desconto (%)", type: "number", step: "0.01", inTable: true },
   { name: "observacoes", label: "Observações", span: 2 },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];

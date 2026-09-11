@@ -105,7 +105,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, razao_social, rota_id, limite_credito"
+          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito"
           : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
@@ -123,7 +123,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from("produtos")
-        .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual")
+        .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
         .order("descricao");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -164,7 +164,9 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from("formas_pagamento")
-        .select("id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias")
+        .select(
+          "id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias, taxa_percentual, desconto_percentual",
+        )
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
@@ -287,8 +289,19 @@ export function DocumentoPage({
       } else {
         payload["rota_id"] = header["rota"] || null;
         payload["previsao_entrega"] = header["previsao"] || null;
+        payload["forma_pagamento_id"] = header["forma"] || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
+      if (config.table === "pedidos") {
+        if (!payload["centro_id"])
+          throw new Error("Informe o centro de custo (cadastre no cliente para vir automático)");
+        if (!payload["rota_id"])
+          throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
+        if (!payload["forma_pagamento_id"])
+          throw new Error(
+            "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
+          );
+      }
       const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
       if (error) throw new Error(error.message);
       return data as Row;
@@ -417,6 +430,11 @@ export function DocumentoPage({
 
   const efetivar = useMutation({
     mutationFn: async () => {
+      if (config.table === "pedidos" && doc) {
+        if (!doc["centro_id"]) throw new Error("Informe o centro de custo do pedido");
+        if (!doc["rota_id"]) throw new Error("Informe a rota de entrega do pedido");
+        if (!doc["forma_pagamento_id"]) throw new Error("Informe a forma de pagamento do pedido");
+      }
       const args =
         config.rpc === "confirmar_pedido" ? { _pedido_id: selected } : { _compra_id: selected };
       const { error } = await client!.rpc(config.rpc, args);
@@ -566,13 +584,23 @@ export function DocumentoPage({
 
 
 
-  /** Ao escolher o cliente, já traz a rota cadastrada dele. */
+  /** Ao escolher o cliente, traz rota, centro de custo e forma de pagamento do cadastro dele. */
   function pickPartner(id: string) {
     const p = partners.data?.find((x) => x["id"] === id);
+    const condicao = String(p?.["condicao_pagamento"] ?? "").trim().toLowerCase();
+    const formaCliente = condicao
+      ? formas.data?.find((f) => String(f["nome"]).trim().toLowerCase() === condicao)
+      : undefined;
     setHeader((h) => ({
       ...h,
       partner: id,
-      ...(config.table === "pedidos" ? { rota: String(p?.["rota_id"] ?? "") } : {}),
+      ...(config.table === "pedidos"
+        ? {
+            rota: String(p?.["rota_id"] ?? ""),
+            centro: String(p?.["centro_id"] ?? h["centro"] ?? ""),
+            forma: String(formaCliente?.["id"] ?? ""),
+          }
+        : {}),
     }));
   }
 
@@ -654,6 +682,22 @@ export function DocumentoPage({
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
+  const produtoPeso = (id: unknown) =>
+    Number(produtos.data?.find((p) => p["id"] === id)?.["peso_kg"] ?? 0);
+  const pesoItem = (it: Row) => produtoPeso(it["produto_id"]) * Number(it["quantidade"] ?? 0);
+  const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
+  const kg = (v: number) =>
+    `${v.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
+  /** Nome da forma com o acréscimo/desconto configurado. */
+  const formaLabel = (f: Row) => {
+    const acr = Number(f["taxa_percentual"] ?? 0);
+    const desc = Number(f["desconto_percentual"] ?? 0);
+    const extras = [
+      acr > 0 ? `+${acr.toLocaleString("pt-BR")}%` : "",
+      desc > 0 ? `−${desc.toLocaleString("pt-BR")}%` : "",
+    ].filter(Boolean);
+    return extras.length ? `${String(f["nome"])} (${extras.join(" ")})` : String(f["nome"]);
+  };
 
   const statusTone = (s: string) => {
     const v = s.toLowerCase();
@@ -968,9 +1012,24 @@ export function DocumentoPage({
                   <p className="text-xs text-muted-foreground">Itens {brl(doc["total_itens"])}</p>
                   <p className="text-xl font-semibold">{brl(doc["total_liquido"])}</p>
                   {config.table === "pedidos" ? (
-                    <p className="text-xs text-muted-foreground">
-                      Comissão {brl(doc["comissao_valor"])}
-                    </p>
+                    <>
+                      {Number(doc["forma_acrescimo_valor"] ?? 0) > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Acréscimo da forma {brl(doc["forma_acrescimo_valor"])}
+                        </p>
+                      ) : null}
+                      {Number(doc["forma_desconto_valor"] ?? 0) > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Desconto da forma −{brl(doc["forma_desconto_valor"])}
+                        </p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        Peso total {kg(pesoTotal)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Comissão {brl(doc["comissao_valor"])}
+                      </p>
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -1124,6 +1183,7 @@ export function DocumentoPage({
                       <TableHead>Produto</TableHead>
                       <TableHead className="text-right">Qtd</TableHead>
                       <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
+                      <TableHead className="text-right">Peso</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                       <TableHead className="w-12" />
                     </TableRow>
@@ -1176,6 +1236,9 @@ export function DocumentoPage({
                             brl(it[config.itemPriceField])
                           )}
                         </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {kg(pesoItem(it))}
+                        </TableCell>
                         <TableCell className="text-right">{brl(it["total"])}</TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -1189,6 +1252,16 @@ export function DocumentoPage({
                         </TableCell>
                       </TableRow>
                     ))}
+                    <TableRow>
+                      <TableCell className="font-semibold">Peso total dos itens</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-right font-semibold">{kg(pesoTotal)}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {brl(doc["total_itens"])}
+                      </TableCell>
+                      <TableCell />
+                    </TableRow>
                   </TableBody>
                 </Table>
               )}
@@ -1236,7 +1309,7 @@ export function DocumentoPage({
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Define as parcelas e os vencimentos gerados no financeiro ao efetivar.
+                Define as parcelas, os vencimentos e o acréscimo ou desconto aplicado no total.
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="space-y-1.5 sm:col-span-2">
@@ -1250,7 +1323,7 @@ export function DocumentoPage({
                     <option value="">—</option>
                     {formas.data?.map((f) => (
                       <option key={String(f["id"])} value={String(f["id"])}>
-                        {String(f["nome"])}
+                        {formaLabel(f)}
                       </option>
                     ))}
                   </select>
@@ -1359,7 +1432,7 @@ export function DocumentoPage({
             {clienteFoco ? <div className="sm:col-span-2">{creditoPainel}</div> : null}
 
             <div className="space-y-1.5">
-              <Label>Centro</Label>
+              <Label>Centro{config.table === "pedidos" ? " *" : ""}</Label>
               <select
                 value={header["centro"] ?? ""}
                 onChange={(e) => setHeader((h) => ({ ...h, centro: e.target.value }))}
@@ -1411,7 +1484,7 @@ export function DocumentoPage({
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <Label>Rota de entrega</Label>
+                  <Label>Rota de entrega *</Label>
                   <select
                     value={header["rota"] ?? ""}
                     onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
@@ -1421,6 +1494,21 @@ export function DocumentoPage({
                     {rotas.data?.map((r) => (
                       <option key={String(r["id"])} value={String(r["id"])}>
                         {String(r["nome"])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Forma de pagamento *</Label>
+                  <select
+                    value={header["forma"] ?? ""}
+                    onChange={(e) => setHeader((h) => ({ ...h, forma: e.target.value }))}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {formas.data?.map((f) => (
+                      <option key={String(f["id"])} value={String(f["id"])}>
+                        {formaLabel(f)}
                       </option>
                     ))}
                   </select>
