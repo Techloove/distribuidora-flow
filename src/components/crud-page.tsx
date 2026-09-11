@@ -614,7 +614,16 @@ export function CrudPage({
               </div>
             ))}
           </div>
-          {extraForm ? <div className="mt-4">{extraForm({ form, editing })}</div> : null}
+          {extraForm ? (
+            <div className="mt-4">
+              {extraForm({
+                form,
+                editing,
+                patch: (values) => setForm((f) => ({ ...f, ...values })),
+                openRow: (row) => openEdit(row),
+              })}
+            </div>
+          ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
