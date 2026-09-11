@@ -69,7 +69,7 @@ export function DocumentoPage({
   config: DocumentoConfig;
   initialDocId?: string | null;
 }) {
-  const { client, roles } = useSupabase();
+  const { client, roles, user } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(initialDocId);
@@ -105,7 +105,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito"
+          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id"
           : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
@@ -158,6 +158,27 @@ export function DocumentoPage({
     },
   });
 
+  const representantes = useQuery({
+    queryKey: ["representantes", "options"],
+    enabled: !!client && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, profile_id, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  /** Representante vinculado ao login atual (usado como padrão nos pedidos). */
+  const meuRepresentante = String(
+    representantes.data?.find((r) => r["profile_id"] && r["profile_id"] === user?.id)?.["id"] ?? "",
+  );
+
+  const representanteNome = (id: unknown) =>
+    String(representantes.data?.find((r) => r["id"] === id)?.["nome"] ?? "—");
+
   const formas = useQuery({
     queryKey: ["formas_pagamento", "options"],
     enabled: !!client,
@@ -199,6 +220,8 @@ export function DocumentoPage({
     if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
     if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
     if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
+    if (f["representante"])
+      list = list.filter((d) => String(d["representante_id"] ?? "") === f["representante"]);
     if (f["forma"])
       list = list.filter((d) => String(d["forma_pagamento_id"] ?? "") === f["forma"]);
     if (f["parceiro"])
@@ -290,6 +313,7 @@ export function DocumentoPage({
         payload["rota_id"] = header["rota"] || null;
         payload["previsao_entrega"] = header["previsao"] || null;
         payload["forma_pagamento_id"] = header["forma"] || null;
+        payload["representante_id"] = header["representante"] || meuRepresentante || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
       if (config.table === "pedidos") {
@@ -599,6 +623,9 @@ export function DocumentoPage({
             rota: String(p?.["rota_id"] ?? ""),
             centro: String(p?.["centro_id"] ?? h["centro"] ?? ""),
             forma: String(formaCliente?.["id"] ?? ""),
+            representante: String(
+              meuRepresentante || p?.["representante_id"] || h["representante"] || "",
+            ),
           }
         : {}),
     }));
@@ -774,15 +801,26 @@ export function DocumentoPage({
             }))}
           />
           {config.table === "pedidos" ? (
-            <FilterSelect
-              label="Rota"
-              value={filtros["rota"] ?? ""}
-              onChange={(v) => setF("rota", v)}
-              options={(rotas.data ?? []).map((r) => ({
-                value: String(r["id"]),
-                label: String(r["nome"]),
-              }))}
-            />
+            <>
+              <FilterSelect
+                label="Rota"
+                value={filtros["rota"] ?? ""}
+                onChange={(v) => setF("rota", v)}
+                options={(rotas.data ?? []).map((r) => ({
+                  value: String(r["id"]),
+                  label: String(r["nome"]),
+                }))}
+              />
+              <FilterSelect
+                label="Representante"
+                value={filtros["representante"] ?? ""}
+                onChange={(v) => setF("representante", v)}
+                options={(representantes.data ?? []).map((r) => ({
+                  value: String(r["id"]),
+                  label: String(r["nome"]),
+                }))}
+              />
+            </>
           ) : null}
           <FilterSelect
             label="Forma de pagamento"
@@ -921,6 +959,9 @@ export function DocumentoPage({
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Nº</th>
                     <th className="px-4 py-2 text-left font-medium">{config.partnerLabel}</th>
+                    {config.table === "pedidos" ? (
+                      <th className="px-4 py-2 text-left font-medium">Representante</th>
+                    ) : null}
                     <th className="px-4 py-2 text-left font-medium">{config.dateLabel}</th>
                     <th className="px-4 py-2 text-left font-medium">Status</th>
                     <th className="px-4 py-2 text-right font-medium">Total</th>
@@ -943,6 +984,11 @@ export function DocumentoPage({
                         <td className="max-w-[380px] truncate px-4 py-2.5">
                           {partnerName(d[config.partnerKey])}
                         </td>
+                        {config.table === "pedidos" ? (
+                          <td className="max-w-[220px] truncate px-4 py-2.5 text-muted-foreground">
+                            {representanteNome(d["representante_id"])}
+                          </td>
+                        ) : null}
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {fmtDate(d[config.dateField])}
                         </td>
@@ -1005,6 +1051,9 @@ export function DocumentoPage({
                       centros.data?.find((c) => c["id"] === doc["centro_id"])?.["nome"] ??
                         "sem centro",
                     )}
+                    {config.table === "pedidos"
+                      ? ` · Representante: ${representanteNome(doc["representante_id"])}`
+                      : ""}
 
                   </p>
                 </div>
@@ -1483,6 +1532,28 @@ export function DocumentoPage({
               </>
             ) : (
               <>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Representante / vendedor</Label>
+                  <select
+                    value={header["representante"] ?? meuRepresentante}
+                    onChange={(e) =>
+                      setHeader((h) => ({ ...h, representante: e.target.value }))
+                    }
+                    disabled={!!meuRepresentante && !roles.includes("admin") && !roles.includes("gestor")}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {representantes.data?.map((r) => (
+                      <option key={String(r["id"])} value={String(r["id"])}>
+                        {String(r["nome"])}
+                        {r["profile_id"] ? " (com login)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Vem do login quando o usuário está vinculado a um representante.
+                  </p>
+                </div>
                 <div className="space-y-1.5">
                   <Label>Rota de entrega *</Label>
                   <select

@@ -91,9 +91,38 @@ function UsuariosPage() {
     },
   });
 
+  const representantes = useQuery({
+    queryKey: ["representantes", "usuarios"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, profile_id, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const vincular = useMutation({
+    mutationFn: async ({ userId, repId }: { userId: string; repId: string }) => {
+      const { error } = await client!.rpc("admin_vincular_representante", {
+        _user_id: userId,
+        _representante_id: repId || null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Vínculo atualizado");
+      queryClient.invalidateQueries({ queryKey: ["representantes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const recarregar = () => {
     queryClient.invalidateQueries({ queryKey: ["profiles"] });
     queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+    queryClient.invalidateQueries({ queryKey: ["representantes"] });
   };
 
   const toggle = useMutation({
@@ -215,6 +244,7 @@ function UsuariosPage() {
                   <TableRow>
                     <TableHead>Usuário</TableHead>
                     <TableHead>E-mail</TableHead>
+                    <TableHead>Representante / vendedor</TableHead>
                     <TableHead>Papéis</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -231,6 +261,31 @@ function UsuariosPage() {
                           ) : null}
                         </TableCell>
                         <TableCell>{String(p["email"] ?? "—")}</TableCell>
+                        <TableCell>
+                          <select
+                            value={String(
+                              representantes.data?.find((r) => r["profile_id"] === p["id"])?.[
+                                "id"
+                              ] ?? "",
+                            )}
+                            disabled={!isAdmin || vincular.isPending}
+                            onChange={(e) =>
+                              vincular.mutate({ userId: String(p["id"]), repId: e.target.value })
+                            }
+                            className="h-9 w-full min-w-44 rounded-md border border-input bg-background px-2 text-sm"
+                          >
+                            <option value="">Sem vínculo</option>
+                            {(representantes.data ?? [])
+                              .filter(
+                                (r) => !r["profile_id"] || r["profile_id"] === p["id"],
+                              )
+                              .map((r) => (
+                                <option key={String(r["id"])} value={String(r["id"])}>
+                                  {String(r["nome"])}
+                                </option>
+                              ))}
+                          </select>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1.5">
                             {papeis.map((papel) => {
