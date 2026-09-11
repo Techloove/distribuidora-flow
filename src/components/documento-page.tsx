@@ -1173,6 +1173,7 @@ export function DocumentoPage({
                       <TableHead>Produto</TableHead>
                       <TableHead className="text-right">Qtd</TableHead>
                       <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
+                      <TableHead className="text-right">Peso</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                       <TableHead className="w-12" />
                     </TableRow>
@@ -1225,6 +1226,9 @@ export function DocumentoPage({
                             brl(it[config.itemPriceField])
                           )}
                         </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {kg(pesoItem(it))}
+                        </TableCell>
                         <TableCell className="text-right">{brl(it["total"])}</TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -1238,6 +1242,16 @@ export function DocumentoPage({
                         </TableCell>
                       </TableRow>
                     ))}
+                    <TableRow>
+                      <TableCell className="font-semibold">Peso total dos itens</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-right font-semibold">{kg(pesoTotal)}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {brl(doc["total_itens"])}
+                      </TableCell>
+                      <TableCell />
+                    </TableRow>
                   </TableBody>
                 </Table>
               )}
