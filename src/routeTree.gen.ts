@@ -45,7 +45,9 @@ import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
+import { Route as AppRelatoriosFinanceirosRouteImport } from './routes/_app/relatorios-financeiros'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
+import { Route as AppRotaDespesasRouteImport } from './routes/_app/rota-despesas'
 import { Route as AppRotasRouteImport } from './routes/_app/rotas'
 import { Route as AppSeparacaoRouteImport } from './routes/_app/separacao'
 import { Route as AppTabelasPrecoRouteImport } from './routes/_app/tabelas-preco'
@@ -232,9 +234,20 @@ const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppRelatoriosFinanceirosRoute =
+  AppRelatoriosFinanceirosRouteImport.update({
+    id: '/relatorios-financeiros',
+    path: '/relatorios-financeiros',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 const AppRepresentantesRoute = AppRepresentantesRouteImport.update({
   id: '/representantes',
   path: '/representantes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRotaDespesasRoute = AppRotaDespesasRouteImport.update({
+  id: '/rota-despesas',
+  path: '/rota-despesas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppRotasRoute = AppRotasRouteImport.update({
@@ -299,7 +312,9 @@ export interface FileRoutesByFullPath {
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
+  '/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/rota-despesas': typeof AppRotaDespesasRoute
   '/rotas': typeof AppRotasRoute
   '/separacao': typeof AppSeparacaoRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
@@ -342,7 +357,9 @@ export interface FileRoutesByTo {
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
   '/relatorios': typeof AppRelatoriosRoute
+  '/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/representantes': typeof AppRepresentantesRoute
+  '/rota-despesas': typeof AppRotaDespesasRoute
   '/rotas': typeof AppRotasRoute
   '/separacao': typeof AppSeparacaoRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
@@ -387,7 +404,9 @@ export interface FileRoutesById {
   '/_app/receber': typeof AppReceberRoute
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
+  '/_app/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
+  '/_app/rota-despesas': typeof AppRotaDespesasRoute
   '/_app/rotas': typeof AppRotasRoute
   '/_app/separacao': typeof AppSeparacaoRoute
   '/_app/tabelas-preco': typeof AppTabelasPrecoRoute
@@ -432,7 +451,9 @@ export interface FileRouteTypes {
     | '/receber'
     | '/regras-comissao'
     | '/relatorios'
+    | '/relatorios-financeiros'
     | '/representantes'
+    | '/rota-despesas'
     | '/rotas'
     | '/separacao'
     | '/tabelas-preco'
@@ -475,7 +496,9 @@ export interface FileRouteTypes {
     | '/receber'
     | '/regras-comissao'
     | '/relatorios'
+    | '/relatorios-financeiros'
     | '/representantes'
+    | '/rota-despesas'
     | '/rotas'
     | '/separacao'
     | '/tabelas-preco'
@@ -519,7 +542,9 @@ export interface FileRouteTypes {
     | '/_app/receber'
     | '/_app/regras-comissao'
     | '/_app/relatorios'
+    | '/_app/relatorios-financeiros'
     | '/_app/representantes'
+    | '/_app/rota-despesas'
     | '/_app/rotas'
     | '/_app/separacao'
     | '/_app/tabelas-preco'
@@ -787,11 +812,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRelatoriosRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/relatorios-financeiros': {
+      id: '/_app/relatorios-financeiros'
+      path: '/relatorios-financeiros'
+      fullPath: '/relatorios-financeiros'
+      preLoaderRoute: typeof AppRelatoriosFinanceirosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/representantes': {
       id: '/_app/representantes'
       path: '/representantes'
       fullPath: '/representantes'
       preLoaderRoute: typeof AppRepresentantesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/rota-despesas': {
+      id: '/_app/rota-despesas'
+      path: '/rota-despesas'
+      fullPath: '/rota-despesas'
+      preLoaderRoute: typeof AppRotaDespesasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/rotas': {
@@ -866,7 +905,9 @@ interface AppRouteRouteChildren {
   AppReceberRoute: typeof AppReceberRoute
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
+  AppRelatoriosFinanceirosRoute: typeof AppRelatoriosFinanceirosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
+  AppRotaDespesasRoute: typeof AppRotaDespesasRoute
   AppRotasRoute: typeof AppRotasRoute
   AppSeparacaoRoute: typeof AppSeparacaoRoute
   AppTabelasPrecoRoute: typeof AppTabelasPrecoRoute
@@ -908,7 +949,9 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppReceberRoute: AppReceberRoute,
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
+  AppRelatoriosFinanceirosRoute: AppRelatoriosFinanceirosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
+  AppRotaDespesasRoute: AppRotaDespesasRoute,
   AppRotasRoute: AppRotasRoute,
   AppSeparacaoRoute: AppSeparacaoRoute,
   AppTabelasPrecoRoute: AppTabelasPrecoRoute,
