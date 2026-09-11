@@ -76,6 +76,8 @@ const nav = [
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
+      { to: "/gestao-comissoes", label: "Gestão de comissões", icon: Coins },
+
     ],
   },
   {
@@ -112,6 +114,8 @@ const nav = [
     group: "Gestão",
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+      { to: "/relatorio-vendas", label: "Relatório de vendas", icon: BarChart3 },
+
       { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },

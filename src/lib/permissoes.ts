@@ -17,6 +17,8 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/lead-rota", label: "Lead Rota", grupo: "Comercial" },
   { path: "/metas", label: "Metas", grupo: "Comercial" },
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
+  { path: "/gestao-comissoes", label: "Gestão de comissões", grupo: "Comercial" },
+
   { path: "/separacao", label: "Separação", grupo: "Operação" },
   { path: "/compras", label: "Compras / NF", grupo: "Operação" },
   { path: "/planejamento-compras", label: "Planejamento de compras", grupo: "Operação" },
@@ -39,6 +41,8 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/boletos", label: "Boletos", grupo: "Financeiro" },
   { path: "/pagar", label: "Contas a pagar", grupo: "Financeiro" },
   { path: "/relatorios", label: "Relatórios", grupo: "Gestão" },
+  { path: "/relatorio-vendas", label: "Relatório de vendas", grupo: "Gestão" },
+
   { path: "/clientes-inativos", label: "Clientes sem comprar", grupo: "Gestão" },
   { path: "/notificacoes", label: "Notificações", grupo: "Gestão" },
   { path: "/usuarios", label: "Usuários e papéis", grupo: "Gestão" },
