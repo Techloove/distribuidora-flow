@@ -448,7 +448,10 @@ function SeparacaoPage() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  avancar.mutate({ pedidoId: id, status: "separacao" });
+                                  rpc.mutate({
+                                    fn: "iniciar_separacao",
+                                    params: { _pedido_id: id },
+                                  });
                                 }}
                               >
                                 Iniciar separação
@@ -459,7 +462,10 @@ function SeparacaoPage() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  avancar.mutate({ pedidoId: id, status: "separado" });
+                                  rpc.mutate({
+                                    fn: "concluir_separacao",
+                                    params: { _pedido_id: id },
+                                  });
                                 }}
                               >
                                 Concluir separação
@@ -471,11 +477,19 @@ function SeparacaoPage() {
                                 variant="secondary"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  avancar.mutate({ pedidoId: id, status: "em_rota" });
+                                  rpc.mutate({
+                                    fn: "conferir_separacao",
+                                    params: { _pedido_id: id, _obs: null },
+                                  });
                                 }}
                               >
-                                Enviar para rota
+                                Conferir separação
                               </Button>
+                            ) : null}
+                            {p.status === "conferido" ? (
+                              <span className="text-[11px] text-emerald-600">
+                                Liberado para faturamento
+                              </span>
                             ) : null}
                           </td>
                         </tr>
@@ -486,36 +500,116 @@ function SeparacaoPage() {
                                 <TableRow>
                                   <TableHead>Código</TableHead>
                                   <TableHead>Produto</TableHead>
-                                  <TableHead className="text-right">Qtd.</TableHead>
+                                  <TableHead className="text-right">Pedido</TableHead>
                                   <TableHead className="text-right">Estoque</TableHead>
-                                  <TableHead className="w-24">Separado</TableHead>
+                                  <TableHead className="w-28 text-right">Separado</TableHead>
+                                  <TableHead className="text-right">Falta</TableHead>
+                                  <TableHead>Situação</TableHead>
+                                  <TableHead className="no-print w-44">
+                                    Tratamento da divergência
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {itens.map((r) => (
-                                  <TableRow key={String(r["produto_id"])}>
-                                    <TableCell>{String(r["produto_codigo"] ?? "—")}</TableCell>
-                                    <TableCell>{String(r["produto"])}</TableCell>
-                                    <TableCell className="text-right">
-                                      {String(r["quantidade"])}
-                                    </TableCell>
-                                    <TableCell
-                                      className={`text-right ${
-                                        Number(r["estoque_atual"] ?? 0) <
-                                        Number(r["quantidade"] ?? 0)
-                                          ? "text-destructive"
-                                          : ""
-                                      }`}
-                                    >
-                                      {String(r["estoque_atual"])}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">______</TableCell>
-                                  </TableRow>
-                                ))}
+                                {itens.map((r) => {
+                                  const itemId = String(r["item_id"] ?? "");
+                                  const pedida = Number(r["quantidade"] ?? 0);
+                                  const sep = r["quantidade_separada"];
+                                  const separada = sep === null || sep === undefined ? null : Number(sep);
+                                  const falta = separada === null ? null : pedida - separada;
+                                  const editavel = p.status === "separacao";
+                                  return (
+                                    <TableRow key={itemId || String(r["produto_id"])}>
+                                      <TableCell>{String(r["produto_codigo"] ?? "—")}</TableCell>
+                                      <TableCell>{String(r["produto"])}</TableCell>
+                                      <TableCell className="text-right">{pedida}</TableCell>
+                                      <TableCell
+                                        className={`text-right ${
+                                          Number(r["estoque_atual"] ?? 0) < pedida
+                                            ? "text-destructive"
+                                            : ""
+                                        }`}
+                                      >
+                                        {String(r["estoque_atual"])}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {editavel ? (
+                                          <input
+                                            type="number"
+                                            step="0.001"
+                                            min="0"
+                                            defaultValue={separada ?? ""}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onBlur={(e) => {
+                                              const v = e.target.value;
+                                              if (v === "") return;
+                                              if (Number(v) === separada) return;
+                                              registrar.mutate({
+                                                itemId,
+                                                quantidade: Number(v),
+                                                acao: String(r["divergencia_acao"] ?? "") || null,
+                                              });
+                                            }}
+                                            className="h-8 w-24 rounded-md border border-input bg-background px-2 text-right text-sm"
+                                          />
+                                        ) : (
+                                          <span>{separada ?? "—"}</span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell
+                                        className={`text-right ${falta ? "text-destructive" : ""}`}
+                                      >
+                                        {falta === null ? "—" : falta}
+                                      </TableCell>
+                                      <TableCell className="text-xs">
+                                        {separada === null ? (
+                                          <span className="text-muted-foreground">pendente</span>
+                                        ) : falta === 0 ? (
+                                          <span className="text-emerald-600">OK</span>
+                                        ) : (
+                                          <span className="font-medium text-destructive">
+                                            divergência
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="no-print">
+                                        {editavel && separada !== null && falta !== 0 ? (
+                                          <select
+                                            className="h-8 w-40 rounded-md border border-input bg-background px-2 text-xs"
+                                            value={String(r["divergencia_acao"] ?? "")}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={(e) =>
+                                              registrar.mutate({
+                                                itemId,
+                                                quantidade: separada,
+                                                acao: e.target.value || null,
+                                              })
+                                            }
+                                          >
+                                            <option value="">Definir…</option>
+                                            <option value="aguardar">Aguardar produto</option>
+                                            <option value="alterar_quantidade">
+                                              Alterar quantidade
+                                            </option>
+                                            <option value="retirar_item">Retirar item</option>
+                                            <option value="substituir">Substituir item</option>
+                                            <option value="cancelar_item">Cancelar item</option>
+                                            <option value="outro">Outra situação</option>
+                                          </select>
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground">
+                                            {String(r["divergencia_acao"] ?? "—").replace(/_/g, " ")}
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
                               </TableBody>
                             </Table>
                           </td>
                         </tr>
+
                       </Fragment>
                     );
                   })}
