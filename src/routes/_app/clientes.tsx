@@ -96,19 +96,41 @@ function ClientesPage() {
     },
   });
 
-  const camposComFormas: CrudField[] = fields.map((f) =>
-    f.name === "condicao_pagamento"
-      ? {
-          ...f,
-          label: "Condição de pagamento (formas cadastradas)",
-          type: "select",
-          options: (formas.data ?? []).map((forma) => ({
-            value: String(forma["nome"]),
-            label: String(forma["nome"]),
-          })),
-        }
-      : f,
-  );
+  const representantes = useQuery({
+    queryKey: ["representantes", "clientes"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((r) => r["ativo"] !== false);
+    },
+  });
+
+  const camposComFormas: CrudField[] = fields.map((f) => {
+    if (f.name === "condicao_pagamento")
+      return {
+        ...f,
+        label: "Condição de pagamento (formas cadastradas)",
+        type: "select" as const,
+        options: (formas.data ?? []).map((forma) => ({
+          value: String(forma["nome"]),
+          label: String(forma["nome"]),
+        })),
+      };
+    if (f.name === "representante_id")
+      return {
+        ...f,
+        options: (representantes.data ?? []).map((r) => ({
+          value: String(r["id"]),
+          label: String(r["nome"]),
+        })),
+      };
+    return f;
+  });
+
 
   return (
     <ErpLayout
