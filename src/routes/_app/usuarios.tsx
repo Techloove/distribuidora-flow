@@ -91,9 +91,38 @@ function UsuariosPage() {
     },
   });
 
+  const representantes = useQuery({
+    queryKey: ["representantes", "usuarios"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, profile_id, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const vincular = useMutation({
+    mutationFn: async ({ userId, repId }: { userId: string; repId: string }) => {
+      const { error } = await client!.rpc("admin_vincular_representante", {
+        _user_id: userId,
+        _representante_id: repId || null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Vínculo atualizado");
+      queryClient.invalidateQueries({ queryKey: ["representantes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const recarregar = () => {
     queryClient.invalidateQueries({ queryKey: ["profiles"] });
     queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+    queryClient.invalidateQueries({ queryKey: ["representantes"] });
   };
 
   const toggle = useMutation({
