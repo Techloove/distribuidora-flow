@@ -76,6 +76,10 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [multa, setMulta] = useState("");
   const [descontoBaixa, setDescontoBaixa] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [openNovo, setOpenNovo] = useState(false);
+  const [novo, setNovo] = useState({ ...novoTituloVazio });
+  const setN = (k: keyof typeof novoTituloVazio, v: string) =>
+    setNovo((s) => ({ ...s, [k]: v }));
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
