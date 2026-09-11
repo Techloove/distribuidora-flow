@@ -115,7 +115,8 @@ stable
 security definer
 set search_path = public
 as $$
-declare ped record; peso numeric(14,3); f record; melhor record; base numeric(14,2);
+declare ped record; peso numeric(14,3); f record; base numeric(14,2);
+        best_id uuid; best_nome text; best_pct numeric(5,2);
 begin
   select * into ped from public.pedidos where id = _pedido_id;
   if ped is null then return; end if;
@@ -127,7 +128,7 @@ begin
    where i.pedido_id = _pedido_id;
 
   base := coalesce(ped.total_itens, 0);
-  melhor := null;
+  best_pct := null;
 
   for f in
     select * from public.desconto_faixas_peso where ativo order by ordem, peso_min
@@ -148,17 +149,17 @@ begin
       if peso_escopo >= f.peso_min
          and (f.peso_max is null or peso_escopo <= f.peso_max)
          and peso_escopo > 0
-         and (melhor is null or f.percentual > melhor.percentual) then
-        melhor := f;
+         and (best_pct is null or f.percentual > best_pct) then
+        best_id := f.id; best_nome := f.nome; best_pct := f.percentual;
       end if;
     end;
   end loop;
 
-  if melhor is null then
+  if best_pct is null then
     return query select peso, null::uuid, null::text, 0::numeric, 0::numeric;
   else
-    return query select peso, melhor.id, melhor.nome::text, melhor.percentual,
-                        round(base * melhor.percentual / 100, 2);
+    return query select peso, best_id, best_nome::text, best_pct::numeric,
+                        round(base * best_pct / 100, 2);
   end if;
 end;
 $$;
