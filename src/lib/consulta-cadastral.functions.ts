@@ -95,6 +95,17 @@ const txt = (v: unknown) => {
   return s === "" ? undefined : s;
 };
 
+/** Normaliza datas (dd/mm/aaaa, ISO com hora) para aaaa-mm-dd. */
+const dataIso = (v: unknown) => {
+  const s = txt(v);
+  if (!s) return undefined;
+  const br = s.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  return undefined;
+};
+
 /** BrasilAPI: dados públicos da Receita Federal, sem chave de API. */
 function mapBrasilApi(j: Record<string, unknown>): DadosCadastrais {
   const cnaes = Array.isArray(j["cnaes_secundarios"])
