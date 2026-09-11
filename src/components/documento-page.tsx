@@ -86,6 +86,8 @@ export function DocumentoPage({
 
 
   const canWrite = roles.length > 0;
+  /** Permissão por papel para alterar o preço unitário dos itens. */
+  const podeAlterarPreco = usePodeAlterarPreco();
 
   const docs = useQuery({
     queryKey: [config.table],
