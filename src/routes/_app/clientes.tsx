@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ConsultaCadastral } from "@/components/consulta-cadastral";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 
@@ -81,6 +82,14 @@ function ClientesPage() {
         orderBy="razao_social"
         emptyLabel="Nenhum cliente cadastrado ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade"]}
+        extraForm={(ctx) => (
+          <ConsultaCadastral
+            form={ctx.form}
+            editing={ctx.editing}
+            patch={ctx.patch}
+            openRow={ctx.openRow}
+          />
+        )}
       />
     </ErpLayout>
   );
