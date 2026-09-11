@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
+import { Route as AppCargasRouteImport } from './routes/_app/cargas'
 import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
@@ -78,6 +79,11 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
 const AppBoletosRoute = AppBoletosRouteImport.update({
   id: '/boletos',
   path: '/boletos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCargasRoute = AppCargasRouteImport.update({
+  id: '/cargas',
+  path: '/cargas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCategoriasFinanceirasRoute =
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
@@ -340,6 +347,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
+  '/_app/cargas': typeof AppCargasRoute
   '/_app/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/auditoria'
     | '/_app/boletos'
+    | '/_app/cargas'
     | '/_app/categorias-financeiras'
     | '/_app/centros'
     | '/_app/clientes'
@@ -617,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/boletos'
       fullPath: '/boletos'
       preLoaderRoute: typeof AppBoletosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/cargas': {
+      id: '/_app/cargas'
+      path: '/cargas'
+      fullPath: '/cargas'
+      preLoaderRoute: typeof AppCargasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/categorias-financeiras': {
@@ -912,6 +931,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
+  AppCargasRoute: typeof AppCargasRoute
   AppCategoriasFinanceirasRoute: typeof AppCategoriasFinanceirasRoute
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
@@ -958,6 +978,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
+  AppCargasRoute: AppCargasRoute,
   AppCategoriasFinanceirasRoute: AppCategoriasFinanceirasRoute,
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,

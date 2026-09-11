@@ -103,20 +103,37 @@ function SeparacaoPage() {
     );
   }, [lista.data, centro, filtros]);
 
-  const avancar = useMutation({
-    mutationFn: async (args: { pedidoId: string; status: string }) => {
-      const { error } = await client!.rpc("avancar_pedido", {
-        _pedido_id: args.pedidoId,
-        _novo_status: args.status,
-      });
+  const rpc = useMutation({
+    mutationFn: async (args: { fn: string; params: Record<string, unknown> }) => {
+      const { error } = await client!.rpc(args.fn, args.params);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Status atualizado");
+      toast.success("Separação atualizada");
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const registrar = useMutation({
+    mutationFn: async (args: {
+      itemId: string;
+      quantidade: number;
+      acao?: string | null;
+      obs?: string | null;
+    }) => {
+      const { error } = await client!.rpc("registrar_separacao_item", {
+        _item_id: args.itemId,
+        _quantidade: args.quantidade,
+        _acao: args.acao ?? null,
+        _obs: args.obs ?? null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => queryClient.invalidateQueries(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   /** Agrupamento por onda: soma a quantidade do mesmo produto em vários pedidos. */
   const porProduto = useMemo(() => {
