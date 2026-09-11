@@ -100,6 +100,7 @@ const nav = [
       { to: "/relatorios-financeiros", label: "Relatórios financeiros", icon: FileText },
       { to: "/rota-despesas", label: "Custos de rota", icon: Route },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
+      { to: "/descontos-peso", label: "Descontos por peso (kg)", icon: Tags },
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
     ],
