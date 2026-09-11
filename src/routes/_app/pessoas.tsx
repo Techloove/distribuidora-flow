@@ -1,9 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ComissaoRepresentante } from "@/components/comissao-representante";
+import { ConsultaCadastral } from "@/components/consulta-cadastral";
+import { ConsultaIe } from "@/components/consulta-ie";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
+import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/pessoas")({
   head: () => ({
@@ -48,13 +52,24 @@ const fields: CrudField[] = [
     name: "tipo_pessoa",
     label: "Tipo de pessoa",
     type: "select",
+    hiddenInForm: true,
     options: [
       { value: "PJ", label: "Pessoa jurídica" },
       { value: "PF", label: "Pessoa física" },
     ],
   },
-  { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true },
+  { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true, hiddenInForm: true },
   { name: "inscricao_estadual", label: "Inscrição estadual" },
+  { name: "uf_inscricao_estadual", label: "UF da inscrição estadual" },
+  { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual" },
+  { name: "indicador_contribuinte_icms", label: "Contribuinte de ICMS" },
+  { name: "situacao_cadastral", label: "Situação cadastral" },
+  { name: "data_abertura", label: "Data de abertura", type: "date" },
+  { name: "data_nascimento", label: "Data de nascimento", type: "date" },
+  { name: "natureza_juridica", label: "Natureza jurídica" },
+  { name: "porte", label: "Porte" },
+  { name: "cnae_principal", label: "CNAE principal", span: 2 },
+  { name: "cnae_secundarios", label: "CNAEs secundários", span: 2 },
   { name: "email", label: "E-mail", type: "email", inTable: true },
   { name: "telefone", label: "Telefone" },
   { name: "whatsapp", label: "WhatsApp" },
@@ -85,6 +100,35 @@ const fields: CrudField[] = [
 ];
 
 function PessoasPage() {
+  const { client } = useSupabase();
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "pessoas"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((f) => f["ativo"] !== false);
+    },
+  });
+
+  const camposComFormas: CrudField[] = fields.map((f) =>
+    f.name === "condicao_pagamento"
+      ? {
+          ...f,
+          label: "Condição de pagamento (formas cadastradas)",
+          type: "select",
+          options: (formas.data ?? []).map((forma) => ({
+            value: String(forma["nome"]),
+            label: String(forma["nome"]),
+          })),
+        }
+      : f,
+  );
+
   return (
     <ErpLayout
       title="Cadastro unificado"
@@ -92,12 +136,21 @@ function PessoasPage() {
     >
       <CrudPage
         table="pessoas"
-        fields={fields}
+        fields={camposComFormas}
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
-        extraForm={({ form, editing }) => (
+        extraFormTop
+        extraForm={({ form, editing, patch, openRow }) => (
           <div className="space-y-4">
+            <ConsultaCadastral
+              form={form}
+              editing={editing}
+              patch={patch}
+              openRow={openRow}
+              escopo="pessoas"
+            />
+            <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
             {form["is_cliente"] ? (
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}

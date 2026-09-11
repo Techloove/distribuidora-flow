@@ -32,10 +32,12 @@ export function ConsultaIe({
   form,
   editing,
   patch,
+  escopo = "clientes",
 }: {
   form: Record<string, string | boolean>;
   editing: Row | null;
   patch: (values: Record<string, string>) => void;
+  escopo?: "clientes" | "pessoas";
 }) {
   const { client, canManage } = useSupabase();
   const queryClient = useQueryClient();
@@ -85,7 +87,8 @@ export function ConsultaIe({
       provedor,
       resultado: resultadoTexto,
       mensagem,
-      cliente_id: editandoId,
+      cliente_id: escopo === "clientes" ? editandoId : null,
+      pessoa_id: escopo === "pessoas" ? editandoId : null,
       origem_cache: doCache,
       inscricao_estadual: reg?.inscricao ?? null,
       uf_inscricao: reg?.uf ?? null,

@@ -68,11 +68,13 @@ export function ConsultaCadastral({
   editing,
   patch,
   openRow,
+  escopo = "clientes",
 }: {
   form: Record<string, string | boolean>;
   editing: Row | null;
   patch: (values: Record<string, string>) => void;
   openRow: (row: Row) => void;
+  escopo?: "clientes" | "pessoas";
 }) {
   const { client, canManage } = useSupabase();
   const queryClient = useQueryClient();
@@ -92,13 +94,14 @@ export function ConsultaCadastral({
   const documento = String(form["cnpj_cpf"] ?? "");
   const doc = digitos(documento);
   const editandoId = editing ? String(editing["id"]) : null;
+  const rpcDocumento = escopo === "pessoas" ? "pessoa_por_documento" : "cliente_por_documento";
 
-  /** Duplicidade: mesmo documento já cadastrado em outro cliente. */
+  /** Duplicidade: mesmo documento já cadastrado em outro registro. */
   const duplicado = useQuery({
-    queryKey: ["cliente_por_documento", doc],
+    queryKey: [rpcDocumento, doc],
     enabled: !!client && (doc.length === 11 || doc.length === 14),
     queryFn: async () => {
-      const { data, error } = await client!.rpc("cliente_por_documento", { _documento: doc });
+      const { data, error } = await client!.rpc(rpcDocumento, { _documento: doc });
       if (error) return [] as Row[];
       return ((data ?? []) as Row[]).filter((r) => String(r["id"]) !== editandoId);
     },
@@ -134,7 +137,8 @@ export function ConsultaCadastral({
       provedor,
       resultado: resultadoTexto,
       mensagem,
-      cliente_id: editandoId,
+      cliente_id: escopo === "clientes" ? editandoId : null,
+      pessoa_id: escopo === "pessoas" ? editandoId : null,
       origem_cache: doCache,
     });
     queryClient.invalidateQueries({ queryKey: ["consultas_log", doc] });
@@ -236,9 +240,9 @@ export function ConsultaCadastral({
 
   async function abrirExistente(id: string) {
     if (!client) return;
-    const { data, error } = await client.from("clientes").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await client.from(escopo).select("*").eq("id", id).maybeSingle();
     if (error || !data) {
-      toast.error("Não foi possível abrir o cliente.");
+      toast.error("Não foi possível abrir o cadastro.");
       return;
     }
     setResultado(null);
