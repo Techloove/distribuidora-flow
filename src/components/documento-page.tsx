@@ -526,6 +526,19 @@ export function DocumentoPage({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  /** Compra feita, mercadoria ainda não recebida. */
+  const marcarComprado = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!.rpc("marcar_compra_comprada", { _compra_id: selected });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Compra marcada como comprada — aguardando o recebimento");
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const cancelar = useMutation({
     mutationFn: async () => {
       if (config.table === "pedidos") {
