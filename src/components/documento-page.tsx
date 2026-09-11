@@ -133,6 +133,23 @@ export function DocumentoPage({
     },
   });
 
+  /** Quantidades já compradas (NF de entrada pendente de recebimento). */
+  const comprados = useQuery({
+    queryKey: ["vw_produto_comprado"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("vw_produto_comprado")
+        .select("produto_id, quantidade_comprada");
+      if (error) throw new Error(error.message);
+      const mapa = new Map<string, number>();
+      for (const r of (data ?? []) as Row[]) {
+        mapa.set(String(r["produto_id"]), Number(r["quantidade_comprada"] ?? 0));
+      }
+      return mapa;
+    },
+  });
+
   const centros = useQuery({
     queryKey: ["centros", "options"],
     enabled: !!client,
