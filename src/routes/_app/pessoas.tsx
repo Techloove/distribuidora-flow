@@ -1,9 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ComissaoRepresentante } from "@/components/comissao-representante";
+import { ConsultaCadastral } from "@/components/consulta-cadastral";
+import { ConsultaIe } from "@/components/consulta-ie";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
+import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/pessoas")({
   head: () => ({
