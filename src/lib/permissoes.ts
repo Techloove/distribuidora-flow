@@ -21,9 +21,12 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/compras", label: "Compras / NF", grupo: "Operação" },
   { path: "/planejamento-compras", label: "Planejamento de compras", grupo: "Operação" },
   { path: "/estoque", label: "Estoque", grupo: "Operação" },
+  { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
+  { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
   { path: "/expedicao", label: "Expedição", grupo: "Operação" },
   { path: "/faturamento", label: "Faturamento (boletos)", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
+
   { path: "/financeiro", label: "Dashboard financeiro", grupo: "Financeiro" },
   { path: "/fluxo-caixa", label: "Fluxo de caixa", grupo: "Financeiro" },
   { path: "/contas", label: "Caixa e bancos", grupo: "Financeiro" },
