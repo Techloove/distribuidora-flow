@@ -1795,6 +1795,11 @@ function ProdutoPicker({
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   est. {String(p["estoque_atual"] ?? 0)}
+                  {(comprados.get(String(p["id"])) ?? 0) > 0 ? (
+                    <span className="ml-2 font-semibold text-primary">
+                      C {comprados.get(String(p["id"]))}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             ))
