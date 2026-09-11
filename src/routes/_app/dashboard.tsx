@@ -121,7 +121,10 @@ function Dashboard() {
         <Kpi label="Produtos" value={d ? String(d.produtos) : "—"} icon={Package} to="/produtos" />
       </div>
 
+      <FluxoOperacional />
+
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
+
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <AlertTriangle className="size-4 text-destructive" />
           Alertas de estoque mínimo
