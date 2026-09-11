@@ -180,3 +180,23 @@ function PessoasPage() {
     </ErpLayout>
   );
 }
+
+/** Comissões do vendedor: busca o vínculo comercial da própria pessoa. */
+function ComissaoDaPessoa({ pessoaId }: { pessoaId: string | null }) {
+  const { client } = useSupabase();
+  const vinculo = useQuery({
+    queryKey: ["representante_da_pessoa", pessoaId],
+    enabled: !!client && !!pessoaId,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id")
+        .eq("pessoa_id", pessoaId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? String(data["id"]) : null;
+    },
+  });
+
+  return <ComissaoRepresentante representanteId={vinculo.data ?? null} />;
+}
