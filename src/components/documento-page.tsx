@@ -209,13 +209,39 @@ export function DocumentoPage({
     },
   });
 
-  /** Filtros da listagem de documentos. */
-  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  /** Data de hoje (fuso local) usada como filtro inicial dos pedidos. */
+  const hoje = useMemo(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  }, []);
+
+  /** Filtros da listagem de documentos: pedidos abrem já no dia atual. */
+  const [filtros, setFiltros] = useState<Record<string, string>>(() =>
+    config.table === "pedidos" ? { de: hoje, ate: hoje } : {},
+  );
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+
+  /** Presets rápidos de período. */
+  const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
+  const diasAtras = (n: number) => {
+    const d = new Date(`${hoje}T00:00:00`);
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
+  const soMeusPedidos =
+    config.table === "pedidos" &&
+    !!meuRepresentante &&
+    !roles.includes("admin") &&
+    !roles.includes("gestor");
 
   const docsFiltrados = useMemo(() => {
     let list = docs.data ?? [];
     const f = filtros;
+    if (soMeusPedidos)
+      list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
     if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
     if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
     if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
@@ -244,7 +270,16 @@ export function DocumentoPage({
       });
     }
     return list;
-  }, [docs.data, filtros, centro, partners.data, config.partnerKey, config.dateField]);
+  }, [
+    docs.data,
+    filtros,
+    centro,
+    partners.data,
+    config.partnerKey,
+    config.dateField,
+    soMeusPedidos,
+    meuRepresentante,
+  ]);
 
   const statusOptions = useMemo(() => {
     const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
@@ -768,7 +803,37 @@ export function DocumentoPage({
 
 
 
-        <FilterBar onClear={() => setFiltros({})}>
+        {config.table === "pedidos" ? (
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "Hoje", de: hoje, ate: hoje },
+              { label: "Últimos 7 dias", de: diasAtras(6), ate: hoje },
+              { label: "Últimos 30 dias", de: diasAtras(29), ate: hoje },
+              { label: "Todo o período", de: "", ate: "" },
+            ].map((p) => {
+              const ativo = (filtros["de"] ?? "") === p.de && (filtros["ate"] ?? "") === p.ate;
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => setPeriodo(p.de, p.ate)}
+                  className={`rounded-full px-3 py-1 text-[11px] transition-colors ${
+                    ativo
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <FilterBar
+          onClear={() =>
+            setFiltros(config.table === "pedidos" ? { de: hoje, ate: hoje } : {})
+          }
+        >
 
           <FilterText
             label="Buscar"
