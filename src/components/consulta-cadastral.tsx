@@ -137,7 +137,8 @@ export function ConsultaCadastral({
       provedor,
       resultado: resultadoTexto,
       mensagem,
-      cliente_id: editandoId,
+      cliente_id: escopo === "clientes" ? editandoId : null,
+      pessoa_id: escopo === "pessoas" ? editandoId : null,
       origem_cache: doCache,
     });
     queryClient.invalidateQueries({ queryKey: ["consultas_log", doc] });
