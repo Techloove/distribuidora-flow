@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
+import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-inativos'
@@ -21,6 +22,7 @@ import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-fa
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
+import { Route as AppContasRouteImport } from './routes/_app/contas'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDevolucoesRouteImport } from './routes/_app/devolucoes'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
@@ -31,6 +33,7 @@ import { Route as AppFormasPagamentoRouteImport } from './routes/_app/formas-pag
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
 import { Route as AppLeadRotaRouteImport } from './routes/_app/lead-rota'
 import { Route as AppMetasRouteImport } from './routes/_app/metas'
+import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
 import { Route as AppNotificacoesRouteImport } from './routes/_app/notificacoes'
 import { Route as AppPagarRouteImport } from './routes/_app/pagar'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
@@ -71,6 +74,12 @@ const AppBoletosRoute = AppBoletosRouteImport.update({
   path: '/boletos',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCategoriasFinanceirasRoute =
+  AppCategoriasFinanceirasRouteImport.update({
+    id: '/categorias-financeiras',
+    path: '/categorias-financeiras',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 const AppCentrosRoute = AppCentrosRouteImport.update({
   id: '/centros',
   path: '/centros',
@@ -104,6 +113,11 @@ const AppComprasRoute = AppComprasRouteImport.update({
 const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppContasRoute = AppContasRouteImport.update({
+  id: '/contas',
+  path: '/contas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -154,6 +168,11 @@ const AppLeadRotaRoute = AppLeadRotaRouteImport.update({
 const AppMetasRoute = AppMetasRouteImport.update({
   id: '/metas',
   path: '/metas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
+  id: '/movimentacoes',
+  path: '/movimentacoes',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
@@ -237,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
@@ -244,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
   '/configuracoes': typeof AppConfiguracoesRoute
+  '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
@@ -254,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/fornecedores': typeof AppFornecedoresRoute
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
+  '/movimentacoes': typeof AppMovimentacoesRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -275,6 +297,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
@@ -282,6 +305,7 @@ export interface FileRoutesByTo {
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
   '/configuracoes': typeof AppConfiguracoesRoute
+  '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/estoque': typeof AppEstoqueRoute
@@ -292,6 +316,7 @@ export interface FileRoutesByTo {
   '/fornecedores': typeof AppFornecedoresRoute
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
+  '/movimentacoes': typeof AppMovimentacoesRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/pagar': typeof AppPagarRoute
   '/pedidos': typeof AppPedidosRoute
@@ -315,6 +340,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
+  '/_app/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
   '/_app/clientes-inativos': typeof AppClientesInativosRoute
@@ -322,6 +348,7 @@ export interface FileRoutesById {
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
   '/_app/configuracoes': typeof AppConfiguracoesRoute
+  '/_app/contas': typeof AppContasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/devolucoes': typeof AppDevolucoesRoute
   '/_app/estoque': typeof AppEstoqueRoute
@@ -332,6 +359,7 @@ export interface FileRoutesById {
   '/_app/fornecedores': typeof AppFornecedoresRoute
   '/_app/lead-rota': typeof AppLeadRotaRoute
   '/_app/metas': typeof AppMetasRoute
+  '/_app/movimentacoes': typeof AppMovimentacoesRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/pagar': typeof AppPagarRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -355,6 +383,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
@@ -362,6 +391,7 @@ export interface FileRouteTypes {
     | '/comissoes'
     | '/compras'
     | '/configuracoes'
+    | '/contas'
     | '/dashboard'
     | '/devolucoes'
     | '/estoque'
@@ -372,6 +402,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/lead-rota'
     | '/metas'
+    | '/movimentacoes'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -393,6 +424,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/categorias-financeiras'
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
@@ -400,6 +432,7 @@ export interface FileRouteTypes {
     | '/comissoes'
     | '/compras'
     | '/configuracoes'
+    | '/contas'
     | '/dashboard'
     | '/devolucoes'
     | '/estoque'
@@ -410,6 +443,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/lead-rota'
     | '/metas'
+    | '/movimentacoes'
     | '/notificacoes'
     | '/pagar'
     | '/pedidos'
@@ -432,6 +466,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/auditoria'
     | '/_app/boletos'
+    | '/_app/categorias-financeiras'
     | '/_app/centros'
     | '/_app/clientes'
     | '/_app/clientes-inativos'
@@ -439,6 +474,7 @@ export interface FileRouteTypes {
     | '/_app/comissoes'
     | '/_app/compras'
     | '/_app/configuracoes'
+    | '/_app/contas'
     | '/_app/dashboard'
     | '/_app/devolucoes'
     | '/_app/estoque'
@@ -449,6 +485,7 @@ export interface FileRouteTypes {
     | '/_app/fornecedores'
     | '/_app/lead-rota'
     | '/_app/metas'
+    | '/_app/movimentacoes'
     | '/_app/notificacoes'
     | '/_app/pagar'
     | '/_app/pedidos'
@@ -509,6 +546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBoletosRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/categorias-financeiras': {
+      id: '/_app/categorias-financeiras'
+      path: '/categorias-financeiras'
+      fullPath: '/categorias-financeiras'
+      preLoaderRoute: typeof AppCategoriasFinanceirasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/centros': {
       id: '/_app/centros'
       path: '/centros'
@@ -556,6 +600,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AppConfiguracoesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/contas': {
+      id: '/_app/contas'
+      path: '/contas'
+      fullPath: '/contas'
+      preLoaderRoute: typeof AppContasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/dashboard': {
@@ -626,6 +677,13 @@ declare module '@tanstack/react-router' {
       path: '/metas'
       fullPath: '/metas'
       preLoaderRoute: typeof AppMetasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/movimentacoes': {
+      id: '/_app/movimentacoes'
+      path: '/movimentacoes'
+      fullPath: '/movimentacoes'
+      preLoaderRoute: typeof AppMovimentacoesRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/notificacoes': {
@@ -739,6 +797,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
+  AppCategoriasFinanceirasRoute: typeof AppCategoriasFinanceirasRoute
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
   AppClientesInativosRoute: typeof AppClientesInativosRoute
@@ -746,6 +805,7 @@ interface AppRouteRouteChildren {
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
+  AppContasRoute: typeof AppContasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDevolucoesRoute: typeof AppDevolucoesRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
@@ -756,6 +816,7 @@ interface AppRouteRouteChildren {
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppLeadRotaRoute: typeof AppLeadRotaRoute
   AppMetasRoute: typeof AppMetasRoute
+  AppMovimentacoesRoute: typeof AppMovimentacoesRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPagarRoute: typeof AppPagarRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -776,6 +837,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
+  AppCategoriasFinanceirasRoute: AppCategoriasFinanceirasRoute,
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
   AppClientesInativosRoute: AppClientesInativosRoute,
@@ -783,6 +845,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
+  AppContasRoute: AppContasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDevolucoesRoute: AppDevolucoesRoute,
   AppEstoqueRoute: AppEstoqueRoute,
@@ -793,6 +856,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppLeadRotaRoute: AppLeadRotaRoute,
   AppMetasRoute: AppMetasRoute,
+  AppMovimentacoesRoute: AppMovimentacoesRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPagarRoute: AppPagarRoute,
   AppPedidosRoute: AppPedidosRoute,
