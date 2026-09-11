@@ -35,6 +35,7 @@ import { Route as AppFinanceiroRouteImport } from './routes/_app/financeiro'
 import { Route as AppFluxoCaixaRouteImport } from './routes/_app/fluxo-caixa'
 import { Route as AppFormasPagamentoRouteImport } from './routes/_app/formas-pagamento'
 import { Route as AppFornecedoresRouteImport } from './routes/_app/fornecedores'
+import { Route as AppGestaoComissoesRouteImport } from './routes/_app/gestao-comissoes'
 import { Route as AppLeadRotaRouteImport } from './routes/_app/lead-rota'
 import { Route as AppMetasRouteImport } from './routes/_app/metas'
 import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
@@ -47,6 +48,7 @@ import { Route as AppPlanejamentoComprasRouteImport } from './routes/_app/planej
 import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppReceberRouteImport } from './routes/_app/receber'
 import { Route as AppRegrasComissaoRouteImport } from './routes/_app/regras-comissao'
+import { Route as AppRelatorioVendasRouteImport } from './routes/_app/relatorio-vendas'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
 import { Route as AppRelatoriosFinanceirosRouteImport } from './routes/_app/relatorios-financeiros'
 import { Route as AppRepresentantesRouteImport } from './routes/_app/representantes'
@@ -187,6 +189,11 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
   path: '/fornecedores',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppGestaoComissoesRoute = AppGestaoComissoesRouteImport.update({
+  id: '/gestao-comissoes',
+  path: '/gestao-comissoes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppLeadRotaRoute = AppLeadRotaRouteImport.update({
   id: '/lead-rota',
   path: '/lead-rota',
@@ -245,6 +252,11 @@ const AppReceberRoute = AppReceberRouteImport.update({
 const AppRegrasComissaoRoute = AppRegrasComissaoRouteImport.update({
   id: '/regras-comissao',
   path: '/regras-comissao',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRelatorioVendasRoute = AppRelatorioVendasRouteImport.update({
+  id: '/relatorio-vendas',
+  path: '/relatorio-vendas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
@@ -320,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/gestao-comissoes': typeof AppGestaoComissoesRoute
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
@@ -332,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
+  '/relatorio-vendas': typeof AppRelatorioVendasRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/representantes': typeof AppRepresentantesRoute
@@ -368,6 +382,7 @@ export interface FileRoutesByTo {
   '/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/formas-pagamento': typeof AppFormasPagamentoRoute
   '/fornecedores': typeof AppFornecedoresRoute
+  '/gestao-comissoes': typeof AppGestaoComissoesRoute
   '/lead-rota': typeof AppLeadRotaRoute
   '/metas': typeof AppMetasRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
@@ -380,6 +395,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof AppProdutosRoute
   '/receber': typeof AppReceberRoute
   '/regras-comissao': typeof AppRegrasComissaoRoute
+  '/relatorio-vendas': typeof AppRelatorioVendasRoute
   '/relatorios': typeof AppRelatoriosRoute
   '/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/representantes': typeof AppRepresentantesRoute
@@ -418,6 +434,7 @@ export interface FileRoutesById {
   '/_app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/_app/formas-pagamento': typeof AppFormasPagamentoRoute
   '/_app/fornecedores': typeof AppFornecedoresRoute
+  '/_app/gestao-comissoes': typeof AppGestaoComissoesRoute
   '/_app/lead-rota': typeof AppLeadRotaRoute
   '/_app/metas': typeof AppMetasRoute
   '/_app/movimentacoes': typeof AppMovimentacoesRoute
@@ -430,6 +447,7 @@ export interface FileRoutesById {
   '/_app/produtos': typeof AppProdutosRoute
   '/_app/receber': typeof AppReceberRoute
   '/_app/regras-comissao': typeof AppRegrasComissaoRoute
+  '/_app/relatorio-vendas': typeof AppRelatorioVendasRoute
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/relatorios-financeiros': typeof AppRelatoriosFinanceirosRoute
   '/_app/representantes': typeof AppRepresentantesRoute
@@ -468,6 +486,7 @@ export interface FileRouteTypes {
     | '/fluxo-caixa'
     | '/formas-pagamento'
     | '/fornecedores'
+    | '/gestao-comissoes'
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
@@ -480,6 +499,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
+    | '/relatorio-vendas'
     | '/relatorios'
     | '/relatorios-financeiros'
     | '/representantes'
@@ -516,6 +536,7 @@ export interface FileRouteTypes {
     | '/fluxo-caixa'
     | '/formas-pagamento'
     | '/fornecedores'
+    | '/gestao-comissoes'
     | '/lead-rota'
     | '/metas'
     | '/movimentacoes'
@@ -528,6 +549,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/receber'
     | '/regras-comissao'
+    | '/relatorio-vendas'
     | '/relatorios'
     | '/relatorios-financeiros'
     | '/representantes'
@@ -565,6 +587,7 @@ export interface FileRouteTypes {
     | '/_app/fluxo-caixa'
     | '/_app/formas-pagamento'
     | '/_app/fornecedores'
+    | '/_app/gestao-comissoes'
     | '/_app/lead-rota'
     | '/_app/metas'
     | '/_app/movimentacoes'
@@ -577,6 +600,7 @@ export interface FileRouteTypes {
     | '/_app/produtos'
     | '/_app/receber'
     | '/_app/regras-comissao'
+    | '/_app/relatorio-vendas'
     | '/_app/relatorios'
     | '/_app/relatorios-financeiros'
     | '/_app/representantes'
@@ -778,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFornecedoresRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/gestao-comissoes': {
+      id: '/_app/gestao-comissoes'
+      path: '/gestao-comissoes'
+      fullPath: '/gestao-comissoes'
+      preLoaderRoute: typeof AppGestaoComissoesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/lead-rota': {
       id: '/_app/lead-rota'
       path: '/lead-rota'
@@ -860,6 +891,13 @@ declare module '@tanstack/react-router' {
       path: '/regras-comissao'
       fullPath: '/regras-comissao'
       preLoaderRoute: typeof AppRegrasComissaoRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/relatorio-vendas': {
+      id: '/_app/relatorio-vendas'
+      path: '/relatorio-vendas'
+      fullPath: '/relatorio-vendas'
+      preLoaderRoute: typeof AppRelatorioVendasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/relatorios': {
@@ -952,6 +990,7 @@ interface AppRouteRouteChildren {
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFormasPagamentoRoute: typeof AppFormasPagamentoRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppGestaoComissoesRoute: typeof AppGestaoComissoesRoute
   AppLeadRotaRoute: typeof AppLeadRotaRoute
   AppMetasRoute: typeof AppMetasRoute
   AppMovimentacoesRoute: typeof AppMovimentacoesRoute
@@ -964,6 +1003,7 @@ interface AppRouteRouteChildren {
   AppProdutosRoute: typeof AppProdutosRoute
   AppReceberRoute: typeof AppReceberRoute
   AppRegrasComissaoRoute: typeof AppRegrasComissaoRoute
+  AppRelatorioVendasRoute: typeof AppRelatorioVendasRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppRelatoriosFinanceirosRoute: typeof AppRelatoriosFinanceirosRoute
   AppRepresentantesRoute: typeof AppRepresentantesRoute
@@ -999,6 +1039,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFormasPagamentoRoute: AppFormasPagamentoRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
+  AppGestaoComissoesRoute: AppGestaoComissoesRoute,
   AppLeadRotaRoute: AppLeadRotaRoute,
   AppMetasRoute: AppMetasRoute,
   AppMovimentacoesRoute: AppMovimentacoesRoute,
@@ -1011,6 +1052,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProdutosRoute: AppProdutosRoute,
   AppReceberRoute: AppReceberRoute,
   AppRegrasComissaoRoute: AppRegrasComissaoRoute,
+  AppRelatorioVendasRoute: AppRelatorioVendasRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppRelatoriosFinanceirosRoute: AppRelatoriosFinanceirosRoute,
   AppRepresentantesRoute: AppRepresentantesRoute,
