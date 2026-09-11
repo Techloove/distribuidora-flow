@@ -876,6 +876,7 @@ end $$;
 -- -------------------------------------------------------------
 -- 11. Views de apoio (separação, carga e painel do fluxo)
 -- -------------------------------------------------------------
+drop view if exists public.vw_separacao;
 create or replace view public.vw_separacao as
 select p.id as pedido_id, p.numero, p.status, p.centro_id, c.nome as centro,
        cli.razao_social as cliente, p.onda_id, p.rota_id,
