@@ -105,7 +105,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, razao_social, rota_id, limite_credito"
+          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito"
           : "id, razao_social";
       const { data, error } = await client!
         .from(config.partnerTable)
@@ -123,7 +123,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from("produtos")
-        .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual")
+        .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
         .order("descricao");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -164,7 +164,9 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from("formas_pagamento")
-        .select("id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias")
+        .select(
+          "id, nome, parcelas_padrao, dias_primeira_parcela, intervalo_dias, taxa_percentual, desconto_percentual",
+        )
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
