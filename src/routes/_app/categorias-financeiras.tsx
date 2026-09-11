@@ -109,14 +109,13 @@ function CategoriasFinanceirasPage() {
         orderBy="ordem"
         emptyLabel="Nenhuma categoria cadastrada."
         searchColumns={["codigo", "nome"]}
-        decorate={(row) => {
-          const r = row as unknown as Record<string, unknown>;
-          return {
+        decorate={(rows) =>
+          rows.map((r) => ({
             ...r,
             parent_id: nomePai(r["parent_id"]),
             grupo_dre: grupos.find((g) => g.value === r["grupo_dre"])?.label ?? r["grupo_dre"],
-          };
-        }}
+          }))
+        }
       />
     </ErpLayout>
   );
