@@ -403,7 +403,7 @@ function CargasPage() {
                   params: {
                     _rota_id: form.rota_id,
                     _data: form.data,
-                    _centro_id: centro ?? null,
+                    _centro_id: centro ? centro : null,
                     _responsavel: form.responsavel || null,
                     _motorista: form.motorista || null,
                     _placa: form.placa || null,
