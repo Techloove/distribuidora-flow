@@ -32,10 +32,12 @@ export function ConsultaIe({
   form,
   editing,
   patch,
+  escopo = "clientes",
 }: {
   form: Record<string, string | boolean>;
   editing: Row | null;
   patch: (values: Record<string, string>) => void;
+  escopo?: "clientes" | "pessoas";
 }) {
   const { client, canManage } = useSupabase();
   const queryClient = useQueryClient();
