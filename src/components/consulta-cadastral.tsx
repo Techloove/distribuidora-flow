@@ -224,7 +224,14 @@ export function ConsultaCadastral({
       if (!selecionados.has(nome)) continue;
       const novo = String(resultado.dados[campo.name] ?? "").trim();
       if (!novo) continue;
-      values[nome] = nome === "cnpj_cpf" ? formatarDoc(novo) : novo;
+      if (nome === "cnpj_cpf") values[nome] = formatarDoc(novo);
+      else if (nome === "data_abertura" || nome === "data_nascimento") {
+        const br = novo.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+        const iso = novo.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (br) values[nome] = `${br[3]}-${br[2]}-${br[1]}`;
+        else if (iso) values[nome] = `${iso[1]}-${iso[2]}-${iso[3]}`;
+        else continue;
+      } else values[nome] = novo;
     }
     if (Object.keys(values).length === 0) {
       toast.info("Nenhum campo selecionado para atualizar.");

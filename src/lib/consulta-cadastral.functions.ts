@@ -95,6 +95,17 @@ const txt = (v: unknown) => {
   return s === "" ? undefined : s;
 };
 
+/** Normaliza datas (dd/mm/aaaa, ISO com hora) para aaaa-mm-dd. */
+const dataIso = (v: unknown) => {
+  const s = txt(v);
+  if (!s) return undefined;
+  const br = s.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  return undefined;
+};
+
 /** BrasilAPI: dados públicos da Receita Federal, sem chave de API. */
 function mapBrasilApi(j: Record<string, unknown>): DadosCadastrais {
   const cnaes = Array.isArray(j["cnaes_secundarios"])
@@ -109,7 +120,7 @@ function mapBrasilApi(j: Record<string, unknown>): DadosCadastrais {
     razao_social: txt(j["razao_social"]),
     nome_fantasia: txt(j["nome_fantasia"]),
     situacao_cadastral: txt(j["descricao_situacao_cadastral"]),
-    data_abertura: txt(j["data_inicio_atividade"]),
+    data_abertura: dataIso(j["data_inicio_atividade"]),
     natureza_juridica: txt(j["natureza_juridica"]),
     porte: txt(j["porte"]),
     cnae_principal: [txt(j["cnae_fiscal"]), txt(j["cnae_fiscal_descricao"])]
@@ -146,7 +157,7 @@ function mapReceitaWs(j: Record<string, unknown>): DadosCadastrais {
     razao_social: txt(j["nome"]),
     nome_fantasia: txt(j["fantasia"]),
     situacao_cadastral: txt(j["situacao"]),
-    data_abertura: txt(j["abertura"]),
+    data_abertura: dataIso(j["abertura"]),
     natureza_juridica: txt(j["natureza_juridica"]),
     porte: txt(j["porte"]),
     cnae_principal: atividade
@@ -179,7 +190,7 @@ function mapCpf(j: Record<string, unknown>): DadosCadastrais {
     cnpj_cpf: g("cpf", "documento", "document"),
     razao_social: g("nome", "name", "nome_completo"),
     situacao_cadastral: g("situacao", "situacao_cadastral", "status"),
-    data_nascimento: g("data_nascimento", "nascimento", "birthdate"),
+    data_nascimento: dataIso(g("data_nascimento", "nascimento", "birthdate")),
     cep: g("cep", "zip"),
     logradouro: g("logradouro", "endereco", "street"),
     numero: g("numero", "number"),
