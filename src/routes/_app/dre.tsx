@@ -68,8 +68,8 @@ function DrePage() {
   /** Consolida os meses no agrupamento escolhido (mensal, trimestral, semestral, anual). */
   const periodos = useMemo(() => {
     const chave = (p: string) => {
-      const [ano, mes] = p.split("-");
-      const m = Number(mes);
+      const ano = p.slice(0, 4);
+      const m = Number(p.slice(5, 7));
       if (visao === "anual") return ano;
       if (visao === "semestral") return `${ano}-S${m <= 6 ? 1 : 2}`;
       if (visao === "trimestral") return `${ano}-T${Math.ceil(m / 3)}`;
