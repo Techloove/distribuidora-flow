@@ -149,6 +149,22 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     },
   });
 
+  const categorias = useQuery({
+    queryKey: ["categorias_financeiras", "titulos", isReceber],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("categorias_financeiras")
+        .select("id, nome, tipo, parent_id, ativo")
+        .eq("ativo", true)
+        .order("ordem");
+      if (error) return [] as Row[];
+      return (rows ?? []).filter(
+        (c) => String((c as Row)["tipo"]) === (isReceber ? "receita" : "despesa"),
+      ) as Row[];
+    },
+  });
+
   const boletos = useQuery({
     queryKey: ["boletos", "por-conta"],
     enabled: !!client && isReceber,
