@@ -34,7 +34,7 @@ export function usePapeis() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("papeis")
-        .select("codigo, nome, sistema, ordem")
+        .select("codigo, nome, sistema, ordem, pode_alterar_preco")
         .order("ordem");
       if (error) return FALLBACK;
       return ((data ?? []) as Papel[]).length ? (data as Papel[]) : FALLBACK;
@@ -47,4 +47,15 @@ export function usePapeis() {
     carregando: query.isLoading,
     nome: (codigo: string) => papeis.find((p) => p.codigo === codigo)?.nome ?? codigo,
   };
+}
+
+/** Indica se o usuário logado pode alterar o preço unitário dos itens. */
+export function usePodeAlterarPreco() {
+  const { roles } = useSupabase();
+  const { papeis, carregando } = usePapeis();
+  if (carregando || roles.length === 0) return true;
+  return roles.some((r) => {
+    const papel = papeis.find((p) => p.codigo === r);
+    return papel ? papel.pode_alterar_preco !== false : true;
+  });
 }
