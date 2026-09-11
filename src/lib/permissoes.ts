@@ -64,6 +64,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/rota-despesas",
     "/pessoas",
     "/faturamento",
+    "/notas",
     "/boletos",
     "/fluxo-caixa",
     "/receber",
@@ -99,7 +100,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/comissoes",
   ],
   estoque: ["/dashboard", "/produtos", "/estoque", "/separacao", "/compras", "/planejamento-compras"],
-  expedicao: ["/dashboard", "/separacao", "/expedicao", "/rotas"],
+  expedicao: ["/dashboard", "/separacao", "/cargas", "/expedicao", "/rotas"],
 };
 
 export type Acesso = {
