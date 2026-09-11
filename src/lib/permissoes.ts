@@ -74,6 +74,8 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/receber",
     "/pagar",
     "/relatorios",
+    "/relatorio-vendas",
+    "/gestao-comissoes",
     "/notificacoes",
   ],
   comercial: [
@@ -89,7 +91,9 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/lead-rota",
     "/metas",
     "/comissoes",
+    "/gestao-comissoes",
     "/relatorios",
+    "/relatorio-vendas",
     "/clientes-inativos",
     "/notificacoes",
   ],
