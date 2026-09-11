@@ -133,6 +133,18 @@ export function PapeisAdmin() {
                   {p.codigo}
                   {p.sistema ? " · perfil do sistema" : ""}
                 </p>
+                <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-primary"
+                    checked={p.pode_alterar_preco !== false}
+                    disabled={!isAdmin || definirPreco.isPending}
+                    onChange={(e) =>
+                      definirPreco.mutate({ codigo: p.codigo, pode: e.target.checked })
+                    }
+                  />
+                  Pode alterar o preço unitário dos itens
+                </label>
               </div>
               {isAdmin ? (
                 <div className="flex gap-2">
