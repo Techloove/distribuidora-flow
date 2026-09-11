@@ -31,12 +31,13 @@ const fields: CrudField[] = [
     name: "tipo_pessoa",
     label: "Tipo de pessoa",
     type: "select",
+    hiddenInForm: true,
     options: [
       { value: "PJ", label: "Pessoa jurídica" },
       { value: "PF", label: "Pessoa física" },
     ],
   },
-  { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true },
+  { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true, hiddenInForm: true },
   { name: "inscricao_estadual", label: "Inscrição estadual" },
   { name: "uf_inscricao_estadual", label: "UF da inscrição estadual" },
   { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual" },
@@ -86,6 +87,7 @@ function ClientesPage() {
         orderBy="razao_social"
         emptyLabel="Nenhum cliente cadastrado ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade"]}
+        extraFormTop
         extraForm={(ctx) => (
           <div className="space-y-4">
             <ConsultaCadastral
