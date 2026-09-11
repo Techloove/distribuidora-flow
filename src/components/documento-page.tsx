@@ -1232,8 +1232,17 @@ export function DocumentoPage({
                     type="number"
                     step="0.01"
                     value={item.preco}
+                    readOnly={!podeAlterarPreco}
+                    title={
+                      podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"
+                    }
                     onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                   />
+                  {!podeAlterarPreco ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Preço definido pela tabela — seu perfil não permite alterar.
+                    </p>
+                  ) : null}
                   {promo !== null ? (
                     <p className="text-xs font-medium text-primary">
                       {promo.nome}: {brl(promo.preco)}
