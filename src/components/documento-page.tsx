@@ -430,6 +430,11 @@ export function DocumentoPage({
 
   const efetivar = useMutation({
     mutationFn: async () => {
+      if (config.table === "pedidos" && doc) {
+        if (!doc["centro_id"]) throw new Error("Informe o centro de custo do pedido");
+        if (!doc["rota_id"]) throw new Error("Informe a rota de entrega do pedido");
+        if (!doc["forma_pagamento_id"]) throw new Error("Informe a forma de pagamento do pedido");
+      }
       const args =
         config.rpc === "confirmar_pedido" ? { _pedido_id: selected } : { _compra_id: selected };
       const { error } = await client!.rpc(config.rpc, args);
@@ -579,13 +584,23 @@ export function DocumentoPage({
 
 
 
-  /** Ao escolher o cliente, já traz a rota cadastrada dele. */
+  /** Ao escolher o cliente, traz rota, centro de custo e forma de pagamento do cadastro dele. */
   function pickPartner(id: string) {
     const p = partners.data?.find((x) => x["id"] === id);
+    const condicao = String(p?.["condicao_pagamento"] ?? "").trim().toLowerCase();
+    const formaCliente = condicao
+      ? formas.data?.find((f) => String(f["nome"]).trim().toLowerCase() === condicao)
+      : undefined;
     setHeader((h) => ({
       ...h,
       partner: id,
-      ...(config.table === "pedidos" ? { rota: String(p?.["rota_id"] ?? "") } : {}),
+      ...(config.table === "pedidos"
+        ? {
+            rota: String(p?.["rota_id"] ?? ""),
+            centro: String(p?.["centro_id"] ?? h["centro"] ?? ""),
+            forma: String(formaCliente?.["id"] ?? ""),
+          }
+        : {}),
     }));
   }
 
