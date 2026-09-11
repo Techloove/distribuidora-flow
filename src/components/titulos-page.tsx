@@ -39,6 +39,24 @@ export type TitulosConfig = {
   partnerLabel: string;
   rpc: "baixar_receber" | "baixar_pagar";
   baixaLabel: string;
+  /** RPC de lançamento manual do título (com parcelamento). */
+  rpcCriar: "criar_receita" | "criar_despesa";
+};
+
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+const novoTituloVazio = {
+  parceiro: "",
+  documento: "",
+  descricao: "",
+  valor: "",
+  parcelas: "1",
+  vencimento: hoje(),
+  intervalo: "30",
+  categoria: "",
+  centro: "",
+  conta: "",
+  forma: "",
 };
 
 const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
