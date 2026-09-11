@@ -270,7 +270,16 @@ export function DocumentoPage({
       });
     }
     return list;
-  }, [docs.data, filtros, centro, partners.data, config.partnerKey, config.dateField]);
+  }, [
+    docs.data,
+    filtros,
+    centro,
+    partners.data,
+    config.partnerKey,
+    config.dateField,
+    soMeusPedidos,
+    meuRepresentante,
+  ]);
 
   const statusOptions = useMemo(() => {
     const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
@@ -794,7 +803,37 @@ export function DocumentoPage({
 
 
 
-        <FilterBar onClear={() => setFiltros({})}>
+        {config.table === "pedidos" ? (
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "Hoje", de: hoje, ate: hoje },
+              { label: "Últimos 7 dias", de: diasAtras(6), ate: hoje },
+              { label: "Últimos 30 dias", de: diasAtras(29), ate: hoje },
+              { label: "Todo o período", de: "", ate: "" },
+            ].map((p) => {
+              const ativo = (filtros["de"] ?? "") === p.de && (filtros["ate"] ?? "") === p.ate;
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => setPeriodo(p.de, p.ate)}
+                  className={`rounded-full px-3 py-1 text-[11px] transition-colors ${
+                    ativo
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <FilterBar
+          onClear={() =>
+            setFiltros(config.table === "pedidos" ? { de: hoje, ate: hoje } : {})
+          }
+        >
 
           <FilterText
             label="Buscar"
