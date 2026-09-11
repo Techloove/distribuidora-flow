@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Printer } from "lucide-react";
+import { Loader2, Plus, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -371,6 +371,9 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         onClear={() => setFiltros({})}
         extra={
           <div className="flex gap-2">
+            <Button size="sm" disabled={!canFinance} onClick={() => setOpenNovo(true)}>
+              <Plus className="size-3.5" /> Novo título
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => window.print()}>
               <Printer className="size-3.5" /> Imprimir
             </Button>
@@ -710,6 +713,151 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             <Button onClick={() => baixar.mutate()} disabled={baixar.isPending}>
               {baixar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openNovo} onOpenChange={setOpenNovo}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Novo título {isReceber ? "a receber" : "a pagar"}</DialogTitle>
+            <DialogDescription>
+              Lançamento manual, sem depender de pedido ou nota. Informe as parcelas e o sistema
+              gera um título para cada vencimento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>{config.partnerLabel}</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={novo.parceiro}
+                onChange={(e) => setN("parceiro", e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(partners.data ?? []).map((p) => (
+                  <option key={String(p["id"])} value={String(p["id"])}>
+                    {String(p["razao_social"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Descrição</Label>
+              <Input
+                value={novo.descricao}
+                onChange={(e) => setN("descricao", e.target.value)}
+                placeholder={isReceber ? "Ex.: Serviço de frete" : "Ex.: Combustível do mês"}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Documento</Label>
+              <Input value={novo.documento} onChange={(e) => setN("documento", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor total (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={novo.valor}
+                onChange={(e) => setN("valor", e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Parcelas</Label>
+              <Input
+                type="number"
+                min="1"
+                value={novo.parcelas}
+                onChange={(e) => setN("parcelas", e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>1º vencimento</Label>
+              <Input
+                type="date"
+                value={novo.vencimento}
+                onChange={(e) => setN("vencimento", e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Intervalo entre parcelas (dias)</Label>
+              <Input
+                type="number"
+                value={novo.intervalo}
+                onChange={(e) => setN("intervalo", e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{isReceber ? "Categoria de receita" : "Categoria de despesa"}</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={novo.categoria}
+                onChange={(e) => setN("categoria", e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(categorias.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {c["parent_id"] ? "— " : ""}
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Centro de custo</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={novo.centro}
+                onChange={(e) => setN("centro", e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(centros.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Banco/caixa previsto</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={novo.conta}
+                onChange={(e) => setN("conta", e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(contas.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Forma de pagamento</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={novo.forma}
+                onChange={(e) => setN("forma", e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(formas.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenNovo(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
+              {criar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Lançar título
             </Button>
           </DialogFooter>
         </DialogContent>

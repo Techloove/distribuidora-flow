@@ -496,6 +496,41 @@ export function DocumentoPage({
     },
   });
 
+  /** Desconto escalonado por peso (kg) dos itens do pedido. */
+  const descontoPeso = useQuery({
+    queryKey: ["desconto_peso_pedido", selected],
+    enabled: !!client && !!selected && config.table === "pedidos",
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("desconto_peso_pedido", { _pedido_id: selected });
+      if (error) throw new Error(error.message);
+      const info = (Array.isArray(data) ? data[0] : data) as
+        | {
+            peso_total: number;
+            faixa_nome: string | null;
+            percentual: number;
+            desconto_valor: number;
+          }
+        | undefined;
+      return info ?? null;
+    },
+  });
+
+  const aplicarDescontoPeso = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!.rpc("aplicar_desconto_peso", { _pedido_id: selected });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Desconto por peso aplicado ao pedido");
+      setPagamento((s) => {
+        const { desconto: _ignored, ...rest } = s;
+        return rest;
+      });
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   /**
    * Preço do item: em pedidos vale o preço vigente da promoção (tabela de preço
    * dentro do período de vigência para o cliente/UF). Sem promoção vigente,
@@ -1159,6 +1194,45 @@ export function DocumentoPage({
               )}
             </div>
 
+            {config.table === "pedidos" && descontoPeso.data ? (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold">Desconto por peso (kg)</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Somamos o peso dos itens e comparamos com as faixas cadastradas em Descontos por
+                  peso (kg).
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-4">
+                  <Resumo
+                    label="Peso total"
+                    value={`${Number(descontoPeso.data.peso_total ?? 0).toLocaleString("pt-BR", {
+                      maximumFractionDigits: 3,
+                    })} kg`}
+                  />
+                  <Resumo label="Faixa" value={descontoPeso.data.faixa_nome ?? "Nenhuma faixa"} />
+                  <Resumo
+                    label="Desconto"
+                    value={`${Number(descontoPeso.data.percentual ?? 0).toLocaleString("pt-BR")}%`}
+                  />
+                  <Resumo label="Valor" value={brl(descontoPeso.data.desconto_valor)} />
+                </div>
+                <Button
+                  className="mt-3"
+                  variant="secondary"
+                  onClick={() => aplicarDescontoPeso.mutate()}
+                  disabled={
+                    !["rascunho", "digitacao"].includes(String(doc["status"])) ||
+                    aplicarDescontoPeso.isPending ||
+                    !canWrite
+                  }
+                >
+                  {aplicarDescontoPeso.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
+                  Aplicar desconto no pedido
+                </Button>
+              </div>
+            ) : null}
+
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -1456,6 +1530,15 @@ function ProdutoPicker({
           )}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function Resumo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
   );
 }
