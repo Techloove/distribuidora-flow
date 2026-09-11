@@ -30,6 +30,10 @@ type Row = Record<string, unknown>;
 
 export type TitulosConfig = {
   table: "contas_receber" | "contas_pagar";
+  /** View com saldo e status efetivo (vencido/parcial) calculados no banco. */
+  view: "vw_titulos_receber" | "vw_titulos_pagar";
+  /** RPC completa de baixa (conta, forma de pagamento, juros, multa, desconto). */
+  rpcBaixa: "receber_titulo" | "pagar_titulo";
   partnerTable: "clientes" | "fornecedores";
   partnerKey: "cliente_id" | "fornecedor_id";
   partnerLabel: string;
@@ -37,7 +41,7 @@ export type TitulosConfig = {
   baixaLabel: string;
 };
 
-const statuses = ["todos", "aberto", "parcial", "pago", "cancelado"] as const;
+const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
 
 export function TitulosPage({ config }: { config: TitulosConfig }) {
   const { client, roles } = useSupabase();
@@ -48,16 +52,22 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [contaId, setContaId] = useState("");
+  const [formaId, setFormaId] = useState("");
+  const [juros, setJuros] = useState("");
+  const [multa, setMulta] = useState("");
+  const [descontoBaixa, setDescontoBaixa] = useState("");
+  const [selecionados, setSelecionados] = useState<string[]>([]);
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
 
   const titulos = useQuery({
-    queryKey: [config.table],
+    queryKey: [config.view],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
-        .from(config.table)
+        .from(config.view)
         .select("*")
         .order("vencimento");
       if (error) throw new Error(error.message);
@@ -79,6 +89,43 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   });
 
   const isReceber = config.table === "contas_receber";
+
+  const contas = useQuery({
+    queryKey: ["contas_financeiras", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("contas_financeiras")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const formas = useQuery({
+    queryKey: ["formas_pagamento", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!
+        .from("formas_pagamento")
+        .select("id, nome")
+        .order("nome");
+      if (error) return [] as Row[];
+      return (rows ?? []) as Row[];
+    },
+  });
+
+  const centros = useQuery({
+    queryKey: ["centros", "titulos"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data: rows, error } = await client!.from("centros").select("id, nome").order("nome");
+      if (error) return [] as Row[];
+      return (rows ?? []) as Row[];
+    },
+  });
 
   const boletos = useQuery({
     queryKey: ["boletos", "por-conta"],
@@ -113,7 +160,16 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
 
   const rows = useMemo(() => {
     let list = titulos.data ?? [];
-    if (status !== "todos") list = list.filter((r) => r["status"] === status);
+    if (status !== "todos")
+      list = list.filter((r) => (r["status_efetivo"] ?? r["status"]) === status);
+    if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
+    if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
+    if (filtros["forma"]) list = list.filter((r) => r["forma_pagamento_id"] === filtros["forma"]);
+    if (filtros["pgde"]) list = list.filter((r) => String(r["data_pagamento"] ?? "") >= filtros["pgde"]!);
+    if (filtros["pgate"])
+      list = list.filter(
+        (r) => !!r["data_pagamento"] && String(r["data_pagamento"]) <= filtros["pgate"]!,
+      );
     const f = filtros;
     if (isReceber && f["boleto"]) {
       list = list.filter((r) => {
@@ -175,6 +231,12 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         .filter((r) => String(r["vencimento"]) < hoje)
         .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0),
       pago: (titulos.data ?? []).reduce((s, r) => s + Number(r["valor_pago"] ?? 0), 0),
+      hoje: abertos
+        .filter((r) => String(r["vencimento"]) === hoje)
+        .reduce((s, r) => s + Number(r["saldo"] ?? 0), 0),
+      futuros: abertos
+        .filter((r) => String(r["vencimento"]) > hoje)
+        .reduce((s, r) => s + Number(r["saldo"] ?? 0), 0),
     };
   }, [titulos.data]);
 
@@ -182,10 +244,16 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     mutationFn: async () => {
       const v = Number(valor || 0);
       if (v <= 0) throw new Error("Informe o valor da baixa");
-      const { error } = await client!.rpc(config.rpc, {
+      const { error } = await client!.rpc(config.rpcBaixa, {
         _id: target!["id"],
         _valor: v,
         _data: data,
+        _conta_id: contaId || null,
+        _forma_id: formaId || null,
+        _juros: Number(juros || 0),
+        _multa: Number(multa || 0),
+        _desconto: Number(descontoBaixa || 0),
+        _observacao: null,
       });
       if (error) throw new Error(error.message);
     },
@@ -198,23 +266,55 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const baixarLote = useMutation({
+    mutationFn: async () => {
+      if (selecionados.length === 0) throw new Error("Selecione os títulos");
+      const { error } = await client!.rpc("baixar_titulos_lote", {
+        _tabela: config.table,
+        _ids: selecionados,
+        _data: data,
+        _conta_id: contaId || null,
+        _forma_id: formaId || null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success(`${selecionados.length} título(s) baixado(s)`);
+      setSelecionados([]);
+      queryClient.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const partnerName = (id: unknown) =>
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
 
   return (
     <div className="space-y-4">
-      <div className="no-print grid gap-4 sm:grid-cols-3">
+      <div className="no-print grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <Card label="Em aberto" value={brl(totals.aberto)} />
         <Card label="Vencido" value={brl(totals.vencido)} tone />
-        <Card label={config.table === "contas_receber" ? "Recebido" : "Pago"} value={brl(totals.pago)} />
+        <Card label={isReceber ? "Recebido" : "Pago"} value={brl(totals.pago)} />
+        <Card label={isReceber ? "Vence hoje" : "Vence hoje"} value={brl(totals.hoje)} />
+        <Card label="A vencer (futuro)" value={brl(totals.futuros)} />
       </div>
 
       <FilterBar
         onClear={() => setFiltros({})}
         extra={
-          <Button size="sm" variant="secondary" onClick={() => window.print()}>
-            <Printer className="size-3.5" /> Imprimir
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => window.print()}>
+              <Printer className="size-3.5" /> Imprimir
+            </Button>
+            <Button
+              size="sm"
+              disabled={!canFinance || selecionados.length === 0 || baixarLote.isPending}
+              onClick={() => baixarLote.mutate()}
+            >
+              {baixarLote.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Baixar {selecionados.length} selecionado(s)
+            </Button>
+          </div>
         }
       >
         <FilterText
@@ -264,6 +364,45 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           type="number"
           value={filtros["max"] ?? ""}
           onChange={(v) => setF("max", v)}
+        />
+        <FilterSelect
+          label="Centro de custo"
+          value={filtros["centro"] ?? ""}
+          onChange={(v) => setF("centro", v)}
+          options={(centros.data ?? []).map((c) => ({
+            value: String(c["id"]),
+            label: String(c["nome"]),
+          }))}
+        />
+        <FilterSelect
+          label="Banco/caixa"
+          value={filtros["conta"] ?? ""}
+          onChange={(v) => setF("conta", v)}
+          options={(contas.data ?? []).map((c) => ({
+            value: String(c["id"]),
+            label: String(c["nome"]),
+          }))}
+        />
+        <FilterSelect
+          label="Forma de pagamento"
+          value={filtros["forma"] ?? ""}
+          onChange={(v) => setF("forma", v)}
+          options={(formas.data ?? []).map((c) => ({
+            value: String(c["id"]),
+            label: String(c["nome"]),
+          }))}
+        />
+        <FilterText
+          label="Pagamento de"
+          type="date"
+          value={filtros["pgde"] ?? ""}
+          onChange={(v) => setF("pgde", v)}
+        />
+        <FilterText
+          label="Pagamento até"
+          type="date"
+          value={filtros["pgate"] ?? ""}
+          onChange={(v) => setF("pgate", v)}
         />
         {isReceber ? (
           <FilterSelect
@@ -321,12 +460,14 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="no-print w-8" />
                 <TableHead>Documento</TableHead>
                 <TableHead>{config.partnerLabel}</TableHead>
                 <TableHead>Parc.</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Pago</TableHead>
+                <TableHead className="text-right">Saldo</TableHead>
                 <TableHead>Status</TableHead>
                 {isReceber ? <TableHead>Boleto</TableHead> : null}
                 <TableHead className="no-print text-right">Ação</TableHead>
@@ -335,13 +476,34 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={String(r["id"])}>
+                  <TableCell className="no-print">
+                    <input
+                      type="checkbox"
+                      aria-label="Selecionar título"
+                      className="size-4"
+                      disabled={
+                        !canFinance ||
+                        r["status"] === "pago" ||
+                        r["status"] === "cancelado"
+                      }
+                      checked={selecionados.includes(String(r["id"]))}
+                      onChange={(e) =>
+                        setSelecionados((s) =>
+                          e.target.checked
+                            ? [...s, String(r["id"])]
+                            : s.filter((id) => id !== String(r["id"])),
+                        )
+                      }
+                    />
+                  </TableCell>
                   <TableCell>{String(r["documento"] ?? "—")}</TableCell>
                   <TableCell>{partnerName(r[config.partnerKey])}</TableCell>
                   <TableCell>{String(r["parcela"])}</TableCell>
                   <TableCell>{String(r["vencimento"])}</TableCell>
                   <TableCell className="text-right">{brl(r["valor"])}</TableCell>
                   <TableCell className="text-right">{brl(r["valor_pago"])}</TableCell>
-                  <TableCell>{String(r["status"])}</TableCell>
+                  <TableCell className="text-right">{brl(r["saldo"])}</TableCell>
+                  <TableCell>{String(r["status_efetivo"] ?? r["status"])}</TableCell>
                   {isReceber ? (
                     <TableCell>
                       <span
@@ -369,7 +531,10 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       disabled={!canFinance || r["status"] === "pago" || r["status"] === "cancelado"}
                       onClick={() => {
                         setTarget(r);
-                        setValor(String(Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0)));
+                        setValor(String(Number(r["saldo"] ?? 0)));
+                        setJuros("");
+                        setMulta("");
+                        setDescontoBaixa("");
                       }}
                     >
                       {config.baixaLabel}
@@ -394,8 +559,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           <DialogHeader>
             <DialogTitle>{config.baixaLabel} título</DialogTitle>
             <DialogDescription>
-              Saldo atual{" "}
-              {brl(Number(target?.["valor"] ?? 0) - Number(target?.["valor_pago"] ?? 0))}.
+              Saldo atual {brl(target?.["saldo"])}. A baixa gera movimentação no banco/caixa
+              escolhido e atualiza fluxo de caixa, DRE e relatórios.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -411,6 +576,63 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             <div className="space-y-1.5">
               <Label>Data</Label>
               <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Banco/caixa</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={contaId}
+                onChange={(e) => setContaId(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(contas.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Forma de pagamento</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={formaId}
+                onChange={(e) => setFormaId(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {(formas.data ?? []).map((c) => (
+                  <option key={String(c["id"])} value={String(c["id"])}>
+                    {String(c["nome"])}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Juros</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={juros}
+                onChange={(e) => setJuros(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Multa</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={multa}
+                onChange={(e) => setMulta(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Desconto</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={descontoBaixa}
+                onChange={(e) => setDescontoBaixa(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>

@@ -60,3 +60,10 @@
 
 ## Lead Rota (fase 25)
 - [x] Módulo Lead Rota: seleção de rota, carteira paginada, filtros/classificação, funil, metas da rota, painel do cliente, histórico, produtos frequentes, sugestões, limite de crédito, registro de contato, novo pedido / repetir último / produtos frequentes
+
+## Módulo financeiro completo (fases 32-36)
+- [x] Base: contas financeiras, movimentos auditáveis, transferências, categorias hierárquicas, extrato e saldo calculado
+- [x] Contas a receber/pagar aprimorados: juros, multa, desconto, banco, forma, categoria, baixa parcial e em lote, estorno, parcelamento de despesas
+- [x] Fluxo de caixa realizado x previsto, CPV, DRE gerencial e dashboard financeiro com gráficos
+- [x] Rentabilidade por produto/pedido/cliente/vendedor/rota e custos configuráveis de rota
+- [x] Permissões financeiras granulares (role_permissoes) e relatórios exportáveis em CSV/PDF

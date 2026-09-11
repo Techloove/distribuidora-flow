@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  ArrowLeftRight,
+  Landmark,
+  PiggyBank,
   Barcode,
   BarChart3,
   Bell,
@@ -88,7 +91,14 @@ const nav = [
   {
     group: "Financeiro",
     items: [
+      { to: "/financeiro", label: "Dashboard financeiro", icon: PiggyBank },
       { to: "/fluxo-caixa", label: "Fluxo de caixa", icon: LineChart },
+      { to: "/contas", label: "Caixa e bancos", icon: Landmark },
+      { to: "/categorias-financeiras", label: "Categorias de despesas", icon: Tags },
+      { to: "/movimentacoes", label: "Conciliação / movimentações", icon: ArrowLeftRight },
+      { to: "/dre", label: "DRE gerencial", icon: BarChart3 },
+      { to: "/relatorios-financeiros", label: "Relatórios financeiros", icon: FileText },
+      { to: "/rota-despesas", label: "Custos de rota", icon: Route },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },

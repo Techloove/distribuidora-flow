@@ -154,10 +154,10 @@ function MovimentacoesPage() {
     if (filtros["conta"]) list = list.filter((r) => r["conta_id"] === filtros["conta"]);
     if (filtros["tipo"]) list = list.filter((r) => r["tipo"] === filtros["tipo"]);
     if (filtros["origem"]) list = list.filter((r) => r["origem"] === filtros["origem"]);
-    if (filtros["de"]) list = list.filter((r) => String(r["data"]) >= filtros["de"]);
-    if (filtros["ate"]) list = list.filter((r) => String(r["data"]) <= filtros["ate"]);
+    if (filtros["de"]) list = list.filter((r) => String(r["data"]) >= filtros["de"]!);
+    if (filtros["ate"]) list = list.filter((r) => String(r["data"]) <= filtros["ate"]!);
     if (filtros["busca"]) {
-      const t = filtros["busca"].toLowerCase();
+      const t = String(filtros["busca"]).toLowerCase();
       list = list.filter((r) =>
         [r["descricao"], r["documento"], r["categoria_nome"], r["conta_nome"]]
           .map((v) => String(v ?? "").toLowerCase())
