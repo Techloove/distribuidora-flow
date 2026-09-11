@@ -57,3 +57,8 @@ begin
   perform public.recalcular_carga(_carga_id);
 end $$;
 grant execute on function public.adicionar_pedido_carga(uuid, uuid) to authenticated;
+
+-- 3) Descrição amigável para o parâmetro de boleto (usado na tela de Configurações)
+update public.parametros
+   set descricao = 'Exigir nota fiscal autorizada para emitir boleto (true/false)'
+ where chave = 'exigir_nf_boleto' and coalesce(descricao, '') = '';
