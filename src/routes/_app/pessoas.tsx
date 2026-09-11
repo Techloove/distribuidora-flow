@@ -172,13 +172,7 @@ function PessoasPage() {
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
             {form["is_representante"] ? (
-              <ComissaoRepresentante
-                representanteId={
-                  editing && editing["representante_id"]
-                    ? String(editing["representante_id"])
-                    : null
-                }
-              />
+              <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
           </div>
         )}
