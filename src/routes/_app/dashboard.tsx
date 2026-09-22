@@ -208,7 +208,7 @@ function RankingRotas() {
   const { client } = useSupabase();
   const de = `${new Date().toISOString().slice(0, 7)}-01`;
 
-  const soma = (view: string, chave: string, valor: "total" | "quantidade") =>
+  const useSoma = (view: string, chave: string, valor: "total" | "quantidade") =>
     useQuery({
       queryKey: ["ranking", view, de],
       enabled: !!client,
@@ -224,9 +224,9 @@ function RankingRotas() {
       },
     });
 
-  const rotas = soma("vw_vendas_rota", "rota", "total");
-  const reps = soma("vw_vendas_representante_rota", "representante", "total");
-  const produtos = soma("vw_produtos_rota", "produto", "quantidade");
+  const rotas = useSoma("vw_vendas_rota", "rota", "total");
+  const reps = useSoma("vw_vendas_representante_rota", "representante", "total");
+  const produtos = useSoma("vw_produtos_rota", "produto", "quantidade");
 
   if (rotas.isError && reps.isError && produtos.isError) return null;
 
