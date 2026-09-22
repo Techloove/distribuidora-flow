@@ -203,6 +203,77 @@ const ETAPAS: { campo: string; label: string; to: string }[] = [
   { campo: "entregues", label: "Entregues", to: "/cargas" },
 ];
 
+/** Ranking do mês: vendas por rota, por representante e produtos mais vendidos por rota. */
+function RankingRotas() {
+  const { client } = useSupabase();
+  const de = `${new Date().toISOString().slice(0, 7)}-01`;
+
+  const soma = (view: string, chave: string, valor: "total" | "quantidade") =>
+    useQuery({
+      queryKey: ["ranking", view, de],
+      enabled: !!client,
+      queryFn: async () => {
+        const { data, error } = await client!.from(view).select("*").gte("data_pedido", de);
+        if (error) throw new Error(error.message);
+        const mapa = new Map<string, number>();
+        for (const r of (data ?? []) as Row[]) {
+          const k = String(r[chave] ?? "—");
+          mapa.set(k, (mapa.get(k) ?? 0) + Number(r[valor] ?? 0));
+        }
+        return [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+      },
+    });
+
+  const rotas = soma("vw_vendas_rota", "rota", "total");
+  const reps = soma("vw_vendas_representante_rota", "representante", "total");
+  const produtos = soma("vw_produtos_rota", "produto", "quantidade");
+
+  if (rotas.isError && reps.isError && produtos.isError) return null;
+
+  const lista = (
+    titulo: string,
+    dados: [string, number][] | undefined,
+    formato: (n: number) => string,
+    to: string,
+  ) => (
+    <div className="rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {titulo}
+        </p>
+        <Link to={to} className="text-xs text-primary hover:underline">
+          ver
+        </Link>
+      </div>
+      {!dados ? (
+        <p className="mt-2 text-sm text-muted-foreground">Carregando...</p>
+      ) : dados.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">Sem dados no mês.</p>
+      ) : (
+        <ul className="mt-2 space-y-1 text-sm">
+          {dados.map(([k, v]) => (
+            <li key={k} className="flex justify-between gap-3">
+              <span className="truncate">{k}</span>
+              <span className="text-muted-foreground">{formato(v)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  return (
+    <section className="mt-6 rounded-lg border border-border bg-card p-5">
+      <h2 className="text-sm font-semibold text-foreground">Desempenho do mês por rota</h2>
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        {lista("Vendas por rota", rotas.data, brl, "/relatorios")}
+        {lista("Vendas por representante", reps.data, brl, "/relatorios")}
+        {lista("Produtos mais vendidos", produtos.data, (n) => `${n} un.`, "/relatorios")}
+      </div>
+    </section>
+  );
+}
+
 /** Painel do fluxo operacional: pedido → separação → faturamento → carga → entrega. */
 function FluxoOperacional() {
   const { client } = useSupabase();
