@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { RelatorioRotas } from "@/components/relatorio-rotas";
 import {
   Table,
   TableBody,
@@ -60,7 +61,9 @@ function RelatoriosPage() {
       title="Relatórios"
       description="Consolidados de vendas, ranking de produtos e clientes e comissões por representante."
     >
-      <div className="grid gap-6 xl:grid-cols-2">
+      <RelatorioRotas />
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel
           title="Vendas por mês"
           query={vendas}
