@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { RotaCidades } from "@/components/rota-cidades";
 
 export const Route = createFileRoute("/_app/rotas")({
   head: () => ({
@@ -66,6 +67,7 @@ function RotasPage() {
         emptyLabel="Nenhuma rota cadastrada ainda."
         searchColumns={["codigo", "nome", "regiao", "cidades", "motorista"]}
       />
+      <RotaCidades />
     </ErpLayout>
   );
 }
