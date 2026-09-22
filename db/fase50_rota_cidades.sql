@@ -180,7 +180,7 @@ select r.id as rota_id,
        count(distinct p.id) as pedidos,
        count(distinct p.cliente_id) as clientes,
        coalesce(sum(p.total_liquido),0) as total,
-       coalesce(sum(p.total_desconto),0) as desconto
+       coalesce(sum(p.desconto_valor),0) as desconto
   from public.pedidos p
   join public.rotas r on r.id = p.rota_id
  where p.status not in ('cancelado','rascunho','digitacao','recusado')
