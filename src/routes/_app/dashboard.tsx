@@ -123,6 +123,8 @@ function Dashboard() {
 
       <FluxoOperacional />
 
+      <RankingRotas />
+
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
 
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
