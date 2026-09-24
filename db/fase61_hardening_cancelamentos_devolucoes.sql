@@ -245,6 +245,12 @@ begin
     raise exception 'Devolucao pertence a outro centro';
   end if;
   if dev.status='cancelada' then return; end if;
+  if dev.status='confirmada' and exists (
+    select 1 from public.contas_receber
+    where documento='DEV-'||dev.numero and status='pago'
+  ) then
+    raise exception 'A devolucao possui credito ja recebido; estorne o recebimento antes de cancelar';
+  end if;
 
   if dev.status='rascunho' then
     update public.devolucoes set status='cancelada' where id=_id;
