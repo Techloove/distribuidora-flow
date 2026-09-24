@@ -44,9 +44,10 @@ create table if not exists public.creditos_clientes_aplicacoes (
   revertido_em timestamptz
 );
 
-create unique index if not exists credito_aplicacao_pedido_uq
-  on public.creditos_clientes_aplicacoes(credito_id, pedido_id)
-  where status in ('reservado','aplicado');
+drop index if exists public.credito_aplicacao_pedido_uq;
+
+create index if not exists credito_aplicacao_credito_pedido_idx
+  on public.creditos_clientes_aplicacoes(credito_id, pedido_id, status);
 
 create unique index if not exists credito_aplicacao_idempotencia_uq
   on public.creditos_clientes_aplicacoes(chave_idempotencia)
@@ -141,6 +142,14 @@ begin
 
   if coalesce(_valor,0) <= 0 then
     raise exception 'Valor do credito invalido';
+  end if;
+
+  if round(_valor,2) <> round(coalesce(dev.valor_total,0),2) then
+    raise exception 'O credito deve corresponder ao valor total da devolucao';
+  end if;
+
+  if not public.usuario_pode_acessar_centro(_centro_id) then
+    raise exception 'Sem acesso ao centro do credito';
   end if;
 
   select * into c
