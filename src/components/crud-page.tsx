@@ -149,8 +149,11 @@ export function CrudPage({
   }) => React.ReactNode;
   /** Exibe o bloco extra antes dos campos (ex.: escolher tipo de pessoa e pesquisar o documento). */
   extraFormTop?: boolean;
+  /** Modo somente leitura: impede criar, editar, excluir e salvar. */
+  readOnly?: boolean;
 }) {
   const { client, canManage } = useSupabase();
+  const effectiveReadOnly = readOnly === true;
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -348,7 +351,7 @@ export function CrudPage({
             <Printer className="size-4" />
             Imprimir
           </Button>
-          <Button onClick={openCreate} disabled={readOnly || !canManage}>
+          <Button onClick={openCreate} disabled={effectiveReadOnly || !canManage}>
             <Plus className="size-4" />
             Novo
           </Button>
@@ -407,7 +410,7 @@ export function CrudPage({
 
       <p className="text-xs text-muted-foreground">{rows.length} registro(s)</p>
 
-      {!canManage && !readOnly ? (
+      {!canManage && !effectiveReadOnly ? (
         <p className="text-xs text-muted-foreground">
           Somente perfis <strong>admin</strong> ou <strong>gestor</strong> podem incluir, editar ou
           excluir registros.
@@ -492,7 +495,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={!canManage}
+                        disabled={effectiveReadOnly || !canManage}
                         onClick={() => openEdit(row)}
                       >
                         <Pencil className="size-4" />
@@ -500,7 +503,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={!canManage}
+                        disabled={effectiveReadOnly || !canManage}
                         onClick={() => remove.mutate(row["id"] as string)}
                       >
                         <Trash2 className="size-4 text-destructive" />
@@ -567,6 +570,7 @@ export function CrudPage({
                         <input
                           type="checkbox"
                           checked={Boolean(form[c.name])}
+                          disabled={effectiveReadOnly}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, [c.name]: e.target.checked }))
                           }
@@ -580,6 +584,7 @@ export function CrudPage({
                   <RefSelect
                     field={field}
                     value={String(form[field.name] ?? "")}
+                    disabled={effectiveReadOnly}
                     onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
                   />
                 ) : field.type === "select" ? (
@@ -603,6 +608,7 @@ export function CrudPage({
                       id={field.name}
                       type="checkbox"
                       checked={Boolean(form[field.name])}
+                      disabled={effectiveReadOnly}
                       onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.checked }))}
                       className="size-4 accent-primary"
                     />
@@ -613,6 +619,7 @@ export function CrudPage({
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
+                    disabled={effectiveReadOnly}
                     onBlur={(e) => {
                       if (field.type !== "number" || !field.step) return;
                       const dec = (field.step.split(".")[1] ?? "").length;
@@ -647,7 +654,7 @@ export function CrudPage({
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            <Button onClick={() => save.mutate()} disabled={effectiveReadOnly || save.isPending}>
               {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Salvar
             </Button>
