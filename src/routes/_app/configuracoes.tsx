@@ -174,7 +174,7 @@ const numericosSicredi = new Set([
 ]);
 
 function ConfiguracoesPage() {
-  const { client, canManage } = useSupabase();
+  const { client, canManage, roles } = useSupabase();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [params, setParams] = useState<Record<string, string>>({});
@@ -481,7 +481,57 @@ function ConfiguracoesPage() {
           </div>
         )}
       </section>
+      {roles.includes("admin") && <LimparDados />}
     </ErpLayout>
+  );
+}
+
+function LimparDados() {
+  const { client } = useSupabase();
+  const queryClient = useQueryClient();
+  const [texto, setTexto] = useState("");
+  const limpar = useMutation({
+    mutationFn: async () => {
+      const { error } = await client!.rpc("admin_limpar_dados", { _confirmacao: texto });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Dados apagados. O sistema está pronto para um novo cadastro.");
+      setTexto("");
+      queryClient.clear();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <section className="mt-6 rounded-lg border border-destructive/50 bg-card p-5">
+      <h2 className="text-sm font-semibold text-destructive">Limpar dados do sistema</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Apaga todos os cadastros e movimentações: clientes, pessoas, fornecedores, produtos, rotas,
+        pedidos, compras, notas, cargas, estoque, financeiro e comissões. Mantém usuários, papéis,
+        centros de custo, dados da empresa, parâmetros, Sicredi, plano de contas, formas de
+        pagamento e faixas de desconto. Esta ação não pode ser desfeita.
+      </p>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="confirmar-limpeza">Digite LIMPAR para confirmar</Label>
+          <Input
+            id="confirmar-limpeza"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="LIMPAR"
+          />
+        </div>
+        <Button
+          variant="destructive"
+          disabled={texto !== "LIMPAR" || limpar.isPending}
+          onClick={() => {
+            if (confirm("Tem certeza? Todos os dados serão apagados definitivamente.")) limpar.mutate();
+          }}
+        >
+          {limpar.isPending && <Loader2 className="size-4 animate-spin" />} Apagar todos os dados
+        </Button>
+      </div>
+    </section>
   );
 }
 
