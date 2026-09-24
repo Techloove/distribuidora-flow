@@ -398,6 +398,20 @@ export function DocumentoPage({
             "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
           );
       }
+      if (config.table === "pedidos") {
+        const { data, error } = await client!.rpc("criar_pedido_rascunho", {
+          _cliente_id: String(payload["cliente_id"]),
+          _centro_id: String(payload["centro_id"]),
+          _rota_id: String(payload["rota_id"]),
+          _forma_pagamento_id: String(payload["forma_pagamento_id"]),
+          _data_pedido: String(payload["data_pedido"]),
+          _observacoes: payload["observacoes"] ? String(payload["observacoes"]) : null,
+          _representante_id: payload["representante_id"] ? String(payload["representante_id"]) : null,
+        });
+        if (error) throw new Error(error.message);
+        return data as Row;
+      }
+
       const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
       if (error) throw new Error(error.message);
       return data as Row;
@@ -488,8 +502,19 @@ export function DocumentoPage({
           pagamento["comissao"] ?? doc["comissao_percentual"] ?? 0,
         );
       }
-      const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("atualizar_pedido_comercial", {
+          _pedido_id: String(doc["id"]),
+          _forma_pagamento_id: String(patch["forma_pagamento_id"]),
+          _frete_valor: Number(patch["frete_valor"] ?? 0),
+          _desconto_valor: Number(patch["desconto_valor"] ?? 0),
+          _comissao_percentual: Number(patch["comissao_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       toast.success("Forma de pagamento salva");
@@ -547,8 +572,19 @@ export function DocumentoPage({
         payload["lote"] = item.lote || null;
         payload["validade"] = item.validade || null;
       }
-      const { error } = await client!.from(config.itemsTable).insert(payload);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("adicionar_item_pedido", {
+          _pedido_id: selected,
+          _produto_id: String(payload["produto_id"]),
+          _quantidade: Number(payload["quantidade"]),
+          _preco_unitario: Number(payload["preco_unitario"]),
+          _desconto_percentual: Number(payload["desconto_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.from(config.itemsTable).insert(payload);
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       setItem({ ...emptyItem });
@@ -560,11 +596,21 @@ export function DocumentoPage({
 
   const updateItem = useMutation({
     mutationFn: async (patch: { id: string; values: Record<string, number> }) => {
-      const { error } = await client!
-        .from(config.itemsTable)
-        .update(patch.values)
-        .eq("id", patch.id);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("atualizar_item_pedido", {
+          _item_id: patch.id,
+          _quantidade: Number(patch.values["quantidade"] ?? 0),
+          _preco_unitario: Number(patch.values["preco_unitario"] ?? 0),
+          _desconto_percentual: Number(patch.values["desconto_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!
+          .from(config.itemsTable)
+          .update(patch.values)
+          .eq("id", patch.id);
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
@@ -575,8 +621,13 @@ export function DocumentoPage({
 
   const removeItem = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client!.from(config.itemsTable).delete().eq("id", id);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("remover_item_pedido", { _item_id: id });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.from(config.itemsTable).delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
