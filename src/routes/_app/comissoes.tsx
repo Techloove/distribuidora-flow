@@ -81,10 +81,10 @@ function ComissoesPage() {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await client!.rpc("atualizar_status_comissao", {\n        _comissao_id: id,\n        _status: status,\n      });
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
+      const { error } = await client!.rpc("atualizar_status_comissao", {
+        _comissao_id: id,
+        _status: status,
+      });
       toast.success("Comissão atualizada");
       queryClient.invalidateQueries({ queryKey: ["comissoes"] });
     },
