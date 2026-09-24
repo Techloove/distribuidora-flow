@@ -1,3 +1,4 @@
+import { requireServerAuth } from "./server-auth";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -195,10 +196,12 @@ function fontes(doc: string): Fonte[] {
 
 /** Consulta a Inscrição Estadual de um CNPJ. Não inventa dados nem assume isenção. */
 export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
-  .inputValidator((input: { documento: string }) => ({
+  .inputValidator((input: { documento: string; accessToken?: string }) => ({
     documento: String(input?.documento ?? ""),
+    accessToken: String(input?.accessToken ?? ""),
   }))
   .handler(async ({ data }): Promise<ConsultaIeResultado> => {
+    await requireServerAuth(data.accessToken, ["admin", "gestor"]);
     const doc = digitos(data.documento);
     if (doc.length !== 14) {
       return {
