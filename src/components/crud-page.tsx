@@ -122,6 +122,7 @@ export function CrudPage({
   onInlineSave,
   extraForm,
   extraFormTop,
+  readOnly = false,
 }: {
   table: string;
   fields: CrudField[];
