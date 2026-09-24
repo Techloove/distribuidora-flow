@@ -107,7 +107,7 @@ const nav = [
       { to: "/rota-despesas", label: "Custos de rota", icon: Route },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/boletos", label: "Boletos", icon: Barcode },
-      { to: "/conciliacao-creditos" as any, label: "Conciliação de créditos", icon: Undo2 },
+      { to: "/conciliacao-creditos" as never, label: "Conciliação de créditos", icon: Undo2 },
       { to: "/pagar", label: "Contas a pagar", icon: Coins },
     ],
   },
