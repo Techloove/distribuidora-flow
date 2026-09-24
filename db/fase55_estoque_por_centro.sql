@@ -54,6 +54,18 @@ set quantidade = excluded.quantidade,
     custo_medio = excluded.custo_medio,
     updated_at = now();
 
+-- Produtos antigos que já possuíam um centro cadastrado e ainda não tinham
+-- movimentação por centro recebem o saldo legado nesse centro.
+insert into public.estoque_saldos (produto_id, centro_id, quantidade, custo_medio)
+select p.id, p.centro_id, coalesce(p.estoque_atual,0), coalesce(p.custo_medio,0)
+  from public.produtos p
+ where p.centro_id is not null
+   and not exists (
+     select 1 from public.estoque_saldos s
+      where s.produto_id = p.id
+   )
+on conflict (produto_id, centro_id) do nothing;
+
 -- O saldo por centro só pode ser alterado pelo motor de estoque.
 revoke insert, update, delete on public.estoque_saldos from authenticated;
 
