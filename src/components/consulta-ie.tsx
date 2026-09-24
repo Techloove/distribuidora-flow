@@ -124,7 +124,7 @@ export function ConsultaIe({
         }
       }
 
-      const res = (await consultar({ data: { documento: doc, accessToken: session?.access_token } })) as ConsultaIeResultado;
+      const res = (await consultar({ data: { documento: doc, ...(session?.access_token ? { accessToken: session.access_token } : {}) } })) as ConsultaIeResultado;
       if (!res.ok) {
         await registrar(res.codigo, null, res.mensagem, null, false);
         throw new Error(res.mensagem);
