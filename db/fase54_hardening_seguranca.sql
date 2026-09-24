@@ -118,6 +118,10 @@ begin
 end $$;
 
 -- 4) Índices para as políticas de escopo.
+create index if not exists comissoes_centro_idx on public.comissoes(centro_id);
+create index if not exists contas_pagar_centro_idx on public.contas_pagar(centro_id);
+create index if not exists pedido_separacoes_pedido_idx on public.pedido_separacoes(pedido_id);
+create index if not exists carga_pedidos_carga_idx on public.carga_pedidos(carga_id);
 create index if not exists pedidos_centro_idx on public.pedidos(centro_id);
 create index if not exists compras_centro_idx on public.compras(centro_id);
 create index if not exists boletos_centro_idx on public.boletos(centro_id);
