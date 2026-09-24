@@ -877,6 +877,162 @@ $$;
 
 grant execute on function public.cancelar_pedido(uuid) to authenticated;
 
+
+
+-- Conciliação segura dos créditos legados DEV-*.
+-- A view é somente diagnóstico; a migração exige operação explícita por título.
+create or replace view public.vw_conciliacao_creditos_dev
+with (security_invoker = on)
+as
+select
+  cr.id as conta_receber_id,
+  cr.documento,
+  cr.cliente_id,
+  cr.pedido_id,
+  cr.centro_id,
+  cr.valor,
+  cr.valor_pago,
+  cr.status as status_conta,
+  cr.observacao,
+  d.id as devolucao_id,
+  d.numero as devolucao_numero,
+  d.status as status_devolucao,
+  d.valor_total as valor_devolucao,
+  c.id as credito_novo_id,
+  c.valor_original as credito_novo_valor,
+  c.valor_utilizado as credito_novo_utilizado,
+  c.saldo as credito_novo_saldo,
+  case
+    when c.id is not null then 'ja_migrado'
+    when cr.valor >= 0 then 'valor_nao_negativo'
+    when coalesce(cr.valor_pago,0) <> 0 then 'possui_movimentacao'
+    when d.id is null then 'devolucao_nao_localizada'
+    when d.status <> 'confirmada' then 'devolucao_nao_confirmada'
+    when d.cliente_id is distinct from cr.cliente_id then 'cliente_divergente'
+    when d.centro_id is distinct from cr.centro_id then 'centro_divergente'
+    when round(abs(cr.valor),2) <> round(coalesce(d.valor_total,0),2) then 'valor_divergente'
+    else 'apto_para_migracao'
+  end as situacao
+from public.contas_receber cr
+left join public.devolucoes d
+  on d.id = cr.pedido_id
+  or (
+    cr.pedido_id is not null
+    and d.pedido_id = cr.pedido_id
+    and cr.documento = 'DEV-'||d.numero
+  )
+left join public.creditos_clientes c
+  on c.devolucao_id = d.id
+where cr.documento like 'DEV-%';
+
+grant select on public.vw_conciliacao_creditos_dev to authenticated;
+
+create or replace function public.migrar_credito_dev(
+  _conta_receber_id uuid
+)
+returns public.creditos_clientes
+language plpgsql
+security definer
+set search_path = public
+as $
+declare
+  cr public.contas_receber;
+  dev public.devolucoes;
+  c public.creditos_clientes;
+begin
+  if not public.can_manage(auth.uid()) then
+    raise exception 'Sem permissao para migrar credito legado';
+  end if;
+
+  select * into cr
+  from public.contas_receber
+  where id = _conta_receber_id
+  for update;
+
+  if cr.id is null then
+    raise exception 'Titulo DEV legado nao encontrado';
+  end if;
+
+  if cr.documento not like 'DEV-%' then
+    raise exception 'O titulo informado nao e um credito DEV legado';
+  end if;
+
+  if cr.valor >= 0 then
+    raise exception 'O titulo DEV legado precisa ter valor negativo';
+  end if;
+
+  if coalesce(cr.valor_pago,0) <> 0 then
+    raise exception 'O credito legado possui movimentacao e nao pode ser migrado automaticamente';
+  end if;
+
+  select * into dev
+  from public.devolucoes
+  where (
+    (cr.pedido_id is not null and pedido_id = cr.pedido_id and 'DEV-'||numero = cr.documento)
+    or id = cr.pedido_id
+  )
+  order by case when id = cr.pedido_id then 0 else 1 end
+  limit 1
+  for update;
+
+  if dev.id is null then
+    raise exception 'Nao foi possivel localizar a devolucao de origem do credito';
+  end if;
+
+  if dev.status <> 'confirmada' then
+    raise exception 'A devolucao de origem precisa estar confirmada';
+  end if;
+
+  if dev.cliente_id is distinct from cr.cliente_id then
+    raise exception 'Cliente do credito legado difere da devolucao';
+  end if;
+
+  if cr.centro_id is distinct from dev.centro_id then
+    raise exception 'Centro do credito legado difere da devolucao';
+  end if;
+
+  if round(abs(cr.valor),2) <> round(coalesce(dev.valor_total,0),2) then
+    raise exception 'Valor do credito legado difere do valor da devolucao';
+  end if;
+
+  select * into c
+  from public.creditos_clientes
+  where devolucao_id = dev.id
+  for update;
+
+  if c.id is null then
+    c := public.criar_credito_devolucao(
+      dev.id,
+      dev.cliente_id,
+      dev.centro_id,
+      dev.valor_total,
+      'Credito migrado do legado '||cr.documento
+    );
+  end if;
+
+  update public.contas_receber
+  set status = 'cancelado',
+      observacao = concat_ws(' | ', nullif(observacao,''), 'Migrado para creditos_clientes: '||c.id)
+  where id = cr.id;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'contas_receber',cr.id,'migrar_credito_legado',
+    jsonb_build_object(
+      'documento',cr.documento,
+      'devolucao_id',dev.id,
+      'credito_id',c.id,
+      'valor',abs(cr.valor)
+    ),
+    auth.uid()
+  );
+
+  return c;
+end;
+$;
+
+grant execute on function public.migrar_credito_dev(uuid) to authenticated;
+
 -- Preflight: nao tenta apagar nem converter creditos DEV antigos.
 -- Eles permanecem historicos e devem ser conciliados antes de uma eventual migracao.
 
