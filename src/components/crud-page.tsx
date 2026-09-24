@@ -86,12 +86,14 @@ function RefSelect({
   field: CrudField;
   value: string;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   const options = useRefOptions(field);
   return (
     <select
       id={field.name}
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
     >
@@ -153,9 +155,9 @@ export function CrudPage({
   readOnly?: boolean;
 }) {
   const { client, canManage } = useSupabase();
-  const effectiveReadOnly = readOnly === true;
   const { centro } = useCentro();
   const queryClient = useQueryClient();
+  const effectiveReadOnly = readOnly === true;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
