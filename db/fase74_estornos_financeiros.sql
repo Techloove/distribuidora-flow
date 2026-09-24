@@ -94,6 +94,9 @@ begin
 
   if m.id is null then raise exception 'Movimentação não encontrada'; end if;
   if m.tipo not in ('entrada','saida') then raise exception 'Movimentação não pode ser estornada'; end if;
+  if m.origem in ('transferencia','estorno','estorno_transferencia') or m.transferencia_id is not null then
+    raise exception 'Use o estorno da transferência para desfazer uma transferência';
+  end if;
   if not public.usuario_pode_acessar_centro(m.centro_id) then
     raise exception 'Sem acesso ao centro da movimentação';
   end if;
