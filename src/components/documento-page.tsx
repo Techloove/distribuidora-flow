@@ -334,6 +334,23 @@ export function DocumentoPage({
     },
   });
 
+  const creditosDevolucao = useQuery({
+    queryKey: ["creditos_clientes", clienteFoco, doc?.["centro_id"]],
+    enabled: !!client && config.table === "pedidos" && !!clienteFoco,
+    queryFn: async () => {
+      const query = client!
+        .from("creditos_clientes")
+        .select("id, valor_original, valor_utilizado, saldo, status, centro_id, devolucao_id")
+        .eq("cliente_id", clienteFoco)
+        .neq("status", "cancelado")
+        .gt("saldo", 0);
+      if (doc?.["centro_id"]) query.eq("centro_id", String(doc["centro_id"]));
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const titulosAbertos = useQuery({
     queryKey: ["contas_receber", "abertos", clienteFoco],
     enabled: !!client && !!clienteFoco,
@@ -390,6 +407,51 @@ export function DocumentoPage({
       setOpenNew(false);
       setHeader({});
       setSelected(String(data["id"]));
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [creditoAplicacao, setCreditoAplicacao] = useState("");
+
+  const creditoDisponivelDevolucao = (creditosDevolucao.data ?? []).reduce(
+    (sum, c) => sum + Number(c["saldo"] ?? 0),
+    0,
+  );
+
+  const creditoAplicadoPedido = useQuery({
+    queryKey: ["credito_aplicacoes", selected],
+    enabled: !!client && config.table === "pedidos" && !!selected,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("creditos_clientes_aplicacoes")
+        .select("id, credito_id, valor, status")
+        .eq("pedido_id", selected!);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const aplicarCreditoPedido = useMutation({
+    mutationFn: async () => {
+      if (!selected || !doc) throw new Error("Selecione um pedido");
+      const valor = Number(creditoAplicacao || 0);
+      if (valor <= 0) throw new Error("Informe o valor do crédito");
+      const credito = (creditosDevolucao.data ?? []).find((c) => Number(c["saldo"] ?? 0) >= valor);
+      if (!credito) throw new Error("Nenhum crédito de devolução possui saldo suficiente para este valor");
+      const { error } = await client!.rpc("aplicar_credito_cliente", {
+        _credito_id: credito["id"],
+        _pedido_id: selected,
+        _valor: valor,
+        _chave_idempotencia: crypto.randomUUID(),
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Crédito reservado no pedido");
+      setCreditoAplicacao("");
+      queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1475,6 +1537,54 @@ export function DocumentoPage({
                   ) : null}
                   Aplicar desconto no pedido
                 </Button>
+              </div>
+            ) : null}
+
+            {config.table === "pedidos" && doc["status"] === "rascunho" && clienteFoco ? (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold">Crédito de devoluções</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Crédito disponível deste cliente no centro do pedido. Ele reduz o valor que será gerado no contas a receber.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <Resumo label="Disponível" value={brl(creditoDisponivelDevolucao)} />
+                  <Resumo
+                    label="Aplicado neste pedido"
+                    value={brl(
+                      (creditoAplicadoPedido.data ?? [])
+                        .filter((a) => ["reservado", "aplicado"].includes(String(a["status"])))
+                        .reduce((sum, a) => sum + Number(a["valor"] ?? 0), 0),
+                    )}
+                  />
+                  <Resumo label="Total do pedido" value={brl(doc["total_liquido"])} />
+                </div>
+                {creditoDisponivelDevolucao > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-end gap-2">
+                    <div className="min-w-48 flex-1 space-y-1.5">
+                      <Label>Valor do crédito</Label>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        max={String(creditoDisponivelDevolucao)}
+                        value={creditoAplicacao}
+                        onChange={(e) => setCreditoAplicacao(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      disabled={aplicarCreditoPedido.isPending}
+                      onClick={() => aplicarCreditoPedido.mutate()}
+                    >
+                      {aplicarCreditoPedido.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                      Aplicar crédito
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Nenhum crédito de devolução disponível para este cliente neste centro.
+                  </p>
+                )}
               </div>
             ) : null}
 
