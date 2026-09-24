@@ -348,7 +348,7 @@ export function CrudPage({
             <Printer className="size-4" />
             Imprimir
           </Button>
-          <Button onClick={openCreate} disabled={!canManage}>
+          <Button onClick={openCreate} disabled={readOnly || !canManage}>
             <Plus className="size-4" />
             Novo
           </Button>
@@ -407,7 +407,7 @@ export function CrudPage({
 
       <p className="text-xs text-muted-foreground">{rows.length} registro(s)</p>
 
-      {!canManage ? (
+      {!canManage && !readOnly ? (
         <p className="text-xs text-muted-foreground">
           Somente perfis <strong>admin</strong> ou <strong>gestor</strong> podem incluir, editar ou
           excluir registros.
