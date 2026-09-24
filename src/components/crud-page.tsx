@@ -82,6 +82,7 @@ function RefSelect({
   field,
   value,
   onChange,
+  disabled = false,
 }: {
   field: CrudField;
   value: string;
