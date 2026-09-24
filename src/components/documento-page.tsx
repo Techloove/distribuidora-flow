@@ -432,6 +432,22 @@ export function DocumentoPage({
     },
   });
 
+  const cancelarCreditoPedido = useMutation({
+    mutationFn: async (aplicacaoId: string) => {
+      const { error } = await client!.rpc("cancelar_aplicacao_credito", {
+        _aplicacao_id: aplicacaoId,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Aplicação de crédito cancelada");
+      queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const aplicarCreditoPedido = useMutation({
     mutationFn: async () => {
       if (!selected || !doc) throw new Error("Selecione um pedido");
@@ -1558,6 +1574,27 @@ export function DocumentoPage({
                   />
                   <Resumo label="Total do pedido" value={brl(doc["total_liquido"])} />
                 </div>
+                {(creditoAplicadoPedido.data ?? []).some((a) => String(a["status"]) === "reservado") ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium">Reservas deste pedido</p>
+                    {(creditoAplicadoPedido.data ?? [])
+                      .filter((a) => String(a["status"]) === "reservado")
+                      .map((a) => (
+                        <div key={String(a["id"])} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                          <span>{brl(a["valor"])}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={cancelarCreditoPedido.isPending}
+                            onClick={() => cancelarCreditoPedido.mutate(String(a["id"]))}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
                 {creditoDisponivelDevolucao > 0 ? (
                   <div className="mt-3 flex flex-wrap items-end gap-2">
                     <div className="min-w-48 flex-1 space-y-1.5">
