@@ -325,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
@@ -427,6 +428,7 @@ export interface FileRoutesById {
   '/_app/comissao-faixas': typeof AppComissaoFaixasRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
+  '/_app/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/_app/configuracoes': typeof AppConfiguracoesRoute
   '/_app/contas': typeof AppContasRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -717,13 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppComprasRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/conciliacao-creditos': {
-    id: '/_app/conciliacao-creditos'
-    path: '/conciliacao-creditos'
-    fullPath: '/conciliacao-creditos'
-    preLoaderRoute: typeof AppConciliacaoCreditosRouteImport
-    parentRoute: typeof AppRouteRoute
-  }
+      '/_app/conciliacao-creditos': {
+      id: '/_app/conciliacao-creditos'
+      path: '/conciliacao-creditos'
+      fullPath: '/conciliacao-creditos'
+      preLoaderRoute: typeof AppConciliacaoCreditosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   '/_app/configuracoes': {
       id: '/_app/configuracoes'
       path: '/configuracoes'
