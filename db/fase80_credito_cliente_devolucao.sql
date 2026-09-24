@@ -769,6 +769,100 @@ $$;
 
 grant execute on function public.cancelar_devolucao(uuid) to authenticated;
 
+
+-- Cancelamento de pedido: restaura credito ja consumido pela venda cancelada.
+create or replace function public.cancelar_pedido(_pedido_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $
+declare
+  ped public.pedidos;
+  op_id uuid;
+  item record;
+  v_pago numeric(14,2);
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para cancelar pedidos';
+  end if;
+
+  select * into ped from public.pedidos where id = _pedido_id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro';
+  end if;
+  if ped.status = 'cancelado' then return; end if;
+  if ped.status not in ('confirmado','faturado') then
+    raise exception 'Pedido no status % nao pode ser cancelado por esta operacao', ped.status;
+  end if;
+
+  select coalesce(sum(valor_pago),0) into v_pago
+  from public.contas_receber
+  where pedido_id = _pedido_id;
+
+  if v_pago > 0 then
+    raise exception 'Pedido possui recebimentos. Utilize o fluxo de devolucao/estorno financeiro';
+  end if;
+
+  if exists (
+    select 1 from public.devolucoes
+    where pedido_id = _pedido_id and status = 'confirmada'
+  ) then
+    raise exception 'Pedido possui devolucao confirmada. Cancele/estorne a devolucao ou conclua o fluxo de devolucao antes de cancelar o pedido';
+  end if;
+
+  insert into public.pedido_operacoes(pedido_id,tipo,created_by)
+  values (_pedido_id,'cancelamento',auth.uid())
+  on conflict (pedido_id,tipo) do nothing
+  returning id into op_id;
+
+  if op_id is null then return; end if;
+
+  for item in
+    select produto_id, sum(quantidade) as qtd
+    from public.pedido_itens
+    where pedido_id = _pedido_id
+    group by produto_id
+  loop
+    insert into public.estoque_movimentos
+      (produto_id,centro_id,tipo,quantidade,origem,documento_id,observacao,created_by)
+    values
+      (item.produto_id,ped.centro_id,'entrada',item.qtd,'pedido_cancelado',
+       _pedido_id,'Reversao de estoque por cancelamento de pedido',auth.uid());
+  end loop;
+
+  update public.contas_receber
+  set status='cancelado'
+  where pedido_id=_pedido_id and status <> 'pago';
+
+  update public.comissoes
+  set status='cancelada'
+  where pedido_id=_pedido_id and status <> 'paga';
+
+  update public.expedicoes
+  set status='cancelada'
+  where pedido_id=_pedido_id and status not in ('entregue','cancelada');
+
+  perform public.restaurar_creditos_cancelamento_pedido(_pedido_id);
+
+  update public.pedidos set status='cancelado' where id=_pedido_id;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values (
+    'pedidos',_pedido_id,'cancelar',
+    jsonb_build_object(
+      'status_anterior',ped.status,
+      'estoque_revertido',true,
+      'creditos_restaurados',true
+    ),
+    auth.uid()
+  );
+end;
+$;
+
+grant execute on function public.cancelar_pedido(uuid) to authenticated;
+
 -- Preflight: nao tenta apagar nem converter creditos DEV antigos.
 -- Eles permanecem historicos e devem ser conciliados antes de uma eventual migracao.
 
