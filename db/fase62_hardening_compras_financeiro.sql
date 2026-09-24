@@ -1,19 +1,32 @@
 -- Fase 62: hardening de compras e baixas financeiras.
 -- Nao inclui Mercado Livre/Shopee.
 
--- Uma compra recebida gera exatamente um conjunto de contas a pagar.
-do $$
+-- Preflight de duplicidades historicas antes das restricoes.
+do $
 declare v_count bigint;
 begin
   select count(*) into v_count from (
-    select compra_id
+    select compra_id, parcela
     from public.contas_pagar
     where compra_id is not null
-    group by compra_id
-    having count(*) > 0
+    group by compra_id, parcela
+    having count(*) > 1
   ) x;
-  -- O indice abaixo deve ser por compra/parcela; compras antigas podem ter parcelas legitimas.
-end $$;
+  if v_count > 0 then
+    raise exception 'Existem % parcelas de contas a pagar duplicadas por compra. Corrija antes da restricao.',v_count;
+  end if;
+
+  select count(*) into v_count from (
+    select pedido_id, parcela
+    from public.contas_receber
+    where pedido_id is not null
+    group by pedido_id, parcela
+    having count(*) > 1
+  ) x;
+  if v_count > 0 then
+    raise exception 'Existem % parcelas de contas a receber duplicadas por pedido. Corrija antes da restricao.',v_count;
+  end if;
+end $;
 
 create unique index if not exists contas_pagar_compra_parcela_uq
   on public.contas_pagar(compra_id, parcela)
