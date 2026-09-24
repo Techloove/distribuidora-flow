@@ -47,3 +47,31 @@ export function requestAccessToken(): string | undefined {
   if (!value) return undefined;
   return value.replace(/^Bearer\s+/i, "").trim() || undefined;
 }
+
+
+export async function enforceRateLimit(
+  accessToken: string | undefined,
+  action: string,
+  limit = 30,
+  windowSeconds = 60,
+): Promise<void> {
+  const token = String(accessToken ?? "").trim();
+  if (!token) throw new Error("Sessão não informada. Entre novamente.");
+  const { url, anonKey } = config();
+  const res = await fetch(`${url}/rest/v1/rpc/consumir_rate_limit`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      _acao: action,
+      _limite: limit,
+      _janela_segundos: windowSeconds,
+    }),
+  });
+  if (!res.ok) throw new Error("Não foi possível validar o limite de requisições.");
+  const allowed = (await res.json()) as boolean;
+  if (!allowed) throw new Error("Limite de consultas atingido. Tente novamente em alguns instantes.");
+}
