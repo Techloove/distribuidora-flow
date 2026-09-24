@@ -15,6 +15,7 @@ as $$
 declare
   c public.comissoes;
   centro uuid;
+  status_anterior text;
 begin
   if not public.can_finance(auth.uid()) then
     raise exception 'Sem permissao para alterar comissoes';
@@ -57,6 +58,8 @@ begin
     raise exception 'Transicao de comissao invalida';
   end if;
 
+  status_anterior := c.status;
+
   update public.comissoes
      set status = _status
    where id = _comissao_id
@@ -67,7 +70,7 @@ begin
     'comissoes',
     _comissao_id,
     'alterar_status',
-    jsonb_build_object('status_anterior', c.status, 'status_novo', _status),
+    jsonb_build_object('status_anterior', status_anterior, 'status_novo', _status),
     auth.uid()
   );
 
