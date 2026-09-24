@@ -1,4 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requestAccessToken, requireServerAuth } from "./server-auth";
+
+const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
+
+async function requireSicrediAccess() {
+  return requireServerAuth(requestAccessToken(), SICREDI_ROLES);
+}
 
 /**
  * Integracao com a API de Cobranca do Sicredi (portal de parceiros).
