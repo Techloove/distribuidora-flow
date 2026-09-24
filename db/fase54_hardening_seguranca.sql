@@ -28,7 +28,32 @@ $$;
 
 grant execute on function public.usuario_pode_acessar_centro(uuid) to authenticated;
 
--- 2) Views devem respeitar RLS das tabelas subjacentes.
+-- 2) Boletos: deriva o centro do título antes da inserção, evitando boleto sem escopo.
+create or replace function public.definir_centro_boleto()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if new.centro_id is null and new.conta_receber_id is not null then
+    select centro_id into new.centro_id
+      from public.contas_receber
+     where id = new.conta_receber_id;
+  end if;
+  if new.centro_id is null then
+    raise exception 'Centro é obrigatório para boleto';
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists definir_centro_boleto_trg on public.boletos;
+create trigger definir_centro_boleto_trg
+before insert or update on public.boletos
+for each row execute function public.definir_centro_boleto();
+
+-- 3) Views devem respeitar RLS das tabelas subjacentes.
 do $$
 begin
   if to_regclass('public.vw_vendas_rota') is not null then
@@ -45,7 +70,7 @@ begin
   end if;
 end $$;
 
--- 3) Tabelas financeiras/logisticas que possuem centro_id.
+-- 4) Tabelas financeiras/logisticas que possuem centro_id.
 -- SELECT passa a respeitar o centro. Escritas continuam sujeitas as permissoes
 -- funcionais existentes e, para tabelas com centro_id, ao mesmo escopo.
 do $$
@@ -117,7 +142,7 @@ begin
   end if;
 end $$;
 
--- 4) Índices para as políticas de escopo.
+-- 5) Índices para as políticas de escopo.
 create index if not exists comissoes_centro_idx on public.comissoes(centro_id);
 create index if not exists contas_pagar_centro_idx on public.contas_pagar(centro_id);
 create index if not exists pedido_separacoes_pedido_idx on public.pedido_separacoes(pedido_id);
@@ -129,7 +154,7 @@ create index if not exists cargas_centro_idx on public.cargas(centro_id);
 create index if not exists estoque_movimentos_centro_idx on public.estoque_movimentos(centro_id);
 create index if not exists usuario_centros_centro_idx on public.usuario_centros(centro_id);
 
--- 5) Concorrencia: bloqueia as comissoes antes de criar o lote de pagamento.
+-- 6) Concorrencia: bloqueia as comissoes antes de criar o lote de pagamento.
 create or replace function public.pagar_comissoes(
   _representante_id uuid,
   _comissao_ids uuid[],
