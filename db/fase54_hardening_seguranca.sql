@@ -227,6 +227,15 @@ begin
     raise exception 'Usuario sem acesso ao centro das comissoes';
   end if;
 
+  if _conta_id is not null and not exists (
+    select 1 from public.contas_financeiras cf
+    where cf.id = _conta_id
+      and public.usuario_pode_acessar_centro(cf.centro_id)
+      and cf.centro_id is not distinct from centro
+  ) then
+    raise exception 'Conta financeira invalida ou de outro centro';
+  end if;
+
   select nome into rep_nome from public.representantes where id = _representante_id;
 
   insert into public.contas_pagar
