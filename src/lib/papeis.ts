@@ -53,9 +53,9 @@ export function usePapeis() {
 export function usePodeAlterarPreco() {
   const { roles } = useSupabase();
   const { papeis, carregando } = usePapeis();
-  if (carregando || roles.length === 0) return true;
+  if (carregando || roles.length === 0) return false;
   return roles.some((r) => {
     const papel = papeis.find((p) => p.codigo === r);
-    return papel ? papel.pode_alterar_preco !== false : true;
+    return papel ? papel.pode_alterar_preco === true : false;
   });
 }
