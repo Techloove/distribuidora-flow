@@ -32,7 +32,7 @@ alter table public.devolucao_operacoes enable row level security;
 revoke all on public.devolucao_operacoes from anon, authenticated;
 
 -- Preflight: nao cria a restricao de credito se ja houver duplicidades.
-do $
+do $$
 declare v_count bigint;
 begin
   select count(*) into v_count from (
@@ -45,7 +45,7 @@ begin
   if v_count > 0 then
     raise exception 'Existem % devolucoes com creditos duplicados. Corrija-os antes de criar a restricao.', v_count;
   end if;
-end $;
+end $$;
 
 create unique index if not exists contas_receber_devolucao_uq
   on public.contas_receber(pedido_id, documento)
