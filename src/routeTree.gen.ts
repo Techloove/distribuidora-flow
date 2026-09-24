@@ -21,6 +21,7 @@ import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-inativos'
 import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-faixas'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
+import { Route as AppCreditosClientesRouteImport } from './routes/_app/creditos-clientes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppContasRouteImport } from './routes/_app/contas'
@@ -117,6 +118,11 @@ const AppComissaoFaixasRoute = AppComissaoFaixasRouteImport.update({
 const AppComissoesRoute = AppComissoesRouteImport.update({
   id: '/comissoes',
   path: '/comissoes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCreditosClientesRoute = AppCreditosClientesRouteImport.update({
+  id: '/creditos-clientes',
+  path: '/creditos-clientes',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppComprasRoute = AppComprasRouteImport.update({
@@ -976,6 +982,7 @@ interface AppRouteRouteChildren {
   AppClientesInativosRoute: typeof AppClientesInativosRoute
   AppComissaoFaixasRoute: typeof AppComissaoFaixasRoute
   AppComissoesRoute: typeof AppComissoesRoute
+  AppCreditosClientesRoute: typeof AppCreditosClientesRoute
   AppComprasRoute: typeof AppComprasRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppContasRoute: typeof AppContasRoute
@@ -1025,6 +1032,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppClientesInativosRoute: AppClientesInativosRoute,
   AppComissaoFaixasRoute: AppComissaoFaixasRoute,
   AppComissoesRoute: AppComissoesRoute,
+  AppCreditosClientesRoute: AppCreditosClientesRoute,
   AppComprasRoute: AppComprasRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppContasRoute: AppContasRoute,
