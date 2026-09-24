@@ -1,4 +1,4 @@
-import { requireServerAuth } from "./server-auth";
+import { enforceRateLimit, requireServerAuth } from "./server-auth";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -370,6 +370,7 @@ export const consultarDocumento = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<ConsultaResultado> => {
     await requireServerAuth(data.accessToken, ["admin", "gestor"]);
+    await enforceRateLimit(data.accessToken, "consulta-cadastral", 20, 60);
     const doc = digitos(data.documento);
     if (doc.length === 14) {
       if (!cnpjValido(doc)) {
