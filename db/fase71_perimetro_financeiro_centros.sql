@@ -147,7 +147,7 @@ begin
   if centro_final is not null and not public.usuario_pode_acessar_centro(centro_final) then
     raise exception 'Sem acesso ao centro informado';
   end if;
-  if conta_centro is distinct from null and centro_final is distinct from conta_centro then
+  if conta_centro is not null and centro_final is distinct from conta_centro then
     raise exception 'Centro da movimentação deve coincidir com o centro da conta';
   end if;
 
