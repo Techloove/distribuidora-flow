@@ -83,6 +83,19 @@ begin
     raise exception 'Pedido possui recebimentos. Utilize o fluxo de devolucao/estorno financeiro';
   end if;
 
+  -- Uma devolução confirmada já devolveu mercadoria ao estoque. Cancelar o
+  -- pedido depois disso não pode lançar novamente a quantidade original,
+  -- pois geraria crédito de estoque em duplicidade e conflito com o crédito
+  -- financeiro da devolução.
+  if exists (
+    select 1
+    from public.devolucoes
+    where pedido_id = _pedido_id
+      and status = 'confirmada'
+  ) then
+    raise exception 'Pedido possui devolucao confirmada. Cancele/estorne a devolucao ou conclua o fluxo de devolucao antes de cancelar o pedido';
+  end if;
+
   insert into public.pedido_operacoes(pedido_id,tipo,created_by)
   values (_pedido_id,'cancelamento',auth.uid())
   on conflict (pedido_id,tipo) do nothing
