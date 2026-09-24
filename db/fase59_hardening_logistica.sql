@@ -18,7 +18,7 @@ begin
         public.can_ship(auth.uid())
         and public.usuario_pode_acessar_centro(centro_id)
       )
-      with check (public.usuario_pode_acessar_centro(centro_id));
+      with check (public.can_ship(auth.uid()) and public.usuario_pode_acessar_centro(centro_id));
 
     drop policy if exists expedicoes_center_insert on public.expedicoes;
     create policy expedicoes_center_insert on public.expedicoes
