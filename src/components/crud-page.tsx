@@ -56,6 +56,8 @@ export type CrudField = {
   auto?: boolean;
   /** Gravado normalmente, mas não exibido na grade do formulário (ex.: preenchido por um bloco próprio). */
   hiddenInForm?: boolean;
+  /** Só exibe no formulário quando este campo do form estiver marcado. */
+  showIf?: string;
 };
 
 /** Opções de um campo de referência (FK). */
@@ -530,7 +532,7 @@ export function CrudPage({
           ) : null}
           <div className="grid gap-4 sm:grid-cols-4">
             {fields
-              .filter((f) => !f.hiddenInForm)
+              .filter((f) => !f.hiddenInForm && (!f.showIf || !!form[f.showIf]))
               .map((field) => (
               <div
                 key={field.name}

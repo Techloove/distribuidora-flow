@@ -82,23 +82,25 @@ const fields: CrudField[] = [
   { name: "cep", label: "CEP" },
   { name: "rota_id", label: "Rota de entrega", type: "ref", ref: { table: "rotas", labelField: "nome" } },
   { name: "limite_credito", label: "Limite de crédito (cliente)", type: "number", step: "0.01" },
-  { name: "regiao", label: "Região de atuação (vendedor)" },
+  { name: "regiao", label: "Região de atuação (vendedor)", showIf: "is_representante" },
   {
     name: "comissao_percentual",
     label: "Comissão (%) do vendedor",
+    showIf: "is_representante",
     type: "number",
     step: "0.01",
   },
   {
     name: "tipo_representante",
     label: "Tipo de vendedor",
+    showIf: "is_representante",
     type: "select",
     options: [
       { value: "interno", label: "Interno" },
       { value: "externo", label: "Externo / representante" },
     ],
   },
-  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01" },
+  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
   { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
   {
