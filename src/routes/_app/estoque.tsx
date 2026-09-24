@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { filtrarCentro, useCentro } from "@/lib/centro-store";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/estoque")({
