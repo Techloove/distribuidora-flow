@@ -19,7 +19,7 @@ begin
   select count(*) into v_count from (
     select pedido_id, parcela
     from public.contas_receber
-    where pedido_id is not null
+    where pedido_id is not null and documento like 'PED-%'
     group by pedido_id, parcela
     having count(*) > 1
   ) x;
@@ -34,7 +34,7 @@ create unique index if not exists contas_pagar_compra_parcela_uq
 
 create unique index if not exists contas_receber_pedido_parcela_uq
   on public.contas_receber(pedido_id, parcela)
-  where pedido_id is not null;
+  where pedido_id is not null and documento like 'PED-%';
 
 create or replace function public.receber_compra(_compra_id uuid)
 returns public.compras
