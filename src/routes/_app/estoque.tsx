@@ -66,24 +66,37 @@ function EstoquePage() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("produtos")
-        .select(
-          "id, codigo, descricao, unidade, estoque_atual, estoque_minimo, custo_medio, centro_id",
-        )
+        .select("id, codigo, descricao, unidade, estoque_atual, estoque_minimo, custo_medio")
         .order("descricao");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
   });
 
-  const movimentos = useQuery({
-    queryKey: ["estoque_movimentos"],
-    enabled: !!client,
+  const saldos = useQuery({
+    queryKey: ["estoque_saldos", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
       const { data, error } = await client!
+        .from("estoque_saldos")
+        .select("produto_id, centro_id, quantidade, custo_medio")
+        .eq("centro_id", centro!);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const movimentos = useQuery({
+    queryKey: ["estoque_movimentos", centro],
+    enabled: !!client,
+    queryFn: async () => {
+      let q = client!
         .from("estoque_movimentos")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(80);
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -94,13 +107,16 @@ function EstoquePage() {
       if (!form.produto_id) throw new Error("Selecione o produto");
       const qtd = Number(form.quantidade || 0);
       if (!qtd) throw new Error("Informe a quantidade");
-      const { error } = await client!.from("estoque_movimentos").insert({
-        produto_id: form.produto_id,
-        tipo: form.tipo,
-        quantidade: qtd,
-        custo_unitario: form.custo === "" ? null : Number(form.custo),
-        origem: "manual",
-        observacao: form.observacao || null,
+      if (!centro) throw new Error("Selecione um centro para movimentar o estoque");
+      const { error } = await client!.rpc("lancar_movimento_estoque", {
+        _produto_id: form.produto_id,
+        _centro_id: centro,
+        _tipo: form.tipo,
+        _quantidade: qtd,
+        _custo_unitario: form.custo === "" ? null : Number(form.custo),
+        _origem: "manual",
+        _documento_id: null,
+        _observacao: form.observacao || null,
       });
       if (error) throw new Error(error.message);
     },
@@ -112,11 +128,18 @@ function EstoquePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saldoProduto = (id: unknown) =>
+    Number(
+      saldos.data?.find((s) => s["produto_id"] === id)?.["quantidade"] ??
+        produtos.data?.find((p) => p["id"] === id)?.["estoque_atual"] ??
+        0,
+    );
+
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
 
   const produtosFiltrados = useMemo(() => {
-    let list = filtrarCentro(produtos.data ?? [], centro);
+    let list = produtos.data ?? [];
     const f = filtros;
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
@@ -127,13 +150,13 @@ function EstoquePage() {
       );
     }
     if (f["somenteAbaixo"] === "1") {
-      list = list.filter((p) => Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0));
+      list = list.filter((p) => saldoProduto(p["id"]) <= Number(p["estoque_minimo"] ?? 0));
     }
     return list;
-  }, [produtos.data, centro, filtros]);
+  }, [produtos.data, saldos.data, centro, filtros]);
 
   const movimentosFiltrados = useMemo(() => {
-    let list = filtrarCentro(movimentos.data ?? [], centro);
+    let list = movimentos.data ?? [];
     const f = filtros;
     if (f["tipo"]) list = list.filter((m) => String(m["tipo"]) === f["tipo"]);
     if (f["de"]) list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) >= f["de"]!);
@@ -143,7 +166,7 @@ function EstoquePage() {
       list = list.filter((m) => produtoName(m["produto_id"]).toLowerCase().includes(termo));
     }
     return list;
-  }, [movimentos.data, centro, filtros]);
+  }, [movimentos.data, produtos.data, centro, filtros]);
 
   return (
     <ErpLayout
@@ -240,17 +263,24 @@ function EstoquePage() {
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={() => lancar.mutate()} disabled={!canStock || lancar.isPending}>
+            <Button onClick={() => lancar.mutate()} disabled={!canStock || !centro || lancar.isPending}>
               {lancar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Lançar
             </Button>
           </div>
         </div>
         {!canStock ? (
+          {!centro ? (
+          <p className="text-xs text-muted-foreground">
+            Selecione um centro no seletor global para lançar ou consultar o saldo por centro.
+          </p>
+        ) : null}
+        {!canStock ? (
           <p className="text-xs text-muted-foreground">
             Somente perfis <strong>estoque</strong>, <strong>expedição</strong>,{" "}
             <strong>gestor</strong> ou <strong>admin</strong> podem lançar movimentos.
           </p>
+        ) : null>
         ) : null}
 
         <div className="print-area">
@@ -273,12 +303,13 @@ function EstoquePage() {
                 </TableHeader>
                 <TableBody>
                   {produtosFiltrados.map((p) => {
-                    const baixo = Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0);
+                    const saldo = saldoProduto(p["id"]);
+                    const baixo = saldo <= Number(p["estoque_minimo"] ?? 0);
                     return (
                       <TableRow key={String(p["id"])}>
                         <TableCell>{String(p["descricao"])}</TableCell>
                         <TableCell>{String(p["unidade"] ?? "UN")}</TableCell>
-                        <TableCell className="text-right">{String(p["estoque_atual"])}</TableCell>
+                        <TableCell className="text-right">{saldoProduto(p["id"])}</TableCell>
                         <TableCell className="text-right">{String(p["estoque_minimo"])}</TableCell>
                         <TableCell className={baixo ? "text-destructive" : "text-muted-foreground"}>
                           {baixo ? "repor" : "ok"}
