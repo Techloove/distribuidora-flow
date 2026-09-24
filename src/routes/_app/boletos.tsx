@@ -71,6 +71,7 @@ function BoletosPage() {
         orderBy="vencimento"
         emptyLabel="Nenhum boleto registrado ainda."
         searchColumns={["nosso_numero", "seu_numero", "linha_digitavel", "status"]}
+        readOnly
       />
     </ErpLayout>
   );
