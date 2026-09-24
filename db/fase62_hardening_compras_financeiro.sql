@@ -2,7 +2,7 @@
 -- Nao inclui Mercado Livre/Shopee.
 
 -- Preflight de duplicidades historicas antes das restricoes.
-do $
+do $$
 declare v_count bigint;
 begin
   select count(*) into v_count from (
@@ -26,7 +26,7 @@ begin
   if v_count > 0 then
     raise exception 'Existem % parcelas de contas a receber duplicadas por pedido. Corrija antes da restricao.',v_count;
   end if;
-end $;
+end $$;
 
 create unique index if not exists contas_pagar_compra_parcela_uq
   on public.contas_pagar(compra_id, parcela)
