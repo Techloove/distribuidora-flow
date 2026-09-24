@@ -48,10 +48,10 @@ function SeparacaoPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_separacao"],
-    enabled: !!client,
+    queryKey: ["vw_separacao", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
-      const { data, error } = await client!.from("vw_separacao").select("*").order("numero");
+      const { data, error } = await client!.from("vw_separacao").select("*").eq("centro_id", centro!).order("numero");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
