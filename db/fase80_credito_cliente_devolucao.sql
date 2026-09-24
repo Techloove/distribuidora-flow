@@ -335,6 +335,10 @@ begin
     raise exception 'Somente aplicacoes de pedidos em rascunho podem ser canceladas';
   end if;
 
+  if app.status <> 'reservado' then
+    return;
+  end if;
+
   select * into cred from public.creditos_clientes where id = app.credito_id for update;
 
   update public.creditos_clientes_aplicacoes
