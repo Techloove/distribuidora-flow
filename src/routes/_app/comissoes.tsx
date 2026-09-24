@@ -81,7 +81,7 @@ function ComissoesPage() {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await client!.from("comissoes").update({ status }).eq("id", id);
+      const { error } = await client!.rpc("atualizar_status_comissao", {\n        _comissao_id: id,\n        _status: status,\n      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
