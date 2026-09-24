@@ -27,10 +27,6 @@ begin
    where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
      and c.relname <> all (manter);
 
-  update public.profiles set representante_id = null
-   where exists (select 1 from information_schema.columns
-                  where table_schema='public' and table_name='profiles' and column_name='representante_id');
-
   execute 'truncate table ' || lista || ' restart identity';
   return qtd;
 end;
