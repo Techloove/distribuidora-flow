@@ -710,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppComissoesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/creditos-clientes': {
+      id: '/_app/creditos-clientes'
+      path: '/creditos-clientes'
+      fullPath: '/creditos-clientes'
+      preLoaderRoute: typeof AppCreditosClientesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/compras': {
       id: '/_app/compras'
       path: '/compras'
