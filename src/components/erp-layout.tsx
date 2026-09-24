@@ -77,14 +77,13 @@ const nav = [
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
       { to: "/gestao-comissoes", label: "Gestão de comissões", icon: Coins },
-
     ],
   },
   {
     group: "Operação",
     items: [
       { to: "/separacao", label: "Separação", icon: PackageCheck },
-      { to: "/compras", label: "Compras / NF", icon: ShoppingCart },
+      { to: "/compras", label: "Compras e NF", icon: ShoppingCart },
       { to: "/planejamento-compras", label: "Planejamento de compras", icon: CalendarClock },
       { to: "/estoque", label: "Estoque", icon: Boxes },
       { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
@@ -115,7 +114,6 @@ const nav = [
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/relatorio-vendas", label: "Relatório de vendas", icon: BarChart3 },
-
       { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
@@ -186,7 +184,6 @@ function SidebarContent({
             </p>
             <div className="space-y-1">
               {section.items.map((item) => {
-
                 const active = pathname.startsWith(item.to);
                 return (
                   <Link
