@@ -1,3 +1,4 @@
+import { requireServerAuth } from "./server-auth";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -363,10 +364,12 @@ async function consultarCpf(doc: string): Promise<ConsultaResultado> {
 
 /** Consulta cadastral por CNPJ ou CPF. Valida e normaliza o documento. */
 export const consultarDocumento = createServerFn({ method: "POST" })
-  .inputValidator((input: { documento: string }) => ({
+  .inputValidator((input: { documento: string; accessToken?: string }) => ({
     documento: String(input?.documento ?? ""),
+    accessToken: String(input?.accessToken ?? ""),
   }))
   .handler(async ({ data }): Promise<ConsultaResultado> => {
+    await requireServerAuth(data.accessToken, ["admin", "gestor"]);
     const doc = digitos(data.documento);
     if (doc.length === 14) {
       if (!cnpjValido(doc)) {
