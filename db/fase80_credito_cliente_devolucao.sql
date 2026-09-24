@@ -283,7 +283,8 @@ begin
   returning * into app;
 
   update public.creditos_clientes
-  set status = case when valor_utilizado + _valor >= valor_original then 'utilizado' else 'disponivel' end
+  set valor_utilizado = valor_utilizado + round(_valor,2),
+      status = case when valor_utilizado + round(_valor,2) >= valor_original then 'utilizado' else 'disponivel' end
   where id = cred.id;
 
   insert into public.auditoria(tabela, registro_id, acao, detalhe, user_id)
@@ -341,11 +342,8 @@ begin
   where id = app.id and status = 'reservado';
 
   update public.creditos_clientes
-  set status = case
-    when valor_utilizado > 0 then
-      case when valor_utilizado >= valor_original then 'utilizado' else 'disponivel' end
-    else 'disponivel'
-  end
+  set valor_utilizado = greatest(valor_utilizado - app.valor,0),
+      status = case when greatest(valor_utilizado - app.valor,0) >= valor_original then 'utilizado' else 'disponivel' end
   where id = cred.id;
 
   insert into public.auditoria(tabela, registro_id, acao, detalhe, user_id)
@@ -435,8 +433,8 @@ begin
     if cred.centro_id is distinct from ped.centro_id then
       raise exception 'Credito aplicado pertence a outro centro';
     end if;
-    if cred.saldo < app.valor then
-      raise exception 'Saldo insuficiente no credito %', cred.id;
+    if cred.saldo < 0 then
+      raise exception 'Credito % esta inconsistente', cred.id;
     end if;
 
     credito_total := credito_total + app.valor;
@@ -489,15 +487,8 @@ begin
   loop
     select * into cred from public.creditos_clientes where id = app.credito_id for update;
 
-    update public.creditos_clientes
-    set valor_utilizado = valor_utilizado + app.valor,
-        status = case
-          when valor_utilizado + app.valor >= valor_original then 'utilizado'
-          else 'disponivel'
-        end
-    where id = cred.id;
-
-    update public.creditos_clientes_aplicacoes
+    -- O valor ja foi reservado no momento da aplicacao.
+    -- Aqui apenas tornamos a reserva definitiva.
     set status = 'aplicado', aplicado_em = now()
     where id = app.id;
   end loop;
