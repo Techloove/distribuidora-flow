@@ -107,8 +107,8 @@ begin
     raise exception 'Usuário sem acesso ao centro do boleto';
   end if;
 
-  if b.status in ('baixado','cancelado') then
-    raise exception 'Boleto já baixado ou cancelado';
+  if b.status in ('baixado','cancelado','liquidado') then
+    raise exception 'Boleto já liquidado, baixado ou cancelado';
   end if;
 
   update public.boletos
