@@ -81,12 +81,13 @@ function ExpedicaoPage() {
     roles.includes("estoque");
 
   const expedicoes = useQuery({
-    queryKey: ["expedicoes"],
-    enabled: !!client,
+    queryKey: ["expedicoes", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
       const { data, error } = await client!
         .from("expedicoes")
         .select("*")
+        .eq("centro_id", centro!)
         .order("numero", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -94,17 +95,17 @@ function ExpedicaoPage() {
   });
 
   const pedidos = useQuery({
-    queryKey: ["pedidos", "expedicao"],
-    enabled: !!client,
+    queryKey: ["pedidos", "expedicao", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
-      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status");
+      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status").eq("centro_id", centro!);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "options"],
+    queryKey: ["clientes", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("clientes").select("id, razao_social");
@@ -114,7 +115,7 @@ function ExpedicaoPage() {
   });
 
   const transportadoras = useQuery({
-    queryKey: ["transportadoras", "options"],
+    queryKey: ["transportadoras", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -127,7 +128,7 @@ function ExpedicaoPage() {
   });
 
   const rotas = useQuery({
-    queryKey: ["rotas", "options"],
+    queryKey: ["rotas", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -209,7 +210,7 @@ function ExpedicaoPage() {
     onSuccess: () => {
       toast.success("Dados de transporte salvos");
       setEditing(null);
-      queryClient.invalidateQueries({ queryKey: ["expedicoes"] });
+      queryClient.invalidateQueries({ queryKey: ["expedicoes", centro] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
