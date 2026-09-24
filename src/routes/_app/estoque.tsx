@@ -269,8 +269,7 @@ function EstoquePage() {
             </Button>
           </div>
         </div>
-        {!canStock ? (
-          {!centro ? (
+        {!centro ? (
           <p className="text-xs text-muted-foreground">
             Selecione um centro no seletor global para lançar ou consultar o saldo por centro.
           </p>
@@ -280,7 +279,6 @@ function EstoquePage() {
             Somente perfis <strong>estoque</strong>, <strong>expedição</strong>,{" "}
             <strong>gestor</strong> ou <strong>admin</strong> podem lançar movimentos.
           </p>
-        ) : null>
         ) : null}
 
         <div className="print-area">
