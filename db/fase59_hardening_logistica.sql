@@ -90,6 +90,19 @@ end;
 $$;
 grant execute on function public.avancar_expedicao(uuid,text,date) to authenticated;
 
+do $
+declare v_count bigint;
+begin
+  select count(*) into v_count from (
+    select pedido_id from public.expedicoes
+    where status <> 'cancelada'
+    group by pedido_id having count(*) > 1
+  ) d;
+  if v_count > 0 then
+    raise exception 'Existem % pedidos com expedicoes ativas duplicadas; corrija antes da restricao.', v_count;
+  end if;
+end $;
+
 create unique index if not exists expedicoes_pedido_ativa_uq
   on public.expedicoes(pedido_id)
   where status <> 'cancelada';
