@@ -31,7 +31,22 @@ create index if not exists devolucao_operacoes_dev_idx
 alter table public.devolucao_operacoes enable row level security;
 revoke all on public.devolucao_operacoes from anon, authenticated;
 
--- Evita dois creditos para a mesma devolucao.
+-- Preflight: nao cria a restricao de credito se ja houver duplicidades.
+do $
+declare v_count bigint;
+begin
+  select count(*) into v_count from (
+    select pedido_id, documento
+    from public.contas_receber
+    where documento like 'DEV-%' and pedido_id is not null
+    group by pedido_id, documento
+    having count(*) > 1
+  ) d;
+  if v_count > 0 then
+    raise exception 'Existem % devolucoes com creditos duplicados. Corrija-os antes de criar a restricao.', v_count;
+  end if;
+end $;
+
 create unique index if not exists contas_receber_devolucao_uq
   on public.contas_receber(pedido_id, documento)
   where documento like 'DEV-%' and pedido_id is not null;
@@ -153,6 +168,13 @@ begin
   end if;
   if dev.centro_id is null then raise exception 'Centro da devolucao obrigatorio'; end if;
 
+  insert into public.devolucao_operacoes(devolucao_id,tipo,created_by)
+  values(_id,'confirmacao',auth.uid())
+  on conflict(devolucao_id,tipo) do nothing
+  returning id into op_id;
+
+  if op_id is null then return; end if;
+
   for it in
     select produto_id,sum(quantidade) as qtd,sum(total) as total
     from public.devolucao_itens where devolucao_id=_id group by produto_id
@@ -180,13 +202,6 @@ begin
        case when it.qtd<>0 then it.total/it.qtd else 0 end,
        'devolucao',dev.id,'Entrada de devolucao '||dev.numero,auth.uid());
   end loop;
-
-  insert into public.devolucao_operacoes(devolucao_id,tipo,created_by)
-  values(_id,'confirmacao',auth.uid())
-  on conflict(devolucao_id,tipo) do nothing
-  returning id into op_id;
-
-  if op_id is null then return; end if;
 
   insert into public.contas_receber
     (cliente_id,pedido_id,documento,parcela,valor,vencimento,status,observacao)
