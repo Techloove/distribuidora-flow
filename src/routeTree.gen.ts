@@ -376,6 +376,7 @@ export interface FileRoutesByTo {
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
