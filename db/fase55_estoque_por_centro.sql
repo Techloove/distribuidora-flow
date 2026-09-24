@@ -258,8 +258,10 @@ create index if not exists transferencias_estoque_destino_idx
 create index if not exists transferencias_estoque_itens_produto_idx
   on public.transferencias_estoque_itens(produto_id);
 
-grant select, insert on public.transferencias_estoque to authenticated;
-grant select, insert on public.transferencias_estoque_itens to authenticated;
+grant select on public.transferencias_estoque to authenticated;
+grant select on public.transferencias_estoque_itens to authenticated;
+revoke insert, update, delete on public.transferencias_estoque from authenticated;
+revoke insert, update, delete on public.transferencias_estoque_itens from authenticated;
 grant all on public.transferencias_estoque to service_role;
 grant all on public.transferencias_estoque_itens to service_role;
 alter table public.transferencias_estoque enable row level security;
@@ -273,33 +275,11 @@ create policy transferencias_estoque_select
     and public.usuario_pode_acessar_centro(destino_centro_id)
   );
 
-drop policy if exists transferencias_estoque_insert on public.transferencias_estoque;
-create policy transferencias_estoque_insert
-  on public.transferencias_estoque for insert to authenticated
-  with check (
-    public.can_stock(auth.uid())
-    and public.usuario_pode_acessar_centro(origem_centro_id)
-    and public.usuario_pode_acessar_centro(destino_centro_id)
-  );
-
 drop policy if exists transferencias_estoque_itens_select on public.transferencias_estoque_itens;
 create policy transferencias_estoque_itens_select
   on public.transferencias_estoque_itens for select to authenticated
   using (
     exists (
-      select 1 from public.transferencias_estoque t
-       where t.id = transferencia_id
-         and public.usuario_pode_acessar_centro(t.origem_centro_id)
-         and public.usuario_pode_acessar_centro(t.destino_centro_id)
-    )
-  );
-
-drop policy if exists transferencias_estoque_itens_insert on public.transferencias_estoque_itens;
-create policy transferencias_estoque_itens_insert
-  on public.transferencias_estoque_itens for insert to authenticated
-  with check (
-    public.can_stock(auth.uid())
-    and exists (
       select 1 from public.transferencias_estoque t
        where t.id = transferencia_id
          and public.usuario_pode_acessar_centro(t.origem_centro_id)
@@ -355,13 +335,17 @@ begin
       raise exception 'Item de transferência inválido';
     end if;
 
-    select coalesce(s.custo_medio, p.custo_medio, 0)
+    select coalesce(
+             (select s.custo_medio
+                from public.estoque_saldos s
+               where s.produto_id = p.id
+                 and s.centro_id = _origem_centro_id),
+             p.custo_medio,
+             0
+           )
       into custo
       from public.produtos p
-      left join public.estoque_saldos s
-        on s.produto_id = p.id and s.centro_id = _origem_centro_id
-     where p.id = produto
-     for update;
+     where p.id = produto;
 
     insert into public.transferencias_estoque_itens
       (transferencia_id, produto_id, quantidade, custo_unitario)
