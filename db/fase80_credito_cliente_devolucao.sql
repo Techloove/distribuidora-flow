@@ -38,6 +38,7 @@ create table if not exists public.creditos_clientes_aplicacoes (
   status text not null default 'reservado'
     check (status in ('reservado','aplicado','revertido','cancelado')),
   chave_idempotencia text,
+  idempotencia_contexto jsonb,
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   aplicado_em timestamptz,
@@ -49,9 +50,13 @@ drop index if exists public.credito_aplicacao_pedido_uq;
 create index if not exists credito_aplicacao_credito_pedido_idx
   on public.creditos_clientes_aplicacoes(credito_id, pedido_id, status);
 
+drop index if exists public.credito_aplicacao_idempotencia_uq;
 create unique index if not exists credito_aplicacao_idempotencia_uq
-  on public.creditos_clientes_aplicacoes(chave_idempotencia)
+  on public.creditos_clientes_aplicacoes(chave_idempotencia, credito_id)
   where chave_idempotencia is not null and btrim(chave_idempotencia) <> '';
+
+-- Uma operação de múltiplos créditos gera várias linhas, portanto a unicidade é por chave + crédito.
+-- O contexto persistido impede reutilizar a mesma chave para outro pedido/valor.
 
 create index if not exists credito_aplicacoes_pedido_idx
   on public.creditos_clientes_aplicacoes(pedido_id, status);
@@ -219,6 +224,13 @@ begin
     where chave_idempotencia = btrim(_chave_idempotencia)
     for update;
     if app.id is not null then
+      if app.idempotencia_contexto is distinct from jsonb_build_object(
+        'pedido_id', _pedido_id,
+        'credito_id', _credito_id,
+        'valor', round(_valor,2)
+      ) then
+        raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
+      end if;
       return app;
     end if;
   end if;
@@ -288,7 +300,13 @@ begin
     (credito_id, pedido_id, valor, status, chave_idempotencia, created_by)
   values
     (cred.id, ped.id, round(_valor,2), 'reservado',
-     nullif(btrim(_chave_idempotencia),''), auth.uid())
+     nullif(btrim(_chave_idempotencia),''),
+     case when nullif(btrim(_chave_idempotencia),'') is not null then jsonb_build_object(
+       'pedido_id', ped.id,
+       'credito_id', cred.id,
+       'valor', round(_valor,2)
+     ) else null end,
+     auth.uid())
   returning * into app;
 
   update public.creditos_clientes
@@ -346,6 +364,18 @@ begin
     select 1 from public.creditos_clientes_aplicacoes
     where chave_idempotencia = chave
   ) then
+    if exists (
+      select 1
+      from public.creditos_clientes_aplicacoes
+      where chave_idempotencia = chave
+        and idempotencia_contexto is distinct from jsonb_build_object(
+          'pedido_id', _pedido_id,
+          'valor', round(_valor,2)
+        )
+    ) then
+      raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
+    end if;
+
     select coalesce(jsonb_agg(jsonb_build_object(
       'id',id,'credito_id',credito_id,'pedido_id',pedido_id,'valor',valor,'status',status
     ) order by created_at),'[]'::jsonb)
@@ -409,7 +439,12 @@ begin
     insert into public.creditos_clientes_aplicacoes
       (credito_id,pedido_id,valor,status,chave_idempotencia,created_by)
     values
-      (cred.id,ped.id,aplicar,'reservado',chave,auth.uid())
+      (cred.id,ped.id,aplicar,'reservado',chave,
+       case when chave is not null then jsonb_build_object(
+         'pedido_id', ped.id,
+         'valor', round(_valor,2)
+       ) else null end,
+       auth.uid())
     returning * into app;
 
     update public.creditos_clientes
