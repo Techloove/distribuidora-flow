@@ -1,0 +1,46 @@
+-- Fase 118: fecha o perímetro de RPCs administrativas/comerciais ainda usadas pelo frontend.
+-- Mantém chamadas apenas para authenticated/service_role; PUBLIC e anon ficam sem EXECUTE.
+begin;
+
+do $$
+declare
+  nome text;
+  r regprocedure;
+  encontrados integer;
+  funcoes text[] := array[
+    'admin_atualizar_usuario',
+    'admin_criar_usuario',
+    'admin_excluir_usuario',
+    'admin_vincular_representante',
+    'aplicar_rotas_por_cidade',
+    'baixar_titulos_lote',
+    'definir_centros_usuario',
+    'definir_papel',
+    'lead_criar_pedido',
+    'meus_centros',
+    'minhas_permissoes',
+    'papel_criar',
+    'papel_definir_preco',
+    'papel_excluir',
+    'papel_renomear'
+  ];
+begin
+  foreach nome in array funcoes loop
+    encontrados := 0;
+    for r in
+      select p.oid::regprocedure
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname='public' and p.proname=nome
+    loop
+      encontrados := encontrados + 1;
+      execute format('revoke execute on function %s from public, anon', r);
+      execute format('grant execute on function %s to authenticated, service_role', r);
+    end loop;
+    if encontrados=0 then
+      raise exception 'Fase 118: RPC usada pelo frontend não encontrada: public.%', nome;
+    end if;
+  end loop;
+end $$;
+
+commit;
