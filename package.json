@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "check:sql": "bun scripts/check-sql-security.mjs",
     "check:surface": "bun scripts/check-client-security-surface.mjs",
-    "check:server": "bun scripts/check-server-security.mjs"
+    "check:server": "bun scripts/check-server-security.mjs",
+    "test": "bun test"
   },
   "overrides": {
     "rolldown": "1.2.1"
