@@ -64,3 +64,25 @@ Para cada teste registrar usuário, centro, data/hora, operação, resultado esp
 Não considerar a branch pronta para produção apenas pelo CI.
 
 Liberação somente após migrations aplicadas sem erro em homologação, RLS/privilégios revisados, testes de concorrência e idempotência executados, estoque/financeiro/logística validados e backup/ponto de restauração confirmado.
+
+## 9. Auditoria de EXECUTE implícito em funções
+
+No PostgreSQL, novas funções podem herdar EXECUTE para PUBLIC. Antes da produção, listar funções SECURITY DEFINER acessíveis por PUBLIC/anon e confirmar que somente os RPCs externos necessários estão liberados.
+
+```sql
+select
+  n.nspname as schema_name,
+  p.proname,
+  pg_get_function_identity_arguments(p.oid) as arguments,
+  p.prosecdef as security_definer,
+  has_function_privilege('public', p.oid, 'EXECUTE') as public_execute,
+  has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.prosecdef
+order by p.proname, arguments;
+```
+
+Qualquer SECURITY DEFINER com PUBLIC/anon EXECUTE deve ser tratado como achado de segurança até confirmar que é intencional. Não fazer revogação global sem validar a lista de RPCs consumidos pelo frontend.
