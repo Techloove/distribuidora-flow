@@ -430,10 +430,15 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
-    const url = `${c.base}/cobranca/boleto/v1/boletos?codigoBeneficiario=${encodeURIComponent(
+    const consultaVersao = c.ambiente === "producao" ? "v2" : "v1";
+    const url = `${c.base}/cobranca/boleto/${consultaVersao}/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
     )}&nossoNumero=${encodeURIComponent(nossoNumero)}`;
-    const res = await fetch(url, { headers: headers(c, tk) });
+    const consultaHeaders = {
+      ...headers(c, tk),
+      ...(consultaVersao === "v2" ? { "data-movimento": "true" } : {}),
+    };
+    const res = await fetch(url, { headers: consultaHeaders });
     const txt = await res.text();
     if (!res.ok) throw new Error(`Consulta Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
@@ -447,10 +452,14 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
       if (!Number.isFinite(valorLiquidacao) || valorLiquidacao <= 0) {
         throw new Error("Boleto sem valor válido para registrar a liquidação no ERP.");
       }
+      const dataMovimento = String(json["dataMovimento"] ?? "").trim();
+      const dataLiquidacao = /^\d{4}-\d{2}-\d{2}$/.test(dataMovimento)
+        ? dataMovimento
+        : new Date().toISOString().slice(0, 10);
       await userRpc(accessToken, "liquidar_boleto", {
         _boleto_id: data.boletoId,
         _valor: valorLiquidacao,
-        _data: new Date().toISOString().slice(0, 10),
+        _data: dataLiquidacao,
       });
     } else {
       await serviceRpc("sincronizar_boleto_sicredi_servidor", {
