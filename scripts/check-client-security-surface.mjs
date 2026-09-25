@@ -82,6 +82,14 @@ for (const file of sourceFiles) {
     );
   }
 
+  // Cadastro público foi removido do ERP: criação de usuários deve ocorrer por fluxo
+  // administrativo controlado, nunca diretamente no bundle do navegador.
+  if (!serverOnlyModule && /\.auth\.signUp\s*\(/.test(source)) {
+    errors.push(
+      `${display}: cadastro público via auth.signUp detectado no cliente; use fluxo administrativo controlado`,
+    );
+  }
+
   for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)/g)) {
     const table = match[1];
     if (forbiddenClientTables.has(table)) {
