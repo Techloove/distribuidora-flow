@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ComissaoRepresentante } from "@/components/comissao-representante";
 import { ConsultaCadastral } from "@/components/consulta-cadastral";
 import { ConsultaIe } from "@/components/consulta-ie";
+import { CodigoIbge } from "@/components/codigo-ibge";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
@@ -80,6 +81,7 @@ const fields: CrudField[] = [
   { name: "cidade", label: "Cidade", inTable: true },
   { name: "uf", label: "UF" },
   { name: "cep", label: "CEP" },
+  { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
   { name: "rota_id", label: "Rota de entrega", type: "ref", ref: { table: "rotas", labelField: "nome" } },
   { name: "limite_credito", label: "Limite de crédito (cliente)", type: "number", step: "0.01" },
   { name: "regiao", label: "Região de atuação (vendedor)", showIf: "is_representante" },
@@ -170,6 +172,7 @@ function PessoasPage() {
               escopo="pessoas"
             />
             <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
+            <CodigoIbge form={form} patch={patch} />
             {form["is_cliente"] ? (
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
