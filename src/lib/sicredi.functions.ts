@@ -39,7 +39,7 @@ async function carregarBoleto(accessToken: string, boletoId: string): Promise<Db
   if (!id) throw new Error("Boleto não informado.");
   const rows = await userRest<DbRow>(
     accessToken,
-    `boletos?select=id,nosso_numero,status,centro_id& id=eq.${encodeURIComponent(id)}&limit=1`.replace("& ", "&"),
+    `boletos?select=id,nosso_numero,status,centro_id&id=eq.${encodeURIComponent(id)}&limit=1`,
   );
   const row = rows[0];
   if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
