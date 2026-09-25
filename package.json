@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "check:sql": "bun scripts/check-sql-security.mjs"
+    "check:sql": "bun scripts/check-sql-security.mjs",
+    "check:surface": "bun scripts/check-client-security-surface.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
