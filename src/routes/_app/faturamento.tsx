@@ -198,30 +198,12 @@ function FaturamentoPage() {
 
     try {
       const res = await emitirFn({
-        data: {
-          seuNumero,
-          valor,
-          vencimento: String(row["vencimento"] ?? ""),
-          informativo: `Pedido ${String(row["pedido_numero"] ?? "-")} parcela ${String(row["parcela"] ?? 1)}`,
-          pagador: {
-            tipoPessoa: String(row["tipo_pessoa"] ?? "").toUpperCase().startsWith("F")
-              ? "PESSOA_FISICA"
-              : "PESSOA_JURIDICA",
-            documento: String(row["cnpj_cpf"] ?? ""),
-            nome: String(row["razao_social"] ?? ""),
-            endereco: endereco || "Nao informado",
-            cidade: String(row["cidade"] ?? ""),
-            uf: String(row["uf"] ?? ""),
-            cep: String(row["cep"] ?? ""),
-            ...(row["telefone"] ? { telefone: String(row["telefone"]) } : {}),
-            ...(row["email"] ? { email: String(row["email"]) } : {}),
-          },
-        },
+        data: { contaId },
       });
 
       const { error } = await client!.rpc("registrar_boleto_sicredi", {
         _conta_id: contaId,
-        _seu_numero: seuNumero,
+        _seu_numero: res.seuNumero ?? seuNumero,
         _nosso_numero: res.nossoNumero ?? null,
         _linha_digitavel: res.linhaDigitavel ?? null,
         _codigo_barras: res.codigoBarras ?? null,
@@ -276,7 +258,7 @@ function FaturamentoPage() {
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await consultarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
+      const res = await consultarFn({ data: { boletoId: String(b["id"]) } });
       if (res.liquidado) {
         const { error } = await client!.rpc("liquidar_boleto", {
           _boleto_id: String(b["id"]),
@@ -303,7 +285,7 @@ function FaturamentoPage() {
 
   const baixar = useMutation({
     mutationFn: async (b: Row) => {
-      await baixarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
+      await baixarFn({ data: { boletoId: String(b["id"]) } });
       const { error } = await client!.rpc("sincronizar_boleto_sicredi", {
         _boleto_id: String(b["id"]),
         _status: "baixado",
@@ -320,7 +302,7 @@ function FaturamentoPage() {
 
   const abrirPdf = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await pdfFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
+      const res = await pdfFn({ data: { boletoId: String(b["id"]) } });
       const bin = atob(res.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
