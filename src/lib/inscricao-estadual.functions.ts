@@ -1,4 +1,4 @@
-import { enforceRateLimit, requireServerAuth } from "./server-auth";
+import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -201,8 +201,9 @@ export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
     accessToken: String(input?.accessToken ?? ""),
   }))
   .handler(async ({ data }): Promise<ConsultaIeResultado> => {
-    await requireServerAuth(data.accessToken, ["admin", "gestor"]);
-    await enforceRateLimit(data.accessToken, "inscricao-estadual", 20, 60);
+    const accessToken = String(data.accessToken ?? "").trim() || requestAccessToken();
+    await requireServerAuth(accessToken, ["admin", "gestor"]);
+    await enforceRateLimit(accessToken, "inscricao-estadual", 20, 60);
     const doc = digitos(data.documento);
     if (doc.length !== 14) {
       return {
