@@ -18,6 +18,16 @@ declare
     'aplicar_desconto_peso',
     'preco_produto_info',
 
+    -- Compras
+    'criar_compra_rascunho',
+    'atualizar_compra_comercial',
+    'adicionar_item_compra',
+    'atualizar_item_compra',
+    'remover_item_compra',
+    'cancelar_compra',
+    'marcar_compra_comprada',
+    'receber_compra',
+
     -- Separacao / operacional
     'iniciar_separacao',
     'concluir_separacao',
