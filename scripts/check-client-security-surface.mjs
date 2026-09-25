@@ -26,6 +26,7 @@ const protectedTables = new Set([
   "cargas",
   "carga_pedidos",
   "estornos_financeiros",
+  "sicredi_config",
 ]);
 
 function walk(dir) {
@@ -44,6 +45,7 @@ const sqlByFile = new Map(sqlFiles.map((name) => [name, readFileSync(join(dbDir,
 
 const errors = [];
 const rpcNames = new Set();
+const forbiddenClientTables = new Set(["sicredi_config"]);
 
 for (const file of sourceFiles) {
   const source = readFileSync(file, "utf8");
@@ -51,6 +53,16 @@ for (const file of sourceFiles) {
 
   for (const match of source.matchAll(/\.rpc\(\s*["']([^"']+)["']/g)) {
     rpcNames.add(match[1]);
+  }
+
+  for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)/g)) {
+    const table = match[1];
+    if (forbiddenClientTables.has(table)) {
+      const line = source.slice(0, match.index).split(/\r?\n/).length;
+      errors.push(
+        `${display}:${line}: acesso direto a tabela sensível "${table}" no cliente; use função server-only`,
+      );
+    }
   }
 
   for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)([\s\S]{0,500}?)\.(insert|update|delete|upsert)\s*\(/g)) {
