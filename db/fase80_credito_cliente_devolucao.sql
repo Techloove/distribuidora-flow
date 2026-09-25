@@ -222,18 +222,37 @@ begin
   end if;
 
   if _chave_idempotencia is not null and btrim(_chave_idempotencia) <> '' then
+    -- Serializa chamadas concorrentes que reutilizam a mesma chave, inclusive
+    -- quando tentam usar outro credito/pedido antes da primeira transacao concluir.
+    perform pg_advisory_xact_lock(hashtextextended(btrim(_chave_idempotencia), 0));
+
+    if exists (
+      select 1
+      from public.creditos_clientes_aplicacoes
+      where chave_idempotencia = btrim(_chave_idempotencia)
+        and idempotencia_contexto is distinct from jsonb_build_object(
+          'pedido_id', _pedido_id,
+          'credito_id', _credito_id,
+          'valor', round(_valor,2)
+        )
+    ) then
+      raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
+    end if;
+
     select * into app
     from public.creditos_clientes_aplicacoes
     where chave_idempotencia = btrim(_chave_idempotencia)
-    for update;
-    if app.id is not null then
-      if app.idempotencia_contexto is distinct from jsonb_build_object(
+      and credito_id = _credito_id
+      and idempotencia_contexto = jsonb_build_object(
         'pedido_id', _pedido_id,
         'credito_id', _credito_id,
         'valor', round(_valor,2)
-      ) then
-        raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
-      end if;
+      )
+    order by created_at
+    limit 1
+    for update;
+
+    if app.id is not null then
       return app;
     end if;
   end if;
@@ -361,6 +380,12 @@ begin
   end if;
   if coalesce(_valor,0) <= 0 then
     raise exception 'Informe um valor de credito maior que zero';
+  end if;
+
+  if chave is not null then
+    -- Uma chave representa uma unica operacao logica. O advisory lock fecha a
+    -- janela de corrida antes de existirem linhas para a chave.
+    perform pg_advisory_xact_lock(hashtextextended(chave, 0));
   end if;
 
   if chave is not null and exists (
