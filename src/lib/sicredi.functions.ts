@@ -22,6 +22,32 @@ async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
   return (await res.json()) as T[];
 }
 
+async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+  if (!url || !key) throw new Error("Service role do Supabase não disponível no servidor.");
+  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Falha ao persistir operação Sicredi no ERP: ${body.slice(0, 300)}`);
+  return (body ? JSON.parse(body) : null) as T;
+}
+
+function jsonPayload(text: string): unknown {
+  try {
+    return JSON.parse(text || "{}") as unknown;
+  } catch {
+    return { raw: text.slice(0, 4000) };
+  }
+}
+
 async function carregarTituloBoleto(accessToken: string, contaId: string): Promise<DbRow> {
   const id = String(contaId ?? "").trim();
   if (!id) throw new Error("Título não informado.");
@@ -225,7 +251,7 @@ type EmitirInput = { contaId: string };
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: EmitirInput) => data)
   .handler(async ({ data }) => {
-    const { accessToken } = await requireSicrediAccess("sicredi_emitir_boleto", 10);
+    const { user, accessToken } = await requireSicrediAccess("sicredi_emitir_boleto", 10);
     const row = await carregarTituloBoleto(accessToken, data.contaId);
     const c = await conf();
     const tk = await token(c);
@@ -288,9 +314,35 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     });
     const txt = await res.text();
     if (!res.ok) {
+      try {
+        await serviceRpc("registrar_erro_boleto_sicredi_servidor", {
+          _actor_id: user.id,
+          _conta_id: data.contaId,
+          _seu_numero: seuNumero,
+          _erro: `Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`,
+        });
+      } catch {
+        // O erro bancário continua sendo a causa principal; a falha de persistência será auditada no servidor.
+      }
       throw new Error(`Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`);
     }
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
+    const retorno = jsonPayload(txt);
+    await serviceRpc("registrar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _conta_id: data.contaId,
+      _seu_numero: seuNumero,
+      _nosso_numero: String(json["nossoNumero"] ?? ""),
+      _linha_digitavel: String(json["linhaDigitavel"] ?? ""),
+      _codigo_barras: String(json["codigoBarras"] ?? ""),
+      _qrcode_pix: String(json["qrCode"] ?? json["txid"] ?? ""),
+      _txid: String(json["txid"] ?? ""),
+      _cooperativa: c.cooperativa,
+      _posto: c.posto,
+      _codigo_beneficiario: c.beneficiario,
+      _ambiente: c.ambiente,
+      _retorno: retorno,
+    });
     return {
       nossoNumero: String(json["nossoNumero"] ?? ""),
       linhaDigitavel: String(json["linhaDigitavel"] ?? ""),
@@ -310,7 +362,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { boletoId: string }) => data)
   .handler(async ({ data }) => {
-    const { accessToken } = await requireSicrediAccess("sicredi_consultar_boleto", 30);
+    const { user, accessToken } = await requireSicrediAccess("sicredi_consultar_boleto", 30);
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
@@ -325,10 +377,20 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const situacao = String(
       (json["situacao"] as string) ?? (json["situacaoBoleto"] as string) ?? "",
     ).toLowerCase();
+    const liquidado = situacao.includes("liquidad");
+    const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
+    if (!liquidado) {
+      await serviceRpc("sincronizar_boleto_sicredi_servidor", {
+        _actor_id: user.id,
+        _boleto_id: data.boletoId,
+        _status: baixado ? "baixado" : "registrado",
+        _retorno: jsonPayload(txt),
+      });
+    }
     return {
       situacao,
-      liquidado: situacao.includes("liquidad"),
-      baixado: situacao.includes("baixad") || situacao.includes("cancelad"),
+      liquidado,
+      baixado,
       retorno: txt.slice(0, 4000),
     };
   });
@@ -337,7 +399,7 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { boletoId: string }) => data)
   .handler(async ({ data }) => {
-    const { accessToken } = await requireSicrediAccess("sicredi_baixar_boleto", 10);
+    const { user, accessToken } = await requireSicrediAccess("sicredi_baixar_boleto", 10);
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
@@ -348,6 +410,12 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
     );
     const txt = await res.text();
     if (!res.ok) throw new Error(`Baixa no Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
+    await serviceRpc("sincronizar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _boleto_id: data.boletoId,
+      _status: "baixado",
+      _retorno: jsonPayload(txt),
+    });
     return { ok: true, retorno: txt.slice(0, 500) };
   });
 
