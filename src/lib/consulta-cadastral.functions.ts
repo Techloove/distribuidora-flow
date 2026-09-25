@@ -1,4 +1,5 @@
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+import { fetchWithTimeout } from "./fetch-timeout";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -206,7 +207,7 @@ function mapCpf(j: Record<string, unknown>): DadosCadastrais {
 
 async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+    const res = await fetchWithTimeout(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
     if (res.status === 404) {
       return {
         ok: false,
@@ -241,7 +242,7 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
   }
 
   try {
-    const res = await fetch(`https://receitaws.com.br/v1/cnpj/${doc}`);
+    const res = await fetchWithTimeout(`https://receitaws.com.br/v1/cnpj/${doc}`);
     if (res.status === 429) {
       return {
         ok: false,
@@ -305,7 +306,7 @@ async function consultarCpf(doc: string): Promise<ConsultaResultado> {
   if (key) headers[header] = header.toLowerCase() === "authorization" ? `Bearer ${key}` : key;
 
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetchWithTimeout(url, { headers });
     if (res.status === 404) {
       return {
         ok: false,
