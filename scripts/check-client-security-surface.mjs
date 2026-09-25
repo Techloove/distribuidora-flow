@@ -26,6 +26,11 @@ const protectedTables = new Set([
   "cargas",
   "carga_pedidos",
   "estornos_financeiros",
+  "auditoria",
+  "pedido_operacoes",
+  "devolucao_operacoes",
+  "comissao_pagamentos",
+  "comissao_pagamento_itens",
   "sicredi_config",
 ]);
 
