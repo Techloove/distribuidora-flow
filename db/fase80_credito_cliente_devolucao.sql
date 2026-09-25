@@ -297,7 +297,7 @@ begin
   end if;
 
   insert into public.creditos_clientes_aplicacoes
-    (credito_id, pedido_id, valor, status, chave_idempotencia, created_by)
+    (credito_id, pedido_id, valor, status, chave_idempotencia, idempotencia_contexto, created_by)
   values
     (cred.id, ped.id, round(_valor,2), 'reservado',
      nullif(btrim(_chave_idempotencia),''),
@@ -437,7 +437,7 @@ begin
     if aplicar <= 0 then continue; end if;
 
     insert into public.creditos_clientes_aplicacoes
-      (credito_id,pedido_id,valor,status,chave_idempotencia,created_by)
+      (credito_id,pedido_id,valor,status,chave_idempotencia,idempotencia_contexto,created_by)
     values
       (cred.id,ped.id,aplicar,'reservado',chave,
        case when chave is not null then jsonb_build_object(
