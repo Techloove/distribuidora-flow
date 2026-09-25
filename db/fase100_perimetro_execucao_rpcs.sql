@@ -13,6 +13,7 @@ declare
     'public.confirmar_pedido(uuid)',
     'public.receber_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text)',
     'public.pagar_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text)',
+    'public.pagar_comissoes(uuid,uuid[],date,uuid,uuid,uuid,text)',
     'public.criar_despesa(uuid,uuid,uuid,text,text,numeric,integer,date,integer,uuid,uuid)',
     'public.cancelar_titulo(text,uuid,text)',
     'public.transferir_entre_contas(uuid,uuid,numeric,date,text)',
