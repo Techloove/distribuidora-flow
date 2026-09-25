@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { fetchWithTimeout } from "./fetch-timeout";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 
 const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
@@ -19,7 +20,7 @@ async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
   const url = process.env["EXT_SUPABASE_URL"];
   const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
   if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
-  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${path}`, {
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/${path}`, {
     headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw new Error("Não foi possível validar o título no ERP.");
@@ -34,7 +35,7 @@ async function userRpc<T>(
   const url = process.env["EXT_SUPABASE_URL"];
   const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
   if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
-  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
     method: "POST",
     headers: {
       apikey: anonKey,
@@ -52,7 +53,7 @@ async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Prom
   const url = process.env["EXT_SUPABASE_URL"];
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
   if (!url || !key) throw new Error("Service role do Supabase não disponível no servidor.");
-  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
     method: "POST",
     headers: {
       apikey: key,
@@ -151,7 +152,7 @@ async function dbConfig(): Promise<DbRow | null> {
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
   if (!url || !key) return null;
   try {
-    const res = await fetch(`${url}/rest/v1/sicredi_config?select=*&limit=1`, {
+    const res = await fetchWithTimeout(`${url}/rest/v1/sicredi_config?select=*&limit=1`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
     if (!res.ok) return null;
@@ -229,7 +230,7 @@ async function token(c: Conf): Promise<string> {
     scope: "cobranca",
     grant_type: "password",
   });
-  const res = await fetch(`${c.base}/auth/openapi/token`, {
+  const res = await fetchWithTimeout(`${c.base}/auth/openapi/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -380,7 +381,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         ...(row["email"] ? { email: String(row["email"]).slice(0, 40) } : {}),
       },
     };
-    const res = await fetch(`${c.base}/cobranca/boleto/v1/boletos`, {
+    const res = await fetchWithTimeout(`${c.base}/cobranca/boleto/v1/boletos`, {
       method: "POST",
       headers: headers(c, tk),
       body: JSON.stringify(payload),
@@ -452,7 +453,7 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
       ...headers(c, tk),
       ...(consultaVersao === "v2" ? { "data-movimento": "true" } : {}),
     };
-    const res = await fetch(url, { headers: consultaHeaders });
+    const res = await fetchWithTimeout(url, { headers: consultaHeaders });
     const txt = await res.text();
     if (!res.ok) throw new Error(`Consulta Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
@@ -504,7 +505,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(nossoNumero)}/baixa`,
       { method: "PATCH", headers: headers(c, tk), body: JSON.stringify({}) },
     );
@@ -532,7 +533,7 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=&nossoNumero=${encodeURIComponent(
         nossoNumero,
       )}&codigoBeneficiario=${encodeURIComponent(c.beneficiario)}`,
