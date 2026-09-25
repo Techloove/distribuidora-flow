@@ -345,7 +345,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 declare
   ped public.pedidos;
   cred public.creditos_clientes;
@@ -476,7 +476,7 @@ begin
 
   return resultado;
 end;
-$;
+$$;
 
 revoke all on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) from public;
 grant execute on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) to authenticated;
@@ -1114,7 +1114,7 @@ returns public.creditos_clientes
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 declare
   cr public.contas_receber;
   dev public.devolucoes;
@@ -1209,7 +1209,7 @@ begin
 
   return c;
 end;
-$;
+$$;
 
 grant execute on function public.migrar_credito_dev(uuid) to authenticated;
 
