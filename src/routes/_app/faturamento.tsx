@@ -68,7 +68,7 @@ function dataBr(v: unknown) {
 }
 
 function FaturamentoPage() {
-  const { client, roles } = useSupabase();
+  const { client, roles, session } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const canFinance =
@@ -85,7 +85,10 @@ function FaturamentoPage() {
 
   const config = useQuery({
     queryKey: ["sicredi", "status"],
-    queryFn: () => sicrediStatus(),
+    queryFn: () =>
+      sicrediStatus({
+        data: session?.access_token ? { accessToken: session.access_token } : {},
+      }),
   });
 
   const pendentes = useQuery({
@@ -180,7 +183,12 @@ function FaturamentoPage() {
   const emitirUm = async (row: Row) => {
     const contaId = String(row["conta_receber_id"]);
     try {
-      await emitirFn({ data: { contaId } });
+      await emitirFn({
+        data: {
+          contaId,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
       return { ok: true as const };
     } catch (e) {
       return { ok: false as const, msg: (e as Error).message };
@@ -214,7 +222,12 @@ function FaturamentoPage() {
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await consultarFn({ data: { boletoId: String(b["id"]) } });
+      const res = await consultarFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
       return res.situacao || (res.liquidado ? "liquidado" : res.baixado ? "baixado" : "registrado");
     },
     onSuccess: (s) => {
@@ -226,7 +239,12 @@ function FaturamentoPage() {
 
   const baixar = useMutation({
     mutationFn: async (b: Row) => {
-      await baixarFn({ data: { boletoId: String(b["id"]) } });
+      await baixarFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Boleto baixado no Sicredi");
@@ -237,7 +255,12 @@ function FaturamentoPage() {
 
   const abrirPdf = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await pdfFn({ data: { boletoId: String(b["id"]) } });
+      const res = await pdfFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
       const bin = atob(res.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
