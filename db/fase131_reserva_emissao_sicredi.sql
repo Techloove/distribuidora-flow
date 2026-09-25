@@ -3,14 +3,6 @@
 -- com um novo "seu número" controlado pelo ERP.
 begin;
 
-create sequence if not exists public.sicredi_seu_numero_seq
-  as bigint
-  minvalue 1
-  maxvalue 9999999999
-  start with 1
-  increment by 1
-  no cycle;
-
 -- Antes de impor unicidade, falha de forma legível se o legado já tiver duplicidade ativa.
 do $$
 declare
@@ -135,10 +127,10 @@ begin
     return b;
   end if;
 
-  -- Novo ciclo (inclusive após boleto baixado/cancelado): aloca um seuNumero novo.
+  -- Novo ciclo (inclusive após boleto baixado/cancelado): aloca um seuNumero numérico de 10 dígitos, com baixa probabilidade de colisão também contra históricos bancários fora deste ERP.
   v_seu_numero := null;
   for tentativa in 1..50 loop
-    v_seu_numero := nextval('public.sicredi_seu_numero_seq')::text;
+    v_seu_numero := (1000000000 + abs(hashtextextended(gen_random_uuid()::text,0) % 9000000000))::text;
     exit when not exists (
       select 1 from public.boletos
       where banco='sicredi' and seu_numero=v_seu_numero
