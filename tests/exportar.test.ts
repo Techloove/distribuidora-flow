@@ -10,8 +10,8 @@ describe("CSV seguro", () => {
   });
 
   test("preserva números negativos e escapa aspas", () => {
-    expect(escapar(-12)).toBe('"'-12'"'.replace("'",""));
-    expect(escapar('a"b')).toBe('"a""b"');
-    expect(escapar(null)).toBe('""');
+    expect(escapar(-12)).toBe("\"-12\"");
+    expect(escapar('a"b')).toBe("\"a\"\"b\"");
+    expect(escapar(null)).toBe("\"\"");
   });
 });
