@@ -22,7 +22,7 @@ for (const file of files) {
     if (!/create\s+or\s+replace\s+function/i.test(chunk)) continue;
     const headerEnd = chunk.search(/\bas\s+\$\$/i);
     const header = headerEnd >= 0 ? chunk.slice(0, headerEnd) : chunk;
-    if (/security\s+definer/i.test(header) && !/set\\s+search_path\\s*(?:=|to)\\s*/i.test(header)) {
+    if (/security\s+definer/i.test(header) && !/set\s+search_path\s*(?:=|to)\s*/i.test(header)) {
       const name = header.match(/function\s+([^\s(]+)/i)?.[1] ?? "função desconhecida";
       errors.push(`${file}: SECURITY DEFINER sem SET search_path explícito em ${name}`);
     }
