@@ -70,6 +70,15 @@ function jsonPayload(text: string): unknown {
   }
 }
 
+function shiftIsoDate(value: unknown, days: number): string | null {
+  const iso = String(value ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 async function carregarTituloBoleto(accessToken: string, contaId: string): Promise<DbRow> {
   const id = String(contaId ?? "").trim();
   if (!id) throw new Error("Título não informado.");
@@ -280,6 +289,15 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     const juros = c.juros;
     const multa = c.multa;
     const diasProtesto = c.diasProtesto;
+    const vencimento = String(row["vencimento"] ?? "");
+    const dataDesconto1 =
+      c.valorDesconto1 > 0 && c.diasDesconto1 >= 0
+        ? shiftIsoDate(vencimento, -c.diasDesconto1)
+        : null;
+    const dataInicioMulta =
+      c.tipoCobranca === "NORMAL" && multa > 0 && c.diasMulta > 0
+        ? shiftIsoDate(vencimento, c.diasMulta)
+        : null;
     const seuNumero =
       `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
         row["parcela"] ?? 1,
@@ -295,17 +313,36 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       codigoBeneficiario: c.beneficiario,
       especieDocumento: c.especieDocumento,
       seuNumero,
-      dataVencimento: String(row["vencimento"] ?? ""),
+      dataVencimento: vencimento,
       valor: Number(Number(row["saldo"] ?? 0).toFixed(2)),
-      tipoDesconto: c.tipoDesconto,
-      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0
-        ? { valorDesconto1: c.valorDesconto1, diasDesconto1: c.diasDesconto1 }
+      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" &&
+      c.valorDesconto1 > 0 &&
+      dataDesconto1
+        ? {
+            tipoDesconto: c.tipoDesconto,
+            valorDesconto1: c.valorDesconto1,
+            dataDesconto1,
+          }
         : {}),
-      tipoJuro: juros > 0 ? (c.tipoJuro === "ISENTO" ? "PERCENTUAL" : c.tipoJuro) : "ISENTO",
-      ...(juros > 0 ? { juros } : {}),
-      ...(multa > 0 ? { multa, diasMulta: c.diasMulta } : {}),
-      ...(c.tipoProtesto !== "SEM_PROTESTO" && diasProtesto > 0
-        ? { tipoProtesto: c.tipoProtesto, diasProtesto }
+      ...(juros > 0 && c.tipoJuro !== "ISENTO"
+        ? {
+            tipoJuros: c.tipoJuro,
+            ...(c.tipoJuro === "PERCENTUAL" ? { tipoJurosPercentual: "MENSAL" } : {}),
+            juros,
+          }
+        : {}),
+      ...(multa > 0
+        ? {
+            tipoMulta: "PERCENTUAL",
+            multa,
+            ...(dataInicioMulta ? { dataInicioMulta } : {}),
+          }
+        : {}),
+      ...(c.tipoProtesto === "PROTESTAR" && diasProtesto > 0
+        ? { diasProtestoAuto: diasProtesto }
+        : {}),
+      ...(c.tipoProtesto === "NEGATIVAR" && diasProtesto > 0
+        ? { diasNegativacaoAuto: diasProtesto }
         : {}),
       ...(c.validadeAposVencimento > 0
         ? { validadeAposVencimento: c.validadeAposVencimento }
@@ -320,13 +357,13 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         documento: String(row["cnpj_cpf"] ?? "").replace(/\D/g, ""),
         nome: String(row["razao_social"] ?? "").slice(0, 40),
         endereco: (endereco || "Nao informado").slice(0, 40),
-        cidade: String(row["cidade"] ?? "").slice(0, 20),
+        cidade: String(row["cidade"] ?? "").slice(0, 25),
         uf: String(row["uf"] ?? "").slice(0, 2).toUpperCase(),
         cep: String(row["cep"] ?? "").replace(/\D/g, ""),
         ...(row["telefone"]
-          ? { telefone: String(row["telefone"]).replace(/\D/g, "") }
+          ? { telefone: String(row["telefone"]).replace(/\D/g, "").slice(0, 11) }
           : {}),
-        ...(row["email"] ? { email: String(row["email"]) } : {}),
+        ...(row["email"] ? { email: String(row["email"]).slice(0, 40) } : {}),
       },
     };
     const res = await fetch(`${c.base}/cobranca/boleto/v1/boletos`, {
