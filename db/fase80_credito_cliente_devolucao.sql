@@ -324,6 +324,7 @@ declare
   app public.creditos_clientes_aplicacoes;
   ped public.pedidos;
   cred public.creditos_clientes;
+  v_pedido_id uuid;
 begin
   if not public.can_operate(auth.uid()) then
     raise exception 'Sem permissao para cancelar aplicacao de credito';
@@ -332,15 +333,15 @@ begin
   -- Ordem de locks: pedido -> aplicacao -> credito.
   -- Deve ser a mesma ordem usada na confirmacao para evitar deadlock
   -- quando duas sessoes operam o mesmo pedido simultaneamente.
-  select pedido_id into ped.id
+  select pedido_id into v_pedido_id
   from public.creditos_clientes_aplicacoes
   where id = _aplicacao_id;
 
-  if ped.id is null then
+  if v_pedido_id is null then
     raise exception 'Aplicacao de credito nao encontrada';
   end if;
 
-  select * into ped from public.pedidos where id = ped.id for update;
+  select * into ped from public.pedidos where id = v_pedido_id for update;
   if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
   if ped.status <> 'rascunho' then
     raise exception 'Somente aplicacoes de pedidos em rascunho podem ser canceladas';
