@@ -60,14 +60,6 @@ const statusLabel: Record<string, string> = {
   erro: "Erro",
 };
 
-function safeJson(v: string) {
-  try {
-    return JSON.parse(v) as unknown;
-  } catch {
-    return { raw: v };
-  }
-}
-
 function dataBr(v: unknown) {
   const s = String(v ?? "");
   if (!s || s === "null") return "—";
@@ -187,42 +179,11 @@ function FaturamentoPage() {
   /** Registra a parcela como boleto no Sicredi e grava o retorno. */
   const emitirUm = async (row: Row) => {
     const contaId = String(row["conta_receber_id"]);
-    const seuNumero =
-      `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
-        row["parcela"] ?? 1,
-      )}`.slice(0, 10);
     try {
-      const res = await emitirFn({
-        data: { contaId },
-      });
-
-      const { error } = await client!.rpc("registrar_boleto_sicredi", {
-        _conta_id: contaId,
-        _seu_numero: res.seuNumero ?? seuNumero,
-        _nosso_numero: res.nossoNumero ?? null,
-        _linha_digitavel: res.linhaDigitavel ?? null,
-        _codigo_barras: res.codigoBarras ?? null,
-        _qrcode_pix: res.qrCode ?? null,
-        _txid: res.txid ?? null,
-        _cooperativa: res.cooperativa ?? null,
-        _posto: res.posto ?? null,
-        _codigo_beneficiario: res.beneficiario ?? null,
-        _ambiente: res.ambiente ?? null,
-        _retorno: safeJson(res.retorno),
-      });
-      if (error) throw new Error(error.message);
+      await emitirFn({ data: { contaId } });
       return { ok: true as const };
     } catch (e) {
-      const msg = (e as Error).message;
-      const { error } = await client!.rpc("registrar_erro_boleto_sicredi", {
-        _conta_id: contaId,
-        _seu_numero: seuNumero,
-        _erro: msg.slice(0, 500),
-      });
-      if (error) {
-        return { ok: false as const, msg: `${msg} | Falha ao registrar erro local: ${error.message}` };
-      }
-      return { ok: false as const, msg };
+      return { ok: false as const, msg: (e as Error).message };
     }
   };
 
@@ -263,13 +224,7 @@ function FaturamentoPage() {
         if (error) throw new Error(error.message);
         return "liquidado";
       }
-      const { error } = await client!.rpc("sincronizar_boleto_sicredi", {
-        _boleto_id: String(b["id"]),
-        _status: res.baixado ? "baixado" : "registrado",
-        _retorno: safeJson(res.retorno),
-      });
-      if (error) throw new Error(error.message);
-      return res.situacao || "registrado";
+      return res.situacao || (res.baixado ? "baixado" : "registrado");
     },
     onSuccess: (s) => {
       toast.success(`Situação no Sicredi: ${s}`);
@@ -281,12 +236,6 @@ function FaturamentoPage() {
   const baixar = useMutation({
     mutationFn: async (b: Row) => {
       await baixarFn({ data: { boletoId: String(b["id"]) } });
-      const { error } = await client!.rpc("sincronizar_boleto_sicredi", {
-        _boleto_id: String(b["id"]),
-        _status: "baixado",
-        _retorno: null,
-      });
-      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Boleto baixado no Sicredi");
