@@ -637,7 +637,7 @@ begin
     from public.creditos_clientes_aplicacoes
     where pedido_id = _pedido_id
       and status = 'reservado'
-    order by created_at
+    order by credito_id, id
     for update
   loop
     select * into cred from public.creditos_clientes where id = app.credito_id for update;
@@ -700,7 +700,7 @@ begin
     from public.creditos_clientes_aplicacoes
     where pedido_id = _pedido_id
       and status = 'reservado'
-    order by created_at
+    order by credito_id, id
     for update
   loop
     select * into cred from public.creditos_clientes where id = app.credito_id for update;
@@ -759,7 +759,7 @@ begin
   for app in
     select * from public.creditos_clientes_aplicacoes
     where pedido_id = _pedido_id and status = 'aplicado'
-    order by aplicado_em
+    order by credito_id, id
     for update
   loop
     select * into cred from public.creditos_clientes where id = app.credito_id for update;
