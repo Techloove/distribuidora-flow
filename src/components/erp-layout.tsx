@@ -33,7 +33,6 @@ import {
   ShieldCheck,
   ShoppingCart,
   Truck,
-  UserRound,
   Users,
   Warehouse,
   Wallet,
@@ -70,9 +69,7 @@ const nav = [
   {
     group: "Comercial",
     items: [
-      { to: "/pessoas", label: "Clientes", icon: Users },
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-      { to: "/pessoas", label: "Vendedores", icon: UserRound },
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
