@@ -191,20 +191,18 @@ function ExpedicaoPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const { error } = await client!
-        .from("expedicoes")
-        .update({
-          transportadora_id: form["transportadora_id"] || null,
-          motorista: form["motorista"] || null,
-          placa: form["placa"] || null,
-          previsao_entrega: form["previsao_entrega"] || null,
-          volumes: Number(form["volumes"] || 1),
-          peso_kg: Number(form["peso_kg"] || 0),
-          rota_id: form["rota_id"] || null,
-          romaneio: form["romaneio"] || null,
-          observacoes: form["observacoes"] || null,
-        })
-        .eq("id", editing!["id"] as string);
+      const { error } = await client!.rpc("atualizar_dados_expedicao", {
+        _id: editing!["id"] as string,
+        _transportadora_id: form["transportadora_id"] || null,
+        _motorista: form["motorista"] || null,
+        _placa: form["placa"] || null,
+        _previsao_entrega: form["previsao_entrega"] || null,
+        _volumes: Number(form["volumes"] || 1),
+        _peso_kg: Number(form["peso_kg"] || 0),
+        _rota_id: form["rota_id"] || null,
+        _romaneio: form["romaneio"] || null,
+        _observacoes: form["observacoes"] || null,
+      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
