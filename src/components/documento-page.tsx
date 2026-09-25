@@ -374,7 +374,7 @@ export function DocumentoPage({
       const payload: Record<string, unknown> = {
         [config.partnerKey]: header["partner"] || null,
         [config.dateField]: header["data"] || new Date().toISOString().slice(0, 10),
-        centro_id: header["centro"] || null,
+        centro_id: header["centro"] || centro || null,
         observacoes: header["observacoes"] || null,
       };
       if (config.table === "compras") {
@@ -388,9 +388,14 @@ export function DocumentoPage({
         payload["representante_id"] = header["representante"] || meuRepresentante || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
+      if (!payload["centro_id"]) {
+        throw new Error(
+          config.table === "pedidos"
+            ? "Informe o centro de custo (cadastre no cliente para vir automático)"
+            : "Informe o centro da compra ou selecione um centro no contexto global",
+        );
+      }
       if (config.table === "pedidos") {
-        if (!payload["centro_id"])
-          throw new Error("Informe o centro de custo (cadastre no cliente para vir automático)");
         if (!payload["rota_id"])
           throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
         if (!payload["forma_pagamento_id"])
