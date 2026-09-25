@@ -101,7 +101,7 @@ begin
   if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then
     raise exception 'Pedido pertence a outro centro';
   end if;
-  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao','aprovado') then
+  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao') then
     raise exception 'Pedido nao pode ser alterado no status atual: %',ped.status;
   end if;
   if _forma_pagamento_id is null
@@ -145,7 +145,7 @@ begin
   select * into ped from public.pedidos where id=_pedido_id for update;
   if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
   if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then raise exception 'Pedido pertence a outro centro'; end if;
-  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao','aprovado') then raise exception 'Itens nao podem ser alterados no status atual: %',ped.status; end if;
+  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao') then raise exception 'Itens nao podem ser alterados no status atual: %',ped.status; end if;
   if not exists (select 1 from public.produtos where id=_produto_id) then raise exception 'Produto nao encontrado'; end if;
   if coalesce(_quantidade,0) <= 0 then raise exception 'Quantidade deve ser maior que zero'; end if;
   if coalesce(_preco_unitario,0) < 0 then raise exception 'Preco invalido'; end if;
@@ -176,7 +176,7 @@ begin
   if it.id is null then raise exception 'Item nao encontrado'; end if;
   select * into ped from public.pedidos where id=it.pedido_id for update;
   if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then raise exception 'Pedido pertence a outro centro'; end if;
-  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao','aprovado') then raise exception 'Item nao pode ser alterado no status atual: %',ped.status; end if;
+  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao') then raise exception 'Item nao pode ser alterado no status atual: %',ped.status; end if;
   if coalesce(_quantidade,0) <= 0 then raise exception 'Quantidade deve ser maior que zero'; end if;
   if coalesce(_preco_unitario,0) < 0 then raise exception 'Preco invalido'; end if;
   if coalesce(_desconto_percentual,0) < 0 or coalesce(_desconto_percentual,0) > 100 then raise exception 'Desconto invalido'; end if;
@@ -202,7 +202,7 @@ begin
   if it.id is null then raise exception 'Item nao encontrado'; end if;
   select * into ped from public.pedidos where id=it.pedido_id for update;
   if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then raise exception 'Pedido pertence a outro centro'; end if;
-  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao','aprovado') then raise exception 'Item nao pode ser removido no status atual: %',ped.status; end if;
+  if ped.status not in ('rascunho','digitacao','aguardando_aprovacao') then raise exception 'Item nao pode ser removido no status atual: %',ped.status; end if;
   delete from public.pedido_itens where id=_item_id;
   perform public.recalcular_pedido(ped.id);
 end;
