@@ -96,8 +96,8 @@ begin
   if to_regclass('public.contas_receber_pedido_parcela_uq') is null then
     raise exception 'Fase 139: indice unico de parcela por pedido ausente';
   end if;
-  if to_regclass('public.comissoes_pedido_uq') is null then
-    raise exception 'Fase 139: indice unico de comissao por pedido ausente';
+  if to_regclass('public.comissoes_pedido_ativa_uq') is null then
+    raise exception 'Fase 139: indice unico de comissao ativa por pedido ausente';
   end if;
 end $$;
 
