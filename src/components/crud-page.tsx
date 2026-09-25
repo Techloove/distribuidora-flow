@@ -291,16 +291,11 @@ export function CrudPage({
         } else if (field.type === "number") {
           const txt = String(raw ?? "").trim().replace(/\./g, "").replace(",", ".");
           const n = txt === "" ? NaN : Number(/,/.test(String(raw)) ? txt : String(raw).trim());
-          if (Number.isNaN(n)) {
-            if (editing) payload[field.name] = null;
-            continue;
-          }
+          // vazio/inválido: não envia (o banco aplica o padrão, ex. 0)
+          if (Number.isNaN(n)) { if (editing) payload[field.name] = null; continue; }
           payload[field.name] = n;
         } else {
-          if (raw === "" || raw == null) {
-            if (editing) payload[field.name] = null;
-            continue;
-          }
+          if (raw === "" || raw == null) { if (editing) payload[field.name] = null; continue; }
           payload[field.name] = raw;
         }
       }
