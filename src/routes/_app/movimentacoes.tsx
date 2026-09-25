@@ -138,7 +138,7 @@ function MovimentacoesPage() {
 
   const estornar = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client!.rpc("estornar_movimento", { _id: id, _motivo: "Estorno manual" });
+      const { error } = await client!.rpc("estornar_movimento_financeiro", { _movimento_id: id, _motivo: "Estorno manual" });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
