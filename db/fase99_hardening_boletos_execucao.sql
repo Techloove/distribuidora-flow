@@ -44,6 +44,18 @@ revoke all on function public.confirmar_devolucao(uuid) from public;
 revoke all on function public.cancelar_devolucao(uuid) from public;
 revoke all on function public.transferir_estoque(uuid,uuid,jsonb,text,text) from public;
 
+grant execute on function public.receber_compra(uuid) to authenticated;
+grant execute on function public.confirmar_pedido(uuid) to authenticated;
+grant execute on function public.receber_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text) to authenticated;
+grant execute on function public.pagar_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text) to authenticated;
+grant execute on function public.criar_despesa(uuid,uuid,uuid,text,text,numeric,integer,date,integer,uuid,uuid) to authenticated;
+grant execute on function public.cancelar_titulo(text,uuid,text) to authenticated;
+grant execute on function public.criar_credito_devolucao(uuid,uuid,uuid,numeric,text) to authenticated;
+grant execute on function public.aplicar_credito_cliente(uuid,uuid,numeric,text) to authenticated;
+grant execute on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) to authenticated;
+grant execute on function public.cancelar_aplicacao_credito(uuid) to authenticated;
+grant execute on function public.migrar_credito_dev(uuid) to authenticated;
+
 grant execute on function public.emitir_boleto(uuid) to authenticated;
 grant execute on function public.liquidar_boleto(uuid,numeric,date) to authenticated;
 grant execute on function public.cancelar_pedido(uuid) to authenticated;
