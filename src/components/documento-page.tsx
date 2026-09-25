@@ -412,7 +412,15 @@ export function DocumentoPage({
         return data as Row;
       }
 
-      const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
+      const { data, error } = await client!.rpc("criar_compra_rascunho", {
+        _fornecedor_id: String(payload["fornecedor_id"]),
+        _centro_id: String(payload["centro_id"]),
+        _data_entrada: String(payload["data_entrada"]),
+        _observacoes: payload["observacoes"] ? String(payload["observacoes"]) : null,
+        _nf_numero: payload["nf_numero"] ? String(payload["nf_numero"]) : null,
+        _chave_acesso: payload["chave_acesso"] ? String(payload["chave_acesso"]) : null,
+        _valor_impostos: Number(payload["valor_impostos"] ?? 0),
+      });
       if (error) throw new Error(error.message);
       return data as Row;
     },
@@ -509,7 +517,14 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
+        const { error } = await client!.rpc("atualizar_compra_comercial", {
+          _compra_id: String(doc["id"]),
+          _forma_pagamento_id: patch["forma_pagamento_id"]
+            ? String(patch["forma_pagamento_id"])
+            : null,
+          _frete_valor: Number(patch["frete_valor"] ?? 0),
+          _desconto_valor: Number(patch["desconto_valor"] ?? 0),
+        });
         if (error) throw new Error(error.message);
       }
     },
@@ -579,7 +594,14 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.from(config.itemsTable).insert(payload);
+        const { error } = await client!.rpc("adicionar_item_compra", {
+          _compra_id: selected,
+          _produto_id: String(payload["produto_id"]),
+          _quantidade: Number(payload["quantidade"]),
+          _custo_unitario: Number(payload["custo_unitario"]),
+          _lote: payload["lote"] ? String(payload["lote"]) : null,
+          _validade: payload["validade"] ? String(payload["validade"]) : null,
+        });
         if (error) throw new Error(error.message);
       }
     },
@@ -602,10 +624,11 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!
-          .from(config.itemsTable)
-          .update(patch.values)
-          .eq("id", patch.id);
+        const { error } = await client!.rpc("atualizar_item_compra", {
+          _item_id: patch.id,
+          _quantidade: Number(patch.values["quantidade"] ?? 0),
+          _custo_unitario: Number(patch.values["custo_unitario"] ?? 0),
+        });
         if (error) throw new Error(error.message);
       }
     },
@@ -622,7 +645,7 @@ export function DocumentoPage({
         const { error } = await client!.rpc("remover_item_pedido", { _item_id: id });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.from(config.itemsTable).delete().eq("id", id);
+        const { error } = await client!.rpc("remover_item_compra", { _item_id: id });
         if (error) throw new Error(error.message);
       }
     },
@@ -671,10 +694,7 @@ export function DocumentoPage({
         const { error } = await client!.rpc("cancelar_pedido", { _pedido_id: selected });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!
-          .from("compras")
-          .update({ status: "cancelada" })
-          .eq("id", selected);
+        const { error } = await client!.rpc("cancelar_compra", { _compra_id: selected });
         if (error) throw new Error(error.message);
       }
     },
