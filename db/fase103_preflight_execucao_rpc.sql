@@ -44,7 +44,14 @@ begin
       raise exception 'Preflight EXECUTE: RPC obrigatoria ausente: %', sig;
     end if;
 
-    if has_function_privilege('public', r, 'EXECUTE') then
+    if exists (
+      select 1
+      from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+      where p.oid = r::oid
+        and a.grantee = 0
+        and a.privilege_type = 'EXECUTE'
+    ) then
       raise exception 'Preflight EXECUTE: PUBLIC ainda executa %', r;
     end if;
 
@@ -71,7 +78,14 @@ begin
   foreach sig in array internos loop
     r := to_regprocedure(sig);
     if r is not null and (
-      has_function_privilege('public', r, 'EXECUTE')
+      exists (
+        select 1
+        from pg_proc p
+        cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+        where p.oid = r::oid
+          and a.grantee = 0
+          and a.privilege_type = 'EXECUTE'
+      )
       or has_function_privilege('anon', r, 'EXECUTE')
       or has_function_privilege('authenticated', r, 'EXECUTE')
     ) then
@@ -92,7 +106,14 @@ begin
 
   r := to_regprocedure('public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid)');
   if r is not null and (
-    has_function_privilege('public', r, 'EXECUTE')
+    exists (
+      select 1
+      from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+      where p.oid = r::oid
+        and a.grantee = 0
+        and a.privilege_type = 'EXECUTE'
+    )
     or has_function_privilege('anon', r, 'EXECUTE')
     or has_function_privilege('authenticated', r, 'EXECUTE')
   ) then
