@@ -177,7 +177,7 @@ const numericosSicredi = new Set([
 ]);
 
 function ConfiguracoesPage() {
-  const { client, canManage, roles } = useSupabase();
+  const { client, canManage, roles, session } = useSupabase();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [params, setParams] = useState<Record<string, string>>({});
@@ -189,7 +189,10 @@ function ConfiguracoesPage() {
   const sicredi = useQuery({
     queryKey: ["sicredi_config_segura"],
     enabled: canManage,
-    queryFn: () => getSicrediConfig(),
+    queryFn: () =>
+      getSicrediConfig({
+        data: session?.access_token ? { accessToken: session.access_token } : {},
+      }),
   });
 
   useEffect(() => {
@@ -216,7 +219,12 @@ function ConfiguracoesPage() {
           payload[campo.name] = numericosSicredi.has(campo.name) ? Number(v || 0) : v;
         }
       }
-      return saveSicrediConfig({ data: payload });
+      return saveSicrediConfig({
+        data: {
+          ...payload,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Configuração Sicredi salva com segurança");
