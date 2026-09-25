@@ -22,6 +22,28 @@ async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
   return (await res.json()) as T[];
 }
 
+async function userRpc<T>(
+  accessToken: string,
+  fn: string,
+  payload: Record<string, unknown>,
+): Promise<T> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
+  if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
+  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Falha ao registrar liquidação no ERP: ${body.slice(0, 300)}`);
+  return (body ? JSON.parse(body) : null) as T;
+}
+
 async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
   const url = process.env["EXT_SUPABASE_URL"];
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
@@ -379,7 +401,13 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     ).toLowerCase();
     const liquidado = situacao.includes("liquidad");
     const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
-    if (!liquidado) {
+    if (liquidado) {
+      await userRpc(accessToken, "liquidar_boleto", {
+        _boleto_id: data.boletoId,
+        _valor: Number(boleto["valor"] ?? 0),
+        _data: new Date().toISOString().slice(0, 10),
+      });
+    } else {
       await serviceRpc("sincronizar_boleto_sicredi_servidor", {
         _actor_id: user.id,
         _boleto_id: data.boletoId,
