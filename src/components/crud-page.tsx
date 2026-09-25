@@ -261,7 +261,9 @@ export function CrudPage({
       return "Há um vínculo inválido: selecione um registro relacionado existente.";
     }
     if (/not-null|null value in column/i.test(message)) {
-      return "Preencha todos os campos obrigatórios.";
+      const col = message.match(/column "([^"]+)"/)?.[1];
+      const label = fields.find((f) => f.name === col)?.label ?? col;
+      return label ? `Preencha o campo obrigatório: ${label}.` : "Preencha todos os campos obrigatórios.";
     }
     return message;
   }
@@ -280,9 +282,14 @@ export function CrudPage({
         if (field.type === "checkbox") {
           payload[field.name] = Boolean(raw);
         } else if (field.type === "number") {
-          payload[field.name] = raw === "" ? null : Number(raw);
+          const txt = String(raw ?? "").trim().replace(/\./g, "").replace(",", ".");
+          const n = txt === "" ? NaN : Number(/,/.test(String(raw)) ? txt : String(raw).trim());
+          // vazio/inválido: não envia (o banco aplica o padrão, ex. 0)
+          if (Number.isNaN(n)) { if (editing) payload[field.name] = null; continue; }
+          payload[field.name] = n;
         } else {
-          payload[field.name] = raw === "" ? null : raw;
+          if (raw === "" || raw == null) { if (editing) payload[field.name] = null; continue; }
+          payload[field.name] = raw;
         }
       }
 

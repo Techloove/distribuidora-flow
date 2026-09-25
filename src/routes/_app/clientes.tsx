@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { ConsultaCadastral } from "@/components/consulta-cadastral";
 import { ConsultaIe } from "@/components/consulta-ie";
+import { CodigoIbge } from "@/components/codigo-ibge";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 import { HistoricoCliente } from "@/components/historico-cliente";
@@ -62,6 +63,7 @@ const fields: CrudField[] = [
   { name: "cidade", label: "Cidade", inTable: true },
   { name: "uf", label: "UF" },
   { name: "cep", label: "CEP" },
+  { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
   { name: "limite_credito", label: "Limite de crédito", type: "number", step: "0.01" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
   { name: "representante_id", label: "Representante / vendedor", type: "select", options: [] },
@@ -153,6 +155,7 @@ function ClientesPage() {
               openRow={ctx.openRow}
             />
             <ConsultaIe form={ctx.form} editing={ctx.editing} patch={ctx.patch} />
+            <CodigoIbge form={ctx.form} patch={ctx.patch} />
             <HistoricoCliente clienteId={ctx.editing ? String(ctx.editing["id"]) : null} />
           </div>
 
