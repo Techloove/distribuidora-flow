@@ -7,7 +7,44 @@ async function requireSicrediAccess(action: string, limit: number) {
   const accessToken = requestAccessToken();
   const user = await requireServerAuth(accessToken, SICREDI_ROLES);
   await enforceRateLimit(accessToken, action, limit, 60);
-  return user;
+  if (!accessToken) throw new Error("Sessão não informada. Entre novamente.");
+  return { user, accessToken };
+}
+
+async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
+  if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
+  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${path}`, {
+    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error("Não foi possível validar o título no ERP.");
+  return (await res.json()) as T[];
+}
+
+async function carregarTituloBoleto(accessToken: string, contaId: string): Promise<DbRow> {
+  const id = String(contaId ?? "").trim();
+  if (!id) throw new Error("Título não informado.");
+  const rows = await userRest<DbRow>(
+    accessToken,
+    `vw_boletos_pendentes?select=*&conta_receber_id=eq.${encodeURIComponent(id)}&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) throw new Error("Título indisponível, sem acesso ou já possui boleto ativo.");
+  return row;
+}
+
+async function carregarBoleto(accessToken: string, boletoId: string): Promise<DbRow> {
+  const id = String(boletoId ?? "").trim();
+  if (!id) throw new Error("Boleto não informado.");
+  const rows = await userRest<DbRow>(
+    accessToken,
+    `boletos?select=id,nosso_numero,status,centro_id& id=eq.${encodeURIComponent(id)}&limit=1`.replace("& ", "&"),
+  );
+  const row = rows[0];
+  if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
+  if (!String(row["nosso_numero"] ?? "").trim()) throw new Error("Boleto sem nosso número.");
+  return row;
 }
 
 /**
@@ -182,45 +219,36 @@ export const sicrediStatus = createServerFn({ method: "GET" }).handler(async () 
   }
 });
 
-type EmitirInput = {
-  seuNumero: string;
-  valor: number;
-  vencimento: string;
-  pagador: {
-    tipoPessoa: string;
-    documento: string;
-    nome: string;
-    endereco: string;
-    cidade: string;
-    uf: string;
-    cep: string;
-    telefone?: string;
-    email?: string;
-  };
-  informativo?: string;
-  diasProtesto?: number;
-  juros?: number;
-  multa?: number;
-};
+type EmitirInput = { contaId: string };
 
 /** Registra o boleto no Sicredi e devolve nosso numero / linha digitavel / PIX. */
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: EmitirInput) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess("sicredi_emitir_boleto", 10);
+    const { accessToken } = await requireSicrediAccess("sicredi_emitir_boleto", 10);
+    const row = await carregarTituloBoleto(accessToken, data.contaId);
     const c = await conf();
     const tk = await token(c);
-    const juros = data.juros !== undefined ? data.juros : c.juros;
-    const multa = data.multa !== undefined ? data.multa : c.multa;
-    const diasProtesto = data.diasProtesto !== undefined ? data.diasProtesto : c.diasProtesto;
-    const informativo = data.informativo || c.informativo;
+    const juros = c.juros;
+    const multa = c.multa;
+    const diasProtesto = c.diasProtesto;
+    const seuNumero =
+      `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
+        row["parcela"] ?? 1,
+      )}`.slice(0, 10);
+    const endereco = [row["logradouro"], row["numero"], row["complemento"], row["bairro"]]
+      .filter(Boolean)
+      .join(", ");
+    const informativo =
+      c.informativo ||
+      `Pedido ${String(row["pedido_numero"] ?? "-")} parcela ${String(row["parcela"] ?? 1)}`;
     const payload = {
       tipoCobranca: c.tipoCobranca,
       codigoBeneficiario: c.beneficiario,
       especieDocumento: c.especieDocumento,
-      seuNumero: data.seuNumero,
-      dataVencimento: data.vencimento,
-      valor: Number(data.valor.toFixed(2)),
+      seuNumero,
+      dataVencimento: String(row["vencimento"] ?? ""),
+      valor: Number(Number(row["saldo"] ?? 0).toFixed(2)),
       tipoDesconto: c.tipoDesconto,
       ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0
         ? { valorDesconto1: c.valorDesconto1, diasDesconto1: c.diasDesconto1 }
@@ -238,15 +266,19 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
 
       pagador: {
-        tipoPessoa: data.pagador.tipoPessoa,
-        documento: data.pagador.documento.replace(/\D/g, ""),
-        nome: data.pagador.nome.slice(0, 40),
-        endereco: data.pagador.endereco.slice(0, 40),
-        cidade: data.pagador.cidade.slice(0, 20),
-        uf: data.pagador.uf.slice(0, 2).toUpperCase(),
-        cep: data.pagador.cep.replace(/\D/g, ""),
-        ...(data.pagador.telefone ? { telefone: data.pagador.telefone.replace(/\D/g, "") } : {}),
-        ...(data.pagador.email ? { email: data.pagador.email } : {}),
+        tipoPessoa: String(row["tipo_pessoa"] ?? "").toUpperCase().startsWith("F")
+          ? "PESSOA_FISICA"
+          : "PESSOA_JURIDICA",
+        documento: String(row["cnpj_cpf"] ?? "").replace(/\D/g, ""),
+        nome: String(row["razao_social"] ?? "").slice(0, 40),
+        endereco: (endereco || "Nao informado").slice(0, 40),
+        cidade: String(row["cidade"] ?? "").slice(0, 20),
+        uf: String(row["uf"] ?? "").slice(0, 2).toUpperCase(),
+        cep: String(row["cep"] ?? "").replace(/\D/g, ""),
+        ...(row["telefone"]
+          ? { telefone: String(row["telefone"]).replace(/\D/g, "") }
+          : {}),
+        ...(row["email"] ? { email: String(row["email"]) } : {}),
       },
     };
     const res = await fetch(`${c.base}/cobranca/boleto/v1/boletos`, {
@@ -270,19 +302,22 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       beneficiario: c.beneficiario,
       ambiente: c.ambiente,
       retorno: txt.slice(0, 4000),
+      seuNumero,
     };
   });
 
 /** Consulta a situacao atual do boleto no Sicredi. */
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { nossoNumero: string }) => data)
+  .inputValidator((data: { boletoId: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess("sicredi_consultar_boleto", 30);
+    const { accessToken } = await requireSicrediAccess("sicredi_consultar_boleto", 30);
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
     const url = `${c.base}/cobranca/boleto/v1/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
-    )}&nossoNumero=${encodeURIComponent(data.nossoNumero)}`;
+    )}&nossoNumero=${encodeURIComponent(nossoNumero)}`;
     const res = await fetch(url, { headers: headers(c, tk) });
     const txt = await res.text();
     if (!res.ok) throw new Error(`Consulta Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
@@ -300,13 +335,15 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 
 /** Solicita a baixa (cancelamento) do boleto. */
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { nossoNumero: string }) => data)
+  .inputValidator((data: { boletoId: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess("sicredi_baixar_boleto", 10);
+    const { accessToken } = await requireSicrediAccess("sicredi_baixar_boleto", 10);
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
     const res = await fetch(
-      `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(data.nossoNumero)}/baixa`,
+      `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(nossoNumero)}/baixa`,
       { method: "PATCH", headers: headers(c, tk), body: JSON.stringify({}) },
     );
     const txt = await res.text();
@@ -316,14 +353,16 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
 
 /** Segunda via em PDF (base64) do boleto registrado. */
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { nossoNumero: string }) => data)
+  .inputValidator((data: { boletoId: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess("sicredi_pdf_boleto", 20);
+    const { accessToken } = await requireSicrediAccess("sicredi_pdf_boleto", 20);
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
     const res = await fetch(
       `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=&nossoNumero=${encodeURIComponent(
-        data.nossoNumero,
+        nossoNumero,
       )}&codigoBeneficiario=${encodeURIComponent(c.beneficiario)}`,
       { headers: headers(c, tk) },
     );
