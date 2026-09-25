@@ -61,7 +61,7 @@ begin
 
   r := to_regprocedure('public.registrar_movimento_estoque_controlado(uuid,uuid,text,numeric,numeric,text,uuid,text)');
   if r is not null then
-    execute format('revoke execute on function %s from public, anon', r);
+    execute format('revoke execute on function %s from public, anon, authenticated', r);
   end if;
 end $$;
 
