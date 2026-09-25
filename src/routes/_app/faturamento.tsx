@@ -215,16 +215,7 @@ function FaturamentoPage() {
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
       const res = await consultarFn({ data: { boletoId: String(b["id"]) } });
-      if (res.liquidado) {
-        const { error } = await client!.rpc("liquidar_boleto", {
-          _boleto_id: String(b["id"]),
-          _valor: Number(b["valor"] ?? 0),
-          _data: new Date().toISOString().slice(0, 10),
-        });
-        if (error) throw new Error(error.message);
-        return "liquidado";
-      }
-      return res.situacao || (res.baixado ? "baixado" : "registrado");
+      return res.situacao || (res.liquidado ? "liquidado" : res.baixado ? "baixado" : "registrado");
     },
     onSuccess: (s) => {
       toast.success(`Situação no Sicredi: ${s}`);
