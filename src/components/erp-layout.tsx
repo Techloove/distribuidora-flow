@@ -33,7 +33,6 @@ import {
   ShieldCheck,
   ShoppingCart,
   Truck,
-  UserRound,
   Users,
   Warehouse,
   Wallet,
