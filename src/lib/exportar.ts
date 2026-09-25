@@ -4,8 +4,11 @@ type Row = Record<string, unknown>;
 
 export type Coluna = { key: string; label: string };
 
-function escapar(v: unknown) {
-  const s = v === null || v === undefined ? "" : String(v);
+export function escapar(v: unknown) {
+  const raw = v === null || v === undefined ? "" : String(v);
+  // Neutraliza fórmulas que planilhas executariam ao abrir o CSV.
+  // eslint-disable-next-line no-control-regex -- inclui controles antes de fórmulas.
+  const s = typeof v === "string" && /^[\s\u0000-\u001f]*[=+@-]/.test(raw) ? `'${raw}` : raw;
   return `"${s.replace(/"/g, '""')}"`;
 }
 
