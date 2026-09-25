@@ -414,13 +414,18 @@ create or replace function public.criar_despesa(
 ) returns integer
 language plpgsql security definer set search_path=public
 as $$
-declare n integer; parcelas integer; valor_parcela numeric(14,2); saldo numeric(14,2);
+declare n integer; parcelas integer; valor_parcela numeric(14,2); saldo numeric(14,2); conta_centro uuid;
 begin
   if not public.can_finance(auth.uid()) then raise exception 'Sem permissão para lançar despesas'; end if;
   if _centro_id is null or not public.usuario_pode_acessar_centro(_centro_id) then
     raise exception 'Centro inválido ou sem acesso';
   end if;
   if coalesce(_valor,0)<=0 then raise exception 'Informe o valor da despesa'; end if;
+  if _conta_id is not null then
+    select centro_id into conta_centro from public.contas_financeiras where id=_conta_id and ativo;
+    if not found then raise exception 'Conta financeira nao encontrada ou inativa'; end if;
+    if conta_centro is not null and conta_centro<>_centro_id then raise exception 'Conta financeira pertence a outro centro'; end if;
+  end if;
 
   parcelas:=greatest(coalesce(_parcelas,1),1);
   valor_parcela:=round(_valor/parcelas,2);
