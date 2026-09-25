@@ -12,7 +12,7 @@ for (const file of files) {
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
-    if (/^as\s+\$/i.test(trimmed) || /^\$\s*;$/.test(trimmed)) {
+    if (/^as\s+\$\s*$/i.test(trimmed) || /^\$\s*;$/.test(trimmed)) {
       errors.push(`${file}:${index + 1}: delimitador SQL inválido; use $ ... $;`);
     }
   });
