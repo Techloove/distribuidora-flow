@@ -7,6 +7,7 @@ const CONFIG_ROLES = ["admin", "gestor"] as const;
 type DbRow = Record<string, unknown>;
 
 export type SicrediConfigInput = {
+  accessToken?: string;
   api_key?: string;
   username?: string;
   password?: string;
@@ -30,8 +31,8 @@ export type SicrediConfigInput = {
   mensagem?: string;
 };
 
-async function requireConfigAccess(action: string) {
-  const accessToken = requestAccessToken();
+async function requireConfigAccess(action: string, explicitAccessToken?: string) {
+  const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
   await requireServerAuth(accessToken, CONFIG_ROLES);
   await enforceRateLimit(accessToken, action, 30, 60);
 }
@@ -117,15 +118,17 @@ function publicConfig(row: DbRow | null) {
   };
 }
 
-export const sicrediConfigGet = createServerFn({ method: "GET" }).handler(async () => {
-  await requireConfigAccess("sicredi_config_get");
-  return publicConfig(await currentConfig());
-});
+export const sicrediConfigGet = createServerFn({ method: "GET" })
+  .inputValidator((data: { accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    await requireConfigAccess("sicredi_config_get", data.accessToken);
+    return publicConfig(await currentConfig());
+  });
 
 export const sicrediConfigSave = createServerFn({ method: "POST" })
   .inputValidator((data: SicrediConfigInput) => data)
   .handler(async ({ data }) => {
-    await requireConfigAccess("sicredi_config_save");
+    await requireConfigAccess("sicredi_config_save", data.accessToken);
 
     const atual = await currentConfig();
 
