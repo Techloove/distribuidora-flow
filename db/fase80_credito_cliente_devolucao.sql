@@ -329,6 +329,23 @@ begin
     raise exception 'Sem permissao para cancelar aplicacao de credito';
   end if;
 
+  -- Ordem de locks: pedido -> aplicacao -> credito.
+  -- Deve ser a mesma ordem usada na confirmacao para evitar deadlock
+  -- quando duas sessoes operam o mesmo pedido simultaneamente.
+  select pedido_id into ped.id
+  from public.creditos_clientes_aplicacoes
+  where id = _aplicacao_id;
+
+  if ped.id is null then
+    raise exception 'Aplicacao de credito nao encontrada';
+  end if;
+
+  select * into ped from public.pedidos where id = ped.id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if ped.status <> 'rascunho' then
+    raise exception 'Somente aplicacoes de pedidos em rascunho podem ser canceladas';
+  end if;
+
   select * into app
   from public.creditos_clientes_aplicacoes
   where id = _aplicacao_id
@@ -336,12 +353,6 @@ begin
 
   if app.id is null then
     raise exception 'Aplicacao de credito nao encontrada';
-  end if;
-
-  select * into ped from public.pedidos where id = app.pedido_id for update;
-  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
-  if ped.status <> 'rascunho' then
-    raise exception 'Somente aplicacoes de pedidos em rascunho podem ser canceladas';
   end if;
 
   if app.status <> 'reservado' then
