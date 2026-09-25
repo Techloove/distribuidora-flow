@@ -4,6 +4,7 @@ import { useRouter } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import { getSupabaseClient } from "./supabase-client";
+import { setCentro } from "./centro-store";
 
 export type AppRole =
   | "admin"
@@ -33,6 +34,8 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -51,7 +54,16 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         setLoading(false);
 
         const { data: sub } = sb.auth.onAuthStateChange((event, newSession) => {
-          setSession(newSession ?? null);
+          setSession((previous) => {
+            const previousId = previous?.user?.id ?? null;
+            const nextId = newSession?.user?.id ?? null;
+            if (previousId !== nextId) {
+              void queryClient.cancelQueries();
+              queryClient.clear();
+              setCentro("");
+            }
+            return newSession ?? null;
+          });
           if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
           router.invalidate();
           if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
@@ -75,17 +87,44 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!client || !userId) {
       setRoles([]);
+      setAccessError(null);
+      setPermissionsLoading(false);
       return;
     }
     let active = true;
-    client
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .then(({ data }) => {
-        if (!active) return;
-        setRoles(((data ?? []) as { role: AppRole }[]).map((r) => r.role));
-      });
+    setPermissionsLoading(true);
+    setAccessError(null);
+    Promise.all([
+      client.from("profiles").select("ativo").eq("id", userId).single(),
+      client.from("user_roles").select("role").eq("user_id", userId),
+    ]).then(([profile, roleRows]) => {
+      if (!active) return;
+      if (profile.error || roleRows.error) {
+        setRoles([]);
+        setAccessError("Não foi possível verificar seu acesso. Tente novamente.");
+        setPermissionsLoading(false);
+        return;
+      }
+      if (profile.data?.ativo !== true) {
+        setRoles([]);
+        setAccessError("Seu acesso está desativado ou aguarda liberação.");
+        setPermissionsLoading(false);
+        return;
+      }
+      const nextRoles = ((roleRows.data ?? []) as { role: AppRole }[]).map((row) => row.role);
+      if (nextRoles.length === 0) {
+        setRoles([]);
+        setAccessError("Usuário sem papel de acesso atribuído.");
+      } else {
+        setRoles(nextRoles);
+      }
+      setPermissionsLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setRoles([]);
+      setAccessError("Não foi possível verificar seu acesso. Tente novamente.");
+      setPermissionsLoading(false);
+    });
     return () => {
       active = false;
     };
@@ -95,6 +134,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     await queryClient.cancelQueries();
     queryClient.clear();
     await client?.auth.signOut();
+    setCentro("");
   }
 
   const value: SupabaseContextValue = {
@@ -102,9 +142,12 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     session,
     user: session?.user ?? null,
     roles,
-    loading,
-    error,
-    canManage: roles.includes("admin") || roles.includes("gestor"),
+    loading: loading || permissionsLoading,
+    error: error ?? accessError,
+    canManage:
+      !(loading || permissionsLoading) &&
+      !(error ?? accessError) &&
+      (roles.includes("admin") || roles.includes("gestor")),
     signOut,
   };
 
