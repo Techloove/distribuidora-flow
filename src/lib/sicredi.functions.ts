@@ -87,7 +87,7 @@ async function carregarBoleto(accessToken: string, boletoId: string): Promise<Db
   if (!id) throw new Error("Boleto não informado.");
   const rows = await userRest<DbRow>(
     accessToken,
-    `boletos?select=id,nosso_numero,status,centro_id&id=eq.${encodeURIComponent(id)}&limit=1`,
+    `boletos?select=id,nosso_numero,status,centro_id,valor,conta_receber_id&id=eq.${encodeURIComponent(id)}&limit=1`,
   );
   const row = rows[0];
   if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
@@ -402,9 +402,13 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const liquidado = situacao.includes("liquidad");
     const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
     if (liquidado) {
+      const valorLiquidacao = Number(boleto["valor"] ?? 0);
+      if (!Number.isFinite(valorLiquidacao) || valorLiquidacao <= 0) {
+        throw new Error("Boleto sem valor válido para registrar a liquidação no ERP.");
+      }
       await userRpc(accessToken, "liquidar_boleto", {
         _boleto_id: data.boletoId,
-        _valor: Number(boleto["valor"] ?? 0),
+        _valor: valorLiquidacao,
         _data: new Date().toISOString().slice(0, 10),
       });
     } else {
