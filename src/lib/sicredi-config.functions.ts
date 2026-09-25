@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 
@@ -48,7 +49,7 @@ function env() {
 
 async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const { url, key } = env();
-  const res = await fetch(`${url}/rest/v1/${path}`, {
+  const res = await fetchWithTimeout(`${url}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: key,
