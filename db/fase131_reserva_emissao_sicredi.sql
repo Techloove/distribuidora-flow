@@ -187,7 +187,7 @@ select
   cr.documento,
   cr.parcela,
   cr.vencimento,
-  (cr.valor - coalesce(cr.valor_pago,0))::numeric(14,2) as saldo,
+  (coalesce(cr.valor,0)+coalesce(cr.juros,0)+coalesce(cr.multa,0)+coalesce(cr.acrescimo,0)-coalesce(cr.desconto,0)-coalesce(cr.valor_pago,0))::numeric(14,2) as saldo,
   cr.valor,
   cr.status as status_titulo,
   c.razao_social,
@@ -207,7 +207,7 @@ from public.contas_receber cr
 join public.clientes c on c.id=cr.cliente_id
 left join public.pedidos p on p.id=cr.pedido_id
 where cr.status in ('aberto','parcial')
-  and (cr.valor-coalesce(cr.valor_pago,0)) > 0
+  and (coalesce(cr.valor,0)+coalesce(cr.juros,0)+coalesce(cr.multa,0)+coalesce(cr.acrescimo,0)-coalesce(cr.desconto,0)-coalesce(cr.valor_pago,0)) > 0
   and not exists (
     select 1
     from public.boletos b
