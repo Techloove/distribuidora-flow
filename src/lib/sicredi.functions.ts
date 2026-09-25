@@ -286,6 +286,14 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     const row = await carregarTituloBoleto(accessToken, data.contaId);
     const c = await conf();
     const tk = await token(c);
+    // Reserva a emissão antes da chamada externa: serializa concorrência e
+    // aloca um seuNumero novo quando houver reemissão após baixa/cancelamento.
+    const reserva = await serviceRpc<DbRow>("preparar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _conta_id: data.contaId,
+    });
+    const seuNumero = String(reserva["seu_numero"] ?? "").trim();
+    if (!seuNumero) throw new Error("Não foi possível reservar o identificador do boleto.");
     const juros = c.juros;
     const multa = c.multa;
     const diasProtesto = c.diasProtesto;
@@ -298,10 +306,6 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       c.tipoCobranca === "NORMAL" && multa > 0 && c.diasMulta > 0
         ? shiftIsoDate(vencimento, c.diasMulta)
         : null;
-    const seuNumero =
-      `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
-        row["parcela"] ?? 1,
-      )}`.slice(0, 10);
     const endereco = [row["logradouro"], row["numero"], row["complemento"], row["bairro"]]
       .filter(Boolean)
       .join(", ");
