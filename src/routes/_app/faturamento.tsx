@@ -191,11 +191,6 @@ function FaturamentoPage() {
       `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
         row["parcela"] ?? 1,
       )}`.slice(0, 10);
-    const valor = Number(row["saldo"] ?? row["valor"] ?? 0);
-    const endereco = [row["logradouro"], row["numero"], row["complemento"], row["bairro"]]
-      .filter(Boolean)
-      .join(", ");
-
     try {
       const res = await emitirFn({
         data: { contaId },
