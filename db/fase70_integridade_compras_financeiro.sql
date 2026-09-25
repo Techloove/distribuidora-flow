@@ -335,6 +335,7 @@ declare
   pago numeric(14,2);
   devido numeric(14,2);
   conta uuid;
+  conta_centro uuid;
 begin
   if not public.can_finance(auth.uid()) then
     raise exception 'Somente financeiro/gestor pode pagar títulos';
@@ -352,8 +353,11 @@ begin
   end if;
 
   conta:=coalesce(_conta_id,titulo.conta_financeira_id,
-    (select id from public.contas_financeiras where ativo order by created_at limit 1));
-  if conta is null then raise exception 'Cadastre uma conta de banco/caixa antes de pagar'; end if;
+    (select id from public.contas_financeiras where ativo and (centro_id is null or centro_id=titulo.centro_id) order by created_at limit 1));
+  if conta is null then raise exception 'Cadastre uma conta de banco/caixa para o centro antes de pagar'; end if;
+  select centro_id into conta_centro from public.contas_financeiras where id=conta and ativo;
+  if not found then raise exception 'Conta financeira nao encontrada ou inativa'; end if;
+  if conta_centro is not null and conta_centro<>titulo.centro_id then raise exception 'Conta pertence a outro centro'; end if;
 
   if _juros<0 or _multa<0 or _desconto<0 then
     raise exception 'Juros, multa e desconto não podem ser negativos';
