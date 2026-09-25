@@ -467,10 +467,7 @@ export function DocumentoPage({
       if (!selected || !doc) throw new Error("Selecione um pedido");
       const valor = Number(creditoAplicacao || 0);
       if (valor <= 0) throw new Error("Informe o valor do crédito");
-      const credito = (creditosDevolucao.data ?? []).find((c) => Number(c["saldo"] ?? 0) >= valor);
-      if (!credito) throw new Error("Nenhum crédito de devolução possui saldo suficiente para este valor");
-      const { error } = await client!.rpc("aplicar_credito_cliente", {
-        _credito_id: credito["id"],
+      const { error } = await client!.rpc("aplicar_creditos_cliente_pedido", {
         _pedido_id: selected,
         _valor: valor,
         _chave_idempotencia: crypto.randomUUID(),
