@@ -3,8 +3,12 @@ import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./serve
 
 const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
 
-async function requireSicrediAccess(action: string, limit: number) {
-  const accessToken = requestAccessToken();
+async function requireSicrediAccess(
+  action: string,
+  limit: number,
+  explicitAccessToken?: string,
+) {
+  const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
   const user = await requireServerAuth(accessToken, SICREDI_ROLES);
   await enforceRateLimit(accessToken, action, limit, 60);
   if (!accessToken) throw new Error("Sessão não informada. Entre novamente.");
@@ -252,8 +256,10 @@ function headers(c: Conf, tk: string) {
 }
 
 /** Status da configuracao — usado pela tela para avisar o usuario. */
-export const sicrediStatus = createServerFn({ method: "GET" }).handler(async () => {
-  await requireSicrediAccess("sicredi_status", 30);
+export const sicrediStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+  await requireSicrediAccess("sicredi_status", 30, data.accessToken);
   try {
     const c = await conf();
     return {
@@ -274,15 +280,19 @@ export const sicrediStatus = createServerFn({ method: "GET" }).handler(async () 
       erro: (e as Error).message,
     };
   }
-});
+  });
 
-type EmitirInput = { contaId: string };
+type EmitirInput = { contaId: string; accessToken?: string };
 
 /** Registra o boleto no Sicredi e devolve nosso numero / linha digitavel / PIX. */
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: EmitirInput) => data)
   .handler(async ({ data }) => {
-    const { user, accessToken } = await requireSicrediAccess("sicredi_emitir_boleto", 10);
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_emitir_boleto",
+      10,
+      data.accessToken,
+    );
     const row = await carregarTituloBoleto(accessToken, data.contaId);
     const c = await conf();
     const tk = await token(c);
@@ -423,9 +433,13 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
 
 /** Consulta a situacao atual do boleto no Sicredi. */
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { boletoId: string }) => data)
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
   .handler(async ({ data }) => {
-    const { user, accessToken } = await requireSicrediAccess("sicredi_consultar_boleto", 30);
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_consultar_boleto",
+      30,
+      data.accessToken,
+    );
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
@@ -479,9 +493,13 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 
 /** Solicita a baixa (cancelamento) do boleto. */
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { boletoId: string }) => data)
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
   .handler(async ({ data }) => {
-    const { user, accessToken } = await requireSicrediAccess("sicredi_baixar_boleto", 10);
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_baixar_boleto",
+      10,
+      data.accessToken,
+    );
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
@@ -503,9 +521,13 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
 
 /** Segunda via em PDF (base64) do boleto registrado. */
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { boletoId: string }) => data)
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
   .handler(async ({ data }) => {
-    const { accessToken } = await requireSicrediAccess("sicredi_pdf_boleto", 20);
+    const { accessToken } = await requireSicrediAccess(
+      "sicredi_pdf_boleto",
+      20,
+      data.accessToken,
+    );
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
