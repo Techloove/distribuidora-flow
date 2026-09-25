@@ -225,6 +225,7 @@ function ExpedicaoPage() {
       previsao_entrega: String(r["previsao_entrega"] ?? ""),
       volumes: String(r["volumes"] ?? 1),
       peso_kg: String(r["peso_kg"] ?? 0),
+      rota_id: String(r["rota_id"] ?? ""),
       observacoes: String(r["observacoes"] ?? ""),
     });
   }
