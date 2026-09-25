@@ -45,6 +45,9 @@ create table if not exists public.creditos_clientes_aplicacoes (
   revertido_em timestamptz
 );
 
+alter table public.creditos_clientes_aplicacoes
+  add column if not exists idempotencia_contexto jsonb;
+
 drop index if exists public.credito_aplicacao_pedido_uq;
 
 create index if not exists credito_aplicacao_credito_pedido_idx
