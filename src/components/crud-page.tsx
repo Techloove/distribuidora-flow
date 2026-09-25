@@ -111,6 +111,37 @@ function RefSelect({
 
 export type Row = Record<string, unknown>;
 
+const CRUD_PROTECTED_TABLES = new Set([
+  "pedidos",
+  "pedido_itens",
+  "compras",
+  "compra_itens",
+  "estoque_movimentos",
+  "estoque_saldos",
+  "transferencias_estoque",
+  "transferencias_estoque_itens",
+  "contas_receber",
+  "contas_pagar",
+  "comissoes",
+  "movimentos_financeiros",
+  "transferencias",
+  "boletos",
+  "creditos_clientes",
+  "creditos_clientes_aplicacoes",
+  "expedicoes",
+  "pedido_separacoes",
+  "cargas",
+  "carga_pedidos",
+  "estornos_financeiros",
+  "auditoria",
+  "pedido_operacoes",
+  "devolucao_operacoes",
+  "comissao_pagamentos",
+  "comissao_pagamento_itens",
+  "sicredi_config",
+  "user_roles",
+]);
+
 export function CrudPage({
   table,
   fields,
@@ -160,6 +191,14 @@ export function CrudPage({
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const effectiveReadOnly = readOnly === true;
+  const directWriteBlocked = effectiveReadOnly || CRUD_PROTECTED_TABLES.has(table);
+
+  function assertDirectWriteAllowed() {
+    if (effectiveReadOnly) throw new Error("Esta tela está em modo somente leitura.");
+    if (CRUD_PROTECTED_TABLES.has(table)) {
+      throw new Error(`A tabela ${table} exige operação controlada por RPC.`);
+    }
+  }
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
@@ -278,6 +317,7 @@ export function CrudPage({
   const save = useMutation({
 
     mutationFn: async () => {
+      assertDirectWriteAllowed();
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
         if (field.auto || field.virtual) continue;
@@ -321,6 +361,7 @@ export function CrudPage({
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      assertDirectWriteAllowed();
       const { error } = await client!.from(table).delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
@@ -333,6 +374,7 @@ export function CrudPage({
 
   const inlineUpdate = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
+      assertDirectWriteAllowed();
       const { error } = await client!.from(table).update(patch).eq("id", id);
       if (error) throw new Error(error.message);
     },
