@@ -102,18 +102,19 @@ begin
     return b;
   end if;
 
-  -- Se houve erro anterior, reutiliza o mesmo identificador: isso reduz a chance
-  -- de duplicidade no banco em caso de timeout após o Sicredi ter processado a chamada.
+  -- Reutiliza um identificador somente se o ÚLTIMO ciclo deste título terminou em erro.
+  -- Assim uma reemissão posterior a boleto baixado/cancelado nunca ressuscita um número antigo.
+  b := null;
   select * into b
   from public.boletos
   where conta_receber_id=cr.id
-    and status='erro'
-    and nullif(btrim(seu_numero),'') is not null
   order by created_at desc
   limit 1
   for update;
 
-  if b.id is not null then
+  if b.id is not null
+     and b.status='erro'
+     and nullif(btrim(b.seu_numero),'') is not null then
     update public.boletos
     set status='em_processamento',
         enviado_em=now(),
