@@ -21,20 +21,44 @@ export async function requireServerAuth(
   const { url, anonKey } = config();
   const userRes = await fetch(`${url}/auth/v1/user`, {
     headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(15000),
   });
   if (!userRes.ok) throw new Error("Sessão inválida ou expirada. Entre novamente.");
 
   const user = (await userRes.json()) as AuthUser;
   if (!user.id) throw new Error("Usuário autenticado não identificado.");
 
-  const roleRes = await fetch(
-    `${url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}`,
-    { headers: { apikey: anonKey, Authorization: `Bearer ${token}` } },
-  );
-  if (!roleRes.ok) throw new Error("Não foi possível validar as permissões do usuário.");
+  const [profileRes, roleRes] = await Promise.all([
+    fetch(
+      `${url}/rest/v1/profiles?select=ativo&id=eq.${encodeURIComponent(user.id)}&limit=1`,
+      {
+        headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(15000),
+      },
+    ),
+    fetch(
+      `${url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}`,
+      {
+        headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(15000),
+      },
+    ),
+  ]);
+
+  if (!profileRes.ok || !roleRes.ok) {
+    throw new Error("Não foi possível validar as permissões do usuário.");
+  }
+
+  const profiles = (await profileRes.json()) as Array<{ ativo?: boolean }>;
+  if (profiles[0]?.ativo !== true) {
+    throw new Error("Usuário desativado ou aguardando liberação.");
+  }
 
   const rows = (await roleRes.json()) as Array<{ role?: string }>;
   const roles = new Set(rows.map((r) => String(r.role ?? "")));
+  if (roles.size === 0) {
+    throw new Error("Usuário sem papel de acesso atribuído.");
+  }
   if (!allowedRoles.some((role) => roles.has(role))) {
     throw new Error("Usuário sem permissão para esta operação.");
   }
@@ -60,6 +84,7 @@ export async function enforceRateLimit(
   const { url, anonKey } = config();
   const res = await fetch(`${url}/rest/v1/rpc/consumir_rate_limit`, {
     method: "POST",
+    signal: AbortSignal.timeout(15000),
     headers: {
       apikey: anonKey,
       Authorization: `Bearer ${token}`,
