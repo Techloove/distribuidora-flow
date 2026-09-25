@@ -34,7 +34,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   if new.centro_id is null and new.conta_receber_id is not null then
     select centro_id into new.centro_id
@@ -46,7 +46,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists definir_centro_boleto_trg on public.boletos;
 create trigger definir_centro_boleto_trg
