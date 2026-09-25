@@ -95,7 +95,12 @@ begin
      ) else null end)
   returning id into v_transferencia_id;
 
-  for v_item in select value from jsonb_array_elements(_itens)
+  -- Ordem deterministica por produto reduz risco de deadlock entre transferencias concorrentes
+  -- que movimentam o mesmo conjunto de produtos em ordens diferentes.
+  for v_item in
+    select value
+    from jsonb_array_elements(_itens)
+    order by value->>'produto_id'
   loop
     begin
       v_produto := (v_item->>'produto_id')::uuid;
