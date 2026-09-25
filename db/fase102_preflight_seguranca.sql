@@ -48,6 +48,14 @@ declare
     'public.cancelar_pedido(uuid)',
     'public.receber_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text)',
     'public.pagar_titulo(uuid,numeric,date,uuid,uuid,numeric,numeric,numeric,text)',
+    'public.pagar_comissoes(uuid,uuid[],date,uuid,uuid,uuid,text)',
+    'public.criar_despesa(uuid,uuid,uuid,text,text,numeric,integer,date,integer,uuid,uuid)',
+    'public.cancelar_titulo(text,uuid,text)',
+    'public.transferir_entre_contas(uuid,uuid,numeric,date,text)',
+    'public.lancar_movimento(uuid,text,numeric,date,uuid,uuid,text,text)',
+    'public.estornar_movimento_financeiro(uuid,text)',
+    'public.estornar_transferencia_financeira(uuid,text)',
+    'public.atualizar_status_comissao(uuid,text)',
     'public.emitir_boleto(uuid)',
     'public.liquidar_boleto(uuid,numeric,date)',
     'public.aplicar_creditos_cliente_pedido(uuid,numeric,text)',
@@ -80,9 +88,13 @@ begin
       and p.prosecdef
       and p.proname in (
         'lancar_movimento_estoque','transferir_estoque','confirmar_pedido','cancelar_pedido',
-        'receber_titulo','pagar_titulo','emitir_boleto','liquidar_boleto',
-        'aplicar_creditos_cliente_pedido','confirmar_devolucao','cancelar_devolucao',
-        'atualizar_dados_expedicao'
+        'receber_titulo','pagar_titulo','pagar_comissoes','criar_despesa','cancelar_titulo',
+        'transferir_entre_contas','lancar_movimento','emitir_boleto','liquidar_boleto',
+        'estornar_movimento_financeiro','estornar_transferencia_financeira','atualizar_status_comissao',
+        'criar_credito_devolucao','aplicar_credito_cliente','aplicar_creditos_cliente_pedido',
+        'cancelar_aplicacao_credito','confirmar_devolucao','cancelar_devolucao','migrar_credito_dev',
+        'criar_pedido_rascunho','atualizar_pedido_comercial','adicionar_item_pedido',
+        'atualizar_item_pedido','remover_item_pedido','atualizar_dados_expedicao'
       )
   loop
     if not exists (
