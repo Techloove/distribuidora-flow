@@ -4,6 +4,7 @@ import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "luc
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -28,56 +29,27 @@ type Row = Record<string, unknown>;
 
 function Dashboard() {
   const { client } = useSupabase();
+  const { centro } = useCentro();
 
   const data = useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", centro],
     enabled: !!client,
     queryFn: async () => {
-      const sb = client!;
-      const [clientes, produtos, pedidos, receber, pagar, comissoes] = await Promise.all([
-        sb.from("clientes").select("id", { count: "exact", head: true }),
-        sb.from("produtos").select("id, descricao, estoque_atual, estoque_minimo"),
-        sb.from("pedidos").select("id, status, total_liquido, data_pedido"),
-        sb.from("contas_receber").select("valor, valor_pago, status, vencimento"),
-        sb.from("contas_pagar").select("valor, valor_pago, status, vencimento"),
-        sb.from("comissoes").select("valor, status"),
-      ]);
-
-      const hoje = new Date().toISOString().slice(0, 10);
-      const saldo = (rows: Row[] | null) =>
-        (rows ?? [])
-          .filter((r) => r["status"] !== "pago" && r["status"] !== "cancelado")
-          .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0);
-      const vencido = (rows: Row[] | null) =>
-        (rows ?? [])
-          .filter(
-            (r) =>
-              r["status"] !== "pago" &&
-              r["status"] !== "cancelado" &&
-              String(r["vencimento"]) < hoje,
-          )
-          .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0);
-
-      const peds = (pedidos.data ?? []) as Row[];
-      const prods = (produtos.data ?? []) as Row[];
-
-      return {
-        clientes: clientes.count ?? 0,
-        produtos: prods.length,
-        pedidosAbertos: peds.filter((p) => p["status"] === "rascunho").length,
-        vendasConfirmadas: peds
-          .filter((p) => p["status"] === "confirmado" || p["status"] === "faturado")
-          .reduce((s, p) => s + Number(p["total_liquido"] ?? 0), 0),
-        receber: saldo(receber.data as Row[] | null),
-        receberVencido: vencido(receber.data as Row[] | null),
-        pagar: saldo(pagar.data as Row[] | null),
-        pagarVencido: vencido(pagar.data as Row[] | null),
-        comissoes: ((comissoes.data ?? []) as Row[])
-          .filter((c) => c["status"] !== "cancelada" && c["status"] !== "paga")
-          .reduce((s, c) => s + Number(c["valor"] ?? 0), 0),
-        alertas: prods.filter(
-          (p) => Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0),
-        ),
+      const { data: resumo, error } = await client!.rpc("dashboard_resumo", {
+        _centro_id: centro || null,
+      });
+      if (error) throw new Error(error.message);
+      return (resumo ?? {}) as {
+        clientes?: number;
+        produtos?: number;
+        pedidosAbertos?: number;
+        vendasConfirmadas?: number;
+        receber?: number;
+        receberVencido?: number;
+        pagar?: number;
+        pagarVencido?: number;
+        comissoes?: number;
+        alertas?: Row[];
       };
     },
   });
@@ -133,13 +105,13 @@ function Dashboard() {
         </h2>
         {!d ? (
           <p className="mt-2 text-sm text-muted-foreground">Carregando...</p>
-        ) : d.alertas.length === 0 ? (
+        ) : (d.alertas ?? []).length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             Nenhum produto abaixo do estoque mínimo.
           </p>
         ) : (
           <ul className="mt-3 space-y-1.5 text-sm">
-            {d.alertas.slice(0, 8).map((p) => (
+            {(d.alertas ?? []).slice(0, 8).map((p) => (
               <li key={String(p["id"])} className="flex justify-between gap-4">
                 <span className="truncate">{String(p["descricao"])}</span>
                 <span className="text-destructive">
