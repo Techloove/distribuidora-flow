@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requestAccessToken, requireServerAuth } from "./server-auth";
+import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 
 const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
 
-async function requireSicrediAccess() {
-  return requireServerAuth(requestAccessToken(), SICREDI_ROLES);
+async function requireSicrediAccess(action: string, limit: number) {
+  const accessToken = requestAccessToken();
+  const user = await requireServerAuth(accessToken, SICREDI_ROLES);
+  await enforceRateLimit(accessToken, action, limit, 60);
+  return user;
 }
 
 /**
@@ -156,7 +159,7 @@ function headers(c: Conf, tk: string) {
 
 /** Status da configuracao — usado pela tela para avisar o usuario. */
 export const sicrediStatus = createServerFn({ method: "GET" }).handler(async () => {
-  await requireSicrediAccess();
+  await requireSicrediAccess("sicredi_status", 30);
   try {
     const c = await conf();
     return {
@@ -204,7 +207,7 @@ type EmitirInput = {
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: EmitirInput) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess();
+    await requireSicrediAccess("sicredi_emitir_boleto", 10);
     const c = await conf();
     const tk = await token(c);
     const juros = data.juros !== undefined ? data.juros : c.juros;
@@ -274,7 +277,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess();
+    await requireSicrediAccess("sicredi_consultar_boleto", 30);
     const c = await conf();
     const tk = await token(c);
     const url = `${c.base}/cobranca/boleto/v1/boletos?codigoBeneficiario=${encodeURIComponent(
@@ -299,7 +302,7 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess();
+    await requireSicrediAccess("sicredi_baixar_boleto", 10);
     const c = await conf();
     const tk = await token(c);
     const res = await fetch(
@@ -315,7 +318,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { nossoNumero: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess();
+    await requireSicrediAccess("sicredi_pdf_boleto", 20);
     const c = await conf();
     const tk = await token(c);
     const res = await fetch(
