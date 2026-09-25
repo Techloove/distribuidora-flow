@@ -52,6 +52,9 @@ begin
   end if;
 
   if v_chave is not null then
+    -- Serializa chamadas concorrentes que reutilizam a mesma chave antes de consultar/inserir.
+    perform pg_advisory_xact_lock(hashtextextended('transferir_estoque:' || v_chave, 0));
+
     select id into v_transferencia_id
       from public.transferencias_estoque
      where chave_idempotencia = v_chave
