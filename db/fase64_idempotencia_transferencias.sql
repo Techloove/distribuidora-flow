@@ -6,6 +6,9 @@ begin;
 alter table public.transferencias_estoque
   add column if not exists chave_idempotencia text;
 
+alter table public.transferencias_estoque
+  add column if not exists idempotencia_contexto jsonb;
+
 create unique index if not exists transferencias_estoque_idempotencia_uq
   on public.transferencias_estoque(chave_idempotencia)
   where chave_idempotencia is not null and btrim(chave_idempotencia) <> '';
@@ -63,18 +66,30 @@ begin
           and (
             origem_centro_id is distinct from _origem_centro_id
             or destino_centro_id is distinct from _destino_centro_id
+            or idempotencia_contexto is distinct from jsonb_build_object(
+              'origem_centro_id', _origem_centro_id,
+              'destino_centro_id', _destino_centro_id,
+              'itens', _itens,
+              'observacao', nullif(_observacao,'')
+            )
           )
       ) then
-        raise exception 'Chave de idempotencia ja utilizada em outra transferencia';
+        raise exception 'Chave de idempotencia ja utilizada em outra transferencia ou com payload diferente';
       end if;
       return v_transferencia_id;
     end if;
   end if;
 
   insert into public.transferencias_estoque
-    (origem_centro_id, destino_centro_id, observacao, created_by, chave_idempotencia)
+    (origem_centro_id, destino_centro_id, observacao, created_by, chave_idempotencia, idempotencia_contexto)
   values
-    (_origem_centro_id, _destino_centro_id, nullif(_observacao,''), auth.uid(), v_chave)
+    (_origem_centro_id, _destino_centro_id, nullif(_observacao,''), auth.uid(), v_chave,
+     case when v_chave is not null then jsonb_build_object(
+       'origem_centro_id', _origem_centro_id,
+       'destino_centro_id', _destino_centro_id,
+       'itens', _itens,
+       'observacao', nullif(_observacao,'')
+     ) else null end)
   returning id into v_transferencia_id;
 
   for v_item in select value from jsonb_array_elements(_itens)
@@ -135,3 +150,5 @@ $$;
 grant execute on function public.transferir_estoque(uuid,uuid,jsonb,text,text) to authenticated;
 
 commit;
+
+-- A mesma chave nao pode representar payloads diferentes; o contexto fica persistido para validacao de retries.
