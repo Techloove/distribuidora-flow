@@ -73,11 +73,6 @@ function AuthPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
-              <Label htmlFor="nome">Nome completo</Label>
-              <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
-            </div>
-          ) : null}
-          <div className="space-y-1.5">
             <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"
