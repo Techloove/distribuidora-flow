@@ -18,6 +18,7 @@ jobs:
       - run: bun run check:sql
       - run: bun run check:surface
       - run: bun run check:server
+      - run: bun run test
       - run: bun run typecheck
       - run: bun run lint
       - run: bun run build
