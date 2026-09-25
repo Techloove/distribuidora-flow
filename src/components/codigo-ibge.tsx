@@ -57,6 +57,7 @@ export function CodigoIbge({
     }
   }
 
+  // automático: quando cidade/UF/CEP mudam e o código está vazio
   useEffect(() => {
     const chave = `${cidade}|${uf}|${cep}`;
     if (codigo || chave === ultimo.current || (!cidade && !cep)) return;
