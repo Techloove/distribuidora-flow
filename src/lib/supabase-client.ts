@@ -7,20 +7,23 @@ let clientPromise: Promise<SupabaseClient> | null = null;
 /** Cliente Supabase do browser (chave anon + sessão persistida, RLS aplicada). */
 export function getSupabaseClient(): Promise<SupabaseClient> {
   if (!clientPromise) {
-    clientPromise = getSupabaseConfig().then((config) => {
-      if (!config.url || !config.anonKey) {
-        throw new Error(
-          "Configuração do Supabase ausente. Verifique os secrets EXT_SUPABASE_URL e EXT_SUPABASE_ANON_KEY.",
-        );
-      }
-      return createClient(config.url, config.anonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-        },
+    clientPromise = getSupabaseConfig()
+      .then((config) => {
+        if (!config.url || !config.anonKey) {
+          throw new Error("Serviço de acesso indisponível. Entre em contato com o administrador.");
+        }
+        return createClient(config.url, config.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+          },
+        });
+      })
+      .catch((error: unknown) => {
+        clientPromise = null;
+        throw error;
       });
-    });
   }
   return clientPromise;
 }

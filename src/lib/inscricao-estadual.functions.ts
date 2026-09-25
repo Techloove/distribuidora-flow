@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { registrationMiddleware } from "./auth-middleware";
+import { fetchWithTimeout } from "./fetch-timeout";
 
 /**
  * Camada de serviço da consulta de Inscrição Estadual (IE) por CNPJ.
@@ -195,6 +197,7 @@ function fontes(doc: string): Fonte[] {
 
 /** Consulta a Inscrição Estadual de um CNPJ. Não inventa dados nem assume isenção. */
 export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
+  .middleware([registrationMiddleware])
   .inputValidator((input: { documento: string }) => ({
     documento: String(input?.documento ?? ""),
   }))
@@ -223,7 +226,10 @@ export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
       try {
         const controle = new AbortController();
         const tempo = setTimeout(() => controle.abort(), 20000);
-        const res = await fetch(fonte.url, { headers: fonte.headers, signal: controle.signal });
+        const res = await fetchWithTimeout(fonte.url, {
+          headers: fonte.headers,
+          signal: controle.signal,
+        });
         clearTimeout(tempo);
 
         if (res.status === 404) {

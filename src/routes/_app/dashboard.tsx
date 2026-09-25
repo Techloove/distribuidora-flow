@@ -4,6 +4,8 @@ import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "luc
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { useCentroValido } from "@/lib/centros-acesso";
+import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -27,57 +29,26 @@ export const Route = createFileRoute("/_app/dashboard")({
 type Row = Record<string, unknown>;
 
 function Dashboard() {
-  const { client } = useSupabase();
+  const { client, user } = useSupabase();
+  const { centro, isLoading: centrosLoading, error: centroError } = useCentroValido();
 
   const data = useQuery({
-    queryKey: ["dashboard"],
-    enabled: !!client,
+    queryKey: ["dashboard", user?.id, centro],
+    enabled: !!client && !centrosLoading && !centroError,
     queryFn: async () => {
-      const sb = client!;
-      const [clientes, produtos, pedidos, receber, pagar, comissoes] = await Promise.all([
-        sb.from("clientes").select("id", { count: "exact", head: true }),
-        sb.from("produtos").select("id, descricao, estoque_atual, estoque_minimo"),
-        sb.from("pedidos").select("id, status, total_liquido, data_pedido"),
-        sb.from("contas_receber").select("valor, valor_pago, status, vencimento"),
-        sb.from("contas_pagar").select("valor, valor_pago, status, vencimento"),
-        sb.from("comissoes").select("valor, status"),
-      ]);
-
-      const hoje = new Date().toISOString().slice(0, 10);
-      const saldo = (rows: Row[] | null) =>
-        (rows ?? [])
-          .filter((r) => r["status"] !== "pago" && r["status"] !== "cancelado")
-          .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0);
-      const vencido = (rows: Row[] | null) =>
-        (rows ?? [])
-          .filter(
-            (r) =>
-              r["status"] !== "pago" &&
-              r["status"] !== "cancelado" &&
-              String(r["vencimento"]) < hoje,
-          )
-          .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0);
-
-      const peds = (pedidos.data ?? []) as Row[];
-      const prods = (produtos.data ?? []) as Row[];
-
-      return {
-        clientes: clientes.count ?? 0,
-        produtos: prods.length,
-        pedidosAbertos: peds.filter((p) => p["status"] === "rascunho").length,
-        vendasConfirmadas: peds
-          .filter((p) => p["status"] === "confirmado" || p["status"] === "faturado")
-          .reduce((s, p) => s + Number(p["total_liquido"] ?? 0), 0),
-        receber: saldo(receber.data as Row[] | null),
-        receberVencido: vencido(receber.data as Row[] | null),
-        pagar: saldo(pagar.data as Row[] | null),
-        pagarVencido: vencido(pagar.data as Row[] | null),
-        comissoes: ((comissoes.data ?? []) as Row[])
-          .filter((c) => c["status"] !== "cancelada" && c["status"] !== "paga")
-          .reduce((s, c) => s + Number(c["valor"] ?? 0), 0),
-        alertas: prods.filter(
-          (p) => Number(p["estoque_atual"] ?? 0) <= Number(p["estoque_minimo"] ?? 0),
-        ),
+      const result = await client!.rpc("dashboard_resumo", { _centro_id: centro || null });
+      if (result.error) throw new Error("Não foi possível atualizar os indicadores.");
+      return result.data as {
+        clientes: number;
+        produtos: number;
+        pedidosAbertos: number;
+        vendasConfirmadas: number;
+        receber: number;
+        receberVencido: number;
+        pagar: number;
+        pagarVencido: number;
+        comissoes: number;
+        alertas: Row[];
       };
     },
   });
@@ -86,9 +57,38 @@ function Dashboard() {
 
   return (
     <ErpLayout
-      title="Dashboard"
-      description="Visão consolidada de vendas, estoque e financeiro da distribuidora."
+      title="Visão geral"
+      description="Acompanhe os indicadores e as próximas etapas da operação."
     >
+      <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-primary p-6 text-primary-foreground">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest opacity-75">
+            Painel da operação
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">Uma visão clara para decidir melhor.</h2>
+          <p className="mt-2 text-sm opacity-80">
+            Vendas e financeiro por centro. Cadastros e estoque consolidado.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            void data.refetch();
+          }}
+          disabled={data.isFetching}
+          className="rounded-xl border border-white/30 px-4 py-2 text-sm hover:bg-white/10 disabled:opacity-50"
+        >
+          {data.isFetching ? "Atualizando…" : "Atualizar painel"}
+        </button>
+      </section>
+      {(data.isError || centroError) && (
+        <div
+          role="alert"
+          className="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"
+        >
+          Não foi possível carregar os indicadores. Tente atualizar o painel ou contate o
+          administrador.
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Kpi
           label="Vendas confirmadas"
@@ -126,13 +126,14 @@ function Dashboard() {
       <RankingRotas />
 
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
-
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <AlertTriangle className="size-4 text-destructive" />
           Alertas de estoque mínimo
         </h2>
         {!d ? (
-          <p className="mt-2 text-sm text-muted-foreground">Carregando...</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.isError ? "Dados indisponíveis." : "Carregando…"}
+          </p>
         ) : d.alertas.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             Nenhum produto abaixo do estoque mínimo.
@@ -150,13 +151,6 @@ function Dashboard() {
           </ul>
         )}
       </section>
-
-      {data.isError ? (
-        <p className="mt-4 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-          Alguns dados não carregaram. Rode <code>db/fase1_cadastros.sql</code> e{" "}
-          <code>db/fase2_vendas_estoque_financeiro.sql</code> no SQL Editor do Supabase.
-        </p>
-      ) : null}
     </ErpLayout>
   );
 }
@@ -177,11 +171,11 @@ function Kpi({
   return (
     <Link
       to={to}
-      className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
+      className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="size-4 text-primary" />
+        <Icon className="size-9 rounded-xl bg-primary/10 p-2 text-primary" />
       </div>
       <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{hint ?? "\u00a0"}</p>
@@ -206,14 +200,17 @@ const ETAPAS: { campo: string; label: string; to: string }[] = [
 /** Ranking do mês: vendas por rota, por representante e produtos mais vendidos por rota. */
 function RankingRotas() {
   const { client } = useSupabase();
+  const { centro } = useCentroValido();
   const de = `${new Date().toISOString().slice(0, 7)}-01`;
 
   const useSoma = (view: string, chave: string, valor: "total" | "quantidade") =>
     useQuery({
-      queryKey: ["ranking", view, de],
+      queryKey: ["ranking", view, de, centro],
       enabled: !!client,
       queryFn: async () => {
-        const { data, error } = await client!.from(view).select("*").gte("data_pedido", de);
+        let query = client!.from(view).select("*").gte("data_pedido", de);
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query;
         if (error) throw new Error(error.message);
         const mapa = new Map<string, number>();
         for (const r of (data ?? []) as Row[]) {
@@ -291,7 +288,9 @@ function FluxoOperacional() {
 
   return (
     <section className="mt-6 rounded-lg border border-border bg-card p-5">
-      <h2 className="text-sm font-semibold text-foreground">Fluxo operacional</h2>
+      <h2 className="text-sm font-semibold text-foreground">
+        Fluxo operacional · centros permitidos
+      </h2>
       <p className="mt-1 text-xs text-muted-foreground">
         Pedido → aprovação → separação → conferência → faturamento → nota fiscal → carga → entrega.
       </p>
