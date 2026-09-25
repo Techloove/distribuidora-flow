@@ -20,7 +20,7 @@ grant execute on function public.admin_limpar_dados_interno_f130(text)
   to service_role;
 
 create or replace function public.admin_limpar_dados(_confirmacao text)
-returns void
+returns int
 language plpgsql
 security definer
 set search_path = public
@@ -34,7 +34,7 @@ begin
     raise exception 'Confirmação inválida. Digite LIMPAR';
   end if;
 
-  perform public.admin_limpar_dados_interno_f130(_confirmacao);
+  return public.admin_limpar_dados_interno_f130(_confirmacao);
 end;
 $$;
 
