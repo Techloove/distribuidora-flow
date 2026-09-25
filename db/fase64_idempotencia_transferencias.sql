@@ -55,6 +55,18 @@ begin
      limit 1;
 
     if v_transferencia_id is not null then
+      -- A mesma chave só pode repetir exatamente a mesma operação.
+      if exists (
+        select 1
+        from public.transferencias_estoque
+        where id = v_transferencia_id
+          and (
+            origem_centro_id is distinct from _origem_centro_id
+            or destino_centro_id is distinct from _destino_centro_id
+          )
+      ) then
+        raise exception 'Chave de idempotencia ja utilizada em outra transferencia';
+      end if;
       return v_transferencia_id;
     end if;
   end if;
