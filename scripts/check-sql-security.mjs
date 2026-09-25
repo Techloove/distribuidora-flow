@@ -17,6 +17,57 @@ for (const file of files) {
     }
   });
 
+  // Verifica dollar-quotes desbalanceados sem se confundir com strings/comentários comuns.
+  // Isso captura casos como AS $ ... sem o $ final, que TypeScript/lint não detectam.
+  {
+    let i = 0;
+    let state = "normal";
+    let dollarTag = null;
+    let blockDepth = 0;
+
+    while (i < sql.length) {
+      if (state === "dollar") {
+        if (sql.startsWith(dollarTag, i)) {
+          i += dollarTag.length;
+          state = "normal";
+          dollarTag = null;
+        } else { i += 1; }
+        continue;
+      }
+
+      if (state === "single") {
+        if (sql[i] === "'" && sql[i + 1] === "'") i += 2;
+        else if (sql[i] === "'") { i += 1; state = "normal"; }
+        else i += 1;
+        continue;
+      }
+
+      if (state === "lineComment") {
+        if (sql[i] === "\n") state = "normal";
+        i += 1;
+        continue;
+      }
+
+      if (state === "blockComment") {
+        if (sql.startsWith("/*", i)) { blockDepth += 1; i += 2; }
+        else if (sql.startsWith("*/", i)) { blockDepth -= 1; i += 2; if (blockDepth === 0) state = "normal"; }
+        else i += 1;
+        continue;
+      }
+
+      if (sql.startsWith("--", i)) { state = "lineComment"; i += 2; continue; }
+      if (sql.startsWith("/*", i)) { state = "blockComment"; blockDepth = 1; i += 2; continue; }
+      if (sql[i] === "'") { state = "single"; i += 1; continue; }
+
+      const match = sql.slice(i).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/);
+      if (match) { dollarTag = match[0]; state = "dollar"; i += dollarTag.length; continue; }
+      i += 1;
+    }
+
+    if (state === "dollar" && dollarTag) {
+      errors.push(file + ': dollar-quote não fechado (' + dollarTag + ')');
+    }
+  }
   const chunks = sql.split(/(?=create\s+(?:or\s+replace\s+)?function\s+)/gi);
   for (const chunk of chunks) {
     if (!/create\s+(?:or\s+replace\s+)?function/i.test(chunk)) continue;
