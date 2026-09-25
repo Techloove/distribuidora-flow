@@ -196,19 +196,6 @@ function FaturamentoPage() {
       .filter(Boolean)
       .join(", ");
 
-    const base: Row = {
-      conta_receber_id: contaId,
-      pedido_id: row["pedido_id"] ?? null,
-      cliente_id: row["cliente_id"] ?? null,
-      centro_id: row["centro_id"] ?? null,
-      documento: row["documento"] ?? null,
-      parcela: row["parcela"] ?? null,
-      banco: "sicredi",
-      seu_numero: seuNumero,
-      valor,
-      vencimento: row["vencimento"] ?? null,
-    };
-
     try {
       const res = await emitirFn({
         data: {
@@ -231,32 +218,33 @@ function FaturamentoPage() {
           },
         },
       });
-      const { error } = await client!.from("boletos").insert({
-        ...base,
-        status: "registrado",
-        nosso_numero: res.nossoNumero,
-        linha_digitavel: res.linhaDigitavel,
-        codigo_barras: res.codigoBarras,
-        qrcode_pix: res.qrCode,
-        txid: res.txid,
-        cooperativa: res.cooperativa,
-        posto: res.posto,
-        codigo_beneficiario: res.beneficiario,
-        ambiente: res.ambiente,
-        enviado_em: new Date().toISOString(),
-        retorno: safeJson(res.retorno),
+
+      const { error } = await client!.rpc("registrar_boleto_sicredi", {
+        _conta_id: contaId,
+        _seu_numero: seuNumero,
+        _nosso_numero: res.nossoNumero ?? null,
+        _linha_digitavel: res.linhaDigitavel ?? null,
+        _codigo_barras: res.codigoBarras ?? null,
+        _qrcode_pix: res.qrCode ?? null,
+        _txid: res.txid ?? null,
+        _cooperativa: res.cooperativa ?? null,
+        _posto: res.posto ?? null,
+        _codigo_beneficiario: res.beneficiario ?? null,
+        _ambiente: res.ambiente ?? null,
+        _retorno: safeJson(res.retorno),
       });
       if (error) throw new Error(error.message);
       return { ok: true as const };
     } catch (e) {
       const msg = (e as Error).message;
-      await client!.from("boletos").insert({
-        ...base,
-        status: "erro",
-        erro: msg.slice(0, 500),
-        tentativas: 1,
-        enviado_em: new Date().toISOString(),
+      const { error } = await client!.rpc("registrar_erro_boleto_sicredi", {
+        _conta_id: contaId,
+        _seu_numero: seuNumero,
+        _erro: msg.slice(0, 500),
       });
+      if (error) {
+        return { ok: false as const, msg: `${msg} | Falha ao registrar erro local: ${error.message}` };
+      }
       return { ok: false as const, msg };
     }
   };
@@ -291,20 +279,18 @@ function FaturamentoPage() {
       const res = await consultarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
       if (res.liquidado) {
         const { error } = await client!.rpc("liquidar_boleto", {
-          _id: String(b["id"]),
+          _boleto_id: String(b["id"]),
           _valor: Number(b["valor"] ?? 0),
           _data: new Date().toISOString().slice(0, 10),
         });
         if (error) throw new Error(error.message);
         return "liquidado";
       }
-      const { error } = await client!
-        .from("boletos")
-        .update({
-          status: res.baixado ? "baixado" : "registrado",
-          retorno: safeJson(res.retorno),
-        })
-        .eq("id", String(b["id"]));
+      const { error } = await client!.rpc("sincronizar_boleto_sicredi", {
+        _boleto_id: String(b["id"]),
+        _status: res.baixado ? "baixado" : "registrado",
+        _retorno: safeJson(res.retorno),
+      });
       if (error) throw new Error(error.message);
       return res.situacao || "registrado";
     },
@@ -318,10 +304,11 @@ function FaturamentoPage() {
   const baixar = useMutation({
     mutationFn: async (b: Row) => {
       await baixarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
-      const { error } = await client!
-        .from("boletos")
-        .update({ status: "baixado" })
-        .eq("id", String(b["id"]));
+      const { error } = await client!.rpc("sincronizar_boleto_sicredi", {
+        _boleto_id: String(b["id"]),
+        _status: "baixado",
+        _retorno: null,
+      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
