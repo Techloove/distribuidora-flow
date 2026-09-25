@@ -579,7 +579,7 @@ begin
 end;
 $$;
 
-grant execute on function public.restaurar_creditos_cancelamento_pedido(uuid) to authenticated;
+revoke all on function public.restaurar_creditos_cancelamento_pedido(uuid) from public, authenticated;
 
 -- Nova confirmacao de devolucao: entrada de estoque + credito do cliente.
 create or replace function public.confirmar_devolucao(_id uuid)
