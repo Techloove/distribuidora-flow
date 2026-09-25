@@ -24,7 +24,7 @@ declare
   cr public.contas_receber;
   b public.boletos;
   saldo numeric(14,2);
-  seu_numero text := nullif(btrim(_seu_numero),'');
+  v_seu_numero text := nullif(btrim(_seu_numero),'');
 begin
   if not public.can_finance(auth.uid()) then
     raise exception 'Sem permissão para registrar boleto';
@@ -42,7 +42,7 @@ begin
   if cr.status in ('pago','cancelado') then
     raise exception 'Título não pode receber boleto no status atual';
   end if;
-  if seu_numero is null then
+  if v_seu_numero is null then
     raise exception 'Seu número é obrigatório';
   end if;
 
@@ -60,7 +60,7 @@ begin
   select * into b
   from public.boletos
   where banco = 'sicredi'
-    and seu_numero = seu_numero
+    and seu_numero = v_seu_numero
   order by created_at desc
   limit 1
   for update;
@@ -85,7 +85,7 @@ begin
     )
     values(
       cr.id,cr.cliente_id,cr.centro_id,cr.pedido_id,cr.documento,cr.parcela,'sicredi',
-      seu_numero,saldo,cr.vencimento,'pendente',auth.uid()
+      v_seu_numero,saldo,cr.vencimento,'pendente',auth.uid()
     )
     returning * into b;
   end if;
@@ -137,7 +137,7 @@ declare
   cr public.contas_receber;
   b public.boletos;
   saldo numeric(14,2);
-  seu_numero text := nullif(btrim(_seu_numero),'');
+  v_seu_numero text := nullif(btrim(_seu_numero),'');
 begin
   if not public.can_finance(auth.uid()) then
     raise exception 'Sem permissão para registrar erro de boleto';
@@ -155,7 +155,7 @@ begin
   if cr.status in ('pago','cancelado') then
     raise exception 'Título não pode receber boleto no status atual';
   end if;
-  if seu_numero is null then
+  if v_seu_numero is null then
     raise exception 'Seu número é obrigatório';
   end if;
 
@@ -172,7 +172,7 @@ begin
   select * into b
   from public.boletos
   where banco='sicredi'
-    and seu_numero=seu_numero
+    and seu_numero=v_seu_numero
   order by created_at desc
   limit 1
   for update;
@@ -207,7 +207,7 @@ begin
     )
     values(
       cr.id,cr.cliente_id,cr.centro_id,cr.pedido_id,cr.documento,cr.parcela,'sicredi',
-      seu_numero,greatest(saldo,0),cr.vencimento,'erro',
+      v_seu_numero,greatest(saldo,0),cr.vencimento,'erro',
       left(coalesce(_erro,'Erro não informado'),500),1,now(),auth.uid()
     )
     returning * into b;
@@ -215,7 +215,7 @@ begin
     when unique_violation then
       select * into b
       from public.boletos
-      where banco='sicredi' and seu_numero=seu_numero
+      where banco='sicredi' and seu_numero=v_seu_numero
       limit 1
       for update;
 
