@@ -55,6 +55,27 @@ for (const file of sourceFiles) {
     rpcNames.add(match[1]);
   }
 
+  const serverOnlyModule =
+    display.endsWith(".functions.ts") ||
+    display.endsWith(".functions.tsx") ||
+    display.includes("/server-") ||
+    display.includes("\\server-");
+
+  if (
+    /EXT_SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY/.test(source) &&
+    !serverOnlyModule
+  ) {
+    errors.push(
+      `${display}: chave service_role referenciada fora de módulo server-only`,
+    );
+  }
+
+  if (/VITE_[A-Z0-9_]*SERVICE_ROLE/.test(source)) {
+    errors.push(
+      `${display}: variável VITE_* de service_role nunca pode ser exposta ao bundle do navegador`,
+    );
+  }
+
   for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)/g)) {
     const table = match[1];
     if (forbiddenClientTables.has(table)) {
