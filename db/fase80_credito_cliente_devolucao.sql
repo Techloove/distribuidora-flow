@@ -313,6 +313,136 @@ $$;
 
 grant execute on function public.aplicar_credito_cliente(uuid,uuid,numeric,text) to authenticated;
 
+-- Aplicacao atomica de multiplos creditos no mesmo pedido.
+-- Trava o pedido primeiro e os creditos em ordem deterministica.
+create or replace function public.aplicar_creditos_cliente_pedido(
+  _pedido_id uuid,
+  _valor numeric,
+  _chave_idempotencia text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $
+declare
+  ped public.pedidos;
+  cred public.creditos_clientes;
+  app public.creditos_clientes_aplicacoes;
+  chave text := nullif(btrim(_chave_idempotencia),'');
+  disponivel numeric(14,2) := 0;
+  restante numeric(14,2);
+  aplicar numeric(14,2);
+  resultado jsonb := '[]'::jsonb;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para aplicar credito em pedidos';
+  end if;
+  if coalesce(_valor,0) <= 0 then
+    raise exception 'Informe um valor de credito maior que zero';
+  end if;
+
+  if chave is not null and exists (
+    select 1 from public.creditos_clientes_aplicacoes
+    where chave_idempotencia = chave
+  ) then
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id',id,'credito_id',credito_id,'pedido_id',pedido_id,'valor',valor,'status',status
+    ) order by created_at),'[]'::jsonb)
+    into resultado
+    from public.creditos_clientes_aplicacoes
+    where chave_idempotencia = chave;
+    return resultado;
+  end if;
+
+  select * into ped from public.pedidos where id=_pedido_id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if ped.status <> 'rascunho' then
+    raise exception 'O credito somente pode ser aplicado antes da confirmacao do pedido';
+  end if;
+  if ped.cliente_id is null then raise exception 'Pedido sem cliente'; end if;
+  if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro ou nao possui centro';
+  end if;
+
+  perform public.recalcular_pedido(_pedido_id);
+  select * into ped from public.pedidos where id=_pedido_id for update;
+
+  if _valor > ped.total_liquido then
+    raise exception 'O credito excede o valor do pedido';
+  end if;
+
+  -- Primeiro trava todos os creditos elegiveis e calcula o saldo real.
+  for cred in
+    select *
+    from public.creditos_clientes
+    where cliente_id=ped.cliente_id
+      and centro_id=ped.centro_id
+      and status='disponivel'
+      and saldo > 0
+    order by created_at, id
+    for update
+  loop
+    disponivel := disponivel + cred.saldo;
+  end loop;
+
+  if disponivel < round(_valor,2) then
+    raise exception 'Saldo de credito insuficiente para esta aplicacao';
+  end if;
+
+  restante := round(_valor,2);
+
+  for cred in
+    select *
+    from public.creditos_clientes
+    where cliente_id=ped.cliente_id
+      and centro_id=ped.centro_id
+      and status='disponivel'
+      and saldo > 0
+    order by created_at, id
+    for update
+  loop
+    exit when restante <= 0;
+    aplicar := least(restante, cred.saldo);
+    if aplicar <= 0 then continue; end if;
+
+    insert into public.creditos_clientes_aplicacoes
+      (credito_id,pedido_id,valor,status,chave_idempotencia,created_by)
+    values
+      (cred.id,ped.id,aplicar,'reservado',chave,auth.uid())
+    returning * into app;
+
+    update public.creditos_clientes
+    set valor_utilizado=valor_utilizado+aplicar,
+        status=case when valor_utilizado+aplicar >= valor_original then 'utilizado' else 'disponivel' end
+    where id=cred.id;
+
+    resultado := resultado || jsonb_build_array(jsonb_build_object(
+      'id',app.id,'credito_id',app.credito_id,'pedido_id',app.pedido_id,
+      'valor',app.valor,'status',app.status
+    ));
+
+    restante := round(restante-aplicar,2);
+  end loop;
+
+  if restante > 0 then
+    raise exception 'Nao foi possivel concluir a aplicacao integral do credito';
+  end if;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'pedidos',ped.id,'aplicar_creditos',
+    jsonb_build_object('valor',round(_valor,2),'aplicacoes',resultado),
+    auth.uid()
+  );
+
+  return resultado;
+end;
+$;
+
+revoke all on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) from public;
+grant execute on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) to authenticated;
+
 -- Remove uma reserva enquanto o pedido ainda esta em rascunho.
 create or replace function public.cancelar_aplicacao_credito(_aplicacao_id uuid)
 returns void
