@@ -1,4 +1,5 @@
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+import { fetchWithTimeout } from "./fetch-timeout";
 import { createServerFn } from "@tanstack/react-start";
 
 /**
@@ -228,7 +229,7 @@ export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
       try {
         const controle = new AbortController();
         const tempo = setTimeout(() => controle.abort(), 20000);
-        const res = await fetch(fonte.url, { headers: fonte.headers, signal: controle.signal });
+        const res = await fetchWithTimeout(fonte.url, { headers: fonte.headers, signal: controle.signal });
         clearTimeout(tempo);
 
         if (res.status === 404) {
