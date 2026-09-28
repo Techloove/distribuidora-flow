@@ -11,11 +11,11 @@ export type CentroOpcao = { id: string; nome: string };
  * `todos` = true quando ele tem acesso a todos os centros cadastrados.
  */
 export function useCentrosPermitidos() {
-  const { client } = useSupabase();
+  const { client, user, loading } = useSupabase();
 
   const centros = useQuery({
-    queryKey: ["centros", "permitidos"],
-    enabled: !!client,
+    queryKey: ["centros", "permitidos", user?.id],
+    enabled: !!client && !!user && !loading,
     queryFn: async () => {
       const todos = await client!.from("centros").select("id, nome").order("nome");
       if (todos.error) throw new Error(todos.error.message);
@@ -34,8 +34,9 @@ export function useCentrosPermitidos() {
 
   return {
     lista: centros.data?.lista ?? [],
-    todos: centros.data?.todos ?? true,
+    todos: centros.data?.todos ?? false,
     isLoading: centros.isLoading,
+    error: centros.error,
   };
 }
 
@@ -44,7 +45,7 @@ export function useCentrosPermitidos() {
  * Usuarios restritos ficam sempre travados em um centro.
  */
 export function useCentroValido() {
-  const { lista, todos, isLoading } = useCentrosPermitidos();
+  const { lista, todos, isLoading, error } = useCentrosPermitidos();
   const { centro } = useCentro();
 
   useEffect(() => {
@@ -56,5 +57,11 @@ export function useCentroValido() {
     }
   }, [isLoading, todos, lista]);
 
-  return { centro, lista, todos, isLoading };
+  return {
+    centro: todos || lista.some((c) => c.id === centro) ? centro : (lista[0]?.id ?? ""),
+    lista,
+    todos,
+    isLoading,
+    error,
+  };
 }

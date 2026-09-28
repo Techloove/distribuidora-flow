@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
@@ -37,8 +36,11 @@ import {
   Warehouse,
   Wallet,
   Menu,
+  Search,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 import {
   Select,
@@ -53,7 +55,10 @@ import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
-  { group: "Visão geral", items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  {
+    group: "Visão geral",
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
   {
     group: "Cadastros",
     items: [
@@ -122,15 +127,24 @@ const nav = [
 
 function CentroFiltro() {
   const { setCentro } = useCentro();
-  const { centro, lista, todos } = useCentroValido();
+  const { centro, lista, todos, isLoading, error } = useCentroValido();
 
   return (
     <Select
+      disabled={isLoading || !!error || lista.length === 0}
       value={centro || (todos ? "todos" : "")}
       onValueChange={(v) => setCentro(v === "todos" ? "" : v)}
     >
       <SelectTrigger className="w-full bg-background sm:w-[13rem]">
-        <SelectValue placeholder="Centro de custo" />
+        <SelectValue
+          placeholder={
+            error
+              ? "Falha ao carregar centros"
+              : isLoading
+                ? "Carregando centros…"
+                : "Nenhum centro disponível"
+          }
+        />
       </SelectTrigger>
       <SelectContent>
         {todos ? <SelectItem value="todos">Todos os centros</SelectItem> : null}
@@ -158,6 +172,11 @@ function SidebarContent({
   roles: readonly string[];
 }) {
   const acesso = useAcesso();
+  const [search, setSearch] = useState("");
+  const term = search
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
   return (
     <>
       <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
@@ -167,40 +186,64 @@ function SidebarContent({
           <p className="text-[11px] text-sidebar-foreground/60">Sistema de Gestão Completa</p>
         </div>
       </div>
-      <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-3 py-4">
+      <div className="px-4 pt-5">
+        <label className="flex items-center gap-2 rounded-xl border border-sidebar-border bg-white/5 px-3 py-2.5">
+          <Search className="size-4 shrink-0 text-sidebar-foreground/60" />
+          <input
+            aria-label="Buscar módulo"
+            placeholder="Buscar módulo…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-sidebar-foreground/50"
+          />
+        </label>
+      </div>
+      <nav
+        aria-label="Navegação principal"
+        className="scrollbar-none flex-1 space-y-5 overflow-y-auto px-3 py-5"
+      >
         {nav
           .map((section) => ({
             group: section.group,
-            items: section.items.filter((item) => acesso.pode(item.to)),
+            items: section.items.filter(
+              (item) =>
+                acesso.pode(item.to) &&
+                item.label
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase()
+                  .includes(term),
+            ),
           }))
           .filter((section) => section.items.length > 0)
           .map((section) => (
-          <div key={section.group}>
-            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-              {section.group}
-            </p>
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const active = pathname.startsWith(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={onNavigate}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors md:py-2 ${
-                      active
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="size-4 shrink-0" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+            <div key={section.group}>
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                {section.group}
+              </p>
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                  return (
+                    <Link
+                      key={`${item.to}-${item.label}`}
+                      aria-current={active ? "page" : undefined}
+                      to={item.to}
+                      onClick={onNavigate}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors md:py-2 ${
+                        active
+                          ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary ring-1 ring-inset ring-sidebar-primary/20"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      <item.icon className="size-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </nav>
       <div className="border-t border-sidebar-border px-4 py-4 text-xs">
         <p className="truncate font-medium">{email}</p>
@@ -238,15 +281,25 @@ export function ErpLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   async function handleSignOut() {
-    await signOut();
-    navigate({ to: "/auth", replace: true });
+    try {
+      await signOut();
+      await navigate({ to: "/auth", replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao sair.");
+    }
   }
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="erp-shell flex min-h-dvh bg-background">
+      <a
+        href="#conteudo-principal"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-primary focus:p-4 focus:text-primary-foreground"
+      >
+        Pular para o conteúdo
+      </a>
       <aside
         className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
-          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+          sidebarCollapsed ? "w-0 overflow-hidden" : "w-72"
         }`}
       >
         <SidebarContent
@@ -257,28 +310,27 @@ export function ErpLayout({
         />
       </aside>
 
-      {menuOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            aria-label="Fechar menu"
-            onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 bg-black/50"
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent
+          side="left"
+          className="flex w-80 max-w-[90vw] flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground md:hidden"
+        >
+          <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+          <SheetDescription className="sr-only">
+            Acesse os módulos disponíveis para seu perfil.
+          </SheetDescription>
+          <SidebarContent
+            pathname={pathname}
+            onNavigate={() => setMenuOpen(false)}
+            onSignOut={handleSignOut}
+            email={user?.email}
+            roles={roles}
           />
-          <div className="absolute inset-y-0 left-0 flex w-[17rem] max-w-[85%] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl">
-            <SidebarContent
-              pathname={pathname}
-              onNavigate={() => setMenuOpen(false)}
-              onSignOut={handleSignOut}
-              email={user?.email}
-              roles={roles}
-            />
-          </div>
-        </div>
-      ) : null}
+        </SheetContent>
+      </Sheet>
 
-      <main className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:items-end sm:gap-4 sm:px-6 sm:py-5">
+      <main id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 outline-none">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-card/90 px-5 py-5 sm:items-center lg:px-9 lg:py-6">
           <div className="flex min-w-0 items-start gap-2">
             <button
               type="button"
@@ -301,7 +353,10 @@ export function ErpLayout({
               )}
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[.18em] text-primary">
+                Área de trabalho
+              </p>
+              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {title}
               </h1>
               {description ? (
@@ -314,8 +369,9 @@ export function ErpLayout({
             {actions}
           </div>
         </header>
-        <div className="px-3 py-4 sm:px-6 sm:py-6">{children}</div>
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-9 lg:py-8">{children}</div>
       </main>
     </div>
   );
 }
+

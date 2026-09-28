@@ -107,7 +107,14 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/metas",
     "/comissoes",
   ],
-  estoque: ["/dashboard", "/produtos", "/estoque", "/separacao", "/compras", "/planejamento-compras"],
+  estoque: [
+    "/dashboard",
+    "/produtos",
+    "/estoque",
+    "/separacao",
+    "/compras",
+    "/planejamento-compras",
+  ],
   expedicao: ["/dashboard", "/separacao", "/cargas", "/expedicao", "/rotas"],
 };
 
@@ -116,20 +123,24 @@ export type Acesso = {
   total: boolean;
   permitidos: Set<string>;
   carregando: boolean;
+  erro?: string | undefined;
   pode: (path: string) => boolean;
 };
 
 /** Menus liberados para o usuário logado, conforme os papéis e a tabela role_menus. */
 export function useAcesso(): Acesso {
-  const { client, roles, loading } = useSupabase();
+  const { client, roles, loading, user } = useSupabase();
   const total = roles.some((r) => PAPEIS_TOTAIS.includes(r));
 
   const q = useQuery({
-    queryKey: ["role_menus", roles.slice().sort().join(",")],
+    queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && roles.length > 0 && !total,
     queryFn: async () => {
-      const { data, error } = await client!.from("role_menus").select("role, path").in("role", roles);
-      if (error) return null;
+      const { data, error } = await client!
+        .from("role_menus")
+        .select("role, path")
+        .in("role", roles);
+      if (error) throw new Error("Não foi possível carregar as permissões.");
       return (data ?? []) as { role: AppRole; path: string }[];
     },
   });
@@ -143,18 +154,15 @@ export function useAcesso(): Acesso {
     };
   }
 
-  const carregando = loading || roles.length === 0 || q.isLoading;
+  const carregando = loading || (roles.length > 0 && q.isPending);
   const doBanco = q.data;
-  const permitidos = new Set<string>(
-    doBanco && doBanco.length > 0
-      ? doBanco.map((r) => r.path)
-      : roles.flatMap((r) => MENUS_PADRAO[r] ?? []),
-  );
+  const permitidos = new Set<string>(q.isError ? [] : (doBanco ?? []).map((r) => r.path));
 
   return {
     total: false,
     permitidos,
     carregando,
+    erro: q.error?.message,
     pode: (path: string) => permitidos.has(path),
   };
 }

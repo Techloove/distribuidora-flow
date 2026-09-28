@@ -39,7 +39,8 @@ export const Route = createFileRoute("/_app/faturamento")({
       { property: "og:title", content: "Faturamento e boletos — ERP Distribuidora" },
       {
         property: "og:description",
-        content: "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
+        content:
+          "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -155,9 +156,15 @@ function FaturamentoPage() {
     if (termo) {
       list = list.filter(
         (r) =>
-          String(r["razao_social"] ?? "").toLowerCase().includes(termo) ||
-          String(r["documento"] ?? "").toLowerCase().includes(termo) ||
-          String(r["pedido_numero"] ?? "").toLowerCase().includes(termo),
+          String(r["razao_social"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["documento"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["pedido_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return list;
@@ -176,9 +183,15 @@ function FaturamentoPage() {
       list = list.filter(
         (b) =>
           cliName(b["cliente_id"]).toLowerCase().includes(termo) ||
-          String(b["nosso_numero"] ?? "").toLowerCase().includes(termo) ||
-          String(b["seu_numero"] ?? "").toLowerCase().includes(termo) ||
-          String(b["linha_digitavel"] ?? "").toLowerCase().includes(termo),
+          String(b["nosso_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(b["seu_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(b["linha_digitavel"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return list;
@@ -212,12 +225,15 @@ function FaturamentoPage() {
     try {
       const res = await emitirFn({
         data: {
+          contaReceberId: contaId,
           seuNumero,
           valor,
           vencimento: String(row["vencimento"] ?? ""),
           informativo: `Pedido ${String(row["pedido_numero"] ?? "-")} parcela ${String(row["parcela"] ?? 1)}`,
           pagador: {
-            tipoPessoa: String(row["tipo_pessoa"] ?? "").toUpperCase().startsWith("F")
+            tipoPessoa: String(row["tipo_pessoa"] ?? "")
+              .toUpperCase()
+              .startsWith("F")
               ? "PESSOA_FISICA"
               : "PESSOA_JURIDICA",
             documento: String(row["cnpj_cpf"] ?? ""),
@@ -510,9 +526,7 @@ function FaturamentoPage() {
                             type="checkbox"
                             aria-label={`Selecionar ${id}`}
                             checked={!!selecao[id]}
-                            onChange={(e) =>
-                              setSelecao((s) => ({ ...s, [id]: e.target.checked }))
-                            }
+                            onChange={(e) => setSelecao((s) => ({ ...s, [id]: e.target.checked }))}
                           />
                         </TableCell>
                         <TableCell>
@@ -544,18 +558,14 @@ function FaturamentoPage() {
         </section>
 
         <section className="print-area space-y-2">
-          <h2 className="text-sm font-semibold">
-            Boletos emitidos · {boletosFiltrados.length}
-          </h2>
+          <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
           <div className="rounded-lg border border-border bg-card">
             {boletos.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Carregando...
               </div>
             ) : boletos.isError ? (
-              <div className="p-6 text-sm text-destructive">
-                {(boletos.error as Error).message}
-              </div>
+              <div className="p-6 text-sm text-destructive">{(boletos.error as Error).message}</div>
             ) : boletosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum boleto emitido ainda.

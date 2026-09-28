@@ -22,20 +22,20 @@ export type PermissaoFin =
  * Admin e gestor recebem tudo pelo próprio RPC do banco.
  */
 export function usePermissoesFin() {
-  const { client, roles, loading } = useSupabase();
+  const { client, roles, loading, user } = useSupabase();
   const total = roles.includes("admin") || roles.includes("gestor");
 
   const q = useQuery({
-    queryKey: ["minhas_permissoes", roles.slice().sort().join(",")],
+    queryKey: ["minhas_permissoes", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && !loading,
     queryFn: async () => {
       const { data, error } = await client!.rpc("minhas_permissoes");
-      if (error) return null;
+      if (error) throw new Error("Não foi possível verificar as permissões financeiras.");
       return (data ?? []) as string[];
     },
   });
 
-  const lista = new Set<string>(q.data ?? []);
+  const lista = new Set<string>(q.isError ? [] : (q.data ?? []));
 
   return {
     carregando: loading || q.isLoading,
