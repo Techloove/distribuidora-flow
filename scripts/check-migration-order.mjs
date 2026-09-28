@@ -48,6 +48,7 @@ const required = [
   "fase166_minimo_privilegio_tabelas.sql",
   "fase167_default_deny_notas_saida.sql",
   "fase168_gate_fiscal_minimo_privilegio.sql",
+  "fase169_dashboard_rankings.sql",
 ];
 
 for (const file of required) {
