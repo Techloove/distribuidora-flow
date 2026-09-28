@@ -150,24 +150,33 @@ end;
 $$;
 
 -- SECURITY DEFINER não deve ficar executável por anon/PUBLIC por herança implícita.
--- Se authenticated já conseguia executar (inclusive via PUBLIC), preserva esse acesso explicitamente.
-do $$
-declare f record;
+-- Importante: não transformar um EXECUTE herdado de PUBLIC em GRANT explícito para authenticated.
+-- Só preservamos authenticated quando já havia ACL explícita para esse papel.
+do $
+declare
+  f record;
+  authenticated_oid oid := to_regrole('authenticated');
 begin
   for f in
-    select p.oid, p.oid::regprocedure as signature
+    select p.oid, p.oid::regprocedure as signature, p.proacl
     from pg_proc p
     where p.pronamespace = 'public'::regnamespace
       and p.prosecdef
       and p.prokind = 'f'
   loop
-    if has_function_privilege('authenticated', f.oid, 'EXECUTE') then
+    if authenticated_oid is not null and exists (
+      select 1
+      from aclexplode(coalesce(f.proacl, '{}'::aclitem[])) a
+      where a.grantee = authenticated_oid
+        and a.privilege_type = 'EXECUTE'
+    ) then
       execute format('grant execute on function %s to authenticated', f.signature);
     end if;
+
     execute format('revoke execute on function %s from public, anon', f.signature);
   end loop;
 end;
-$$;
+$;
 
 grant execute on function public.usuario_ativo() to authenticated;
 
