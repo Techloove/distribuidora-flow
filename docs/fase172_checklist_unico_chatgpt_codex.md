@@ -10,7 +10,7 @@ Este documento consolida a auditoria atual com a revisão paralela da branch `co
 - branch auditada: `fix/auditoria-seguranca-r1`.
 - branch Codex legada: `codex/erp-seguranca-layout`.
 - a branch Codex está 1 commit à frente e 12 atrás de `main`.
-- a branch Codex está 1 commit à frente e 343 atrás da branch auditada.
+- a branch Codex está 1 commit à frente e 361 atrás da branch auditada.
 - não fazer merge integral ou cherry-pick em bloco da branch Codex legada.
 - as migrations Codex antigas `fase79_seguranca_acesso.sql`, `fase80_dashboard_resumo.sql` e `fase81_liquidacao_boleto.sql` foram substituídas por hardenings posteriores.
 
