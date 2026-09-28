@@ -33,13 +33,15 @@ O Advisor de segurança ainda acusa problemas no banco implantado que já possue
 8. Validar estoque, financeiro, logística e concorrência.
 9. Aplicar Lote C: Fases 80–89.
 10. Validar créditos, pedidos, devoluções e expedição.
-11. Aplicar Lote D: Fases 99–118.
-12. Validar mínimo privilégio, RPCs e operações administrativas.
-13. Aplicar Lote E: Fases 119–135.
-14. Validar Sicredi server-only, retries e idempotência.
-15. Aplicar Lote F: Fases 136–169.
-16. Executar gates finais, Advisors e testes de concorrência.
-17. Só então retirar o PR de draft e planejar merge para `main`.
+11. Executar Fase 182 (preflight do Lote D).
+12. Aplicar Lote D: Fases 99–118.
+13. Executar Fase 183 (gate do Lote D) e validar mínimo privilégio, RPCs e operações administrativas.
+14. Executar Fase 184 (preflight do Lote E).
+15. Aplicar Lote E: Fases 119–135.
+16. Executar Fase 185 (gate do Lote E) e validar Sicredi server-only, retries e idempotência.
+17. Aplicar Lote F: Fases 136–169.
+18. Executar gates finais, Advisors e testes de concorrência.
+19. Só então retirar o PR de draft e planejar merge para `main`.
 
 ## Regra de execução
 
