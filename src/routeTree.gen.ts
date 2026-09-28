@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
+import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
 import { Route as AppCargasRouteImport } from './routes/_app/cargas'
 import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
@@ -81,6 +82,11 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
 const AppBoletosRoute = AppBoletosRouteImport.update({
   id: '/boletos',
   path: '/boletos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCadastrosPadraoRoute = AppCadastrosPadraoRouteImport.update({
+  id: '/cadastros-padrao',
+  path: '/cadastros-padrao',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCargasRoute = AppCargasRouteImport.update({
@@ -311,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cadastros-padrao': typeof AppCadastrosPadraoRoute
   '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
@@ -361,6 +368,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
+  '/cadastros-padrao': typeof AppCadastrosPadraoRoute
   '/cargas': typeof AppCargasRoute
   '/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/centros': typeof AppCentrosRoute
@@ -413,6 +421,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
+  '/_app/cadastros-padrao': typeof AppCadastrosPadraoRoute
   '/_app/cargas': typeof AppCargasRoute
   '/_app/categorias-financeiras': typeof AppCategoriasFinanceirasRoute
   '/_app/centros': typeof AppCentrosRoute
@@ -465,6 +474,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cadastros-padrao'
     | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
@@ -515,6 +525,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auditoria'
     | '/boletos'
+    | '/cadastros-padrao'
     | '/cargas'
     | '/categorias-financeiras'
     | '/centros'
@@ -566,6 +577,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/auditoria'
     | '/_app/boletos'
+    | '/_app/cadastros-padrao'
     | '/_app/cargas'
     | '/_app/categorias-financeiras'
     | '/_app/centros'
@@ -653,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/boletos'
       fullPath: '/boletos'
       preLoaderRoute: typeof AppBoletosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/cadastros-padrao': {
+      id: '/_app/cadastros-padrao'
+      path: '/cadastros-padrao'
+      fullPath: '/cadastros-padrao'
+      preLoaderRoute: typeof AppCadastrosPadraoRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/cargas': {
@@ -969,6 +988,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
+  AppCadastrosPadraoRoute: typeof AppCadastrosPadraoRoute
   AppCargasRoute: typeof AppCargasRoute
   AppCategoriasFinanceirasRoute: typeof AppCategoriasFinanceirasRoute
   AppCentrosRoute: typeof AppCentrosRoute
@@ -1018,6 +1038,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
+  AppCadastrosPadraoRoute: AppCadastrosPadraoRoute,
   AppCargasRoute: AppCargasRoute,
   AppCategoriasFinanceirasRoute: AppCategoriasFinanceirasRoute,
   AppCentrosRoute: AppCentrosRoute,
