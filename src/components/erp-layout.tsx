@@ -162,12 +162,14 @@ function SidebarContent({
   onSignOut,
   email,
   roles,
+  compact,
 }: {
   pathname: string;
   onNavigate?: () => void;
   onSignOut: () => void;
   email?: string | undefined;
   roles: readonly string[];
+  compact: boolean;
 }) {
   const acesso = useAcesso();
   const [search, setSearch] = useState("");
@@ -177,25 +179,35 @@ function SidebarContent({
     .toLowerCase();
   return (
     <>
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
-        <Warehouse className="size-6 text-sidebar-primary" />
-        <div>
-          <p className="text-sm font-semibold tracking-tight">Caparaó System</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Sistema de Gestão Completa</p>
+      <div
+        className={`flex items-center gap-2 border-b border-sidebar-border ${
+          compact ? "justify-center px-1 py-2.5" : "px-2.5 py-2.5"
+        }`}
+      >
+        <Warehouse className="size-5 shrink-0 text-sidebar-primary" />
+        {!compact && (
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold tracking-tight">Caparaó System</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/60">
+              Sistema de Gestão Completa
+            </p>
+          </div>
+        )}
+      </div>
+      {!compact && (
+        <div className="px-2 pt-2.5">
+          <label className="flex items-center gap-2 rounded-lg border border-sidebar-border bg-white/5 px-2 py-1.5">
+            <Search className="size-3.5 shrink-0 text-sidebar-foreground/60" />
+            <input
+              aria-label="Buscar módulo"
+              placeholder="Buscar módulo…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-sidebar-foreground/50"
+            />
+          </label>
         </div>
-      </div>
-      <div className="px-4 pt-5">
-        <label className="flex items-center gap-2 rounded-xl border border-sidebar-border bg-white/5 px-3 py-2.5">
-          <Search className="size-4 shrink-0 text-sidebar-foreground/60" />
-          <input
-            aria-label="Buscar módulo"
-            placeholder="Buscar módulo…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-sidebar-foreground/50"
-          />
-        </label>
-      </div>
+      )}
       <nav
         aria-label="Navegação principal"
         className="scrollbar-none flex-1 space-y-5 overflow-y-auto px-3 py-5"
