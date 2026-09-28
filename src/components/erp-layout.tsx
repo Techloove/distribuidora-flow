@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   ShoppingCart,
   Truck,
-  UserRound,
   Users,
   Warehouse,
   Wallet,
@@ -76,7 +75,6 @@ const nav = [
     group: "Comercial",
     items: [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-      { to: "/representantes", label: "Representantes", icon: UserRound },
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
@@ -376,3 +374,4 @@ export function ErpLayout({
     </div>
   );
 }
+

@@ -6,6 +6,8 @@ Foi feito inventário dos 209 arquivos versionados (208 textuais e um ícone), b
 
 ## Correções nesta proposta
 
+Atualização: as fases 79–81 foram aplicadas e verificadas no Supabase após esta revisão inicial. Consulte [VALIDACAO-SUPABASE.md](VALIDACAO-SUPABASE.md) para o estado da implantação e da integração com as alterações recentes do usuário.
+
 | Problema confirmado | Mudança |
 | --- | --- |
 | Funções Sicredi e consultas cadastrais sem autenticação no servidor | Middleware valida JWT com `auth.getUser`, consulta perfil ativo e papéis usando o JWT do usuário e exige perfil adequado antes de acessar integrações. |
@@ -68,3 +70,4 @@ Listagens genéricas e rankings ainda podem depender do limite REST padrão e fa
 
 - [TanStack Start — middleware](https://tanstack.com/start/latest/docs/framework/react/guide/middleware): proteção na função de servidor, além da interface.
 - A confirmação final de políticas, funções e índices deve ser feita no catálogo do PostgreSQL implantado, não apenas nos arquivos históricos.
+

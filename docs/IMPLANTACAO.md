@@ -1,6 +1,6 @@
 # Homologação e implantação
 
-Esta proposta está preparada para revisão. As migrations não foram executadas no Supabase real e não houve publicação no Lovable/produção.
+As fases 79–81 já foram aplicadas no Supabase de desenvolvimento e verificadas. Consulte [VALIDACAO-SUPABASE.md](VALIDACAO-SUPABASE.md). Não houve publicação no Lovable/produção. O roteiro abaixo continua válido para novos ambientes e para a homologação completa ainda pendente.
 
 1. Obter o schema atual do Supabase e reconciliar as fases ausentes. Confirmar `profiles`, `user_roles`, `centros`, `usuario_centros`, `pessoas`, `pedidos`, `produtos`, `clientes`, `contas_receber`, `contas_pagar`, `comissoes`, `boletos` e respectivos helpers. A aplicação já existente depende de outras estruturas descritas na auditoria.
 2. Restaurar uma cópia isolada para homologação. Preservar um administrador ativo existente. Se o projeto for novo, o primeiro administrador precisa ser provisionado pelo operador; novos cadastros não recebem privilégios automaticamente.
@@ -23,3 +23,4 @@ Esta proposta está preparada para revisão. As migrations não foram executadas
 ## Reversão
 
 Reverter o frontend não deve remover as proteções de acesso. As migrations são transacionais e podem ser reaplicadas, mas não há downgrade automático que reabra permissões. Em falha de homologação, identificar a função/policy incompatível usando o schema salvo e preparar ajuste específico; em incidente de dados, usar o backup cuja restauração foi validada. Não desabilitar RLS como solução.
+
