@@ -69,6 +69,10 @@ const required = [
   "fase169_dashboard_rankings.sql",
   "fase180_preflight_lote_c.sql",
   "fase181_gate_lote_c.sql",
+  "fase182_preflight_lote_d.sql",
+  "fase183_gate_lote_d.sql",
+  "fase184_preflight_lote_e.sql",
+  "fase185_gate_lote_e.sql",
 ];
 
 for (const file of required) {
