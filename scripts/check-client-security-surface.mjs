@@ -33,6 +33,7 @@ const protectedTables = new Set([
   "comissao_pagamento_itens",
   "sicredi_config",
   "user_roles",
+  "notas_saida",
 ]);
 
 function walk(dir) {
