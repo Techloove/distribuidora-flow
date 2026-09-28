@@ -11,6 +11,24 @@ const files = readdirSync(dbDir)
   });
 
 const errors = [];
+
+// A branch antiga do Codex (codex/erp-seguranca-layout) partiu de uma base anterior
+// ao hardening atual. Estas migrations foram reconciliadas em fases posteriores e
+// não podem reaparecer por merge/cherry-pick, pois reutilizam números/assinaturas
+// antigas e podem sobrescrever regras mais novas.
+const staleCodexMigrations = [
+  "fase79_seguranca_acesso.sql",
+  "fase80_dashboard_resumo.sql",
+  "fase81_liquidacao_boleto.sql",
+];
+
+for (const file of staleCodexMigrations) {
+  if (files.includes(file)) {
+    errors.push(
+      `migration Codex legada não deve ser reintroduzida: ${file}; use as fases reconciliadas 100+/148/151/152/153`,
+    );
+  }
+}
 const required = [
   "fase54_hardening_seguranca.sql",
   "fase55_estoque_por_centro.sql",
