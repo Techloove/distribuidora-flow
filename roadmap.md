@@ -49,6 +49,7 @@
 ## Novas demandas
 - [x] Configurações: chaves da API Sicredi + juros, multa, desconto e protesto
 - [x] Produtos: preço de custo, custo médio, markup e preço de venda na mesma linha, markup editável sobre o custo médio
+- [x] Promoções: painel moderno com resumo, campanhas, regras e preços dos produtos na mesma área
 
 ## Pedidos
 - [x] Listagem de pedidos em tela cheia, uma linha por pedido
