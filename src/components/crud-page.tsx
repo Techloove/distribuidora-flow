@@ -554,7 +554,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={effectiveReadOnly || !canManage}
+                        disabled={directWriteBlocked || !canManage}
                         onClick={() => openEdit(row)}
                       >
                         <Pencil className="size-4" />
@@ -562,7 +562,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={effectiveReadOnly || !canManage}
+                        disabled={directWriteBlocked || !canManage}
                         onClick={() => remove.mutate(row["id"] as string)}
                       >
                         <Trash2 className="size-4 text-destructive" />
