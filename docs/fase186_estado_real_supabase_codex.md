@@ -11,10 +11,15 @@ A validação foi feita diretamente no projeto Supabase `CaparaoSystem` em modo 
 - branch auditada: `fix/auditoria-seguranca-r1`;
 - CI do head atual: verde;
 - PR #1: aberto, draft e mergeável;
-- branch Codex legada: divergiu e está 361 commits atrás da branch auditada, com apenas 1 commit exclusivo;
+- branch Codex legada: divergiu e, na verificação atual, está 363 commits atrás da branch auditada, com apenas 1 commit exclusivo;
 - não fazer merge/cherry-pick em bloco da branch Codex legada; os achados relevantes já foram reconciliados e substituídos por hardenings posteriores.
 
 ## Estado real do Supabase
+
+- Organização confirmada no plano Free (`tier_free`).
+- Projeto ERP confirmado: `CaparaoSystem` (`zviwittrjdwyczhutvjf`).
+- CI do head `e96a6daf6643386f12959acd69f344043015652d`: sucesso (run 667).
+
 
 O banco implantado está significativamente atrás do GitHub.
 
@@ -34,6 +39,8 @@ As estruturas fundacionais novas da branch ainda não estão implantadas no banc
 - RLS está habilitado nas tabelas consultadas, mas GRANT + RLS atuais ainda não refletem o perímetro final da branch.
 
 Exemplos confirmados com DML direto concedido atualmente: `pedidos`, `pedido_itens`, `compras`, `compra_itens`, `estoque_movimentos`, `contas_receber`, `contas_pagar`, `comissoes`, `movimentos_financeiros`, `boletos`, `expedicoes`, `cargas`, `carga_pedidos`, `pedido_separacoes`, `sicredi_config` e `user_roles`.
+
+Também foi confirmado que existem policies restritivas de usuário ativo/centro em várias dessas tabelas, mas elas coexistem com policies permissivas de escrita e com GRANTs amplos. Portanto, o perímetro implantado ainda é o legado e não deve ser confundido com o hardening final da branch.
 
 ## Consequência
 
