@@ -152,7 +152,7 @@ $$;
 -- SECURITY DEFINER não deve ficar executável por anon/PUBLIC por herança implícita.
 -- Importante: não transformar um EXECUTE herdado de PUBLIC em GRANT explícito para authenticated.
 -- Só preservamos authenticated quando já havia ACL explícita para esse papel.
-do $
+do $$
 declare
   f record;
   authenticated_oid oid := to_regrole('authenticated');
@@ -176,7 +176,7 @@ begin
     execute format('revoke execute on function %s from public, anon', f.signature);
   end loop;
 end;
-$;
+$$;
 
 grant execute on function public.usuario_ativo() to authenticated;
 
