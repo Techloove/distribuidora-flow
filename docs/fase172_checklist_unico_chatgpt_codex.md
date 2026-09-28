@@ -77,7 +77,7 @@ Para a operação atual de uma única distribuidora/projeto, isso não impede o 
 - [ ] backup/snapshot de homologação;
 - [ ] migrations aplicadas em ordem sem erro;
 - [ ] `scripts/check-migration-order.mjs` aprovado;
-- [ ] gates SQL aprovados;
+- [ ] gates SQL aprovados, incluindo Fases 177, 179, 181, 183 e 185;
 - [ ] RLS e grants conferidos no banco real;
 - [ ] Supabase Advisors revisados;
 - [ ] usuário inativo bloqueado;
