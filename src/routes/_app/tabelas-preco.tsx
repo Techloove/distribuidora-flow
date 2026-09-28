@@ -1,6 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
+import {
+  BadgePercent,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  Package,
+  Pencil,
+  Plus,
+  Printer,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,6 +70,7 @@ function TabelasPrecoPage() {
   const [item, setItem] = useState({ produto_id: "", preco: "0", desconto_maximo: "0" });
   const [editando, setEditando] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [buscaItem, setBuscaItem] = useState("");
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const tabelas = useQuery({
@@ -149,7 +162,6 @@ function TabelasPrecoPage() {
   };
 
   const tabelasFiltradas = useMemo(() => {
-
     let list = tabelas.data ?? [];
     const termo = (filtros["busca"] ?? "").trim().toLowerCase();
     if (termo) {
@@ -160,6 +172,49 @@ function TabelasPrecoPage() {
     }
     return list;
   }, [tabelas.data, filtros]);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const resumo = useMemo(() => {
+    const lista = tabelas.data ?? [];
+    const ativas = lista.filter(
+      (t) =>
+        Boolean(t["ativo"]) &&
+        String(t["vigencia_inicio"] ?? "") <= hoje &&
+        (!t["vigencia_fim"] || String(t["vigencia_fim"]) >= hoje),
+    ).length;
+    const agendadas = lista.filter(
+      (t) => Boolean(t["ativo"]) && String(t["vigencia_inicio"] ?? "") > hoje,
+    ).length;
+    const descontos = (promocoes.data ?? [])
+      .map((p) => Number(p["variacao_percentual"] ?? 0))
+      .filter((valor) => valor < 0);
+    const descontoMedio = descontos.length
+      ? Math.abs(descontos.reduce((soma, valor) => soma + valor, 0) / descontos.length)
+      : 0;
+    return { ativas, agendadas, produtos: promocoesLista.length, descontoMedio };
+  }, [tabelas.data, promocoes.data, promocoesLista.length, hoje]);
+
+  const tabelaSelecionada = useMemo(
+    () => (tabelas.data ?? []).find((t) => String(t["id"]) === selected),
+    [tabelas.data, selected],
+  );
+
+  const itensFiltrados = useMemo(() => {
+    const termo = buscaItem.trim().toLowerCase();
+    if (!termo) return itens.data ?? [];
+    return (itens.data ?? []).filter((registro) =>
+      nomeProduto(registro["produto_id"]).toLowerCase().includes(termo),
+    );
+  }, [itens.data, buscaItem, produtos.data]);
+
+  const statusTabela = (tabela: Row) => {
+    if (!tabela["ativo"]) return { label: "Inativa", tone: "muted" } as const;
+    if (String(tabela["vigencia_inicio"] ?? "") > hoje)
+      return { label: "Agendada", tone: "scheduled" } as const;
+    if (tabela["vigencia_fim"] && String(tabela["vigencia_fim"]) < hoje)
+      return { label: "Encerrada", tone: "muted" } as const;
+    return { label: "Ativa", tone: "active" } as const;
+  };
 
   const nomeProduto = (id: unknown) => {
     const p = produtos.data?.find((x) => x["id"] === id);
