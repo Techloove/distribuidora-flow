@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -338,7 +339,31 @@ export function CrudPage({
 
   const inlineSet = new Set(inlineEdit ?? []);
 
-  const tableFields = fields.filter((f) => f.inTable);
+  const [colunas, setColunas] = useState<string[] | null>(null);
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(`colunas:${table}`);
+      setColunas(salvo ? (JSON.parse(salvo) as string[]) : null);
+    } catch {
+      setColunas(null);
+    }
+  }, [table]);
+
+  const tableFields = colunas
+    ? fields.filter((f) => colunas.includes(f.name))
+    : fields.filter((f) => f.inTable);
+
+  function toggleColuna(name: string) {
+    const atual = tableFields.map((f) => f.name);
+    const next = atual.includes(name) ? atual.filter((n) => n !== name) : [...atual, name];
+    setColunas(next);
+    localStorage.setItem(`colunas:${table}`, JSON.stringify(next));
+  }
+
+  function resetColunas() {
+    setColunas(null);
+    localStorage.removeItem(`colunas:${table}`);
+  }
 
   return (
     <div className="space-y-4">
@@ -351,6 +376,34 @@ export function CrudPage({
           className="max-w-xs bg-card"
         />
         <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="secondary" className="no-print">
+                <Columns3 className="size-4" />
+                Colunas
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Dados visíveis na lista
+              </p>
+              <div className="max-h-72 space-y-1 overflow-y-auto">
+                {fields.map((f) => (
+                  <label key={f.name} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={tableFields.some((t) => t.name === f.name)}
+                      onChange={() => toggleColuna(f.name)}
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+              <Button size="sm" variant="ghost" className="mt-2 w-full" onClick={resetColunas}>
+                Restaurar padrão
+              </Button>
+            </PopoverContent>
+          </Popover>
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="size-4" />
             Imprimir
