@@ -59,7 +59,31 @@ export type CrudField = {
   hiddenInForm?: boolean;
   /** Só exibe no formulário quando este campo do form estiver marcado. */
   showIf?: string;
+  /** Texto com sugestões de um cadastro padrão (ex.: cad_categorias). */
+  lookup?: string;
 };
+
+/** Lista de sugestões (datalist) vinda de um cadastro padrão. */
+function LookupList({ id, table }: { id: string; table: string }) {
+  const { client } = useSupabase();
+  const q = useQuery({
+    queryKey: ["lookup", table],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from(table).select("*").eq("ativo", true).order("nome");
+      if (error) throw error;
+      return (data ?? []) as { nome: string; uf?: string }[];
+    },
+  });
+  const nomes = Array.from(new Set((q.data ?? []).map((r) => r.nome)));
+  return (
+    <datalist id={id}>
+      {nomes.map((n) => (
+        <option key={n} value={n} />
+      ))}
+    </datalist>
+  );
+}
 
 /** Opções de um campo de referência (FK). */
 function useRefOptions(field: CrudField) {
@@ -668,8 +692,12 @@ export function CrudPage({
                     />
                   </div>
                 ) : (
+                  <>
+                  {field.lookup ? <LookupList id={`lk-${field.name}`} table={field.lookup} /> : null}
                   <Input
                     id={field.name}
+                    list={field.lookup ? `lk-${field.name}` : undefined}
+                    autoComplete={field.lookup ? "off" : undefined}
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
