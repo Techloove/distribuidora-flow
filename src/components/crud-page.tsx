@@ -404,7 +404,7 @@ export function CrudPage({
             <Printer className="size-4" />
             Imprimir
           </Button>
-          <Button onClick={openCreate} disabled={effectiveReadOnly || !canManage}>
+          <Button onClick={openCreate} disabled={directWriteBlocked || !canManage}>
             <Plus className="size-4" />
             Novo
           </Button>
@@ -469,6 +469,12 @@ export function CrudPage({
           excluir registros.
         </p>
       ) : null}
+      {CRUD_PROTECTED_TABLES.has(table) && !effectiveReadOnly ? (
+        <p className="text-xs text-muted-foreground">
+          Esta tabela possui escrita protegida. Alterações devem ser feitas pelo fluxo operacional
+          específico, que executa as RPCs e validações do banco.
+        </p>
+      ) : null}
 
       <div className="print-area rounded-lg border border-border bg-card">
         {query.isLoading ? (
@@ -500,7 +506,7 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {inlineSet.has(f.name) && canManage ? (
+                      {inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
                         <Input
                           key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
                           type="number"
@@ -623,7 +629,7 @@ export function CrudPage({
                         <input
                           type="checkbox"
                           checked={Boolean(form[c.name])}
-                          disabled={effectiveReadOnly}
+                          disabled={directWriteBlocked}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, [c.name]: e.target.checked }))
                           }
@@ -637,7 +643,7 @@ export function CrudPage({
                   <RefSelect
                     field={field}
                     value={String(form[field.name] ?? "")}
-                    disabled={effectiveReadOnly}
+                    disabled={directWriteBlocked}
                     onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
                   />
                 ) : field.type === "select" ? (
@@ -661,7 +667,7 @@ export function CrudPage({
                       id={field.name}
                       type="checkbox"
                       checked={Boolean(form[field.name])}
-                      disabled={effectiveReadOnly}
+                      disabled={directWriteBlocked}
                       onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.checked }))}
                       className="size-4 accent-primary"
                     />
@@ -672,7 +678,7 @@ export function CrudPage({
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
-                    disabled={effectiveReadOnly}
+                    disabled={directWriteBlocked}
                     onBlur={(e) => {
                       if (field.type !== "number" || !field.step) return;
                       const dec = (field.step.split(".")[1] ?? "").length;
@@ -707,7 +713,7 @@ export function CrudPage({
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => save.mutate()} disabled={effectiveReadOnly || save.isPending}>
+            <Button onClick={() => save.mutate()} disabled={directWriteBlocked || save.isPending}>
               {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Salvar
             </Button>
