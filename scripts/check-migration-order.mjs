@@ -27,6 +27,7 @@ const required = [
   "fase160_revoke_execute_trigger_functions.sql",
   "fase163_rls_restrictive_default_deny.sql",
   "fase166_minimo_privilegio_tabelas.sql",
+  "fase167_default_deny_notas_saida.sql",
 ];
 
 for (const file of required) {
