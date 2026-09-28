@@ -18,19 +18,26 @@ declare
   ];
 begin
   foreach nome in array funcoes loop
-    encontrados := 0;
-
-    for r in
-      select p.oid::regprocedure
+    select count(*)
+      into encontrados
       from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'public'
-        and p.proname = nome
-    loop
-      encontrados := encontrados + 1;
-      execute format('revoke execute on function %s from public, anon', r);
-      execute format('grant execute on function %s to authenticated, service_role', r);
-    end loop;
+     where n.nspname = 'public'
+       and p.proname = nome;
+
+    if encontrados <> 1 then
+      raise exception 'Perimetro inseguro: public.% possui % assinaturas; esperado exatamente 1 antes de conceder EXECUTE', nome, encontrados;
+    end if;
+
+    select p.oid::regprocedure
+      into r
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname = nome;
+
+    execute format('revoke execute on function %s from public, anon', r);
+    execute format('grant execute on function %s to authenticated, service_role', r);
 
     if encontrados = 0 then
       raise exception 'Fase 116: RPC usada pelo frontend nao encontrada: public.%', nome;
