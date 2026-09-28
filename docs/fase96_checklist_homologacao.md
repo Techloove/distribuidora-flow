@@ -86,3 +86,17 @@ order by p.proname, arguments;
 ```
 
 Qualquer SECURITY DEFINER com PUBLIC/anon EXECUTE deve ser tratado como achado de segurança até confirmar que é intencional. Não fazer revogação global sem validar a lista de RPCs consumidos pelo frontend.
+
+
+## 9. Supabase Auth e advisors
+
+Após aplicar as migrations de hardening em homologação, executar novamente os Security Advisors do Supabase.
+
+Bloqueadores adicionais de produção:
+
+- nenhum helper do schema public pode permanecer com `search_path` mutável sem justificativa;
+- funções de trigger `SECURITY DEFINER` não devem ser executáveis diretamente por `anon` ou `authenticated`;
+- revisar individualmente as RPCs `SECURITY DEFINER` expostas a `authenticated` e manter apenas as que fazem parte da API intencional do ERP;
+- habilitar **Leaked Password Protection** no Supabase Auth antes da liberação de produção.
+
+O último diagnóstico independente do projeto CaparaoSystem ainda apontava o aviso `auth_leaked_password_protection`. Esse item é uma configuração do Auth e não é corrigido por migration SQL do schema.
