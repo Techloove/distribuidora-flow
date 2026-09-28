@@ -68,7 +68,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/pessoas",
     "/faturamento",
     "/notas",
-    "/boletos",
     "/fluxo-caixa",
     "/receber",
     "/pagar",
