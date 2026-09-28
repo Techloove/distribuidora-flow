@@ -18,7 +18,6 @@ import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
-import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,6 +198,11 @@ function TabelasPrecoPage() {
     [tabelas.data, selected],
   );
 
+  const nomeProduto = (id: unknown) => {
+    const p = produtos.data?.find((x) => x["id"] === id);
+    return p ? `${String(p["codigo"] ?? "")} ${String(p["descricao"])}`.trim() : "—";
+  };
+
   const itensFiltrados = useMemo(() => {
     const termo = buscaItem.trim().toLowerCase();
     if (!termo) return itens.data ?? [];
@@ -214,11 +218,6 @@ function TabelasPrecoPage() {
     if (tabela["vigencia_fim"] && String(tabela["vigencia_fim"]) < hoje)
       return { label: "Encerrada", tone: "muted" } as const;
     return { label: "Ativa", tone: "active" } as const;
-  };
-
-  const nomeProduto = (id: unknown) => {
-    const p = produtos.data?.find((x) => x["id"] === id);
-    return p ? `${String(p["codigo"] ?? "")} ${String(p["descricao"])}`.trim() : "—";
   };
 
   const criar = useMutation({
