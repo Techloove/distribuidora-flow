@@ -38,7 +38,7 @@ import {
   Menu,
   Search,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
@@ -162,12 +162,14 @@ function SidebarContent({
   onSignOut,
   email,
   roles,
+  compact,
 }: {
   pathname: string;
   onNavigate?: () => void;
   onSignOut: () => void;
   email?: string | undefined;
   roles: readonly string[];
+  compact: boolean;
 }) {
   const acesso = useAcesso();
   const [search, setSearch] = useState("");
@@ -177,28 +179,40 @@ function SidebarContent({
     .toLowerCase();
   return (
     <>
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
-        <Warehouse className="size-6 text-sidebar-primary" />
-        <div>
-          <p className="text-sm font-semibold tracking-tight">Caparaó System</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Sistema de Gestão Completa</p>
+      <div
+        className={`flex items-center gap-2 border-b border-sidebar-border ${
+          compact ? "justify-center px-1 py-2.5" : "px-2.5 py-2.5"
+        }`}
+      >
+        <Warehouse className="size-5 shrink-0 text-sidebar-primary" />
+        {!compact && (
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold tracking-tight">Caparaó System</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/60">
+              Sistema de Gestão Completa
+            </p>
+          </div>
+        )}
+      </div>
+      {!compact && (
+        <div className="px-2 pt-2.5">
+          <label className="flex items-center gap-2 rounded-lg border border-sidebar-border bg-white/5 px-2 py-1.5">
+            <Search className="size-3.5 shrink-0 text-sidebar-foreground/60" />
+            <input
+              aria-label="Buscar módulo"
+              placeholder="Buscar módulo…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-sidebar-foreground/50"
+            />
+          </label>
         </div>
-      </div>
-      <div className="px-4 pt-5">
-        <label className="flex items-center gap-2 rounded-xl border border-sidebar-border bg-white/5 px-3 py-2.5">
-          <Search className="size-4 shrink-0 text-sidebar-foreground/60" />
-          <input
-            aria-label="Buscar módulo"
-            placeholder="Buscar módulo…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-sidebar-foreground/50"
-          />
-        </label>
-      </div>
+      )}
       <nav
         aria-label="Navegação principal"
-        className="scrollbar-none flex-1 space-y-5 overflow-y-auto px-3 py-5"
+        className={`scrollbar-none flex-1 overflow-y-auto ${
+          compact ? "px-1 py-1.5" : "px-1.5 py-2"
+        }`}
       >
         {nav
           .map((section) => ({
@@ -214,28 +228,36 @@ function SidebarContent({
             ),
           }))
           .filter((section) => section.items.length > 0)
-          .map((section) => (
-            <div key={section.group}>
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-                {section.group}
-              </p>
-              <div className="space-y-1">
+          .map((section, i) => (
+            <div key={section.group} className={i > 0 ? "mt-2" : undefined}>
+              {compact ? (
+                i > 0 ? <div className="mx-auto mb-1 h-px w-5 bg-sidebar-border" /> : null
+              ) : (
+                <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                  {section.group}
+                </p>
+              )}
+              <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
                   return (
                     <Link
                       key={`${item.to}-${item.label}`}
                       aria-current={active ? "page" : undefined}
+                      aria-label={compact ? item.label : undefined}
+                      title={item.label}
                       to={item.to}
                       onClick={onNavigate}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors md:py-2 ${
+                      className={`flex items-center rounded-lg text-[13px] leading-tight transition-colors ${
+                        compact ? "justify-center p-1.5" : "gap-2 px-2 py-1.5"
+                      } ${
                         active
                           ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary ring-1 ring-inset ring-sidebar-primary/20"
                           : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                       }`}
                     >
                       <item.icon className="size-4 shrink-0" />
-                      {item.label}
+                      {!compact && <span className="truncate">{item.label}</span>}
                     </Link>
                   );
                 })}
@@ -243,18 +265,30 @@ function SidebarContent({
             </div>
           ))}
       </nav>
-      <div className="border-t border-sidebar-border px-4 py-4 text-xs">
-        <p className="truncate font-medium">{email}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
-          <Boxes className="size-3" />
-          {roles.length ? roles.join(", ") : "sem papel"}
-        </p>
+      <div
+        className={`border-t border-sidebar-border text-[11px] ${
+          compact ? "px-1 py-2" : "px-2 py-2.5"
+        }`}
+      >
+        {!compact && (
+          <>
+            <p className="truncate font-medium">{email}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
+              <Boxes className="size-3" />
+              {roles.length ? roles.join(", ") : "sem papel"}
+            </p>
+          </>
+        )}
         <button
           onClick={onSignOut}
-          className="mt-3 inline-flex items-center gap-2 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs transition-colors hover:bg-sidebar-accent"
+          aria-label="Sair"
+          title={compact ? "Sair" : undefined}
+          className={`mt-2 inline-flex items-center gap-1.5 rounded-md border border-sidebar-border transition-colors hover:bg-sidebar-accent ${
+            compact ? "justify-center p-1.5" : "px-2 py-1"
+          }`}
         >
           <LogOut className="size-3.5" />
-          Sair
+          {!compact && "Sair"}
         </button>
       </div>
     </>
@@ -276,7 +310,27 @@ export function ErpLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [menuMinimo, setMenuMinimo] = useState(false);
+
+  useEffect(() => {
+    try {
+      setMenuMinimo(window.localStorage.getItem("caparao-menu-minimo") === "1");
+    } catch {
+      // navegador bloqueou o armazenamento local: segue com o menu completo
+    }
+  }, []);
+
+  function alternarMenu() {
+    setMenuMinimo((atual) => {
+      const novo = !atual;
+      try {
+        window.localStorage.setItem("caparao-menu-minimo", novo ? "1" : "0");
+      } catch {
+        // navegador bloqueou o armazenamento local: só não lembra da escolha
+      }
+      return novo;
+    });
+  }
 
   async function handleSignOut() {
     try {
@@ -296,8 +350,8 @@ export function ErpLayout({
         Pular para o conteúdo
       </a>
       <aside
-        className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
-          sidebarCollapsed ? "w-0 overflow-hidden" : "w-72"
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
+          menuMinimo ? "w-11" : "w-52"
         }`}
       >
         <SidebarContent
@@ -305,6 +359,7 @@ export function ErpLayout({
           onSignOut={handleSignOut}
           email={user?.email}
           roles={roles}
+          compact={menuMinimo}
         />
       </aside>
 
@@ -323,6 +378,7 @@ export function ErpLayout({
             onSignOut={handleSignOut}
             email={user?.email}
             roles={roles}
+            compact={false}
           />
         </SheetContent>
       </Sheet>
@@ -340,11 +396,12 @@ export function ErpLayout({
             </button>
             <button
               type="button"
-              aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              className="no-print -ml-1 hidden rounded-md border border-border p-2 text-foreground transition-colors hover:bg-accent md:inline-flex"
+              aria-label={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              title={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              onClick={alternarMenu}
+              className="no-print -ml-1 hidden rounded-md border border-border p-1.5 text-foreground transition-colors hover:bg-accent md:inline-flex"
             >
-              {sidebarCollapsed ? (
+              {menuMinimo ? (
                 <PanelLeftOpen className="size-4" />
               ) : (
                 <PanelLeftClose className="size-4" />
