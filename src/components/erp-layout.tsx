@@ -310,7 +310,27 @@ export function ErpLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [menuMinimo, setMenuMinimo] = useState(false);
+
+  useEffect(() => {
+    try {
+      setMenuMinimo(window.localStorage.getItem("caparao-menu-minimo") === "1");
+    } catch {
+      // navegador bloqueou o armazenamento local: segue com o menu completo
+    }
+  }, []);
+
+  function alternarMenu() {
+    setMenuMinimo((atual) => {
+      const novo = !atual;
+      try {
+        window.localStorage.setItem("caparao-menu-minimo", novo ? "1" : "0");
+      } catch {
+        // navegador bloqueou o armazenamento local: só não lembra da escolha
+      }
+      return novo;
+    });
+  }
 
   async function handleSignOut() {
     try {
@@ -330,8 +350,8 @@ export function ErpLayout({
         Pular para o conteúdo
       </a>
       <aside
-        className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
-          sidebarCollapsed ? "w-0 overflow-hidden" : "w-72"
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
+          menuMinimo ? "w-11" : "w-52"
         }`}
       >
         <SidebarContent
@@ -339,6 +359,7 @@ export function ErpLayout({
           onSignOut={handleSignOut}
           email={user?.email}
           roles={roles}
+          compact={menuMinimo}
         />
       </aside>
 
@@ -357,6 +378,7 @@ export function ErpLayout({
             onSignOut={handleSignOut}
             email={user?.email}
             roles={roles}
+            compact={false}
           />
         </SheetContent>
       </Sheet>
@@ -374,11 +396,12 @@ export function ErpLayout({
             </button>
             <button
               type="button"
-              aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              className="no-print -ml-1 hidden rounded-md border border-border p-2 text-foreground transition-colors hover:bg-accent md:inline-flex"
+              aria-label={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              title={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              onClick={alternarMenu}
+              className="no-print -ml-1 hidden rounded-md border border-border p-1.5 text-foreground transition-colors hover:bg-accent md:inline-flex"
             >
-              {sidebarCollapsed ? (
+              {menuMinimo ? (
                 <PanelLeftOpen className="size-4" />
               ) : (
                 <PanelLeftClose className="size-4" />
