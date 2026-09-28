@@ -67,6 +67,8 @@ const required = [
   "fase167_default_deny_notas_saida.sql",
   "fase168_gate_fiscal_minimo_privilegio.sql",
   "fase169_dashboard_rankings.sql",
+  "fase180_preflight_lote_c.sql",
+  "fase181_gate_lote_c.sql",
 ];
 
 for (const file of required) {
