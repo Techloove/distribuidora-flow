@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "check:sql": "bun scripts/check-sql-security.mjs",
+    "check:migrations": "bun scripts/check-migration-order.mjs",
     "check:surface": "bun scripts/check-client-security-surface.mjs",
     "check:server": "bun scripts/check-server-security.mjs",
     "test": "bun test"
