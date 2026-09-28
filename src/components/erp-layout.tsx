@@ -78,7 +78,6 @@ const nav = [
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
-      { to: "/gestao-comissoes", label: "Gestão de comissões", icon: Coins },
     ],
   },
   {

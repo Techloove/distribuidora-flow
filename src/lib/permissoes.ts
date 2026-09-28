@@ -17,7 +17,6 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/lead-rota", label: "Lead Rota", grupo: "Comercial" },
   { path: "/metas", label: "Metas", grupo: "Comercial" },
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
-  { path: "/gestao-comissoes", label: "Gestão de comissões", grupo: "Comercial" },
 
   { path: "/separacao", label: "Separação", grupo: "Operação" },
   { path: "/compras", label: "Compras / NF", grupo: "Operação" },
@@ -73,7 +72,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/pagar",
     "/relatorios",
     "/relatorio-vendas",
-    "/gestao-comissoes",
+    "/comissoes",
     "/notificacoes",
   ],
   comercial: [
@@ -89,7 +88,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/lead-rota",
     "/metas",
     "/comissoes",
-    "/gestao-comissoes",
     "/relatorios",
     "/relatorio-vendas",
     "/clientes-inativos",
