@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Boxes } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
@@ -169,6 +171,13 @@ function ProdutosPage() {
     <ErpLayout
       title="Produtos"
       description="Catálogo que alimenta pedidos, precificação, estoque e compras."
+      actions={
+        <Button asChild variant="secondary">
+          <Link to="/estoque">
+            <Boxes className="size-4" /> Estoque e movimentações
+          </Link>
+        </Button>
+      }
     >
       <CrudPage
         table="produtos"
