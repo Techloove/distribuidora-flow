@@ -717,6 +717,7 @@ export function CrudPage({
                       })
                     }
                   />
+                  </>
                 )}
               </div>
             ))}

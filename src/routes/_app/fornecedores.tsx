@@ -27,7 +27,7 @@ const fields: CrudField[] = [
   { name: "cnpj_cpf", label: "CNPJ/CPF", inTable: true },
   { name: "email", label: "E-mail", type: "email" },
   { name: "telefone", label: "Telefone" },
-  { name: "cidade", label: "Cidade", inTable: true },
+  { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
   { name: "uf", label: "UF" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },

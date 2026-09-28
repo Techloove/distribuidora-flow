@@ -26,7 +26,7 @@ const fields: CrudField[] = [
   { name: "cnpj", label: "CNPJ", inTable: true },
   { name: "email", label: "E-mail", type: "email" },
   { name: "telefone", label: "Telefone", inTable: true },
-  { name: "cidade", label: "Cidade", inTable: true },
+  { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
   { name: "uf", label: "UF" },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
