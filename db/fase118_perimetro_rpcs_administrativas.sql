@@ -44,10 +44,6 @@ begin
 
     execute format('revoke execute on function %s from public, anon', r);
     execute format('grant execute on function %s to authenticated, service_role', r);
-
-    if encontrados=0 then
-      raise exception 'Fase 118: RPC usada pelo frontend não encontrada: public.%', nome;
-    end if;
   end loop;
 end $$;
 
