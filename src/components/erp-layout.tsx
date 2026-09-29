@@ -63,6 +63,7 @@ const nav = [
     items: [
       { to: "/pessoas", label: "Cadastro Unificado", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
+      { to: "/cadastros-padrao", label: "Categorias, marcas e cidades", icon: Tags },
       { to: "/tabelas-preco", label: "Promoção", icon: Tags },
       { to: "/centros", label: "Centros", icon: Building2 },
       { to: "/rotas", label: "Rotas de entrega", icon: Route },
@@ -77,8 +78,6 @@ const nav = [
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
-      { to: "/gestao-comissoes", label: "Gestão de comissões", icon: Coins },
-
     ],
   },
   {
