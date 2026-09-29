@@ -20,12 +20,14 @@ const staleCodexMigrations = [
   "fase79_seguranca_acesso.sql",
   "fase80_dashboard_resumo.sql",
   "fase81_liquidacao_boleto.sql",
+  "fase82_unificar_comissoes.sql",
+  "fase83_cadastros_padrao.sql",
 ];
 
 for (const file of staleCodexMigrations) {
   if (files.includes(file)) {
     errors.push(
-      `migration Codex legada não deve ser reintroduzida: ${file}; use as fases reconciliadas 100+/148/151/152/153`,
+      `migration legada/reconciliada não deve ser reintroduzida: ${file}; preserve as fases endurecidas posteriores (100+/148/151/152/153/187/188)`,
     );
   }
 }
