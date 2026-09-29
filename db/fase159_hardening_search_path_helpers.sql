@@ -14,7 +14,10 @@ declare
     'public.sincronizar_markup_produto()',
     'public.so_digitos(text)',
     'public.norm_cidade(text)',
-    'public.rota_cidades_touch()'
+    'public.rota_cidades_touch()',
+    'public.trg_cad_produto()',
+    'public.trg_cad_cidade()',
+    'public.norm_txt(text)'
   ];
 begin
   foreach sig in array funcoes loop

@@ -96,11 +96,23 @@ begin
     execute 'create policy movimentos_financeiros_write on public.movimentos_financeiros for all to authenticated using (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id)) with check (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id))';
   end if;
 
+  -- transferencias e financeira (entre contas) e nao possui centro_id.
+  -- O escopo por centro somente se aplica quando a coluna existir.
   if to_regclass('public.transferencias') is not null then
-    execute 'drop policy if exists transferencias_select on public.transferencias';
-    execute 'create policy transferencias_select on public.transferencias for select to authenticated using (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id))';
-    execute 'drop policy if exists transferencias_write on public.transferencias';
-    execute 'create policy transferencias_write on public.transferencias for all to authenticated using (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id)) with check (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id))';
+    if exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='transferencias' and column_name='centro_id'
+    ) then
+      execute 'drop policy if exists transferencias_select on public.transferencias';
+      execute 'create policy transferencias_select on public.transferencias for select to authenticated using (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id))';
+      execute 'drop policy if exists transferencias_write on public.transferencias';
+      execute 'create policy transferencias_write on public.transferencias for all to authenticated using (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id)) with check (public.can_finance(auth.uid()) and public.usuario_pode_acessar_centro(centro_id))';
+    else
+      execute 'drop policy if exists transferencias_select on public.transferencias';
+      execute 'create policy transferencias_select on public.transferencias for select to authenticated using (public.can_finance(auth.uid()))';
+      execute 'drop policy if exists transferencias_write on public.transferencias';
+      execute 'create policy transferencias_write on public.transferencias for all to authenticated using (public.can_finance(auth.uid())) with check (public.can_finance(auth.uid()))';
+    end if;
   end if;
 
   if to_regclass('public.cargas') is not null then
