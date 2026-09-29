@@ -5,11 +5,20 @@ const EVENT = "erp:centro";
 
 export function getCentro(): string {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(KEY) ?? "";
+  try {
+    return window.localStorage.getItem(KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export function setCentro(id: string) {
-  window.localStorage.setItem(KEY, id);
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(KEY, id);
+  } catch {
+    /* Storage unavailable. */
+  }
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 
@@ -21,7 +30,11 @@ export function useCentro() {
     setState(getCentro());
     const onChange = () => setState(getCentro());
     window.addEventListener(EVENT, onChange);
-    return () => window.removeEventListener(EVENT, onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener(EVENT, onChange);
+      window.removeEventListener("storage", onChange);
+    };
   }, []);
 
   return { centro, setCentro };
