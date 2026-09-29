@@ -75,6 +75,8 @@ const required = [
   "fase183_gate_lote_d.sql",
   "fase184_preflight_lote_e.sql",
   "fase185_gate_lote_e.sql",
+  "fase187_reconciliacao_comissoes_main.sql",
+  "fase188_cadastros_padrao_hardened.sql",
 ];
 
 for (const file of required) {
