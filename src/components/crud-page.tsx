@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -58,7 +59,32 @@ export type CrudField = {
   hiddenInForm?: boolean;
   /** Só exibe no formulário quando este campo do form estiver marcado. */
   showIf?: string;
+  /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
+  lookup?: string;
 };
+
+/** Sugestões textuais vindas de um cadastro padrão. */
+function LookupList({ id, table }: { id: string; table: string }) {
+  const { client } = useSupabase();
+  const query = useQuery({
+    queryKey: ["lookup", table],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from(table).select("nome, ativo").eq("ativo", true).order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { nome: string }[];
+    },
+  });
+
+  const nomes = Array.from(new Set((query.data ?? []).map((row) => row.nome).filter(Boolean)));
+  return (
+    <datalist id={id}>
+      {nomes.map((nome) => (
+        <option key={nome} value={nome} />
+      ))}
+    </datalist>
+  );
+}
 
 /** Opções de um campo de referência (FK). */
 function useRefOptions(field: CrudField) {
@@ -387,7 +413,39 @@ export function CrudPage({
 
   const inlineSet = new Set(inlineEdit ?? []);
 
-  const tableFields = fields.filter((f) => f.inTable);
+  const [colunas, setColunas] = useState<string[] | null>(null);
+  useEffect(() => {
+    try {
+      const salvo = window.localStorage.getItem(`colunas:${table}`);
+      setColunas(salvo ? (JSON.parse(salvo) as string[]) : null);
+    } catch {
+      setColunas(null);
+    }
+  }, [table]);
+
+  const tableFields = colunas
+    ? fields.filter((f) => colunas.includes(f.name))
+    : fields.filter((f) => f.inTable);
+
+  function toggleColuna(name: string) {
+    const atuais = tableFields.map((f) => f.name);
+    const next = atuais.includes(name) ? atuais.filter((n) => n !== name) : [...atuais, name];
+    setColunas(next);
+    try {
+      window.localStorage.setItem(`colunas:${table}`, JSON.stringify(next));
+    } catch {
+      // armazenamento local indisponível: a seleção permanece apenas na sessão.
+    }
+  }
+
+  function resetColunas() {
+    setColunas(null);
+    try {
+      window.localStorage.removeItem(`colunas:${table}`);
+    } catch {
+      // armazenamento local indisponível.
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -400,6 +458,32 @@ export function CrudPage({
           className="max-w-xs bg-card"
         />
         <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="secondary" className="no-print">
+                <Columns3 className="size-4" />
+                Colunas
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Dados visíveis na lista</p>
+              <div className="max-h-72 space-y-1 overflow-y-auto">
+                {fields.map((f) => (
+                  <label key={f.name} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={tableFields.some((t) => t.name === f.name)}
+                      onChange={() => toggleColuna(f.name)}
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+              <Button size="sm" variant="ghost" className="mt-2 w-full" onClick={resetColunas}>
+                Restaurar padrão
+              </Button>
+            </PopoverContent>
+          </Popover>
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="size-4" />
             Imprimir
@@ -673,8 +757,12 @@ export function CrudPage({
                     />
                   </div>
                 ) : (
-                  <Input
+                  <>
+                    {field.lookup ? <LookupList id={`lk-${field.name}`} table={field.lookup} /> : null}
+                    <Input
                     id={field.name}
+                    list={field.lookup ? `lk-${field.name}` : undefined}
+                    autoComplete={field.lookup ? "off" : undefined}
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
@@ -695,6 +783,7 @@ export function CrudPage({
                       })
                     }
                   />
+                  </>
                 )}
               </div>
             ))}
