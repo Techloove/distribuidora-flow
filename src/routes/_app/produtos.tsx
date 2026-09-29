@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Boxes } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { Button } from "@/components/ui/button";
 import { HistoricoProduto } from "@/components/historico-produto";
 import { useSupabase } from "@/lib/supabase-provider";
 
@@ -29,8 +31,8 @@ export const Route = createFileRoute("/_app/produtos")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
-  { name: "categoria", label: "Categoria", inTable: true },
-  { name: "marca", label: "Marca" },
+  { name: "categoria", label: "Categoria", inTable: true, lookup: "cad_categorias" },
+  { name: "marca", label: "Marca", lookup: "cad_marcas" },
   { name: "unidade", label: "Unidade" },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
   { name: "ultimo_custo", label: "Custo Compra", type: "number", step: "0.01", inTable: true, span: 1 },
@@ -169,6 +171,13 @@ function ProdutosPage() {
     <ErpLayout
       title="Produtos"
       description="Catálogo que alimenta pedidos, precificação, estoque e compras."
+      actions={
+        <Button asChild variant="secondary">
+          <Link to="/estoque">
+            <Boxes className="size-4" /> Estoque e movimentações
+          </Link>
+        </Button>
+      }
     >
       <CrudPage
         table="produtos"
