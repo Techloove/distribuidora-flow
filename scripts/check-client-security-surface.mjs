@@ -138,6 +138,22 @@ for (const rpc of [...rpcNames].sort()) {
   }
 }
 
+
+// Permissões financeiras devem falhar fechado e o cache precisa ser isolado por usuário.
+{
+  const file = "src/lib/permissoes-financeiras.ts";
+  const source = readFileSync(file, "utf8");
+  for (const required of [
+    "user?.id",
+    "if (error) throw new Error",
+    "q.isError ? []",
+  ]) {
+    if (!source.includes(required)) {
+      errors.push(`${file}: proteção financeira esperada ausente: ${required}`);
+    }
+  }
+}
+
 if (errors.length) {
   console.error("Falhas no perímetro cliente/RPC:");
   for (const error of errors) console.error(`- ${error}`);
