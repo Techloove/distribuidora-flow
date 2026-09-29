@@ -60,7 +60,7 @@ const fields: CrudField[] = [
   { name: "numero", label: "Número" },
   { name: "complemento", label: "Complemento" },
   { name: "bairro", label: "Bairro" },
-  { name: "cidade", label: "Cidade", inTable: true },
+  { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
   { name: "uf", label: "UF" },
   { name: "cep", label: "CEP" },
   { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
