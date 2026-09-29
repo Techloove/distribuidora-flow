@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_app/cadastros-padrao")({
         name: "description",
         content: "Cadastros padrão de categorias, marcas e cidades usados em todo o sistema.",
       },
+      { property: "og:title", content: "Categorias, marcas e cidades — ERP Distribuidora" },
+      { property: "og:description", content: "Listas padronizadas e correlacionadas do ERP." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CadastrosPadraoPage,
@@ -33,7 +37,7 @@ function CadastrosPadraoPage() {
   return (
     <ErpLayout
       title="Categorias, marcas e cidades"
-      description="Cadastros mestres para padronizar nomes usados no ERP. Alterações são restritas à gestão."
+      description="Cada nome é cadastrado uma única vez e usado em todo o sistema. Renomear aqui atualiza todos os registros."
     >
       <Tabs defaultValue="cat">
         <TabsList>
@@ -42,31 +46,13 @@ function CadastrosPadraoPage() {
           <TabsTrigger value="cid">Cidades</TabsTrigger>
         </TabsList>
         <TabsContent value="cat">
-          <CrudPage
-            table="cad_categorias"
-            fields={simples}
-            orderBy="nome"
-            emptyLabel="Nenhuma categoria."
-            searchColumns={["nome"]}
-          />
+          <CrudPage table="cad_categorias" fields={simples} orderBy="nome" emptyLabel="Nenhuma categoria." searchColumns={["nome"]} />
         </TabsContent>
         <TabsContent value="marca">
-          <CrudPage
-            table="cad_marcas"
-            fields={simples}
-            orderBy="nome"
-            emptyLabel="Nenhuma marca."
-            searchColumns={["nome"]}
-          />
+          <CrudPage table="cad_marcas" fields={simples} orderBy="nome" emptyLabel="Nenhuma marca." searchColumns={["nome"]} />
         </TabsContent>
         <TabsContent value="cid">
-          <CrudPage
-            table="cad_cidades"
-            fields={cidades}
-            orderBy="nome"
-            emptyLabel="Nenhuma cidade."
-            searchColumns={["nome", "uf", "codigo_ibge"]}
-          />
+          <CrudPage table="cad_cidades" fields={cidades} orderBy="nome" emptyLabel="Nenhuma cidade." searchColumns={["nome", "uf", "codigo_ibge"]} />
         </TabsContent>
       </Tabs>
     </ErpLayout>
