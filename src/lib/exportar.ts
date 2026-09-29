@@ -6,7 +6,8 @@ export type Coluna = { key: string; label: string };
 
 export function escapar(v: unknown) {
   const raw = v === null || v === undefined ? "" : String(v);
-  // eslint-disable-next-line no-control-regex -- bloqueia controles antes de formulas CSV
+  // Neutraliza fórmulas que planilhas executariam ao abrir o CSV.
+  // eslint-disable-next-line no-control-regex -- inclui controles antes de fórmulas.
   const s = typeof v === "string" && /^[\s\u0000-\u001f]*[=+@-]/.test(raw) ? `'${raw}` : raw;
   return `"${s.replace(/"/g, '""')}"`;
 }

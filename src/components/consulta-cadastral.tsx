@@ -76,7 +76,7 @@ export function ConsultaCadastral({
   openRow: (row: Row) => void;
   escopo?: "clientes" | "pessoas";
 }) {
-  const { client, canManage } = useSupabase();
+  const { client, session, canManage } = useSupabase();
   const queryClient = useQueryClient();
   const consultar = useServerFn(consultarDocumento);
   const [resultado, setResultado] = useState<
@@ -172,7 +172,7 @@ export function ConsultaCadastral({
       }
 
       // 2) provedor externo, sempre pelo servidor
-      const res = (await consultar({ data: { documento: doc } })) as ConsultaResultado;
+      const res = (await consultar({ data: { documento: doc, ...(session?.access_token ? { accessToken: session.access_token } : {}) } })) as ConsultaResultado;
       if (!res.ok) {
         await registrar(res.codigo, null, res.tipo, res.mensagem, false);
         throw new Error(res.mensagem);

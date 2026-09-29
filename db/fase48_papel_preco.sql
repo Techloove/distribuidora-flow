@@ -18,12 +18,12 @@ set search_path = public
 as $$
   select coalesce(
     (
-      select bool_or(coalesce(p.pode_alterar_preco, true))
+      select bool_or(coalesce(p.pode_alterar_preco, false))
       from public.user_roles ur
       left join public.papeis p on p.codigo = ur.role::text
       where ur.user_id = _user_id
     ),
-    true
+    false
   )
 $$;
 
@@ -40,7 +40,7 @@ begin
   if not public.has_role(auth.uid(), 'admin') then
     raise exception 'Apenas administradores podem alterar permissões de papéis';
   end if;
-  update public.papeis set pode_alterar_preco = coalesce(_pode, true) where codigo = _codigo;
+  update public.papeis set pode_alterar_preco = coalesce(_pode, false) where codigo = _codigo;
   if not found then
     raise exception 'Papel % não encontrado', _codigo;
   end if;

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -59,27 +59,28 @@ export type CrudField = {
   hiddenInForm?: boolean;
   /** Só exibe no formulário quando este campo do form estiver marcado. */
   showIf?: string;
-  /** Texto com sugestões de um cadastro padrão (ex.: cad_categorias). */
+  /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
   lookup?: string;
 };
 
-/** Lista de sugestões (datalist) vinda de um cadastro padrão. */
+/** Sugestões textuais vindas de um cadastro padrão. */
 function LookupList({ id, table }: { id: string; table: string }) {
   const { client } = useSupabase();
-  const q = useQuery({
+  const query = useQuery({
     queryKey: ["lookup", table],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!.from(table).select("*").eq("ativo", true).order("nome");
-      if (error) throw error;
-      return (data ?? []) as { nome: string; uf?: string }[];
+      const { data, error } = await client!.from(table).select("nome, ativo").eq("ativo", true).order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { nome: string }[];
     },
   });
-  const nomes = Array.from(new Set((q.data ?? []).map((r) => r.nome)));
+
+  const nomes = Array.from(new Set((query.data ?? []).map((row) => row.nome).filter(Boolean)));
   return (
     <datalist id={id}>
-      {nomes.map((n) => (
-        <option key={n} value={n} />
+      {nomes.map((nome) => (
+        <option key={nome} value={nome} />
       ))}
     </datalist>
   );
@@ -107,16 +108,19 @@ function RefSelect({
   field,
   value,
   onChange,
+  disabled = false,
 }: {
   field: CrudField;
   value: string;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   const options = useRefOptions(field);
   return (
     <select
       id={field.name}
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
     >
@@ -133,6 +137,37 @@ function RefSelect({
 
 export type Row = Record<string, unknown>;
 
+const CRUD_PROTECTED_TABLES = new Set([
+  "pedidos",
+  "pedido_itens",
+  "compras",
+  "compra_itens",
+  "estoque_movimentos",
+  "estoque_saldos",
+  "transferencias_estoque",
+  "transferencias_estoque_itens",
+  "contas_receber",
+  "contas_pagar",
+  "comissoes",
+  "movimentos_financeiros",
+  "transferencias",
+  "boletos",
+  "creditos_clientes",
+  "creditos_clientes_aplicacoes",
+  "expedicoes",
+  "pedido_separacoes",
+  "cargas",
+  "carga_pedidos",
+  "estornos_financeiros",
+  "auditoria",
+  "pedido_operacoes",
+  "devolucao_operacoes",
+  "comissao_pagamentos",
+  "comissao_pagamento_itens",
+  "sicredi_config",
+  "user_roles",
+]);
+
 export function CrudPage({
   table,
   fields,
@@ -145,6 +180,7 @@ export function CrudPage({
   onInlineSave,
   extraForm,
   extraFormTop,
+  readOnly = false,
 }: {
   table: string;
   fields: CrudField[];
@@ -174,10 +210,21 @@ export function CrudPage({
   }) => React.ReactNode;
   /** Exibe o bloco extra antes dos campos (ex.: escolher tipo de pessoa e pesquisar o documento). */
   extraFormTop?: boolean;
+  /** Modo somente leitura: impede criar, editar, excluir e salvar. */
+  readOnly?: boolean;
 }) {
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
+  const effectiveReadOnly = readOnly === true;
+  const directWriteBlocked = effectiveReadOnly || CRUD_PROTECTED_TABLES.has(table);
+
+  function assertDirectWriteAllowed() {
+    if (effectiveReadOnly) throw new Error("Esta tela está em modo somente leitura.");
+    if (CRUD_PROTECTED_TABLES.has(table)) {
+      throw new Error(`A tabela ${table} exige operação controlada por RPC.`);
+    }
+  }
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
@@ -296,6 +343,7 @@ export function CrudPage({
   const save = useMutation({
 
     mutationFn: async () => {
+      assertDirectWriteAllowed();
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
         if (field.auto || field.virtual) continue;
@@ -339,6 +387,7 @@ export function CrudPage({
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      assertDirectWriteAllowed();
       const { error } = await client!.from(table).delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
@@ -351,6 +400,7 @@ export function CrudPage({
 
   const inlineUpdate = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
+      assertDirectWriteAllowed();
       const { error } = await client!.from(table).update(patch).eq("id", id);
       if (error) throw new Error(error.message);
     },
@@ -366,7 +416,7 @@ export function CrudPage({
   const [colunas, setColunas] = useState<string[] | null>(null);
   useEffect(() => {
     try {
-      const salvo = localStorage.getItem(`colunas:${table}`);
+      const salvo = window.localStorage.getItem(`colunas:${table}`);
       setColunas(salvo ? (JSON.parse(salvo) as string[]) : null);
     } catch {
       setColunas(null);
@@ -378,15 +428,23 @@ export function CrudPage({
     : fields.filter((f) => f.inTable);
 
   function toggleColuna(name: string) {
-    const atual = tableFields.map((f) => f.name);
-    const next = atual.includes(name) ? atual.filter((n) => n !== name) : [...atual, name];
+    const atuais = tableFields.map((f) => f.name);
+    const next = atuais.includes(name) ? atuais.filter((n) => n !== name) : [...atuais, name];
     setColunas(next);
-    localStorage.setItem(`colunas:${table}`, JSON.stringify(next));
+    try {
+      window.localStorage.setItem(`colunas:${table}`, JSON.stringify(next));
+    } catch {
+      // armazenamento local indisponível: a seleção permanece apenas na sessão.
+    }
   }
 
   function resetColunas() {
     setColunas(null);
-    localStorage.removeItem(`colunas:${table}`);
+    try {
+      window.localStorage.removeItem(`colunas:${table}`);
+    } catch {
+      // armazenamento local indisponível.
+    }
   }
 
   return (
@@ -408,9 +466,7 @@ export function CrudPage({
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 p-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Dados visíveis na lista
-              </p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Dados visíveis na lista</p>
               <div className="max-h-72 space-y-1 overflow-y-auto">
                 {fields.map((f) => (
                   <label key={f.name} className="flex items-center gap-2 text-sm">
@@ -432,7 +488,7 @@ export function CrudPage({
             <Printer className="size-4" />
             Imprimir
           </Button>
-          <Button onClick={openCreate} disabled={!canManage}>
+          <Button onClick={openCreate} disabled={directWriteBlocked || !canManage}>
             <Plus className="size-4" />
             Novo
           </Button>
@@ -491,10 +547,16 @@ export function CrudPage({
 
       <p className="text-xs text-muted-foreground">{rows.length} registro(s)</p>
 
-      {!canManage ? (
+      {!canManage && !effectiveReadOnly ? (
         <p className="text-xs text-muted-foreground">
           Somente perfis <strong>admin</strong> ou <strong>gestor</strong> podem incluir, editar ou
           excluir registros.
+        </p>
+      ) : null}
+      {CRUD_PROTECTED_TABLES.has(table) && !effectiveReadOnly ? (
+        <p className="text-xs text-muted-foreground">
+          Esta tabela possui escrita protegida. Alterações devem ser feitas pelo fluxo operacional
+          específico, que executa as RPCs e validações do banco.
         </p>
       ) : null}
 
@@ -528,7 +590,7 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name}>
-                      {inlineSet.has(f.name) && canManage ? (
+                      {inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
                         <Input
                           key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
                           type="number"
@@ -576,7 +638,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={!canManage}
+                        disabled={directWriteBlocked || !canManage}
                         onClick={() => openEdit(row)}
                       >
                         <Pencil className="size-4" />
@@ -584,7 +646,7 @@ export function CrudPage({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={!canManage}
+                        disabled={directWriteBlocked || !canManage}
                         onClick={() => remove.mutate(row["id"] as string)}
                       >
                         <Trash2 className="size-4 text-destructive" />
@@ -651,6 +713,7 @@ export function CrudPage({
                         <input
                           type="checkbox"
                           checked={Boolean(form[c.name])}
+                          disabled={directWriteBlocked}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, [c.name]: e.target.checked }))
                           }
@@ -664,6 +727,7 @@ export function CrudPage({
                   <RefSelect
                     field={field}
                     value={String(form[field.name] ?? "")}
+                    disabled={directWriteBlocked}
                     onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
                   />
                 ) : field.type === "select" ? (
@@ -687,20 +751,22 @@ export function CrudPage({
                       id={field.name}
                       type="checkbox"
                       checked={Boolean(form[field.name])}
+                      disabled={directWriteBlocked}
                       onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.checked }))}
                       className="size-4 accent-primary"
                     />
                   </div>
                 ) : (
                   <>
-                  {field.lookup ? <LookupList id={`lk-${field.name}`} table={field.lookup} /> : null}
-                  <Input
+                    {field.lookup ? <LookupList id={`lk-${field.name}`} table={field.lookup} /> : null}
+                    <Input
                     id={field.name}
                     list={field.lookup ? `lk-${field.name}` : undefined}
                     autoComplete={field.lookup ? "off" : undefined}
                     type={field.type === "number" ? "number" : field.type ?? "text"}
                     step={field.step}
                     value={String(form[field.name] ?? "")}
+                    disabled={directWriteBlocked}
                     onBlur={(e) => {
                       if (field.type !== "number" || !field.step) return;
                       const dec = (field.step.split(".")[1] ?? "").length;
@@ -736,7 +802,7 @@ export function CrudPage({
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            <Button onClick={() => save.mutate()} disabled={directWriteBlocked || save.isPending}>
               {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Salvar
             </Button>

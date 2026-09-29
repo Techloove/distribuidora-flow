@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { Button } from "@/components/ui/button";
 import { HistoricoProduto } from "@/components/historico-produto";
 import { useSupabase } from "@/lib/supabase-provider";
 

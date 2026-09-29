@@ -20,12 +20,13 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
 
   { path: "/separacao", label: "Separação", grupo: "Operação" },
-  { path: "/compras", label: "Compras / NF", grupo: "Operação" },
+  { path: "/compras", label: "Compras e NF", grupo: "Operação" },
   { path: "/planejamento-compras", label: "Planejamento de compras", grupo: "Operação" },
   { path: "/estoque", label: "Estoque", grupo: "Operação" },
   { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
   { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
   { path: "/expedicao", label: "Expedição", grupo: "Operação" },
+  { path: "/faturamento", label: "Faturamento (boletos)", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
 
   { path: "/financeiro", label: "Dashboard financeiro", grupo: "Financeiro" },
@@ -37,7 +38,8 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/relatorios-financeiros", label: "Relatórios financeiros", grupo: "Financeiro" },
   { path: "/rota-despesas", label: "Custos de rota", grupo: "Financeiro" },
   { path: "/receber", label: "Contas a receber", grupo: "Financeiro" },
-  { path: "/faturamento", label: "Boletos", grupo: "Financeiro" },
+  { path: "/boletos", label: "Boletos", grupo: "Financeiro" },
+  { path: "/conciliacao-creditos", label: "Conciliação de créditos", grupo: "Financeiro" },
   { path: "/pagar", label: "Contas a pagar", grupo: "Financeiro" },
   { path: "/relatorios", label: "Relatórios", grupo: "Gestão" },
   { path: "/relatorio-vendas", label: "Relatório de vendas", grupo: "Gestão" },
@@ -68,6 +70,8 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/pessoas",
     "/faturamento",
     "/notas",
+    "/boletos",
+    "/conciliacao-creditos",
     "/fluxo-caixa",
     "/receber",
     "/pagar",
@@ -105,14 +109,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/metas",
     "/comissoes",
   ],
-  estoque: [
-    "/dashboard",
-    "/produtos",
-    "/estoque",
-    "/separacao",
-    "/compras",
-    "/planejamento-compras",
-  ],
+  estoque: ["/dashboard", "/produtos", "/estoque", "/separacao", "/compras", "/planejamento-compras"],
   expedicao: ["/dashboard", "/separacao", "/cargas", "/expedicao", "/rotas"],
 };
 
@@ -134,10 +131,7 @@ export function useAcesso(): Acesso {
     queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && roles.length > 0 && !total,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("role_menus")
-        .select("role, path")
-        .in("role", roles);
+      const { data, error } = await client!.from("role_menus").select("role, path").in("role", roles);
       if (error) throw new Error("Não foi possível carregar as permissões.");
       return (data ?? []) as { role: AppRole; path: string }[];
     },
@@ -170,6 +164,7 @@ const ALIASES: Record<string, string> = {
   "/clientes": "/pessoas",
   "/fornecedores": "/pessoas",
   "/transportadoras": "/pessoas",
+  "/gestao-comissoes": "/comissoes",
   "/regras-comissao": "/comissoes",
   "/comissao-faixas": "/comissoes",
 };

@@ -334,6 +334,23 @@ export function DocumentoPage({
     },
   });
 
+  const creditosDevolucao = useQuery({
+    queryKey: ["creditos_clientes", clienteFoco, doc?.["centro_id"]],
+    enabled: !!client && config.table === "pedidos" && !!clienteFoco,
+    queryFn: async () => {
+      const query = client!
+        .from("creditos_clientes")
+        .select("id, valor_original, valor_utilizado, saldo, status, centro_id, devolucao_id")
+        .eq("cliente_id", clienteFoco)
+        .neq("status", "cancelado")
+        .gt("saldo", 0);
+      if (doc?.["centro_id"]) query.eq("centro_id", String(doc["centro_id"]));
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
   const titulosAbertos = useQuery({
     queryKey: ["contas_receber", "abertos", clienteFoco],
     enabled: !!client && !!clienteFoco,
@@ -357,7 +374,7 @@ export function DocumentoPage({
       const payload: Record<string, unknown> = {
         [config.partnerKey]: header["partner"] || null,
         [config.dateField]: header["data"] || new Date().toISOString().slice(0, 10),
-        centro_id: header["centro"] || null,
+        centro_id: header["centro"] || centro || null,
         observacoes: header["observacoes"] || null,
       };
       if (config.table === "compras") {
@@ -371,9 +388,14 @@ export function DocumentoPage({
         payload["representante_id"] = header["representante"] || meuRepresentante || null;
       }
       if (!payload[config.partnerKey]) throw new Error(`Selecione o ${config.partnerLabel}`);
+      if (!payload["centro_id"]) {
+        throw new Error(
+          config.table === "pedidos"
+            ? "Informe o centro de custo (cadastre no cliente para vir automático)"
+            : "Informe o centro da compra ou selecione um centro no contexto global",
+        );
+      }
       if (config.table === "pedidos") {
-        if (!payload["centro_id"])
-          throw new Error("Informe o centro de custo (cadastre no cliente para vir automático)");
         if (!payload["rota_id"])
           throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
         if (!payload["forma_pagamento_id"])
@@ -381,7 +403,29 @@ export function DocumentoPage({
             "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
           );
       }
-      const { data, error } = await client!.from(config.table).insert(payload).select("id").single();
+      if (config.table === "pedidos") {
+        const { data, error } = await client!.rpc("criar_pedido_rascunho", {
+          _cliente_id: String(payload["cliente_id"]),
+          _centro_id: String(payload["centro_id"]),
+          _rota_id: String(payload["rota_id"]),
+          _forma_pagamento_id: String(payload["forma_pagamento_id"]),
+          _data_pedido: String(payload["data_pedido"]),
+          _observacoes: payload["observacoes"] ? String(payload["observacoes"]) : null,
+          _representante_id: payload["representante_id"] ? String(payload["representante_id"]) : null,
+        });
+        if (error) throw new Error(error.message);
+        return data as Row;
+      }
+
+      const { data, error } = await client!.rpc("criar_compra_rascunho", {
+        _fornecedor_id: String(payload["fornecedor_id"]),
+        _centro_id: String(payload["centro_id"]),
+        _data_entrada: String(payload["data_entrada"]),
+        _observacoes: payload["observacoes"] ? String(payload["observacoes"]) : null,
+        _nf_numero: payload["nf_numero"] ? String(payload["nf_numero"]) : null,
+        _chave_acesso: payload["chave_acesso"] ? String(payload["chave_acesso"]) : null,
+        _valor_impostos: Number(payload["valor_impostos"] ?? 0),
+      });
       if (error) throw new Error(error.message);
       return data as Row;
     },
@@ -390,6 +434,64 @@ export function DocumentoPage({
       setOpenNew(false);
       setHeader({});
       setSelected(String(data["id"]));
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [creditoAplicacao, setCreditoAplicacao] = useState("");
+
+  const creditoDisponivelDevolucao = (creditosDevolucao.data ?? []).reduce(
+    (sum, c) => sum + Number(c["saldo"] ?? 0),
+    0,
+  );
+
+  const creditoAplicadoPedido = useQuery({
+    queryKey: ["credito_aplicacoes", selected],
+    enabled: !!client && config.table === "pedidos" && !!selected,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("creditos_clientes_aplicacoes")
+        .select("id, credito_id, valor, status")
+        .eq("pedido_id", selected!);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const cancelarCreditoPedido = useMutation({
+    mutationFn: async (aplicacaoId: string) => {
+      const { error } = await client!.rpc("cancelar_aplicacao_credito", {
+        _aplicacao_id: aplicacaoId,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Aplicação de crédito cancelada");
+      queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
+      queryClient.invalidateQueries({ queryKey: [config.table] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const aplicarCreditoPedido = useMutation({
+    mutationFn: async () => {
+      if (!selected || !doc) throw new Error("Selecione um pedido");
+      const valor = Number(creditoAplicacao || 0);
+      if (valor <= 0) throw new Error("Informe o valor do crédito");
+      const { error } = await client!.rpc("aplicar_creditos_cliente_pedido", {
+        _pedido_id: selected,
+        _valor: valor,
+        _chave_idempotencia: crypto.randomUUID(),
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Crédito reservado no pedido");
+      setCreditoAplicacao("");
+      queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -410,8 +512,26 @@ export function DocumentoPage({
           pagamento["comissao"] ?? doc["comissao_percentual"] ?? 0,
         );
       }
-      const { error } = await client!.from(config.table).update(patch).eq("id", doc["id"]);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("atualizar_pedido_comercial", {
+          _pedido_id: String(doc["id"]),
+          _forma_pagamento_id: String(patch["forma_pagamento_id"]),
+          _frete_valor: Number(patch["frete_valor"] ?? 0),
+          _desconto_valor: Number(patch["desconto_valor"] ?? 0),
+          _comissao_percentual: Number(patch["comissao_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.rpc("atualizar_compra_comercial", {
+          _compra_id: String(doc["id"]),
+          _forma_pagamento_id: patch["forma_pagamento_id"]
+            ? String(patch["forma_pagamento_id"])
+            : null,
+          _frete_valor: Number(patch["frete_valor"] ?? 0),
+          _desconto_valor: Number(patch["desconto_valor"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       toast.success("Forma de pagamento salva");
@@ -469,8 +589,26 @@ export function DocumentoPage({
         payload["lote"] = item.lote || null;
         payload["validade"] = item.validade || null;
       }
-      const { error } = await client!.from(config.itemsTable).insert(payload);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("adicionar_item_pedido", {
+          _pedido_id: selected,
+          _produto_id: String(payload["produto_id"]),
+          _quantidade: Number(payload["quantidade"]),
+          _preco_unitario: Number(payload["preco_unitario"]),
+          _desconto_percentual: Number(payload["desconto_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.rpc("adicionar_item_compra", {
+          _compra_id: selected,
+          _produto_id: String(payload["produto_id"]),
+          _quantidade: Number(payload["quantidade"]),
+          _custo_unitario: Number(payload["custo_unitario"]),
+          _lote: payload["lote"] ? String(payload["lote"]) : null,
+          _validade: payload["validade"] ? String(payload["validade"]) : null,
+        });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       setItem({ ...emptyItem });
@@ -482,11 +620,22 @@ export function DocumentoPage({
 
   const updateItem = useMutation({
     mutationFn: async (patch: { id: string; values: Record<string, number> }) => {
-      const { error } = await client!
-        .from(config.itemsTable)
-        .update(patch.values)
-        .eq("id", patch.id);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("atualizar_item_pedido", {
+          _item_id: patch.id,
+          _quantidade: Number(patch.values["quantidade"] ?? 0),
+          _preco_unitario: Number(patch.values["preco_unitario"] ?? 0),
+          _desconto_percentual: Number(patch.values["desconto_percentual"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.rpc("atualizar_item_compra", {
+          _item_id: patch.id,
+          _quantidade: Number(patch.values["quantidade"] ?? 0),
+          _custo_unitario: Number(patch.values["custo_unitario"] ?? 0),
+        });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
@@ -497,8 +646,13 @@ export function DocumentoPage({
 
   const removeItem = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client!.from(config.itemsTable).delete().eq("id", id);
-      if (error) throw new Error(error.message);
+      if (config.table === "pedidos") {
+        const { error } = await client!.rpc("remover_item_pedido", { _item_id: id });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await client!.rpc("remover_item_compra", { _item_id: id });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
@@ -545,10 +699,7 @@ export function DocumentoPage({
         const { error } = await client!.rpc("cancelar_pedido", { _pedido_id: selected });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!
-          .from("compras")
-          .update({ status: "cancelada" })
-          .eq("id", selected);
+        const { error } = await client!.rpc("cancelar_compra", { _compra_id: selected });
         if (error) throw new Error(error.message);
       }
     },
@@ -1475,6 +1626,75 @@ export function DocumentoPage({
                   ) : null}
                   Aplicar desconto no pedido
                 </Button>
+              </div>
+            ) : null}
+
+            {config.table === "pedidos" && doc["status"] === "rascunho" && clienteFoco ? (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold">Crédito de devoluções</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Crédito disponível deste cliente no centro do pedido. Ele reduz o valor que será gerado no contas a receber.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <Resumo label="Disponível" value={brl(creditoDisponivelDevolucao)} />
+                  <Resumo
+                    label="Aplicado neste pedido"
+                    value={brl(
+                      (creditoAplicadoPedido.data ?? [])
+                        .filter((a) => ["reservado", "aplicado"].includes(String(a["status"])))
+                        .reduce((sum, a) => sum + Number(a["valor"] ?? 0), 0),
+                    )}
+                  />
+                  <Resumo label="Total do pedido" value={brl(doc["total_liquido"])} />
+                </div>
+                {(creditoAplicadoPedido.data ?? []).some((a) => String(a["status"]) === "reservado") ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium">Reservas deste pedido</p>
+                    {(creditoAplicadoPedido.data ?? [])
+                      .filter((a) => String(a["status"]) === "reservado")
+                      .map((a) => (
+                        <div key={String(a["id"])} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                          <span>{brl(a["valor"])}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={cancelarCreditoPedido.isPending}
+                            onClick={() => cancelarCreditoPedido.mutate(String(a["id"]))}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+                {creditoDisponivelDevolucao > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-end gap-2">
+                    <div className="min-w-48 flex-1 space-y-1.5">
+                      <Label>Valor do crédito</Label>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        max={String(creditoDisponivelDevolucao)}
+                        value={creditoAplicacao}
+                        onChange={(e) => setCreditoAplicacao(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      disabled={aplicarCreditoPedido.isPending}
+                      onClick={() => aplicarCreditoPedido.mutate()}
+                    >
+                      {aplicarCreditoPedido.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                      Aplicar crédito
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Nenhum crédito de devolução disponível para este cliente neste centro.
+                  </p>
+                )}
               </div>
             ) : null}
 

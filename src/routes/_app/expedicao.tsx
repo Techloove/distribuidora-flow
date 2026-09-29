@@ -81,12 +81,13 @@ function ExpedicaoPage() {
     roles.includes("estoque");
 
   const expedicoes = useQuery({
-    queryKey: ["expedicoes"],
-    enabled: !!client,
+    queryKey: ["expedicoes", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
       const { data, error } = await client!
         .from("expedicoes")
         .select("*")
+        .eq("centro_id", centro!)
         .order("numero", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -94,17 +95,17 @@ function ExpedicaoPage() {
   });
 
   const pedidos = useQuery({
-    queryKey: ["pedidos", "expedicao"],
-    enabled: !!client,
+    queryKey: ["pedidos", "expedicao", centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
-      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status");
+      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status").eq("centro_id", centro!);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "options"],
+    queryKey: ["clientes", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("clientes").select("id, razao_social");
@@ -114,7 +115,7 @@ function ExpedicaoPage() {
   });
 
   const transportadoras = useQuery({
-    queryKey: ["transportadoras", "options"],
+    queryKey: ["transportadoras", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -127,7 +128,7 @@ function ExpedicaoPage() {
   });
 
   const rotas = useQuery({
-    queryKey: ["rotas", "options"],
+    queryKey: ["rotas", "options", centro],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -190,26 +191,24 @@ function ExpedicaoPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const { error } = await client!
-        .from("expedicoes")
-        .update({
-          transportadora_id: form["transportadora_id"] || null,
-          motorista: form["motorista"] || null,
-          placa: form["placa"] || null,
-          previsao_entrega: form["previsao_entrega"] || null,
-          volumes: Number(form["volumes"] || 1),
-          peso_kg: Number(form["peso_kg"] || 0),
-          rota_id: form["rota_id"] || null,
-          romaneio: form["romaneio"] || null,
-          observacoes: form["observacoes"] || null,
-        })
-        .eq("id", editing!["id"] as string);
+      const { error } = await client!.rpc("atualizar_dados_expedicao", {
+        _id: editing!["id"] as string,
+        _transportadora_id: form["transportadora_id"] || null,
+        _motorista: form["motorista"] || null,
+        _placa: form["placa"] || null,
+        _previsao_entrega: form["previsao_entrega"] || null,
+        _volumes: Number(form["volumes"] || 1),
+        _peso_kg: Number(form["peso_kg"] || 0),
+        _rota_id: form["rota_id"] || null,
+        _romaneio: form["romaneio"] || null,
+        _observacoes: form["observacoes"] || null,
+      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Dados de transporte salvos");
       setEditing(null);
-      queryClient.invalidateQueries({ queryKey: ["expedicoes"] });
+      queryClient.invalidateQueries({ queryKey: ["expedicoes", centro] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -226,6 +225,7 @@ function ExpedicaoPage() {
       previsao_entrega: String(r["previsao_entrega"] ?? ""),
       volumes: String(r["volumes"] ?? 1),
       peso_kg: String(r["peso_kg"] ?? 0),
+      rota_id: String(r["rota_id"] ?? ""),
       observacoes: String(r["observacoes"] ?? ""),
     });
   }

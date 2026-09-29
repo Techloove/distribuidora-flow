@@ -1,4 +1,7 @@
-/** Bound external requests; never retry bank mutations automatically. */
-export function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
-  return fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(20_000) });
+/** Limita chamadas externas para evitar requisições penduradas indefinidamente. */
+export function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, timeoutMs = 20_000) {
+  return fetch(input, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(timeoutMs),
+  });
 }

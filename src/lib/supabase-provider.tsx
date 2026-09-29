@@ -1,5 +1,6 @@
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "./supabase-client";
 import { setCentro } from "./centro-store";
@@ -24,6 +25,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   const [initializing, setInitializing] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
@@ -45,9 +47,12 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       .then(async (sb) => {
         if (!active) return;
         setClient(sb);
-        const { data: listener } = sb.auth.onAuthStateChange((_event, next) => {
+        const { data: listener } = sb.auth.onAuthStateChange((event, next) => {
           revision++;
           accept(next);
+          if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+            void router.invalidate();
+          }
         });
         unsubscribe = () => listener.subscription.unsubscribe();
         const requestedAt = revision;
@@ -64,7 +69,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe?.();
     };
-  }, [queryClient]);
+  }, [queryClient, router]);
 
   const permissions = useQuery({
     queryKey: ["session-permissions", session?.user.id],

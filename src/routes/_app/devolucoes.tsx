@@ -253,7 +253,7 @@ function DevolucoesPage() {
   return (
     <ErpLayout
       title="Devoluções de venda"
-      description="Confirmar devolve os itens ao estoque e lança um crédito negativo no contas a receber."
+      description="Confirmar devolve os itens ao estoque e gera um crédito para o cliente."
       actions={
         <Button variant="secondary" onClick={() => window.print()}>
           <Printer className="size-4" /> Imprimir

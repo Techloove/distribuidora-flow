@@ -1,7 +1,113 @@
 import { createServerFn } from "@tanstack/react-start";
-import { financialMiddleware } from "./auth-middleware";
-import { emitirBoletoSchema, boletoReferenceSchema } from "./sicredi-schema";
 import { fetchWithTimeout } from "./fetch-timeout";
+import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+
+const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
+
+async function requireSicrediAccess(
+  action: string,
+  limit: number,
+  explicitAccessToken?: string,
+) {
+  const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
+  const user = await requireServerAuth(accessToken, SICREDI_ROLES);
+  await enforceRateLimit(accessToken, action, limit, 60);
+  if (!accessToken) throw new Error("Sessão não informada. Entre novamente.");
+  return { user, accessToken };
+}
+
+async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
+  if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/${path}`, {
+    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error("Não foi possível validar o título no ERP.");
+  return (await res.json()) as T[];
+}
+
+async function userRpc<T>(
+  accessToken: string,
+  fn: string,
+  payload: Record<string, unknown>,
+): Promise<T> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
+  if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Falha ao registrar liquidação no ERP: ${body.slice(0, 300)}`);
+  return (body ? JSON.parse(body) : null) as T;
+}
+
+async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
+  const url = process.env["EXT_SUPABASE_URL"];
+  const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+  if (!url || !key) throw new Error("Service role do Supabase não disponível no servidor.");
+  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Falha ao persistir operação Sicredi no ERP: ${body.slice(0, 300)}`);
+  return (body ? JSON.parse(body) : null) as T;
+}
+
+function jsonPayload(text: string): unknown {
+  try {
+    return JSON.parse(text || "{}") as unknown;
+  } catch {
+    return { raw: text.slice(0, 4000) };
+  }
+}
+
+function shiftIsoDate(value: unknown, days: number): string | null {
+  const iso = String(value ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function carregarTituloBoleto(accessToken: string, contaId: string): Promise<DbRow> {
+  const id = String(contaId ?? "").trim();
+  if (!id) throw new Error("Título não informado.");
+  const rows = await userRest<DbRow>(
+    accessToken,
+    `vw_boletos_pendentes?select=*&conta_receber_id=eq.${encodeURIComponent(id)}&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) throw new Error("Título indisponível, sem acesso ou já possui boleto ativo.");
+  return row;
+}
+
+async function carregarBoleto(accessToken: string, boletoId: string): Promise<DbRow> {
+  const id = String(boletoId ?? "").trim();
+  if (!id) throw new Error("Boleto não informado.");
+  const rows = await userRest<DbRow>(
+    accessToken,
+    `boletos?select=id,nosso_numero,status,centro_id,valor,conta_receber_id&id=eq.${encodeURIComponent(id)}&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
+  if (!String(row["nosso_numero"] ?? "").trim()) throw new Error("Boleto sem nosso número.");
+  return row;
+}
 
 /**
  * Integracao com a API de Cobranca do Sicredi (portal de parceiros).
@@ -49,11 +155,11 @@ async function dbConfig(): Promise<DbRow | null> {
     const res = await fetchWithTimeout(`${url}/rest/v1/sicredi_config?select=*&limit=1`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
-    if (!res.ok) throw new Error("Falha ao carregar a configuração bancária.");
+    if (!res.ok) return null;
     const rows = (await res.json()) as DbRow[];
     return rows[0] ?? null;
   } catch {
-    throw new Error("Configuração bancária indisponível. Tente novamente antes de emitir.");
+    return null;
   }
 }
 
@@ -116,6 +222,7 @@ async function conf(): Promise<Conf> {
   return c;
 }
 
+
 async function token(c: Conf): Promise<string> {
   const body = new URLSearchParams({
     username: c.username,
@@ -133,10 +240,7 @@ async function token(c: Conf): Promise<string> {
     body,
   });
   const txt = await res.text();
-  if (!res.ok)
-    throw new Error(
-      `Falha na autenticacao Sicredi (${res.status}): Consulte o suporte com o código da resposta.`,
-    );
+  if (!res.ok) throw new Error(`Falha na autenticacao Sicredi (${res.status}): ${txt.slice(0, 300)}`);
   const json = JSON.parse(txt) as { access_token?: string };
   if (!json.access_token) throw new Error("Sicredi nao retornou access_token");
   return json.access_token;
@@ -153,104 +257,128 @@ function headers(c: Conf, tk: string) {
 }
 
 /** Status da configuracao — usado pela tela para avisar o usuario. */
-export const sicrediStatus = createServerFn({ method: "GET" })
-  .middleware([financialMiddleware])
-  .handler(async () => {
-    try {
-      const c = await conf();
-      return {
-        configurado: true,
-        ambiente: c.ambiente,
-        cooperativa: c.cooperativa,
-        posto: c.posto,
-        beneficiario: c.beneficiario,
-        erro: null as string | null,
-      };
-    } catch (e) {
-      return {
-        configurado: false,
-        ambiente: (process.env["SICREDI_AMBIENTE"] ?? "homologacao").toLowerCase(),
-        cooperativa: "",
-        posto: "",
-        beneficiario: "",
-        erro: (e as Error).message,
-      };
-    }
+export const sicrediStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+  await requireSicrediAccess("sicredi_status", 30, data.accessToken);
+  try {
+    const c = await conf();
+    return {
+      configurado: true,
+      ambiente: c.ambiente,
+      cooperativa: c.cooperativa,
+      posto: c.posto,
+      beneficiario: c.beneficiario,
+      erro: null as string | null,
+    };
+  } catch (e) {
+    return {
+      configurado: false,
+      ambiente: (process.env["SICREDI_AMBIENTE"] ?? "homologacao").toLowerCase(),
+      cooperativa: "",
+      posto: "",
+      beneficiario: "",
+      erro: (e as Error).message,
+    };
+  }
   });
+
+type EmitirInput = { contaId: string; accessToken?: string };
 
 /** Registra o boleto no Sicredi e devolve nosso numero / linha digitavel / PIX. */
 export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
-  .middleware([financialMiddleware])
-  .inputValidator(emitirBoletoSchema)
-  .handler(async ({ data, context }) => {
-    const { data: title, error } = await context.auth.client
-      .from("contas_receber")
-      .select("id, valor, valor_pago, status, vencimento, cliente_id, centro_id")
-      .eq("id", data.contaReceberId)
-      .single();
-    if (error || !title || !["aberto", "parcial"].includes(title.status))
-      throw new Error("Título indisponível para emissão.");
-    const centers = await context.auth.client.rpc("meus_centros");
-    if (centers.error || !title.centro_id || !(centers.data ?? []).includes(title.centro_id))
-      throw new Error("Sem acesso ao centro do título.");
-    const customer = await context.auth.client
-      .from("clientes")
-      .select("cnpj_cpf")
-      .eq("id", title.cliente_id)
-      .single();
-    if (
-      customer.error ||
-      String(customer.data?.cnpj_cpf ?? "").replace(/\D/g, "") !== data.pagador.documento
-    )
-      throw new Error("Pagador não corresponde ao título.");
-    const balance = Math.round((Number(title.valor) - Number(title.valor_pago ?? 0)) * 100);
-    if (Math.round(data.valor * 100) !== balance || data.vencimento !== title.vencimento)
-      throw new Error("O título mudou. Atualize a lista antes de emitir.");
-    const existing = await context.auth.client
-      .from("boletos")
-      .select("id")
-      .eq("conta_receber_id", title.id)
-      .in("status", ["pendente", "em_processamento", "registrado", "liquidado"])
-      .limit(1);
-    if (existing.error || existing.data?.length)
-      throw new Error("Já existe boleto ativo ou não foi possível verificar a emissão.");
+  .inputValidator((data: EmitirInput) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_emitir_boleto",
+      10,
+      data.accessToken,
+    );
+    const row = await carregarTituloBoleto(accessToken, data.contaId);
     const c = await conf();
     const tk = await token(c);
-    const juros = data.juros !== undefined ? data.juros : c.juros;
-    const multa = data.multa !== undefined ? data.multa : c.multa;
-    const diasProtesto = data.diasProtesto !== undefined ? data.diasProtesto : c.diasProtesto;
-    const informativo = data.informativo || c.informativo;
+    // Reserva a emissão antes da chamada externa: serializa concorrência e
+    // aloca um seuNumero novo quando houver reemissão após baixa/cancelamento.
+    const reserva = await serviceRpc<DbRow>("preparar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _conta_id: data.contaId,
+    });
+    const seuNumero = String(reserva["seu_numero"] ?? "").trim();
+    if (!seuNumero) throw new Error("Não foi possível reservar o identificador do boleto.");
+    const juros = c.juros;
+    const multa = c.multa;
+    const diasProtesto = c.diasProtesto;
+    const vencimento = String(row["vencimento"] ?? "");
+    const dataDesconto1 =
+      c.valorDesconto1 > 0 && c.diasDesconto1 >= 0
+        ? shiftIsoDate(vencimento, -c.diasDesconto1)
+        : null;
+    const dataInicioMulta =
+      c.tipoCobranca === "NORMAL" && multa > 0 && c.diasMulta > 0
+        ? shiftIsoDate(vencimento, c.diasMulta)
+        : null;
+    const endereco = [row["logradouro"], row["numero"], row["complemento"], row["bairro"]]
+      .filter(Boolean)
+      .join(", ");
+    const informativo =
+      c.informativo ||
+      `Pedido ${String(row["pedido_numero"] ?? "-")} parcela ${String(row["parcela"] ?? 1)}`;
     const payload = {
       tipoCobranca: c.tipoCobranca,
       codigoBeneficiario: c.beneficiario,
       especieDocumento: c.especieDocumento,
-      seuNumero: data.seuNumero,
-      dataVencimento: data.vencimento,
-      valor: Number(data.valor.toFixed(2)),
-      tipoDesconto: c.tipoDesconto,
-      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0
-        ? { valorDesconto1: c.valorDesconto1, diasDesconto1: c.diasDesconto1 }
+      seuNumero,
+      dataVencimento: vencimento,
+      valor: Number(Number(row["saldo"] ?? 0).toFixed(2)),
+      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" &&
+      c.valorDesconto1 > 0 &&
+      dataDesconto1
+        ? {
+            tipoDesconto: c.tipoDesconto,
+            valorDesconto1: c.valorDesconto1,
+            dataDesconto1,
+          }
         : {}),
-      tipoJuro: juros > 0 ? (c.tipoJuro === "ISENTO" ? "PERCENTUAL" : c.tipoJuro) : "ISENTO",
-      ...(juros > 0 ? { juros } : {}),
-      ...(multa > 0 ? { multa, diasMulta: c.diasMulta } : {}),
-      ...(c.tipoProtesto !== "SEM_PROTESTO" && diasProtesto > 0
-        ? { tipoProtesto: c.tipoProtesto, diasProtesto }
+      ...(juros > 0 && c.tipoJuro !== "ISENTO"
+        ? {
+            tipoJuros: c.tipoJuro,
+            ...(c.tipoJuro === "PERCENTUAL" ? { tipoJurosPercentual: "MENSAL" } : {}),
+            juros,
+          }
         : {}),
-      ...(c.validadeAposVencimento > 0 ? { validadeAposVencimento: c.validadeAposVencimento } : {}),
+      ...(multa > 0
+        ? {
+            tipoMulta: "PERCENTUAL",
+            multa,
+            ...(dataInicioMulta ? { dataInicioMulta } : {}),
+          }
+        : {}),
+      ...(c.tipoProtesto === "PROTESTAR" && diasProtesto > 0
+        ? { diasProtestoAuto: diasProtesto }
+        : {}),
+      ...(c.tipoProtesto === "NEGATIVAR" && diasProtesto > 0
+        ? { diasNegativacaoAuto: diasProtesto }
+        : {}),
+      ...(c.validadeAposVencimento > 0
+        ? { validadeAposVencimento: c.validadeAposVencimento }
+        : {}),
       ...(informativo ? { informativos: [informativo.slice(0, 80)] } : {}),
       ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
 
       pagador: {
-        tipoPessoa: data.pagador.tipoPessoa,
-        documento: data.pagador.documento.replace(/\D/g, ""),
-        nome: data.pagador.nome.slice(0, 40),
-        endereco: data.pagador.endereco.slice(0, 40),
-        cidade: data.pagador.cidade.slice(0, 20),
-        uf: data.pagador.uf.slice(0, 2).toUpperCase(),
-        cep: data.pagador.cep.replace(/\D/g, ""),
-        ...(data.pagador.telefone ? { telefone: data.pagador.telefone.replace(/\D/g, "") } : {}),
-        ...(data.pagador.email ? { email: data.pagador.email } : {}),
+        tipoPessoa: String(row["tipo_pessoa"] ?? "").toUpperCase().startsWith("F")
+          ? "PESSOA_FISICA"
+          : "PESSOA_JURIDICA",
+        documento: String(row["cnpj_cpf"] ?? "").replace(/\D/g, ""),
+        nome: String(row["razao_social"] ?? "").slice(0, 40),
+        endereco: (endereco || "Nao informado").slice(0, 40),
+        cidade: String(row["cidade"] ?? "").slice(0, 25),
+        uf: String(row["uf"] ?? "").slice(0, 2).toUpperCase(),
+        cep: String(row["cep"] ?? "").replace(/\D/g, ""),
+        ...(row["telefone"]
+          ? { telefone: String(row["telefone"]).replace(/\D/g, "").slice(0, 11) }
+          : {}),
+        ...(row["email"] ? { email: String(row["email"]).slice(0, 40) } : {}),
       },
     };
     const res = await fetchWithTimeout(`${c.base}/cobranca/boleto/v1/boletos`, {
@@ -260,11 +388,35 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     });
     const txt = await res.text();
     if (!res.ok) {
-      throw new Error(
-        `Sicredi recusou o boleto (${res.status}): Consulte o suporte com o código da resposta.`,
-      );
+      try {
+        await serviceRpc("registrar_erro_boleto_sicredi_servidor", {
+          _actor_id: user.id,
+          _conta_id: data.contaId,
+          _seu_numero: seuNumero,
+          _erro: `Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`,
+        });
+      } catch {
+        // O erro bancário continua sendo a causa principal; a falha de persistência será auditada no servidor.
+      }
+      throw new Error(`Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`);
     }
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
+    const retorno = jsonPayload(txt);
+    await serviceRpc("registrar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _conta_id: data.contaId,
+      _seu_numero: seuNumero,
+      _nosso_numero: String(json["nossoNumero"] ?? ""),
+      _linha_digitavel: String(json["linhaDigitavel"] ?? ""),
+      _codigo_barras: String(json["codigoBarras"] ?? ""),
+      _qrcode_pix: String(json["qrCode"] ?? json["txid"] ?? ""),
+      _txid: String(json["txid"] ?? ""),
+      _cooperativa: c.cooperativa,
+      _posto: c.posto,
+      _codigo_beneficiario: c.beneficiario,
+      _ambiente: c.ambiente,
+      _retorno: retorno,
+    });
     return {
       nossoNumero: String(json["nossoNumero"] ?? ""),
       linhaDigitavel: String(json["linhaDigitavel"] ?? ""),
@@ -276,113 +428,120 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       beneficiario: c.beneficiario,
       ambiente: c.ambiente,
       retorno: txt.slice(0, 4000),
+      seuNumero,
     };
   });
 
 /** Consulta a situacao atual do boleto no Sicredi. */
 export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
-  .middleware([financialMiddleware])
-  .inputValidator(boletoReferenceSchema)
-  .handler(async ({ data, context }) => {
-    const result = await context.auth.client
-      .from("boletos")
-      .select("id, centro_id")
-      .eq("nosso_numero", data.nossoNumero)
-      .single();
-    const centers = await context.auth.client.rpc("meus_centros");
-    if (
-      result.error ||
-      centers.error ||
-      !result.data?.centro_id ||
-      !(centers.data ?? []).includes(result.data.centro_id)
-    )
-      throw new Error("Boleto indisponível para seu acesso.");
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_consultar_boleto",
+      30,
+      data.accessToken,
+    );
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
-    const url = `${c.base}/cobranca/boleto/v1/boletos?codigoBeneficiario=${encodeURIComponent(
+    const consultaVersao = c.ambiente === "producao" ? "v2" : "v1";
+    const url = `${c.base}/cobranca/boleto/${consultaVersao}/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
-    )}&nossoNumero=${encodeURIComponent(data.nossoNumero)}`;
-    const res = await fetchWithTimeout(url, { headers: headers(c, tk) });
+    )}&nossoNumero=${encodeURIComponent(nossoNumero)}`;
+    const consultaHeaders = {
+      ...headers(c, tk),
+      ...(consultaVersao === "v2" ? { "data-movimento": "true" } : {}),
+    };
+    const res = await fetchWithTimeout(url, { headers: consultaHeaders });
     const txt = await res.text();
-    if (!res.ok)
-      throw new Error(
-        `Consulta Sicredi falhou (${res.status}): Consulte o suporte com o código da resposta.`,
-      );
+    if (!res.ok) throw new Error(`Consulta Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
     const situacao = String(
       (json["situacao"] as string) ?? (json["situacaoBoleto"] as string) ?? "",
     ).toLowerCase();
+    const liquidado = situacao.includes("liquidad");
+    const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
+    if (liquidado) {
+      const valorLiquidacao = Number(boleto["valor"] ?? 0);
+      if (!Number.isFinite(valorLiquidacao) || valorLiquidacao <= 0) {
+        throw new Error("Boleto sem valor válido para registrar a liquidação no ERP.");
+      }
+      const dataMovimento = String(json["dataMovimento"] ?? "").trim();
+      const dataLiquidacao = /^\d{4}-\d{2}-\d{2}$/.test(dataMovimento)
+        ? dataMovimento
+        : new Date().toISOString().slice(0, 10);
+      await userRpc(accessToken, "liquidar_boleto", {
+        _boleto_id: data.boletoId,
+        _valor: valorLiquidacao,
+        _data: dataLiquidacao,
+      });
+    } else {
+      await serviceRpc("sincronizar_boleto_sicredi_servidor", {
+        _actor_id: user.id,
+        _boleto_id: data.boletoId,
+        _status: baixado ? "baixado" : "registrado",
+        _retorno: jsonPayload(txt),
+      });
+    }
     return {
       situacao,
-      liquidado: situacao.includes("liquidad"),
-      baixado: situacao.includes("baixad") || situacao.includes("cancelad"),
+      liquidado,
+      baixado,
       retorno: txt.slice(0, 4000),
     };
   });
 
 /** Solicita a baixa (cancelamento) do boleto. */
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
-  .middleware([financialMiddleware])
-  .inputValidator(boletoReferenceSchema)
-  .handler(async ({ data, context }) => {
-    const result = await context.auth.client
-      .from("boletos")
-      .select("id, centro_id")
-      .eq("nosso_numero", data.nossoNumero)
-      .single();
-    const centers = await context.auth.client.rpc("meus_centros");
-    if (
-      result.error ||
-      centers.error ||
-      !result.data?.centro_id ||
-      !(centers.data ?? []).includes(result.data.centro_id)
-    )
-      throw new Error("Boleto indisponível para seu acesso.");
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_baixar_boleto",
+      10,
+      data.accessToken,
+    );
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
     const res = await fetchWithTimeout(
-      `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(data.nossoNumero)}/baixa`,
+      `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(nossoNumero)}/baixa`,
       { method: "PATCH", headers: headers(c, tk), body: JSON.stringify({}) },
     );
     const txt = await res.text();
-    if (!res.ok)
-      throw new Error(
-        `Baixa no Sicredi falhou (${res.status}): Consulte o suporte com o código da resposta.`,
-      );
+    if (!res.ok) throw new Error(`Baixa no Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
+    await serviceRpc("sincronizar_boleto_sicredi_servidor", {
+      _actor_id: user.id,
+      _boleto_id: data.boletoId,
+      _status: "baixado",
+      _retorno: jsonPayload(txt),
+    });
     return { ok: true, retorno: txt.slice(0, 500) };
   });
 
 /** Segunda via em PDF (base64) do boleto registrado. */
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
-  .middleware([financialMiddleware])
-  .inputValidator(boletoReferenceSchema)
-  .handler(async ({ data, context }) => {
-    const result = await context.auth.client
-      .from("boletos")
-      .select("id, centro_id")
-      .eq("nosso_numero", data.nossoNumero)
-      .single();
-    const centers = await context.auth.client.rpc("meus_centros");
-    if (
-      result.error ||
-      centers.error ||
-      !result.data?.centro_id ||
-      !(centers.data ?? []).includes(result.data.centro_id)
-    )
-      throw new Error("Boleto indisponível para seu acesso.");
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { accessToken } = await requireSicrediAccess(
+      "sicredi_pdf_boleto",
+      20,
+      data.accessToken,
+    );
+    const boleto = await carregarBoleto(accessToken, data.boletoId);
+    const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
     const res = await fetchWithTimeout(
       `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=&nossoNumero=${encodeURIComponent(
-        data.nossoNumero,
+        nossoNumero,
       )}&codigoBeneficiario=${encodeURIComponent(c.beneficiario)}`,
       { headers: headers(c, tk) },
     );
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(
-        `PDF do boleto indisponivel (${res.status}): Consulte o suporte com o código da resposta.`,
-      );
+      throw new Error(`PDF do boleto indisponivel (${res.status}): ${txt.slice(0, 300)}`);
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     let bin = "";

@@ -1,6 +1,6 @@
-import { createServerFn } from "@tanstack/react-start";
-import { registrationMiddleware } from "./auth-middleware";
+import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
+import { createServerFn } from "@tanstack/react-start";
 
 /**
  * Camada de serviço de consulta cadastral (desacoplada do cadastro de clientes).
@@ -365,11 +365,14 @@ async function consultarCpf(doc: string): Promise<ConsultaResultado> {
 
 /** Consulta cadastral por CNPJ ou CPF. Valida e normaliza o documento. */
 export const consultarDocumento = createServerFn({ method: "POST" })
-  .middleware([registrationMiddleware])
-  .inputValidator((input: { documento: string }) => ({
+  .inputValidator((input: { documento: string; accessToken?: string }) => ({
     documento: String(input?.documento ?? ""),
+    accessToken: String(input?.accessToken ?? ""),
   }))
   .handler(async ({ data }): Promise<ConsultaResultado> => {
+    const accessToken = String(data.accessToken ?? "").trim() || requestAccessToken();
+    await requireServerAuth(accessToken, ["admin", "gestor"]);
+    await enforceRateLimit(accessToken, "consulta-cadastral", 20, 60);
     const doc = digitos(data.documento);
     if (doc.length === 14) {
       if (!cnpjValido(doc)) {

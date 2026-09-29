@@ -44,13 +44,15 @@ function PlanejamentoPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_sugestao_compras"],
+    queryKey: ["vw_sugestao_compras_centro", centro],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("vw_sugestao_compras")
+      let q = client!
+        .from("vw_sugestao_compras_centro")
         .select("*")
         .order("sugestao", { ascending: false });
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -70,7 +72,7 @@ function PlanejamentoPage() {
 
   const rows = useMemo(() => {
     let list = lista.data ?? [];
-    if (centro) list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
+
     const term = (filtros["busca"] ?? "").trim().toLowerCase();
     if (term) {
       list = list.filter((r) =>

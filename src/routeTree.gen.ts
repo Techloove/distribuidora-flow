@@ -14,8 +14,8 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
-import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
 import { Route as AppCargasRouteImport } from './routes/_app/cargas'
+import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
 import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
@@ -24,6 +24,7 @@ import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-fa
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
 import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
+import { Route as AppConciliacaoCreditosRouteImport } from './routes/_app/conciliacao-creditos'
 import { Route as AppContasRouteImport } from './routes/_app/contas'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDescontosPesoRouteImport } from './routes/_app/descontos-peso'
@@ -84,14 +85,14 @@ const AppBoletosRoute = AppBoletosRouteImport.update({
   path: '/boletos',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppCadastrosPadraoRoute = AppCadastrosPadraoRouteImport.update({
-  id: '/cadastros-padrao',
-  path: '/cadastros-padrao',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppCargasRoute = AppCargasRouteImport.update({
   id: '/cargas',
   path: '/cargas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCadastrosPadraoRoute = AppCadastrosPadraoRouteImport.update({
+  id: '/cadastros-padrao',
+  path: '/cadastros-padrao',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCategoriasFinanceirasRoute =
@@ -128,6 +129,11 @@ const AppComissoesRoute = AppComissoesRouteImport.update({
 const AppComprasRoute = AppComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppConciliacaoCreditosRoute = AppConciliacaoCreditosRouteImport.update({
+  id: '/conciliacao-creditos',
+  path: '/conciliacao-creditos',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByTo {
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
+  '/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/configuracoes': typeof AppConfiguracoesRoute
   '/contas': typeof AppContasRoute
   '/dashboard': typeof AppDashboardRoute
@@ -430,6 +438,7 @@ export interface FileRoutesById {
   '/_app/comissao-faixas': typeof AppComissaoFaixasRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
+  '/_app/conciliacao-creditos': typeof AppConciliacaoCreditosRoute
   '/_app/configuracoes': typeof AppConfiguracoesRoute
   '/_app/contas': typeof AppContasRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -730,7 +739,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppComprasRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/configuracoes': {
+      '/_app/conciliacao-creditos': {
+      id: '/_app/conciliacao-creditos'
+      path: '/conciliacao-creditos'
+      fullPath: '/conciliacao-creditos'
+      preLoaderRoute: typeof AppConciliacaoCreditosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+  '/_app/configuracoes': {
       id: '/_app/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
@@ -998,6 +1014,7 @@ interface AppRouteRouteChildren {
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
+  AppConciliacaoCreditosRoute: typeof AppConciliacaoCreditosRoute
   AppContasRoute: typeof AppContasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDescontosPesoRoute: typeof AppDescontosPesoRoute
@@ -1048,6 +1065,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
+  AppConciliacaoCreditosRoute: AppConciliacaoCreditosRoute,
   AppContasRoute: AppContasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDescontosPesoRoute: AppDescontosPesoRoute,

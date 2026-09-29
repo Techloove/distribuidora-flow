@@ -39,8 +39,7 @@ export const Route = createFileRoute("/_app/faturamento")({
       { property: "og:title", content: "Faturamento e boletos — ERP Distribuidora" },
       {
         property: "og:description",
-        content:
-          "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
+        content: "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -61,14 +60,6 @@ const statusLabel: Record<string, string> = {
   erro: "Erro",
 };
 
-function safeJson(v: string) {
-  try {
-    return JSON.parse(v) as unknown;
-  } catch {
-    return { raw: v };
-  }
-}
-
 function dataBr(v: unknown) {
   const s = String(v ?? "");
   if (!s || s === "null") return "—";
@@ -77,7 +68,7 @@ function dataBr(v: unknown) {
 }
 
 function FaturamentoPage() {
-  const { client, roles } = useSupabase();
+  const { client, roles, session } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const canFinance =
@@ -94,7 +85,10 @@ function FaturamentoPage() {
 
   const config = useQuery({
     queryKey: ["sicredi", "status"],
-    queryFn: () => sicrediStatus(),
+    queryFn: () =>
+      sicrediStatus({
+        data: session?.access_token ? { accessToken: session.access_token } : {},
+      }),
   });
 
   const pendentes = useQuery({
@@ -156,15 +150,9 @@ function FaturamentoPage() {
     if (termo) {
       list = list.filter(
         (r) =>
-          String(r["razao_social"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(r["documento"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(r["pedido_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo),
+          String(r["razao_social"] ?? "").toLowerCase().includes(termo) ||
+          String(r["documento"] ?? "").toLowerCase().includes(termo) ||
+          String(r["pedido_numero"] ?? "").toLowerCase().includes(termo),
       );
     }
     return list;
@@ -183,15 +171,9 @@ function FaturamentoPage() {
       list = list.filter(
         (b) =>
           cliName(b["cliente_id"]).toLowerCase().includes(termo) ||
-          String(b["nosso_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(b["seu_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(b["linha_digitavel"] ?? "")
-            .toLowerCase()
-            .includes(termo),
+          String(b["nosso_numero"] ?? "").toLowerCase().includes(termo) ||
+          String(b["seu_numero"] ?? "").toLowerCase().includes(termo) ||
+          String(b["linha_digitavel"] ?? "").toLowerCase().includes(termo),
       );
     }
     return list;
@@ -200,80 +182,16 @@ function FaturamentoPage() {
   /** Registra a parcela como boleto no Sicredi e grava o retorno. */
   const emitirUm = async (row: Row) => {
     const contaId = String(row["conta_receber_id"]);
-    const seuNumero =
-      `${String(row["pedido_numero"] ?? row["documento"] ?? "").replace(/\D/g, "") || "0"}${String(
-        row["parcela"] ?? 1,
-      )}`.slice(0, 10);
-    const valor = Number(row["saldo"] ?? row["valor"] ?? 0);
-    const endereco = [row["logradouro"], row["numero"], row["complemento"], row["bairro"]]
-      .filter(Boolean)
-      .join(", ");
-
-    const base: Row = {
-      conta_receber_id: contaId,
-      pedido_id: row["pedido_id"] ?? null,
-      cliente_id: row["cliente_id"] ?? null,
-      centro_id: row["centro_id"] ?? null,
-      documento: row["documento"] ?? null,
-      parcela: row["parcela"] ?? null,
-      banco: "sicredi",
-      seu_numero: seuNumero,
-      valor,
-      vencimento: row["vencimento"] ?? null,
-    };
-
     try {
-      const res = await emitirFn({
+      await emitirFn({
         data: {
-          contaReceberId: contaId,
-          seuNumero,
-          valor,
-          vencimento: String(row["vencimento"] ?? ""),
-          informativo: `Pedido ${String(row["pedido_numero"] ?? "-")} parcela ${String(row["parcela"] ?? 1)}`,
-          pagador: {
-            tipoPessoa: String(row["tipo_pessoa"] ?? "")
-              .toUpperCase()
-              .startsWith("F")
-              ? "PESSOA_FISICA"
-              : "PESSOA_JURIDICA",
-            documento: String(row["cnpj_cpf"] ?? ""),
-            nome: String(row["razao_social"] ?? ""),
-            endereco: endereco || "Nao informado",
-            cidade: String(row["cidade"] ?? ""),
-            uf: String(row["uf"] ?? ""),
-            cep: String(row["cep"] ?? ""),
-            ...(row["telefone"] ? { telefone: String(row["telefone"]) } : {}),
-            ...(row["email"] ? { email: String(row["email"]) } : {}),
-          },
+          contaId,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
         },
       });
-      const { error } = await client!.from("boletos").insert({
-        ...base,
-        status: "registrado",
-        nosso_numero: res.nossoNumero,
-        linha_digitavel: res.linhaDigitavel,
-        codigo_barras: res.codigoBarras,
-        qrcode_pix: res.qrCode,
-        txid: res.txid,
-        cooperativa: res.cooperativa,
-        posto: res.posto,
-        codigo_beneficiario: res.beneficiario,
-        ambiente: res.ambiente,
-        enviado_em: new Date().toISOString(),
-        retorno: safeJson(res.retorno),
-      });
-      if (error) throw new Error(error.message);
       return { ok: true as const };
     } catch (e) {
-      const msg = (e as Error).message;
-      await client!.from("boletos").insert({
-        ...base,
-        status: "erro",
-        erro: msg.slice(0, 500),
-        tentativas: 1,
-        enviado_em: new Date().toISOString(),
-      });
-      return { ok: false as const, msg };
+      return { ok: false as const, msg: (e as Error).message };
     }
   };
 
@@ -304,25 +222,13 @@ function FaturamentoPage() {
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await consultarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
-      if (res.liquidado) {
-        const { error } = await client!.rpc("liquidar_boleto", {
-          _id: String(b["id"]),
-          _valor: Number(b["valor"] ?? 0),
-          _data: new Date().toISOString().slice(0, 10),
-        });
-        if (error) throw new Error(error.message);
-        return "liquidado";
-      }
-      const { error } = await client!
-        .from("boletos")
-        .update({
-          status: res.baixado ? "baixado" : "registrado",
-          retorno: safeJson(res.retorno),
-        })
-        .eq("id", String(b["id"]));
-      if (error) throw new Error(error.message);
-      return res.situacao || "registrado";
+      const res = await consultarFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
+      return res.situacao || (res.liquidado ? "liquidado" : res.baixado ? "baixado" : "registrado");
     },
     onSuccess: (s) => {
       toast.success(`Situação no Sicredi: ${s}`);
@@ -333,12 +239,12 @@ function FaturamentoPage() {
 
   const baixar = useMutation({
     mutationFn: async (b: Row) => {
-      await baixarFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
-      const { error } = await client!
-        .from("boletos")
-        .update({ status: "baixado" })
-        .eq("id", String(b["id"]));
-      if (error) throw new Error(error.message);
+      await baixarFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Boleto baixado no Sicredi");
@@ -349,7 +255,12 @@ function FaturamentoPage() {
 
   const abrirPdf = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await pdfFn({ data: { nossoNumero: String(b["nosso_numero"] ?? "") } });
+      const res = await pdfFn({
+        data: {
+          boletoId: String(b["id"]),
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
       const bin = atob(res.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
@@ -526,7 +437,9 @@ function FaturamentoPage() {
                             type="checkbox"
                             aria-label={`Selecionar ${id}`}
                             checked={!!selecao[id]}
-                            onChange={(e) => setSelecao((s) => ({ ...s, [id]: e.target.checked }))}
+                            onChange={(e) =>
+                              setSelecao((s) => ({ ...s, [id]: e.target.checked }))
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -558,14 +471,18 @@ function FaturamentoPage() {
         </section>
 
         <section className="print-area space-y-2">
-          <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
+          <h2 className="text-sm font-semibold">
+            Boletos emitidos · {boletosFiltrados.length}
+          </h2>
           <div className="rounded-lg border border-border bg-card">
             {boletos.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Carregando...
               </div>
             ) : boletos.isError ? (
-              <div className="p-6 text-sm text-destructive">{(boletos.error as Error).message}</div>
+              <div className="p-6 text-sm text-destructive">
+                {(boletos.error as Error).message}
+              </div>
             ) : boletosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum boleto emitido ainda.

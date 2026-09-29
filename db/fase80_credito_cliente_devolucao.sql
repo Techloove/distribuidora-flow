@@ -1,0 +1,1244 @@
+-- Fase 80: credito de cliente por devolucao e compensacao em vendas.
+-- Arquitetura:
+-- devolucao confirmada -> credito_cliente -> aplicacao em pedido rascunho
+-- -> confirmar_pedido gera contas_receber apenas pelo saldo liquido.
+-- Nao usa contas_receber negativas para novos creditos.
+-- Nao inclui Mercado Livre/Shopee.
+
+begin;
+
+create table if not exists public.creditos_clientes (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid not null references public.clientes(id) on delete restrict,
+  centro_id uuid not null references public.centros(id) on delete restrict,
+  devolucao_id uuid references public.devolucoes(id) on delete restrict,
+  valor_original numeric(14,2) not null check (valor_original > 0),
+  valor_utilizado numeric(14,2) not null default 0 check (valor_utilizado >= 0 and valor_utilizado <= valor_original),
+  saldo numeric(14,2) generated always as (valor_original - valor_utilizado) stored,
+  status text not null default 'disponivel'
+    check (status in ('disponivel','utilizado','cancelado')),
+  observacao text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists creditos_clientes_devolucao_uq
+  on public.creditos_clientes(devolucao_id)
+  where devolucao_id is not null;
+
+create index if not exists creditos_clientes_cliente_idx
+  on public.creditos_clientes(cliente_id, centro_id, status);
+
+create table if not exists public.creditos_clientes_aplicacoes (
+  id uuid primary key default gen_random_uuid(),
+  credito_id uuid not null references public.creditos_clientes(id) on delete restrict,
+  pedido_id uuid not null references public.pedidos(id) on delete restrict,
+  valor numeric(14,2) not null check (valor > 0),
+  status text not null default 'reservado'
+    check (status in ('reservado','aplicado','revertido','cancelado')),
+  chave_idempotencia text,
+  idempotencia_contexto jsonb,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  aplicado_em timestamptz,
+  revertido_em timestamptz
+);
+
+alter table public.creditos_clientes_aplicacoes
+  add column if not exists idempotencia_contexto jsonb;
+
+drop index if exists public.credito_aplicacao_pedido_uq;
+
+create index if not exists credito_aplicacao_credito_pedido_idx
+  on public.creditos_clientes_aplicacoes(credito_id, pedido_id, status);
+
+drop index if exists public.credito_aplicacao_idempotencia_uq;
+create unique index if not exists credito_aplicacao_idempotencia_uq
+  on public.creditos_clientes_aplicacoes(chave_idempotencia, credito_id)
+  where chave_idempotencia is not null and btrim(chave_idempotencia) <> '';
+
+-- Uma operação de múltiplos créditos gera várias linhas, portanto a unicidade é por chave + crédito.
+-- O contexto persistido impede reutilizar a mesma chave para outro pedido/valor.
+
+create index if not exists credito_aplicacoes_pedido_idx
+  on public.creditos_clientes_aplicacoes(pedido_id, status);
+
+alter table public.creditos_clientes enable row level security;
+alter table public.creditos_clientes_aplicacoes enable row level security;
+
+revoke all on public.creditos_clientes from anon, authenticated;
+revoke all on public.creditos_clientes_aplicacoes from anon, authenticated;
+grant select on public.creditos_clientes to authenticated;
+grant select on public.creditos_clientes_aplicacoes to authenticated;
+
+drop policy if exists "creditos_clientes_select" on public.creditos_clientes;
+create policy "creditos_clientes_select"
+on public.creditos_clientes for select to authenticated
+using (public.usuario_pode_acessar_centro(centro_id));
+
+drop policy if exists "credito_aplicacoes_select" on public.creditos_clientes_aplicacoes;
+create policy "credito_aplicacoes_select"
+on public.creditos_clientes_aplicacoes for select to authenticated
+using (
+  exists (
+    select 1
+    from public.creditos_clientes c
+    where c.id = credito_id
+      and public.usuario_pode_acessar_centro(c.centro_id)
+  )
+);
+
+create or replace function public.trg_credito_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_creditos_clientes_updated on public.creditos_clientes;
+create trigger trg_creditos_clientes_updated
+before update on public.creditos_clientes
+for each row execute function public.trg_credito_updated_at();
+
+-- Cria o credito uma unica vez para cada devolucao confirmada.
+create or replace function public.criar_credito_devolucao(
+  _devolucao_id uuid,
+  _cliente_id uuid,
+  _centro_id uuid,
+  _valor numeric,
+  _observacao text default null
+)
+returns public.creditos_clientes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  c public.creditos_clientes;
+  dev public.devolucoes;
+begin
+  if not public.can_manage(auth.uid()) then
+    raise exception 'Sem permissao para gerar credito de cliente';
+  end if;
+
+  select * into dev
+  from public.devolucoes
+  where id = _devolucao_id
+  for update;
+
+  if dev.id is null then
+    raise exception 'Devolucao nao encontrada';
+  end if;
+
+  if dev.status <> 'confirmada' then
+    raise exception 'Somente devolucao confirmada pode gerar credito';
+  end if;
+
+  if dev.cliente_id is distinct from _cliente_id then
+    raise exception 'Cliente do credito difere da devolucao';
+  end if;
+
+  if dev.centro_id is distinct from _centro_id then
+    raise exception 'Centro do credito difere da devolucao';
+  end if;
+
+  if coalesce(_valor,0) <= 0 then
+    raise exception 'Valor do credito invalido';
+  end if;
+
+  if round(_valor,2) <> round(coalesce(dev.valor_total,0),2) then
+    raise exception 'O credito deve corresponder ao valor total da devolucao';
+  end if;
+
+  if not public.usuario_pode_acessar_centro(_centro_id) then
+    raise exception 'Sem acesso ao centro do credito';
+  end if;
+
+  select * into c
+  from public.creditos_clientes
+  where devolucao_id = _devolucao_id
+  for update;
+
+  if c.id is not null then
+    return c;
+  end if;
+
+  insert into public.creditos_clientes
+    (cliente_id, centro_id, devolucao_id, valor_original, observacao, created_by)
+  values
+    (_cliente_id, _centro_id, _devolucao_id, round(_valor,2),
+     nullif(_observacao,''), auth.uid())
+  returning * into c;
+
+  insert into public.auditoria(tabela, registro_id, acao, detalhe, user_id)
+  values (
+    'creditos_clientes', c.id, 'criar',
+    jsonb_build_object(
+      'devolucao_id', _devolucao_id,
+      'cliente_id', _cliente_id,
+      'centro_id', _centro_id,
+      'valor', c.valor_original
+    ),
+    auth.uid()
+  );
+
+  return c;
+end;
+$$;
+
+grant execute on function public.criar_credito_devolucao(uuid,uuid,uuid,numeric,text) to authenticated;
+
+-- Reserva credito em pedido ainda nao confirmado.
+create or replace function public.aplicar_credito_cliente(
+  _credito_id uuid,
+  _pedido_id uuid,
+  _valor numeric,
+  _chave_idempotencia text default null
+)
+returns public.creditos_clientes_aplicacoes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  cred public.creditos_clientes;
+  ped public.pedidos;
+  app public.creditos_clientes_aplicacoes;
+  ja numeric(14,2);
+  valor_total numeric(14,2);
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para aplicar credito em pedidos';
+  end if;
+
+  if coalesce(_valor,0) <= 0 then
+    raise exception 'Informe um valor de credito maior que zero';
+  end if;
+
+  if _chave_idempotencia is not null and btrim(_chave_idempotencia) <> '' then
+    -- Serializa chamadas concorrentes que reutilizam a mesma chave, inclusive
+    -- quando tentam usar outro credito/pedido antes da primeira transacao concluir.
+    perform pg_advisory_xact_lock(hashtextextended(btrim(_chave_idempotencia), 0));
+
+    if exists (
+      select 1
+      from public.creditos_clientes_aplicacoes
+      where chave_idempotencia = btrim(_chave_idempotencia)
+        and idempotencia_contexto is distinct from jsonb_build_object(
+          'pedido_id', _pedido_id,
+          'credito_id', _credito_id,
+          'valor', round(_valor,2)
+        )
+    ) then
+      raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
+    end if;
+
+    select * into app
+    from public.creditos_clientes_aplicacoes
+    where chave_idempotencia = btrim(_chave_idempotencia)
+      and credito_id = _credito_id
+      and idempotencia_contexto = jsonb_build_object(
+        'pedido_id', _pedido_id,
+        'credito_id', _credito_id,
+        'valor', round(_valor,2)
+      )
+    order by created_at
+    limit 1
+    for update;
+
+    if app.id is not null then
+      return app;
+    end if;
+  end if;
+
+  select * into ped
+  from public.pedidos
+  where id = _pedido_id
+  for update;
+
+  if ped.id is null then
+    raise exception 'Pedido nao encontrado';
+  end if;
+
+  if ped.status <> 'rascunho' then
+    raise exception 'O credito somente pode ser aplicado antes da confirmacao do pedido';
+  end if;
+
+  if ped.cliente_id is null then
+    raise exception 'Pedido sem cliente';
+  end if;
+
+  if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro ou nao possui centro';
+  end if;
+
+  select * into cred
+  from public.creditos_clientes
+  where id = _credito_id
+  for update;
+
+  if cred.id is null then
+    raise exception 'Credito nao encontrado';
+  end if;
+
+  if cred.status = 'cancelado' or cred.saldo <= 0 then
+    raise exception 'Credito sem saldo disponivel';
+  end if;
+
+  if cred.cliente_id is distinct from ped.cliente_id then
+    raise exception 'O credito pertence a outro cliente';
+  end if;
+
+  if cred.centro_id is distinct from ped.centro_id then
+    raise exception 'O credito pertence a outro centro';
+  end if;
+
+  perform public.recalcular_pedido(_pedido_id);
+
+  select total_liquido into valor_total
+  from public.pedidos
+  where id = _pedido_id;
+
+  select coalesce(sum(valor),0) into ja
+  from public.creditos_clientes_aplicacoes
+  where pedido_id = _pedido_id
+    and status = 'reservado';
+
+  if _valor > cred.saldo then
+    raise exception 'Valor superior ao saldo disponivel do credito';
+  end if;
+
+  if ja + _valor > valor_total then
+    raise exception 'A aplicacao de credito excede o valor do pedido';
+  end if;
+
+  insert into public.creditos_clientes_aplicacoes
+    (credito_id, pedido_id, valor, status, chave_idempotencia, idempotencia_contexto, created_by)
+  values
+    (cred.id, ped.id, round(_valor,2), 'reservado',
+     nullif(btrim(_chave_idempotencia),''),
+     case when nullif(btrim(_chave_idempotencia),'') is not null then jsonb_build_object(
+       'pedido_id', ped.id,
+       'credito_id', cred.id,
+       'valor', round(_valor,2)
+     ) else null end,
+     auth.uid())
+  returning * into app;
+
+  update public.creditos_clientes
+  set valor_utilizado = valor_utilizado + round(_valor,2),
+      status = case when valor_utilizado + round(_valor,2) >= valor_original then 'utilizado' else 'disponivel' end
+  where id = cred.id;
+
+  insert into public.auditoria(tabela, registro_id, acao, detalhe, user_id)
+  values (
+    'creditos_clientes_aplicacoes', app.id, 'reservar',
+    jsonb_build_object(
+      'credito_id', cred.id,
+      'pedido_id', ped.id,
+      'valor', app.valor
+    ),
+    auth.uid()
+  );
+
+  return app;
+end;
+$$;
+
+grant execute on function public.aplicar_credito_cliente(uuid,uuid,numeric,text) to authenticated;
+
+-- Aplicacao atomica de multiplos creditos no mesmo pedido.
+-- Trava o pedido primeiro e os creditos em ordem deterministica.
+create or replace function public.aplicar_creditos_cliente_pedido(
+  _pedido_id uuid,
+  _valor numeric,
+  _chave_idempotencia text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ped public.pedidos;
+  cred public.creditos_clientes;
+  app public.creditos_clientes_aplicacoes;
+  chave text := nullif(btrim(_chave_idempotencia),'');
+  disponivel numeric(14,2) := 0;
+  restante numeric(14,2);
+  aplicar numeric(14,2);
+  resultado jsonb := '[]'::jsonb;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para aplicar credito em pedidos';
+  end if;
+  if coalesce(_valor,0) <= 0 then
+    raise exception 'Informe um valor de credito maior que zero';
+  end if;
+
+  if chave is not null then
+    -- Uma chave representa uma unica operacao logica. O advisory lock fecha a
+    -- janela de corrida antes de existirem linhas para a chave.
+    perform pg_advisory_xact_lock(hashtextextended(chave, 0));
+  end if;
+
+  if chave is not null and exists (
+    select 1 from public.creditos_clientes_aplicacoes
+    where chave_idempotencia = chave
+  ) then
+    if exists (
+      select 1
+      from public.creditos_clientes_aplicacoes
+      where chave_idempotencia = chave
+        and idempotencia_contexto is distinct from jsonb_build_object(
+          'pedido_id', _pedido_id,
+          'valor', round(_valor,2)
+        )
+    ) then
+      raise exception 'Chave de idempotencia ja utilizada com parametros diferentes';
+    end if;
+
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id',id,'credito_id',credito_id,'pedido_id',pedido_id,'valor',valor,'status',status
+    ) order by created_at),'[]'::jsonb)
+    into resultado
+    from public.creditos_clientes_aplicacoes
+    where chave_idempotencia = chave;
+    return resultado;
+  end if;
+
+  select * into ped from public.pedidos where id=_pedido_id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if ped.status <> 'rascunho' then
+    raise exception 'O credito somente pode ser aplicado antes da confirmacao do pedido';
+  end if;
+  if ped.cliente_id is null then raise exception 'Pedido sem cliente'; end if;
+  if ped.centro_id is null or not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro ou nao possui centro';
+  end if;
+
+  perform public.recalcular_pedido(_pedido_id);
+  select * into ped from public.pedidos where id=_pedido_id for update;
+
+  if _valor > ped.total_liquido then
+    raise exception 'O credito excede o valor do pedido';
+  end if;
+
+  -- Primeiro trava todos os creditos elegiveis e calcula o saldo real.
+  for cred in
+    select *
+    from public.creditos_clientes
+    where cliente_id=ped.cliente_id
+      and centro_id=ped.centro_id
+      and status='disponivel'
+      and saldo > 0
+    order by created_at, id
+    for update
+  loop
+    disponivel := disponivel + cred.saldo;
+  end loop;
+
+  if disponivel < round(_valor,2) then
+    raise exception 'Saldo de credito insuficiente para esta aplicacao';
+  end if;
+
+  restante := round(_valor,2);
+
+  for cred in
+    select *
+    from public.creditos_clientes
+    where cliente_id=ped.cliente_id
+      and centro_id=ped.centro_id
+      and status='disponivel'
+      and saldo > 0
+    order by created_at, id
+    for update
+  loop
+    exit when restante <= 0;
+    aplicar := least(restante, cred.saldo);
+    if aplicar <= 0 then continue; end if;
+
+    insert into public.creditos_clientes_aplicacoes
+      (credito_id,pedido_id,valor,status,chave_idempotencia,idempotencia_contexto,created_by)
+    values
+      (cred.id,ped.id,aplicar,'reservado',chave,
+       case when chave is not null then jsonb_build_object(
+         'pedido_id', ped.id,
+         'valor', round(_valor,2)
+       ) else null end,
+       auth.uid())
+    returning * into app;
+
+    update public.creditos_clientes
+    set valor_utilizado=valor_utilizado+aplicar,
+        status=case when valor_utilizado+aplicar >= valor_original then 'utilizado' else 'disponivel' end
+    where id=cred.id;
+
+    resultado := resultado || jsonb_build_array(jsonb_build_object(
+      'id',app.id,'credito_id',app.credito_id,'pedido_id',app.pedido_id,
+      'valor',app.valor,'status',app.status
+    ));
+
+    restante := round(restante-aplicar,2);
+  end loop;
+
+  if restante > 0 then
+    raise exception 'Nao foi possivel concluir a aplicacao integral do credito';
+  end if;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'pedidos',ped.id,'aplicar_creditos',
+    jsonb_build_object('valor',round(_valor,2),'aplicacoes',resultado),
+    auth.uid()
+  );
+
+  return resultado;
+end;
+$$;
+
+revoke all on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) from public;
+grant execute on function public.aplicar_creditos_cliente_pedido(uuid,numeric,text) to authenticated;
+
+-- Remove uma reserva enquanto o pedido ainda esta em rascunho.
+create or replace function public.cancelar_aplicacao_credito(_aplicacao_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  app public.creditos_clientes_aplicacoes;
+  ped public.pedidos;
+  cred public.creditos_clientes;
+  v_pedido_id uuid;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para cancelar aplicacao de credito';
+  end if;
+
+  -- Ordem de locks: pedido -> aplicacao -> credito.
+  -- Deve ser a mesma ordem usada na confirmacao para evitar deadlock
+  -- quando duas sessoes operam o mesmo pedido simultaneamente.
+  select pedido_id into v_pedido_id
+  from public.creditos_clientes_aplicacoes
+  where id = _aplicacao_id;
+
+  if v_pedido_id is null then
+    raise exception 'Aplicacao de credito nao encontrada';
+  end if;
+
+  select * into ped from public.pedidos where id = v_pedido_id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if ped.status <> 'rascunho' then
+    raise exception 'Somente aplicacoes de pedidos em rascunho podem ser canceladas';
+  end if;
+
+  select * into app
+  from public.creditos_clientes_aplicacoes
+  where id = _aplicacao_id
+  for update;
+
+  if app.id is null then
+    raise exception 'Aplicacao de credito nao encontrada';
+  end if;
+
+  if app.status <> 'reservado' then
+    return;
+  end if;
+
+  select * into cred from public.creditos_clientes where id = app.credito_id for update;
+
+  update public.creditos_clientes_aplicacoes
+  set status = 'cancelado'
+  where id = app.id and status = 'reservado';
+
+  update public.creditos_clientes
+  set valor_utilizado = greatest(valor_utilizado - app.valor,0),
+      status = case when greatest(valor_utilizado - app.valor,0) >= valor_original then 'utilizado' else 'disponivel' end
+  where id = cred.id;
+
+  insert into public.auditoria(tabela, registro_id, acao, detalhe, user_id)
+  values (
+    'creditos_clientes_aplicacoes', app.id, 'cancelar',
+    jsonb_build_object('credito_id', app.credito_id, 'pedido_id', app.pedido_id, 'valor', app.valor),
+    auth.uid()
+  );
+end;
+$$;
+
+grant execute on function public.cancelar_aplicacao_credito(uuid) to authenticated;
+
+-- Fase 76 + credito: confirmacao idempotente, estoque controlado,
+-- contas a receber pelo saldo liquido e aplicacoes de credito consumidas atomically.
+create or replace function public.confirmar_pedido(_pedido_id uuid)
+returns public.pedidos
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ped public.pedidos;
+  item record;
+  app record;
+  n int;
+  parcelas int;
+  valor_total numeric(14,2);
+  credito_total numeric(14,2);
+  valor_parcela numeric(14,2);
+  saldo numeric(14,2);
+  cred public.creditos_clientes;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para confirmar pedidos';
+  end if;
+
+  select * into ped from public.pedidos where id = _pedido_id for update;
+
+  if ped.id is null then
+    raise exception 'Pedido nao encontrado';
+  end if;
+
+  if ped.centro_id is null then
+    raise exception 'Centro do pedido obrigatorio';
+  end if;
+
+  if not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro';
+  end if;
+
+  if ped.status = 'confirmado' then
+    return ped;
+  end if;
+
+  if ped.status <> 'rascunho' then
+    raise exception 'Pedido nao pode ser confirmado no status atual: %', ped.status;
+  end if;
+
+  if not exists (select 1 from public.pedido_itens where pedido_id = _pedido_id) then
+    raise exception 'Inclua ao menos um item no pedido';
+  end if;
+
+  perform public.recalcular_pedido(_pedido_id);
+
+  select * into ped from public.pedidos where id = _pedido_id for update;
+  valor_total := coalesce(ped.total_liquido,0);
+
+  -- Bloqueia e valida todas as reservas do pedido.
+  credito_total := 0;
+  for app in
+    select *
+    from public.creditos_clientes_aplicacoes
+    where pedido_id = _pedido_id
+      and status = 'reservado'
+    order by credito_id, id
+    for update
+  loop
+    select * into cred from public.creditos_clientes where id = app.credito_id for update;
+
+    if cred.id is null or cred.status = 'cancelado' then
+      raise exception 'Credito da aplicacao % esta indisponivel', app.id;
+    end if;
+    if cred.cliente_id is distinct from ped.cliente_id then
+      raise exception 'Credito aplicado pertence a outro cliente';
+    end if;
+    if cred.centro_id is distinct from ped.centro_id then
+      raise exception 'Credito aplicado pertence a outro centro';
+    end if;
+    if cred.saldo < 0 then
+      raise exception 'Credito % esta inconsistente', cred.id;
+    end if;
+
+    credito_total := credito_total + app.valor;
+  end loop;
+
+  if credito_total > valor_total then
+    raise exception 'Creditos aplicados excedem o valor do pedido';
+  end if;
+
+  for item in
+    select produto_id, sum(quantidade) qtd
+    from public.pedido_itens
+    where pedido_id = _pedido_id
+    group by produto_id
+  loop
+    perform public.registrar_movimento_estoque_controlado(
+      item.produto_id, ped.centro_id, 'saida', item.qtd, null,
+      'pedido', _pedido_id, 'Baixa por confirmacao de pedido'
+    );
+  end loop;
+
+  -- Gera recebiveis apenas sobre o saldo apos credito.
+  parcelas := greatest(coalesce(ped.parcelas,1),1);
+  saldo := valor_total - credito_total;
+  if saldo > 0 then
+    valor_parcela := round(saldo / parcelas,2);
+    for n in 1..parcelas loop
+      if n = parcelas then
+        valor_parcela := saldo;
+      end if;
+
+      insert into public.contas_receber
+        (cliente_id,pedido_id,documento,parcela,valor,vencimento,centro_id,data_emissao,status)
+      values
+        (ped.cliente_id,ped.id,'PED-'||ped.numero,n,valor_parcela,
+         ped.data_pedido+((n-1)*30),ped.centro_id,current_date,'aberto');
+
+      saldo := saldo - valor_parcela;
+    end loop;
+  end if;
+
+  -- Consome o credito somente dentro da mesma transacao da confirmacao.
+  for app in
+    select *
+    from public.creditos_clientes_aplicacoes
+    where pedido_id = _pedido_id
+      and status = 'reservado'
+    order by credito_id, id
+    for update
+  loop
+    select * into cred from public.creditos_clientes where id = app.credito_id for update;
+
+    -- O valor ja foi reservado no momento da aplicacao.
+    -- Aqui apenas tornamos a reserva definitiva.
+    update public.creditos_clientes_aplicacoes
+    set status = 'aplicado', aplicado_em = now()
+    where id = app.id;
+  end loop;
+
+  if ped.representante_id is not null and ped.comissao_valor > 0 then
+    insert into public.comissoes
+      (representante_id,pedido_id,base_calculo,percentual,valor,centro_id)
+    values
+      (ped.representante_id,ped.id,ped.total_itens,ped.comissao_percentual,ped.comissao_valor,ped.centro_id);
+  end if;
+
+  update public.pedidos set status='confirmado' where id=_pedido_id returning * into ped;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'pedidos',_pedido_id,'confirmar',
+    jsonb_build_object(
+      'total',ped.total_liquido,
+      'credito_aplicado',credito_total,
+      'saldo_a_receber',greatest(ped.total_liquido-credito_total,0),
+      'parcelas',ped.parcelas,
+      'centro_id',ped.centro_id
+    ),
+    auth.uid()
+  );
+
+  return ped;
+end;
+$$;
+
+revoke all on function public.confirmar_pedido(uuid) from public;
+grant execute on function public.confirmar_pedido(uuid) to authenticated;
+
+-- Cancelamento de pedido restaura creditos que ja foram consumidos.
+create or replace function public.restaurar_creditos_cancelamento_pedido(_pedido_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  app record;
+  cred public.creditos_clientes;
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para restaurar credito';
+  end if;
+
+  for app in
+    select * from public.creditos_clientes_aplicacoes
+    where pedido_id = _pedido_id and status = 'aplicado'
+    order by credito_id, id
+    for update
+  loop
+    select * into cred from public.creditos_clientes where id = app.credito_id for update;
+
+    if cred.id is null then
+      raise exception 'Credito % nao encontrado', app.credito_id;
+    end if;
+
+    update public.creditos_clientes
+    set valor_utilizado = greatest(valor_utilizado - app.valor,0),
+        status = case
+          when status = 'cancelado' then 'cancelado'
+          when valor_utilizado - app.valor <= 0 then 'disponivel'
+          else 'disponivel'
+        end
+    where id = cred.id;
+
+    update public.creditos_clientes_aplicacoes
+    set status = 'revertido', revertido_em = now()
+    where id = app.id;
+  end loop;
+end;
+$$;
+
+revoke all on function public.restaurar_creditos_cancelamento_pedido(uuid) from public, authenticated;
+
+-- Nova confirmacao de devolucao: entrada de estoque + credito do cliente.
+create or replace function public.confirmar_devolucao(_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  dev public.devolucoes;
+  ped public.pedidos;
+  it record;
+  op_id uuid;
+  qtd_vendida numeric(14,3);
+  qtd_devolvida numeric(14,3);
+begin
+  if not public.can_manage(auth.uid()) then
+    raise exception 'Sem permissao para confirmar devolucoes';
+  end if;
+
+  select * into dev from public.devolucoes where id=_id for update;
+  if dev.id is null then raise exception 'Devolucao nao encontrada'; end if;
+
+  if dev.pedido_id is not null then
+    select * into ped from public.pedidos where id=dev.pedido_id for update;
+    if ped.id is null then raise exception 'Pedido de origem nao encontrado'; end if;
+    if not public.usuario_pode_acessar_centro(ped.centro_id) then
+      raise exception 'Pedido pertence a outro centro';
+    end if;
+    if ped.status not in ('confirmado','faturado','entregue','parcial','nao_entregue','devolvido') then
+      raise exception 'Pedido no status % nao permite devolucao',ped.status;
+    end if;
+    if dev.centro_id is null then
+      dev.centro_id := ped.centro_id;
+    elsif dev.centro_id <> ped.centro_id then
+      raise exception 'Centro da devolucao difere do centro do pedido';
+    end if;
+  else
+    if not public.usuario_pode_acessar_centro(dev.centro_id) then
+      raise exception 'Devolucao pertence a outro centro';
+    end if;
+  end if;
+
+  if dev.status='confirmada' then return; end if;
+  if dev.status<>'rascunho' then
+    raise exception 'Somente devolucoes em rascunho podem ser confirmadas';
+  end if;
+  if not exists(select 1 from public.devolucao_itens where devolucao_id=_id) then
+    raise exception 'Inclua ao menos um item na devolucao';
+  end if;
+  if dev.centro_id is null then raise exception 'Centro da devolucao obrigatorio'; end if;
+  if dev.cliente_id is null then raise exception 'Cliente da devolucao obrigatorio para gerar credito'; end if;
+  if coalesce(dev.valor_total,0) <= 0 then raise exception 'Valor da devolucao deve ser maior que zero'; end if;
+
+  insert into public.devolucao_operacoes(devolucao_id,tipo,created_by)
+  values(_id,'confirmacao',auth.uid())
+  on conflict(devolucao_id,tipo) do nothing
+  returning id into op_id;
+
+  if op_id is null then return; end if;
+
+  for it in
+    select produto_id,sum(quantidade) as qtd,sum(total) as total
+    from public.devolucao_itens
+    where devolucao_id=_id
+    group by produto_id
+  loop
+    if dev.pedido_id is not null then
+      select coalesce(sum(quantidade),0) into qtd_vendida
+      from public.pedido_itens
+      where pedido_id=dev.pedido_id and produto_id=it.produto_id;
+
+      select coalesce(sum(di.quantidade),0) into qtd_devolvida
+      from public.devolucao_itens di
+      join public.devolucoes d on d.id=di.devolucao_id
+      where d.pedido_id=dev.pedido_id
+        and di.produto_id=it.produto_id
+        and d.status='confirmada'
+        and d.id<>_id;
+
+      if it.qtd > greatest(qtd_vendida-qtd_devolvida,0) then
+        raise exception 'Quantidade devolvida do produto % excede a quantidade vendida disponivel',it.produto_id;
+      end if;
+    end if;
+
+    insert into public.estoque_movimentos
+      (produto_id,centro_id,tipo,quantidade,custo_unitario,origem,documento_id,observacao,created_by)
+    values
+      (it.produto_id,dev.centro_id,'entrada',it.qtd,
+       case when it.qtd<>0 then it.total/it.qtd else 0 end,
+       'devolucao',dev.id,'Entrada de devolucao '||dev.numero,auth.uid());
+  end loop;
+
+  update public.devolucoes
+  set centro_id=dev.centro_id,status='confirmada'
+  where id=_id;
+
+  perform public.criar_credito_devolucao(
+    _id,dev.cliente_id,dev.centro_id,dev.valor_total,
+    'Credito gerado pela devolucao '||dev.numero
+  );
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'devolucoes',_id,'confirmar',
+    jsonb_build_object(
+      'numero',dev.numero,
+      'valor',dev.valor_total,
+      'centro_id',dev.centro_id,
+      'credito_cliente',true
+    ),
+    auth.uid()
+  );
+
+  perform public.notificar(
+    'Devolucao confirmada',
+    'Devolucao '||dev.numero||' retornou ao estoque e gerou credito ao cliente.',
+    'alerta','/devolucoes'
+  );
+end;
+$$;
+
+grant execute on function public.confirmar_devolucao(uuid) to authenticated;
+
+-- Cancelamento de devolucao confirmada: estorna estoque e cancela o credito ainda nao utilizado.
+create or replace function public.cancelar_devolucao(_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  dev public.devolucoes;
+  op_id uuid;
+  it record;
+  cred public.creditos_clientes;
+begin
+  if not public.can_manage(auth.uid()) then
+    raise exception 'Sem permissao para cancelar devolucoes';
+  end if;
+
+  select * into dev from public.devolucoes where id=_id for update;
+  if dev.id is null then raise exception 'Devolucao nao encontrada'; end if;
+  if not public.usuario_pode_acessar_centro(dev.centro_id) then
+    raise exception 'Devolucao pertence a outro centro';
+  end if;
+  if dev.status='cancelada' then return; end if;
+
+  if dev.status='rascunho' then
+    update public.devolucoes set status='cancelada' where id=_id;
+  elsif dev.status='confirmada' then
+    select * into cred
+    from public.creditos_clientes
+    where devolucao_id = _id
+    for update;
+
+    if cred.id is not null and cred.valor_utilizado > 0 then
+      raise exception 'A devolucao possui credito ja utilizado; estorne a aplicacao do credito antes de cancelar';
+    end if;
+
+    insert into public.devolucao_operacoes(devolucao_id,tipo,created_by)
+    values(_id,'cancelamento',auth.uid())
+    on conflict(devolucao_id,tipo) do nothing
+    returning id into op_id;
+
+    if op_id is null then return; end if;
+
+    for it in
+      select produto_id,sum(quantidade) as qtd
+      from public.devolucao_itens
+      where devolucao_id=_id
+      group by produto_id
+    loop
+      insert into public.estoque_movimentos
+        (produto_id,centro_id,tipo,quantidade,origem,documento_id,observacao,created_by)
+      values(
+        it.produto_id,dev.centro_id,'saida',it.qtd,'devolucao_cancelada',
+        dev.id,'Reversao de entrada por cancelamento de devolucao',auth.uid()
+      );
+    end loop;
+
+    if cred.id is not null then
+      update public.creditos_clientes
+      set status='cancelado'
+      where id=cred.id;
+    end if;
+
+    update public.devolucoes set status='cancelada' where id=_id;
+  else
+    raise exception 'Status de devolucao invalido: %',dev.status;
+  end if;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'devolucoes',_id,'cancelar',
+    jsonb_build_object('numero',dev.numero,'status_anterior',dev.status),
+    auth.uid()
+  );
+end;
+$$;
+
+grant execute on function public.cancelar_devolucao(uuid) to authenticated;
+
+
+-- Cancelamento de pedido: restaura credito ja consumido pela venda cancelada.
+create or replace function public.cancelar_pedido(_pedido_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ped public.pedidos;
+  op_id uuid;
+  item record;
+  v_pago numeric(14,2);
+begin
+  if not public.can_operate(auth.uid()) then
+    raise exception 'Sem permissao para cancelar pedidos';
+  end if;
+
+  select * into ped from public.pedidos where id = _pedido_id for update;
+  if ped.id is null then raise exception 'Pedido nao encontrado'; end if;
+  if not public.usuario_pode_acessar_centro(ped.centro_id) then
+    raise exception 'Pedido pertence a outro centro';
+  end if;
+  if ped.status = 'cancelado' then return; end if;
+  if ped.status not in ('confirmado','faturado') then
+    raise exception 'Pedido no status % nao pode ser cancelado por esta operacao', ped.status;
+  end if;
+
+  select coalesce(sum(valor_pago),0) into v_pago
+  from public.contas_receber
+  where pedido_id = _pedido_id;
+
+  if v_pago > 0 then
+    raise exception 'Pedido possui recebimentos. Utilize o fluxo de devolucao/estorno financeiro';
+  end if;
+
+  if exists (
+    select 1 from public.devolucoes
+    where pedido_id = _pedido_id and status = 'confirmada'
+  ) then
+    raise exception 'Pedido possui devolucao confirmada. Cancele/estorne a devolucao ou conclua o fluxo de devolucao antes de cancelar o pedido';
+  end if;
+
+  insert into public.pedido_operacoes(pedido_id,tipo,created_by)
+  values (_pedido_id,'cancelamento',auth.uid())
+  on conflict (pedido_id,tipo) do nothing
+  returning id into op_id;
+
+  if op_id is null then return; end if;
+
+  for item in
+    select produto_id, sum(quantidade) as qtd
+    from public.pedido_itens
+    where pedido_id = _pedido_id
+    group by produto_id
+  loop
+    insert into public.estoque_movimentos
+      (produto_id,centro_id,tipo,quantidade,origem,documento_id,observacao,created_by)
+    values
+      (item.produto_id,ped.centro_id,'entrada',item.qtd,'pedido_cancelado',
+       _pedido_id,'Reversao de estoque por cancelamento de pedido',auth.uid());
+  end loop;
+
+  update public.contas_receber
+  set status='cancelado'
+  where pedido_id=_pedido_id and status <> 'pago';
+
+  update public.comissoes
+  set status='cancelada'
+  where pedido_id=_pedido_id and status <> 'paga';
+
+  update public.expedicoes
+  set status='cancelada'
+  where pedido_id=_pedido_id and status not in ('entregue','cancelada');
+
+  perform public.restaurar_creditos_cancelamento_pedido(_pedido_id);
+
+  update public.pedidos set status='cancelado' where id=_pedido_id;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values (
+    'pedidos',_pedido_id,'cancelar',
+    jsonb_build_object(
+      'status_anterior',ped.status,
+      'estoque_revertido',true,
+      'creditos_restaurados',true
+    ),
+    auth.uid()
+  );
+end;
+$$;
+
+grant execute on function public.cancelar_pedido(uuid) to authenticated;
+
+
+
+-- Conciliação segura dos créditos legados DEV-*.
+-- A view é somente diagnóstico; a migração exige operação explícita por título.
+create or replace view public.vw_conciliacao_creditos_dev
+with (security_invoker = on)
+as
+select
+  cr.id as conta_receber_id,
+  cr.documento,
+  cr.cliente_id,
+  cr.pedido_id,
+  cr.centro_id,
+  cr.valor,
+  cr.valor_pago,
+  cr.status as status_conta,
+  cr.observacao,
+  d.id as devolucao_id,
+  d.numero as devolucao_numero,
+  d.status as status_devolucao,
+  d.valor_total as valor_devolucao,
+  c.id as credito_novo_id,
+  c.valor_original as credito_novo_valor,
+  c.valor_utilizado as credito_novo_utilizado,
+  c.saldo as credito_novo_saldo,
+  case
+    when c.id is not null then 'ja_migrado'
+    when cr.valor >= 0 then 'valor_nao_negativo'
+    when coalesce(cr.valor_pago,0) <> 0 then 'possui_movimentacao'
+    when d.id is null then 'devolucao_nao_localizada'
+    when d.status <> 'confirmada' then 'devolucao_nao_confirmada'
+    when d.cliente_id is distinct from cr.cliente_id then 'cliente_divergente'
+    when d.centro_id is distinct from cr.centro_id then 'centro_divergente'
+    when round(abs(cr.valor),2) <> round(coalesce(d.valor_total,0),2) then 'valor_divergente'
+    else 'apto_para_migracao'
+  end as situacao
+from public.contas_receber cr
+left join public.devolucoes d
+  on d.id = cr.pedido_id
+  or (
+    cr.pedido_id is not null
+    and d.pedido_id = cr.pedido_id
+    and cr.documento = 'DEV-'||d.numero
+  )
+left join public.creditos_clientes c
+  on c.devolucao_id = d.id
+where cr.documento like 'DEV-%';
+
+grant select on public.vw_conciliacao_creditos_dev to authenticated;
+
+create or replace function public.migrar_credito_dev(
+  _conta_receber_id uuid
+)
+returns public.creditos_clientes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  cr public.contas_receber;
+  dev public.devolucoes;
+  c public.creditos_clientes;
+begin
+  if not public.can_manage(auth.uid()) then
+    raise exception 'Sem permissao para migrar credito legado';
+  end if;
+
+  select * into cr
+  from public.contas_receber
+  where id = _conta_receber_id
+  for update;
+
+  if cr.id is null then
+    raise exception 'Titulo DEV legado nao encontrado';
+  end if;
+
+  if cr.documento not like 'DEV-%' then
+    raise exception 'O titulo informado nao e um credito DEV legado';
+  end if;
+
+  if cr.valor >= 0 then
+    raise exception 'O titulo DEV legado precisa ter valor negativo';
+  end if;
+
+  if coalesce(cr.valor_pago,0) <> 0 then
+    raise exception 'O credito legado possui movimentacao e nao pode ser migrado automaticamente';
+  end if;
+
+  select * into dev
+  from public.devolucoes
+  where (
+    (cr.pedido_id is not null and pedido_id = cr.pedido_id and 'DEV-'||numero = cr.documento)
+    or id = cr.pedido_id
+  )
+  order by case when id = cr.pedido_id then 0 else 1 end
+  limit 1
+  for update;
+
+  if dev.id is null then
+    raise exception 'Nao foi possivel localizar a devolucao de origem do credito';
+  end if;
+
+  if dev.status <> 'confirmada' then
+    raise exception 'A devolucao de origem precisa estar confirmada';
+  end if;
+
+  if dev.cliente_id is distinct from cr.cliente_id then
+    raise exception 'Cliente do credito legado difere da devolucao';
+  end if;
+
+  if cr.centro_id is distinct from dev.centro_id then
+    raise exception 'Centro do credito legado difere da devolucao';
+  end if;
+
+  if round(abs(cr.valor),2) <> round(coalesce(dev.valor_total,0),2) then
+    raise exception 'Valor do credito legado difere do valor da devolucao';
+  end if;
+
+  select * into c
+  from public.creditos_clientes
+  where devolucao_id = dev.id
+  for update;
+
+  if c.id is null then
+    c := public.criar_credito_devolucao(
+      dev.id,
+      dev.cliente_id,
+      dev.centro_id,
+      dev.valor_total,
+      'Credito migrado do legado '||cr.documento
+    );
+  end if;
+
+  update public.contas_receber
+  set status = 'cancelado',
+      observacao = concat_ws(' | ', nullif(observacao,''), 'Migrado para creditos_clientes: '||c.id)
+  where id = cr.id;
+
+  insert into public.auditoria(tabela,registro_id,acao,detalhe,user_id)
+  values(
+    'contas_receber',cr.id,'migrar_credito_legado',
+    jsonb_build_object(
+      'documento',cr.documento,
+      'devolucao_id',dev.id,
+      'credito_id',c.id,
+      'valor',abs(cr.valor)
+    ),
+    auth.uid()
+  );
+
+  return c;
+end;
+$$;
+
+grant execute on function public.migrar_credito_dev(uuid) to authenticated;
+
+-- Preflight: nao tenta apagar nem converter creditos DEV antigos.
+-- Eles permanecem historicos e devem ser conciliados antes de uma eventual migracao.
+
+commit;

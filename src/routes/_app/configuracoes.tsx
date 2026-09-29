@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { ErpLayout } from "@/components/erp-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sicrediConfigGet, sicrediConfigSave } from "@/lib/sicredi-config.functions";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/configuracoes")({
@@ -62,9 +64,9 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
   {
     titulo: "Credenciais da API",
     campos: [
-      { name: "api_key", label: "Chave de API (x-api-key)", span: 2 },
+      { name: "api_key", label: "Chave de API (x-api-key)", span: 2, hint: "Por segurança, a chave atual nunca é enviada ao navegador. Deixe em branco para manter a existente." },
       { name: "username", label: "Usuário" },
-      { name: "password", label: "Senha", type: "password" },
+      { name: "password", label: "Senha", type: "password", hint: "A senha atual fica somente no servidor. Deixe em branco para manter a existente." },
       { name: "cooperativa", label: "Cooperativa" },
       { name: "posto", label: "Posto" },
       { name: "codigo_beneficiario", label: "Código do beneficiário" },
@@ -127,6 +129,7 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         name: "dias_multa",
         label: "Multa após (dias do vencimento)",
         type: "number",
+        hint: "No boleto HÍBRIDO, o início explícito de multa é omitido para preservar o PIX, conforme a API Sicredi.",
       },
     ],
   },
@@ -143,7 +146,7 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         ],
       },
       { name: "valor_desconto1", label: "Valor/percentual do desconto", type: "number" },
-      { name: "dias_desconto1", label: "Desconto até (dias antes do venc.)", type: "number" },
+      { name: "dias_desconto1", label: "Desconto até (dias antes do venc.)", type: "number", hint: "O sistema converte os dias em dataDesconto1 ao emitir o boleto." },
     ],
   },
   {
@@ -174,62 +177,60 @@ const numericosSicredi = new Set([
 ]);
 
 function ConfiguracoesPage() {
-  const { client, canManage, roles } = useSupabase();
+  const { client, canManage, roles, session } = useSupabase();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [params, setParams] = useState<Record<string, string>>({});
   const [sic, setSic] = useState<Record<string, string>>({});
 
+  const getSicrediConfig = useServerFn(sicrediConfigGet);
+  const saveSicrediConfig = useServerFn(sicrediConfigSave);
+
   const sicredi = useQuery({
-    queryKey: ["sicredi_config"],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data, error } = await client!
-        .from("sicredi_config")
-        .select("*")
-        .order("created_at")
-        .limit(1)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return (data ?? null) as Row | null;
-    },
+    queryKey: ["sicredi_config_segura"],
+    enabled: canManage,
+    queryFn: () =>
+      getSicrediConfig({
+        data: session?.access_token ? { accessToken: session.access_token } : {},
+      }),
   });
 
   useEffect(() => {
     const row = sicredi.data;
     const next: Record<string, string> = {};
     for (const g of gruposSicredi) {
-      for (const c of g.campos) {
-        const v = row?.[c.name];
-        next[c.name] = String(v ?? (c.options ? (c.options[0]?.value ?? "") : ""));
+      for (const campo of g.campos) {
+        const v = row?.[campo.name as keyof typeof row];
+        next[campo.name] = String(v ?? (campo.options ? (campo.options[0]?.value ?? "") : ""));
       }
     }
+    // Segredos nunca voltam ao navegador; campos vazios significam "manter o valor atual".
+    next["api_key"] = "";
+    next["password"] = "";
     setSic(next);
   }, [sicredi.data]);
 
   const salvarSicredi = useMutation({
     mutationFn: async () => {
-      const payload: Record<string, string | number | null> = {};
+      const payload: Record<string, string | number | undefined> = {};
       for (const g of gruposSicredi) {
-        for (const c of g.campos) {
-          const v = (sic[c.name] ?? "").trim();
-          payload[c.name] = numericosSicredi.has(c.name) ? Number(v || 0) : v || null;
+        for (const campo of g.campos) {
+          const v = (sic[campo.name] ?? "").trim();
+          payload[campo.name] = numericosSicredi.has(campo.name) ? Number(v || 0) : v;
         }
       }
-      if (sicredi.data) {
-        const { error } = await client!
-          .from("sicredi_config")
-          .update(payload as never)
-          .eq("id", sicredi.data["id"] as string);
-        if (error) throw new Error(error.message);
-      } else {
-        const { error } = await client!.from("sicredi_config").insert(payload as never);
-        if (error) throw new Error(error.message);
-      }
+      return saveSicrediConfig({
+        data: {
+          ...payload,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      });
     },
     onSuccess: () => {
-      toast.success("Configuração Sicredi salva");
-      queryClient.invalidateQueries({ queryKey: ["sicredi_config"] });
+      toast.success("Configuração Sicredi salva com segurança");
+      setSic((s) => ({ ...s, api_key: "", password: "" }));
+      queryClient.invalidateQueries({ queryKey: ["sicredi_config_segura"] });
+      queryClient.invalidateQueries({ queryKey: ["sicredi", "status"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -420,7 +421,9 @@ function ConfiguracoesPage() {
           Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
           aplicadas em todo boleto emitido no Faturamento.
         </p>
-        {sicredi.isLoading ? (
+        {!canManage ? (
+          <p className="py-6 text-sm text-muted-foreground">Somente administradores e gestores podem alterar as credenciais bancárias.</p>
+        ) : sicredi.isLoading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
           </div>

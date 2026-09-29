@@ -39,7 +39,7 @@ export function ConsultaIe({
   patch: (values: Record<string, string>) => void;
   escopo?: "clientes" | "pessoas";
 }) {
-  const { client, canManage } = useSupabase();
+  const { client, session, canManage } = useSupabase();
   const queryClient = useQueryClient();
   const consultar = useServerFn(consultarInscricaoEstadual);
   const [resultado, setResultado] = useState<null | {
@@ -124,7 +124,7 @@ export function ConsultaIe({
         }
       }
 
-      const res = (await consultar({ data: { documento: doc } })) as ConsultaIeResultado;
+      const res = (await consultar({ data: { documento: doc, ...(session?.access_token ? { accessToken: session.access_token } : {}) } })) as ConsultaIeResultado;
       if (!res.ok) {
         await registrar(res.codigo, null, res.mensagem, null, false);
         throw new Error(res.mensagem);
