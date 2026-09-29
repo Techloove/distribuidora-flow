@@ -19,6 +19,8 @@
  */
 
 @theme inline {
+  --font-promo-body: "DM Sans", sans-serif;
+  --font-promo-display: "Space Grotesk", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -59,6 +61,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@utility font-promo-body {
+  font-family: var(--font-promo-body);
+}
+
+@utility font-promo-display {
+  font-family: var(--font-promo-display);
 }
 
 :root {
@@ -145,25 +155,25 @@
 
 /* ---------- ERP Distribuidora: paleta petróleo + âmbar ---------- */
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.004 240);
+  --radius: 0.875rem;
+  --background: oklch(0.974 0.006 250);
   --foreground: oklch(0.22 0.03 235);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.03 235);
-  --primary: oklch(0.42 0.075 220);
+  --primary: oklch(0.47 0.13 245);
   --primary-foreground: oklch(0.985 0.005 220);
   --secondary: oklch(0.95 0.012 230);
   --secondary-foreground: oklch(0.3 0.04 230);
   --muted: oklch(0.955 0.008 235);
   --muted-foreground: oklch(0.52 0.025 235);
-  --accent: oklch(0.78 0.15 74);
-  --accent-foreground: oklch(0.25 0.05 60);
+  --accent: oklch(0.94 0.025 245);
+  --accent-foreground: oklch(0.32 0.07 245);
   --border: oklch(0.9 0.012 235);
   --input: oklch(0.9 0.012 235);
   --ring: oklch(0.42 0.075 220);
-  --sidebar: oklch(0.26 0.035 232);
+  --sidebar: oklch(0.23 0.043 255);
   --sidebar-foreground: oklch(0.93 0.01 230);
-  --sidebar-primary: oklch(0.78 0.15 74);
+  --sidebar-primary: oklch(0.81 0.115 180);
   --sidebar-primary-foreground: oklch(0.24 0.05 60);
   --sidebar-accent: oklch(0.32 0.04 232);
   --sidebar-accent-foreground: oklch(0.96 0.01 230);
@@ -202,4 +212,39 @@
 }
 .print-only {
   display: none;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.erp-shell main section,
+.erp-shell main .bg-card {
+  box-shadow: 0 2px 8px oklch(0.25 0.02 250 / 3%);
+}
+.erp-shell table {
+  font-variant-numeric: tabular-nums;
+}
+.erp-shell thead {
+  background: var(--muted);
+}
+.erp-shell th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.erp-shell input:focus-visible,
+.erp-shell button:focus-visible,
+.erp-shell a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
