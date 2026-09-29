@@ -4,7 +4,7 @@ import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "luc
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
-import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -28,28 +28,26 @@ export const Route = createFileRoute("/_app/dashboard")({
 type Row = Record<string, unknown>;
 
 function Dashboard() {
-  const { client } = useSupabase();
-  const { centro } = useCentro();
+  const { client, user } = useSupabase();
+  const { centro, isLoading: centrosLoading, error: centroError } = useCentroValido();
 
   const data = useQuery({
-    queryKey: ["dashboard", centro],
-    enabled: !!client,
+    queryKey: ["dashboard", user?.id, centro],
+    enabled: !!client && !centrosLoading && !centroError,
     queryFn: async () => {
-      const { data: resumo, error } = await client!.rpc("dashboard_resumo", {
-        _centro_id: centro || null,
-      });
-      if (error) throw new Error(error.message);
-      return (resumo ?? {}) as {
-        clientes?: number;
-        produtos?: number;
-        pedidosAbertos?: number;
-        vendasConfirmadas?: number;
-        receber?: number;
-        receberVencido?: number;
-        pagar?: number;
-        pagarVencido?: number;
-        comissoes?: number;
-        alertas?: Row[];
+      const result = await client!.rpc("dashboard_resumo", { _centro_id: centro || null });
+      if (result.error) throw new Error("Não foi possível atualizar os indicadores.");
+      return result.data as {
+        clientes: number;
+        produtos: number;
+        pedidosAbertos: number;
+        vendasConfirmadas: number;
+        receber: number;
+        receberVencido: number;
+        pagar: number;
+        pagarVencido: number;
+        comissoes: number;
+        alertas: Row[];
       };
     },
   });
@@ -58,9 +56,38 @@ function Dashboard() {
 
   return (
     <ErpLayout
-      title="Dashboard"
-      description="Visão consolidada de vendas, estoque e financeiro da distribuidora."
+      title="Visão geral"
+      description="Acompanhe os indicadores e as próximas etapas da operação."
     >
+      <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-primary p-6 text-primary-foreground">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest opacity-75">
+            Painel da operação
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">Uma visão clara para decidir melhor.</h2>
+          <p className="mt-2 text-sm opacity-80">
+            Vendas e financeiro por centro. Cadastros e estoque consolidado.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            void data.refetch();
+          }}
+          disabled={data.isFetching}
+          className="rounded-xl border border-white/30 px-4 py-2 text-sm hover:bg-white/10 disabled:opacity-50"
+        >
+          {data.isFetching ? "Atualizando…" : "Atualizar painel"}
+        </button>
+      </section>
+      {(data.isError || centroError) && (
+        <div
+          role="alert"
+          className="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"
+        >
+          Não foi possível carregar os indicadores. Tente atualizar o painel ou contate o
+          administrador.
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Kpi
           label="Vendas confirmadas"
@@ -98,20 +125,21 @@ function Dashboard() {
       <RankingRotas />
 
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
-
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <AlertTriangle className="size-4 text-destructive" />
           Alertas de estoque mínimo
         </h2>
         {!d ? (
-          <p className="mt-2 text-sm text-muted-foreground">Carregando...</p>
-        ) : (d.alertas ?? []).length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.isError ? "Dados indisponíveis." : "Carregando…"}
+          </p>
+        ) : d.alertas.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             Nenhum produto abaixo do estoque mínimo.
           </p>
         ) : (
           <ul className="mt-3 space-y-1.5 text-sm">
-            {(d.alertas ?? []).slice(0, 8).map((p) => (
+            {d.alertas.slice(0, 8).map((p) => (
               <li key={String(p["id"])} className="flex justify-between gap-4">
                 <span className="truncate">{String(p["descricao"])}</span>
                 <span className="text-destructive">
@@ -122,13 +150,6 @@ function Dashboard() {
           </ul>
         )}
       </section>
-
-      {data.isError ? (
-        <p className="mt-4 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-          Alguns dados não carregaram. Rode <code>db/fase1_cadastros.sql</code> e{" "}
-          <code>db/fase2_vendas_estoque_financeiro.sql</code> no SQL Editor do Supabase.
-        </p>
-      ) : null}
     </ErpLayout>
   );
 }
@@ -149,11 +170,11 @@ function Kpi({
   return (
     <Link
       to={to}
-      className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
+      className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="size-4 text-primary" />
+        <Icon className="size-9 rounded-xl bg-primary/10 p-2 text-primary" />
       </div>
       <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{hint ?? "\u00a0"}</p>
@@ -178,7 +199,7 @@ const ETAPAS: { campo: string; label: string; to: string }[] = [
 /** Ranking do mês calculado no PostgreSQL para evitar limite REST e somas no cliente. */
 function RankingRotas() {
   const { client } = useSupabase();
-  const { centro } = useCentro();
+  const { centro } = useCentroValido();
   const de = `${new Date().toISOString().slice(0, 7)}-01`;
 
   const ranking = useQuery({
