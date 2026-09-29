@@ -239,7 +239,8 @@ begin
     and c.relname='vw_boletos_pendentes'
     and c.relkind='v';
 
-  if not ('security_invoker=true'=any(coalesce(opts,array[]::text[]))) then
+  -- O Postgres normaliza o valor como on/true; aceita ambas as formas.
+  if not (coalesce(opts,array[]::text[]) && array['security_invoker=true','security_invoker=on']) then
     raise exception 'Fase 131: vw_boletos_pendentes sem security_invoker';
   end if;
 end $$;

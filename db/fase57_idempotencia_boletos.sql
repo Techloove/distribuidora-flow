@@ -72,6 +72,9 @@ exception
 end;
 $$;
 
+-- A versao legada usava o parametro _id; o rename exige drop antes do create.
+drop function if exists public.liquidar_boleto(uuid, numeric, date);
+
 create or replace function public.liquidar_boleto(
   _boleto_id uuid,
   _valor numeric,

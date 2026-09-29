@@ -116,7 +116,8 @@ begin
      where n.nspname='public'
        and c.relkind='v'
   loop
-    if not ('security_invoker=true' = any(coalesce(v.reloptions,array[]::text[]))) then
+    -- O Postgres normaliza o valor como on/true; aceita ambas as formas.
+    if not (coalesce(v.reloptions,array[]::text[]) && array['security_invoker=true','security_invoker=on']) then
       raise exception 'Fase 148: view public.% nao esta com security_invoker=true', v.relname;
     end if;
   end loop;

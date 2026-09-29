@@ -38,8 +38,9 @@ begin
   end if;
 
   select pg_get_functiondef(r::oid) into definicao;
+  -- A Fase 80 delega o credito a criar_credito_devolucao, que grava em creditos_clientes.
   if position('criar_credito_devolucao' in definicao) = 0
-     or position('creditos_clientes' in definicao) = 0 then
+     or to_regprocedure('public.criar_credito_devolucao(uuid,uuid,uuid,numeric,text)') is null then
     raise exception 'Fase 113: confirmar_devolucao ainda esta na implementacao legada de credito financeiro';
   end if;
 end $$;
