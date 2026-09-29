@@ -9,6 +9,18 @@ const files = [
 
 const errors = [];
 
+// O PR Codex #2 introduziu auth.server.ts/auth-middleware.ts em uma arquitetura anterior.
+// A branch auditada consolidou autenticação server-side em server-auth.ts; reintroduzir os
+// dois mecanismos paralelos pode criar divergência de regras e bypass acidental.
+for (const stale of ["src/lib/auth.server.ts", "src/lib/auth-middleware.ts"]) {
+  try {
+    readFileSync(stale, "utf8");
+    errors.push(`${stale}: mecanismo legado/paralelo de autenticação não deve ser reintroduzido; use src/lib/server-auth.ts`);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
 for (const file of files) {
   const source = readFileSync(file, "utf8");
 
