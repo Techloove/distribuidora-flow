@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
@@ -39,10 +38,9 @@ import {
   Menu,
   Search,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 import {
   Select,
@@ -57,7 +55,10 @@ import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 const nav = [
-  { group: "Visão geral", items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  {
+    group: "Visão geral",
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
   {
     group: "Cadastros",
     items: [
@@ -116,7 +117,6 @@ const nav = [
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/relatorio-vendas", label: "Relatório de vendas", icon: BarChart3 },
-
       { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
@@ -165,12 +165,14 @@ function SidebarContent({
   onSignOut,
   email,
   roles,
+  compact,
 }: {
   pathname: string;
   onNavigate?: () => void;
   onSignOut: () => void;
   email?: string | undefined;
   roles: readonly string[];
+  compact: boolean;
 }) {
   const acesso = useAcesso();
   const [search, setSearch] = useState("");
@@ -180,77 +182,116 @@ function SidebarContent({
     .toLowerCase();
   return (
     <>
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-5">
-        <Warehouse className="size-6 text-sidebar-primary" />
-        <div>
-          <p className="text-sm font-semibold tracking-tight">Caparaó System</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Sistema de Gestão Completa</p>
+      <div
+        className={`flex items-center gap-2 border-b border-sidebar-border ${
+          compact ? "justify-center px-1 py-2.5" : "px-2.5 py-2.5"
+        }`}
+      >
+        <Warehouse className="size-5 shrink-0 text-sidebar-primary" />
+        {!compact && (
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold tracking-tight">Caparaó System</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/60">
+              Sistema de Gestão Completa
+            </p>
+          </div>
+        )}
+      </div>
+      {!compact && (
+        <div className="px-2 pt-2.5">
+          <label className="flex items-center gap-2 rounded-lg border border-sidebar-border bg-white/5 px-2 py-1.5">
+            <Search className="size-3.5 shrink-0 text-sidebar-foreground/60" />
+            <input
+              aria-label="Buscar módulo"
+              placeholder="Buscar módulo…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-sidebar-foreground/50"
+            />
+          </label>
         </div>
-      </div>
-      <div className="px-4 pt-5">
-        <label className="flex items-center gap-2 rounded-xl border border-sidebar-border bg-white/5 px-3 py-2.5">
-          <Search className="size-4 shrink-0 text-sidebar-foreground/60" />
-          <input
-            aria-label="Buscar módulo"
-            placeholder="Buscar módulo…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-sidebar-foreground/50"
-          />
-        </label>
-      </div>
-      <nav aria-label="Navegação principal" className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-3 py-4">
+      )}
+      <nav
+        aria-label="Navegação principal"
+        className={`scrollbar-none flex-1 overflow-y-auto ${
+          compact ? "px-1 py-1.5" : "px-1.5 py-2"
+        }`}
+      >
         {nav
           .map((section) => ({
             group: section.group,
-            items: section.items.filter((item) => {
-              const label = item.label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-              return acesso.pode(item.to) && label.includes(term);
-            }),
+            items: section.items.filter(
+              (item) =>
+                acesso.pode(item.to) &&
+                item.label
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase()
+                  .includes(term),
+            ),
           }))
           .filter((section) => section.items.length > 0)
-          .map((section) => (
-          <div key={section.group}>
-            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-              {section.group}
-            </p>
-            <div className="space-y-1">
-              {section.items.map((item) => {
-
-                const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
-                return (
-                  <Link
-                    key={`${item.to}-${item.label}`}
-                    aria-current={active ? "page" : undefined}
-                    to={item.to}
-                    onClick={onNavigate}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors md:py-2 ${
-                      active
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="size-4 shrink-0" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+          .map((section, i) => (
+            <div key={section.group} className={i > 0 ? "mt-2" : undefined}>
+              {compact ? (
+                i > 0 ? <div className="mx-auto mb-1 h-px w-5 bg-sidebar-border" /> : null
+              ) : (
+                <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                  {section.group}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                  return (
+                    <Link
+                      key={`${item.to}-${item.label}`}
+                      aria-current={active ? "page" : undefined}
+                      aria-label={compact ? item.label : undefined}
+                      title={item.label}
+                      to={item.to}
+                      onClick={onNavigate}
+                      className={`flex items-center rounded-lg text-[13px] leading-tight transition-colors ${
+                        compact ? "justify-center p-1.5" : "gap-2 px-2 py-1.5"
+                      } ${
+                        active
+                          ? "bg-sidebar-primary/15 font-semibold text-sidebar-primary ring-1 ring-inset ring-sidebar-primary/20"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      <item.icon className="size-4 shrink-0" />
+                      {!compact && <span className="truncate">{item.label}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </nav>
-      <div className="border-t border-sidebar-border px-4 py-4 text-xs">
-        <p className="truncate font-medium">{email}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
-          <Boxes className="size-3" />
-          {roles.length ? roles.join(", ") : "sem papel"}
-        </p>
+      <div
+        className={`border-t border-sidebar-border text-[11px] ${
+          compact ? "px-1 py-2" : "px-2 py-2.5"
+        }`}
+      >
+        {!compact && (
+          <>
+            <p className="truncate font-medium">{email}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-sidebar-foreground/60">
+              <Boxes className="size-3" />
+              {roles.length ? roles.join(", ") : "sem papel"}
+            </p>
+          </>
+        )}
         <button
           onClick={onSignOut}
-          className="mt-3 inline-flex items-center gap-2 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs transition-colors hover:bg-sidebar-accent"
+          aria-label="Sair"
+          title={compact ? "Sair" : undefined}
+          className={`mt-2 inline-flex items-center gap-1.5 rounded-md border border-sidebar-border transition-colors hover:bg-sidebar-accent ${
+            compact ? "justify-center p-1.5" : "px-2 py-1"
+          }`}
         >
           <LogOut className="size-3.5" />
-          Sair
+          {!compact && "Sair"}
         </button>
       </div>
     </>
@@ -272,7 +313,27 @@ export function ErpLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [menuMinimo, setMenuMinimo] = useState(false);
+
+  useEffect(() => {
+    try {
+      setMenuMinimo(window.localStorage.getItem("caparao-menu-minimo") === "1");
+    } catch {
+      // navegador bloqueou o armazenamento local: segue com o menu completo
+    }
+  }, []);
+
+  function alternarMenu() {
+    setMenuMinimo((atual) => {
+      const novo = !atual;
+      try {
+        window.localStorage.setItem("caparao-menu-minimo", novo ? "1" : "0");
+      } catch {
+        // navegador bloqueou o armazenamento local: só não lembra da escolha
+      }
+      return novo;
+    });
+  }
 
   async function handleSignOut() {
     try {
@@ -284,16 +345,16 @@ export function ErpLayout({
   }
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="erp-shell flex min-h-dvh bg-background">
       <a
         href="#conteudo-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:p-3 focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-primary focus:p-4 focus:text-primary-foreground"
       >
         Pular para o conteúdo
       </a>
       <aside
-        className={`sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
-          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex ${
+          menuMinimo ? "w-11" : "w-52"
         }`}
       >
         <SidebarContent
@@ -301,6 +362,7 @@ export function ErpLayout({
           onSignOut={handleSignOut}
           email={user?.email}
           roles={roles}
+          compact={menuMinimo}
         />
       </aside>
 
@@ -319,12 +381,13 @@ export function ErpLayout({
             onSignOut={handleSignOut}
             email={user?.email}
             roles={roles}
+            compact={false}
           />
         </SheetContent>
       </Sheet>
 
       <main id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 outline-none">
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:items-end sm:gap-4 sm:px-6 sm:py-5">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-card/90 px-5 py-5 sm:items-center lg:px-9 lg:py-6">
           <div className="flex min-w-0 items-start gap-2">
             <button
               type="button"
@@ -336,18 +399,22 @@ export function ErpLayout({
             </button>
             <button
               type="button"
-              aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              className="no-print -ml-1 hidden rounded-md border border-border p-2 text-foreground transition-colors hover:bg-accent md:inline-flex"
+              aria-label={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              title={menuMinimo ? "Expandir menu" : "Deixar menu mínimo"}
+              onClick={alternarMenu}
+              className="no-print -ml-1 hidden rounded-md border border-border p-1.5 text-foreground transition-colors hover:bg-accent md:inline-flex"
             >
-              {sidebarCollapsed ? (
+              {menuMinimo ? (
                 <PanelLeftOpen className="size-4" />
               ) : (
                 <PanelLeftClose className="size-4" />
               )}
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[.18em] text-primary">
+                Área de trabalho
+              </p>
+              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {title}
               </h1>
               {description ? (
@@ -360,8 +427,9 @@ export function ErpLayout({
             {actions}
           </div>
         </header>
-        <div className="px-3 py-4 sm:px-6 sm:py-6">{children}</div>
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-9 lg:py-8">{children}</div>
       </main>
     </div>
   );
 }
+
