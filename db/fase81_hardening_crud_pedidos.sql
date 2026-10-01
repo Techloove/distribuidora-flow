@@ -213,7 +213,13 @@ grant select on public.pedidos to authenticated;
 revoke all on table public.pedido_itens from anon, authenticated;
 grant select on public.pedido_itens to authenticated;
 
-revoke all on function public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid) from public;
+-- A assinatura legada de 7 argumentos pode nao existir; revoga apenas se presente.
+do $$
+begin
+  if to_regprocedure('public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid)') is not null then
+    execute 'revoke all on function public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid) from public';
+  end if;
+end $$;
 revoke all on function public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid,date) from public;
 grant execute on function public.criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid,date) to authenticated;
 revoke all on function public.atualizar_pedido_comercial(uuid,uuid,numeric,numeric,numeric) from public;
