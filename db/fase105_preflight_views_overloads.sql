@@ -21,7 +21,8 @@ begin
       from pg_class c join pg_namespace n on n.oid=c.relnamespace
       where n.nspname='public' and c.relname=v and c.relkind='v';
 
-      if not ('security_invoker=true' = any(coalesce(relopts,array[]::text[]))) then
+      -- O Postgres normaliza o valor como on/true; aceita ambas as formas.
+      if not (coalesce(relopts,array[]::text[]) && array['security_invoker=true','security_invoker=on']) then
         raise exception 'Preflight: view publica %.% sem security_invoker=true', 'public', v;
       end if;
     end if;
