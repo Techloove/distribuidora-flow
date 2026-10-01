@@ -14,8 +14,8 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
-import { Route as AppCargasRouteImport } from './routes/_app/cargas'
 import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
+import { Route as AppCargasRouteImport } from './routes/_app/cargas'
 import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/categorias-financeiras'
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
@@ -23,8 +23,8 @@ import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-
 import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-faixas'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
-import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppConciliacaoCreditosRouteImport } from './routes/_app/conciliacao-creditos'
+import { Route as AppConfiguracoesRouteImport } from './routes/_app/configuracoes'
 import { Route as AppContasRouteImport } from './routes/_app/contas'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDescontosPesoRouteImport } from './routes/_app/descontos-peso'
@@ -85,14 +85,14 @@ const AppBoletosRoute = AppBoletosRouteImport.update({
   path: '/boletos',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppCargasRoute = AppCargasRouteImport.update({
-  id: '/cargas',
-  path: '/cargas',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppCadastrosPadraoRoute = AppCadastrosPadraoRouteImport.update({
   id: '/cadastros-padrao',
   path: '/cadastros-padrao',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCargasRoute = AppCargasRouteImport.update({
+  id: '/cargas',
+  path: '/cargas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCategoriasFinanceirasRoute =
@@ -492,6 +492,7 @@ export interface FileRouteTypes {
     | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
+    | '/conciliacao-creditos'
     | '/configuracoes'
     | '/contas'
     | '/dashboard'
@@ -543,6 +544,7 @@ export interface FileRouteTypes {
     | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
+    | '/conciliacao-creditos'
     | '/configuracoes'
     | '/contas'
     | '/dashboard'
@@ -595,6 +597,7 @@ export interface FileRouteTypes {
     | '/_app/comissao-faixas'
     | '/_app/comissoes'
     | '/_app/compras'
+    | '/_app/conciliacao-creditos'
     | '/_app/configuracoes'
     | '/_app/contas'
     | '/_app/dashboard'
@@ -739,14 +742,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppComprasRouteImport
       parentRoute: typeof AppRouteRoute
     }
-      '/_app/conciliacao-creditos': {
+    '/_app/conciliacao-creditos': {
       id: '/_app/conciliacao-creditos'
       path: '/conciliacao-creditos'
       fullPath: '/conciliacao-creditos'
       preLoaderRoute: typeof AppConciliacaoCreditosRouteImport
       parentRoute: typeof AppRouteRoute
     }
-  '/_app/configuracoes': {
+    '/_app/configuracoes': {
       id: '/_app/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
@@ -1013,8 +1016,8 @@ interface AppRouteRouteChildren {
   AppComissaoFaixasRoute: typeof AppComissaoFaixasRoute
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
-  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppConciliacaoCreditosRoute: typeof AppConciliacaoCreditosRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppContasRoute: typeof AppContasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDescontosPesoRoute: typeof AppDescontosPesoRoute
@@ -1064,8 +1067,8 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppComissaoFaixasRoute: AppComissaoFaixasRoute,
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,
-  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppConciliacaoCreditosRoute: AppConciliacaoCreditosRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppContasRoute: AppContasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDescontosPesoRoute: AppDescontosPesoRoute,
