@@ -111,7 +111,14 @@ const fields: CrudField[] = [
     step: "0.01",
   },
   { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
-  { name: "regiao", label: "Região de atuação", showIf: "is_representante" },
+  {
+    name: "regiao",
+    label: "Região de atuação",
+    showIf: "is_representante",
+    after: ({ editing }) => (
+      <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
+    ),
+  },
 
   // Endereço
   { name: "cep", label: "CEP", section: "Endereço" },
@@ -120,7 +127,18 @@ const fields: CrudField[] = [
   { name: "complemento", label: "Complemento" },
   { name: "bairro", label: "Bairro" },
   { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
-  { name: "uf", label: "UF" },
+  {
+    name: "uf",
+    label: "UF",
+    after: ({ form, patch, editing }) => (
+      <div className="space-y-4">
+        <CodigoIbge form={form} patch={patch} />
+        {form["is_representante"] ? (
+          <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
+        ) : null}
+      </div>
+    ),
+  },
   { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
 
   // Somente cliente
@@ -226,15 +244,8 @@ function PessoasPage() {
               escopo="pessoas"
             />
             <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
-            <CodigoIbge form={form} patch={patch} />
             {form["is_cliente"] ? (
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
-            ) : null}
-            {form["is_representante"] ? (
-              <>
-                <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
-                <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
-              </>
             ) : null}
           </div>
         )}
