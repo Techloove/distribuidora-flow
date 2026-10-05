@@ -374,8 +374,14 @@ function ConfiguracoesPage() {
             <div className="mt-3 space-y-3">
               {parametros.data!.map((p) => {
                 const chave = String(p["chave"]);
-                const isBool =
-                  chave === "exigir_nf_carga" || chave === "exigir_nf_boleto";
+                const isBool = [
+                  "exigir_nf_carga",
+                  "exigir_nf_boleto",
+                  "aprovacao_limite_credito",
+                  "aprovacao_titulos_vencidos",
+                  "vencimento_fim_semana_feriado",
+                  "alerta_estoque_minimo",
+                ].includes(chave);
                 return (
                   <div key={chave}>
                     <Label>{String(p["descricao"] ?? chave)}</Label>
