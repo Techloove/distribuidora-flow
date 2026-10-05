@@ -662,19 +662,39 @@ export function DocumentoPage({
   });
 
   const efetivar = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<string | null> => {
       if (config.table === "pedidos" && doc) {
         if (!doc["centro_id"]) throw new Error("Informe o centro de custo do pedido");
         if (!doc["rota_id"]) throw new Error("Informe a rota de entrega do pedido");
         if (!doc["forma_pagamento_id"]) throw new Error("Informe a forma de pagamento do pedido");
+        // Regras de crédito: bloqueios mandam o pedido direto para aprovação.
+        if (String(doc["status"]) !== "aprovado") {
+          const { data: val, error: vErr } = await client!.rpc("validar_pedido", {
+            _pedido_id: selected,
+          });
+          if (vErr) throw new Error(vErr.message);
+          const bloqueios = ((val ?? []) as { nivel: string; mensagem: string }[]).filter(
+            (v) => v.nivel === "bloqueio",
+          );
+          if (bloqueios.length > 0) {
+            const { error: aErr } = await client!.rpc("avancar_pedido", {
+              _pedido_id: selected,
+              _novo_status: "aguardando_aprovacao",
+            });
+            if (aErr) throw new Error(aErr.message);
+            return bloqueios.map((b) => b.mensagem).join(" | ");
+          }
+        }
       }
       const args =
         config.rpc === "confirmar_pedido" ? { _pedido_id: selected } : { _compra_id: selected };
       const { error } = await client!.rpc(config.rpc, args);
       if (error) throw new Error(error.message);
+      return null;
     },
-    onSuccess: () => {
-      toast.success(`${config.rpcLabel} concluído — estoque e financeiro atualizados`);
+    onSuccess: (motivo) => {
+      if (motivo) toast.warning(`Pedido enviado para aprovação: ${motivo}`, { duration: 8000 });
+      else toast.success(`${config.rpcLabel} concluído — estoque e financeiro atualizados`);
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
