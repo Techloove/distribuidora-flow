@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useCentro } from "@/lib/centro-store";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -67,6 +69,10 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [status, setStatus] = useState<(typeof statuses)[number]>("aberto");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+  const { centro: centroGlobal } = useCentro();
+  useEffect(() => {
+    setFiltros((s) => ({ ...s, centro: centroGlobal }));
+  }, [centroGlobal]);
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
@@ -371,7 +377,14 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         onClear={() => setFiltros({})}
         extra={
           <div className="flex gap-2">
-            <Button size="sm" disabled={!canFinance} onClick={() => setOpenNovo(true)}>
+            <Button
+              size="sm"
+              disabled={!canFinance}
+              onClick={() => {
+                setNovo((s) => ({ ...s, centro: s.centro || centroGlobal }));
+                setOpenNovo(true);
+              }}
+            >
               <Plus className="size-3.5" /> Novo título
             </Button>
             <Button size="sm" variant="secondary" onClick={() => window.print()}>
