@@ -8,6 +8,7 @@ import { CodigoIbge } from "@/components/codigo-ibge";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
+import { RotasRepresentante } from "@/components/rotas-representante";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/pessoas")({
@@ -205,7 +206,10 @@ function PessoasPage() {
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
             ) : null}
             {form["is_representante"] ? (
-              <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
+              <>
+                <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
+                <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
+              </>
             ) : null}
           </div>
         )}
