@@ -144,7 +144,7 @@ const fields: CrudField[] = [
   // Somente cliente
   {
     name: "rota_id",
-    label: "Rota de entrega do cliente",
+    label: "Rota",
     section: "Dados do cliente",
     showIf: "is_cliente",
     type: "ref",
