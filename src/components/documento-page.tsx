@@ -1750,6 +1750,25 @@ export function DocumentoPage({
                       value={pagamento["comissao"] ?? String(doc["comissao_percentual"] ?? 0)}
                       onChange={(e) => setPagamento((s) => ({ ...s, comissao: e.target.value }))}
                     />
+                    {(() => {
+                      const base = Math.max(
+                        Number(doc["total_itens"] ?? 0) -
+                          Number(pagamento["desconto"] ?? doc["desconto_valor"] ?? 0),
+                        0,
+                      );
+                      const pct = Number(
+                        String(pagamento["comissao"] ?? doc["comissao_percentual"] ?? 0).replace(",", "."),
+                      ) || 0;
+                      const apurada = Math.round(base * pct) / 100;
+                      return (
+                        <p className="text-xs font-medium text-primary">
+                          Comissão apurada: {brl(apurada)}{" "}
+                          <span className="font-normal text-muted-foreground">
+                            (base {brl(base)})
+                          </span>
+                        </p>
+                      );
+                    })()}
                   </div>
                 ) : null}
               </div>
