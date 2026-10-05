@@ -104,6 +104,14 @@ function useRefOptions(field: CrudField) {
   });
 }
 
+/** Nome legível de um registro relacionado, exibido na grade. */
+function RefLabel({ field, value }: { field: CrudField; value: unknown }) {
+  const options = useRefOptions(field);
+  if (value === null || value === undefined || value === "") return <>—</>;
+  const row = (options.data ?? []).find((r) => String(r["id"]) === String(value));
+  return <>{row ? String(row[field.ref!.labelField] ?? "—") : options.isLoading ? "…" : "—"}</>;
+}
+
 function RefSelect({
   field,
   value,
@@ -626,6 +634,11 @@ export function CrudPage({
                         ) : (
                           "Não"
                         )
+                      ) : f.type === "ref" && f.ref ? (
+                        <RefLabel field={f} value={row[f.name]} />
+                      ) : f.type === "select" && f.options?.length ? (
+                        f.options.find((o) => o.value === String(row[f.name] ?? ""))?.label ??
+                        String(row[f.name] ?? "—")
                       ) : (
                         String(row[f.name] ?? "—")
                       )}
