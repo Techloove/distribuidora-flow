@@ -59,6 +59,10 @@ export type CrudField = {
   hiddenInForm?: boolean;
   /** Só exibe no formulário quando este campo do form estiver marcado. */
   showIf?: string;
+  /** Regra livre de exibição no formulário. */
+  showWhen?: (form: Record<string, string | boolean>) => boolean;
+  /** Título de seção exibido antes deste campo no formulário. */
+  section?: string;
   /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
   lookup?: string;
 };
@@ -188,6 +192,7 @@ export function CrudPage({
   onInlineSave,
   extraForm,
   extraFormTop,
+  extraFormEnd,
   readOnly = false,
 }: {
   table: string;
@@ -218,6 +223,13 @@ export function CrudPage({
   }) => React.ReactNode;
   /** Exibe o bloco extra antes dos campos (ex.: escolher tipo de pessoa e pesquisar o documento). */
   extraFormTop?: boolean;
+  /** Bloco extra exibido depois de todos os campos. */
+  extraFormEnd?: (ctx: {
+    form: Record<string, string | boolean>;
+    editing: Row | null;
+    patch: (values: Record<string, string>) => void;
+    openRow: (row: Row) => void;
+  }) => React.ReactNode;
   /** Modo somente leitura: impede criar, editar, excluir e salvar. */
   readOnly?: boolean;
 }) {
@@ -691,8 +703,19 @@ export function CrudPage({
           ) : null}
           <div className="grid gap-4 sm:grid-cols-4">
             {fields
-              .filter((f) => !f.hiddenInForm && (!f.showIf || !!form[f.showIf]))
+              .filter(
+                (f) =>
+                  !f.hiddenInForm &&
+                  (!f.showIf || !!form[f.showIf]) &&
+                  (!f.showWhen || f.showWhen(form)),
+              )
               .map((field) => (
+              <Fragment key={field.name}>
+              {field.section ? (
+                <h3 className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-4">
+                  {field.section}
+                </h3>
+              ) : null}
               <div
                 key={field.name}
                 className={`space-y-1.5 ${
@@ -801,6 +824,16 @@ export function CrudPage({
               </div>
             ))}
           </div>
+          {extraFormEnd ? (
+            <div className="mt-4">
+              {extraFormEnd({
+                form,
+                editing,
+                patch: (values) => setForm((f) => ({ ...f, ...values })),
+                openRow: (row) => openEdit(row),
+              })}
+            </div>
+          ) : null}
           {extraForm && !extraFormTop ? (
             <div className="mt-4">
               {extraForm({
