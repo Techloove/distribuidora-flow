@@ -64,7 +64,13 @@ const fields: CrudField[] = [
   { name: "email", label: "E-mail", type: "email", inTable: true },
   { name: "telefone", label: "Telefone" },
   { name: "whatsapp", label: "WhatsApp" },
-  { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
+  {
+    name: "centro_id",
+    label: "Centro de custo",
+    type: "ref",
+    inTable: true,
+    ref: { table: "centros", labelField: "nome", emptyLabel: "Todos os centros" },
+  },
   {
     name: "status",
     label: "Status",

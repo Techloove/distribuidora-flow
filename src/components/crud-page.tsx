@@ -45,7 +45,8 @@ export type CrudField = {
   /** Colunas booleanas exibidas como grupo de caixas de seleção (type: "multicheck"). */
   checks?: { name: string; label: string }[];
   /** Seleção de registro relacionado (type: "ref"). */
-  ref?: { table: string; labelField: string };
+  /** emptyLabel: texto da opção vazia (ex.: "Todos os centros"). */
+  ref?: { table: string; labelField: string; emptyLabel?: string };
   required?: boolean;
   step?: string;
   inTable?: boolean;
@@ -118,7 +119,7 @@ function useRefOptions(field: CrudField) {
 /** Nome legível de um registro relacionado, exibido na grade. */
 function RefLabel({ field, value }: { field: CrudField; value: unknown }) {
   const options = useRefOptions(field);
-  if (value === null || value === undefined || value === "") return <>—</>;
+  if (value === null || value === undefined || value === "") return <>{field.ref?.emptyLabel ?? "—"}</>;
   const row = (options.data ?? []).find((r) => String(r["id"]) === String(value));
   return <>{row ? String(row[field.ref!.labelField] ?? "—") : options.isLoading ? "…" : "—"}</>;
 }
@@ -143,7 +144,7 @@ function RefSelect({
       onChange={(e) => onChange(e.target.value)}
       className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
     >
-      <option value="">—</option>
+      <option value="">{field.ref?.emptyLabel ?? "—"}</option>
       {(options.data ?? []).map((o) => (
         <option key={String(o["id"])} value={String(o["id"])}>
           {String(o[field.ref!.labelField] ?? "")}
