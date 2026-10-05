@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -822,6 +822,7 @@ export function CrudPage({
                   </>
                 )}
               </div>
+              </Fragment>
             ))}
           </div>
           {extraFormEnd ? (
