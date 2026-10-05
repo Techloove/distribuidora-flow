@@ -104,6 +104,13 @@ const fields: CrudField[] = [
   },
   { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
   { name: "condicao_pagamento", label: "Condição de pagamento" },
+  {
+    name: "representante_id",
+    label: "Representante / vendedor do cliente",
+    type: "select",
+    showIf: "is_cliente",
+    options: [],
+  },
   { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
   {
     name: "status",
@@ -136,19 +143,40 @@ function PessoasPage() {
     },
   });
 
-  const camposComFormas: CrudField[] = fields.map((f) =>
-    f.name === "condicao_pagamento"
-      ? {
-          ...f,
-          label: "Condição de pagamento (formas cadastradas)",
-          type: "select",
-          options: (formas.data ?? []).map((forma) => ({
-            value: String(forma["nome"]),
-            label: String(forma["nome"]),
-          })),
-        }
-      : f,
-  );
+  const representantes = useQuery({
+    queryKey: ["representantes", "pessoas"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("representantes")
+        .select("id, nome, ativo")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((r) => r["ativo"] !== false);
+    },
+  });
+
+  const camposComFormas: CrudField[] = fields.map((f) => {
+    if (f.name === "condicao_pagamento")
+      return {
+        ...f,
+        label: "Condição de pagamento (formas cadastradas)",
+        type: "select" as const,
+        options: (formas.data ?? []).map((forma) => ({
+          value: String(forma["nome"]),
+          label: String(forma["nome"]),
+        })),
+      };
+    if (f.name === "representante_id")
+      return {
+        ...f,
+        options: (representantes.data ?? []).map((r) => ({
+          value: String(r["id"]),
+          label: String(r["nome"]),
+        })),
+      };
+    return f;
+  });
 
   return (
     <ErpLayout
