@@ -61,57 +61,9 @@ const fields: CrudField[] = [
     ],
   },
   { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true, hiddenInForm: true },
-  { name: "inscricao_estadual", label: "Inscrição estadual" },
-  { name: "uf_inscricao_estadual", label: "UF da inscrição estadual" },
-  { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual" },
-  { name: "indicador_contribuinte_icms", label: "Contribuinte de ICMS" },
-  { name: "situacao_cadastral", label: "Situação cadastral" },
-  { name: "data_abertura", label: "Data de abertura", type: "date" },
-  { name: "data_nascimento", label: "Data de nascimento", type: "date" },
-  { name: "natureza_juridica", label: "Natureza jurídica" },
-  { name: "porte", label: "Porte" },
-  { name: "cnae_principal", label: "CNAE principal", span: 2 },
-  { name: "cnae_secundarios", label: "CNAEs secundários", span: 2 },
   { name: "email", label: "E-mail", type: "email", inTable: true },
   { name: "telefone", label: "Telefone" },
   { name: "whatsapp", label: "WhatsApp" },
-  { name: "logradouro", label: "Logradouro", span: 2 },
-  { name: "numero", label: "Número" },
-  { name: "complemento", label: "Complemento" },
-  { name: "bairro", label: "Bairro" },
-  { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
-  { name: "uf", label: "UF" },
-  { name: "cep", label: "CEP" },
-  { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
-  { name: "rota_id", label: "Rota de entrega", type: "ref", ref: { table: "rotas", labelField: "nome" } },
-  { name: "limite_credito", label: "Limite de crédito (cliente)", type: "number", step: "0.01" },
-  { name: "regiao", label: "Região de atuação (vendedor)", showIf: "is_representante" },
-  {
-    name: "comissao_percentual",
-    label: "Comissão (%) do vendedor",
-    showIf: "is_representante",
-    type: "number",
-    step: "0.01",
-  },
-  {
-    name: "tipo_representante",
-    label: "Tipo de vendedor",
-    showIf: "is_representante",
-    type: "select",
-    options: [
-      { value: "interno", label: "Interno" },
-      { value: "externo", label: "Externo / representante" },
-    ],
-  },
-  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
-  { name: "condicao_pagamento", label: "Condição de pagamento" },
-  {
-    name: "representante_id",
-    label: "Representante / vendedor do cliente",
-    type: "select",
-    showIf: "is_cliente",
-    options: [],
-  },
   { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
   {
     name: "status",
@@ -125,8 +77,99 @@ const fields: CrudField[] = [
     ],
   },
   { name: "ativo", label: "Ativo", type: "checkbox" },
-  { name: "observacoes", label: "Observações", span: 2 },
+  { name: "data_nascimento", label: "Data de nascimento", type: "date" },
+
+  // Dados fiscais e da empresa: não se aplicam a quem é só representante.
+  { name: "inscricao_estadual", label: "Inscrição estadual", section: "Dados fiscais", showWhen: naoSoRepresentante },
+  { name: "uf_inscricao_estadual", label: "UF da inscrição estadual", showWhen: naoSoRepresentante },
+  { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual", showWhen: naoSoRepresentante },
+  { name: "indicador_contribuinte_icms", label: "Contribuinte de ICMS", showWhen: naoSoRepresentante },
+  { name: "situacao_cadastral", label: "Situação cadastral", showWhen: naoSoRepresentante },
+  { name: "data_abertura", label: "Data de abertura", type: "date", showWhen: naoSoRepresentante },
+  { name: "natureza_juridica", label: "Natureza jurídica", showWhen: naoSoRepresentante },
+  { name: "porte", label: "Porte", showWhen: naoSoRepresentante },
+  { name: "cnae_principal", label: "CNAE principal", span: 2, showWhen: naoSoRepresentante },
+  { name: "cnae_secundarios", label: "CNAEs secundários", span: 2, showWhen: naoSoRepresentante },
+
+  // Comissão do representante: tudo junto.
+  {
+    name: "tipo_representante",
+    label: "Tipo de vendedor",
+    section: "Comissão do representante",
+    showIf: "is_representante",
+    type: "select",
+    options: [
+      { value: "interno", label: "Interno" },
+      { value: "externo", label: "Externo / representante" },
+    ],
+  },
+  {
+    name: "comissao_percentual",
+    label: "Comissão padrão (%)",
+    showIf: "is_representante",
+    type: "number",
+    step: "0.01",
+  },
+  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
+  {
+    name: "regiao",
+    label: "Região de atuação",
+    showIf: "is_representante",
+    after: ({ editing }) => (
+      <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
+    ),
+  },
+
+  // Endereço
+  { name: "cep", label: "CEP", section: "Endereço" },
+  { name: "logradouro", label: "Logradouro", span: 2 },
+  { name: "numero", label: "Número" },
+  { name: "complemento", label: "Complemento" },
+  { name: "bairro", label: "Bairro" },
+  { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
+  {
+    name: "uf",
+    label: "UF",
+    after: ({ form, patch, editing }) => (
+      <div className="space-y-4">
+        <CodigoIbge form={form} patch={patch} />
+        {form["is_representante"] ? (
+          <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
+        ) : null}
+      </div>
+    ),
+  },
+  { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
+
+  // Somente cliente
+  {
+    name: "rota_id",
+    label: "Rota de entrega do cliente",
+    section: "Dados do cliente",
+    showIf: "is_cliente",
+    type: "ref",
+    ref: { table: "rotas", labelField: "nome" },
+  },
+  { name: "limite_credito", label: "Limite de crédito", type: "number", step: "0.01", showIf: "is_cliente" },
+  { name: "condicao_pagamento", label: "Condição de pagamento", showIf: "is_cliente" },
+  {
+    name: "representante_id",
+    label: "Representante / vendedor do cliente",
+    type: "select",
+    showIf: "is_cliente",
+    options: [],
+  },
+  { name: "observacoes", label: "Observações", span: 2, section: "Observações" },
 ];
+
+function naoSoRepresentante(form: Record<string, string | boolean>) {
+  return (
+    !form["is_representante"] ||
+    !!form["is_cliente"] ||
+    !!form["is_fornecedor"] ||
+    !!form["is_transportadora"]
+  );
+}
 
 function PessoasPage() {
   const { client } = useSupabase();
@@ -201,15 +244,8 @@ function PessoasPage() {
               escopo="pessoas"
             />
             <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
-            <CodigoIbge form={form} patch={patch} />
             {form["is_cliente"] ? (
               <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
-            ) : null}
-            {form["is_representante"] ? (
-              <>
-                <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
-                <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
-              </>
             ) : null}
           </div>
         )}
