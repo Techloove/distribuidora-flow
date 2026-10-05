@@ -43,13 +43,13 @@ function isChunkLoadError(error: Error) {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
     // Falha ao baixar o código da página (comum em conexões móveis instáveis):
     // recarrega automaticamente uma única vez em vez de mostrar erro.
-    if (typeof window !== "undefined" && isChunkLoadError(error)) {
+    if (typeof window !== "undefined" && isChunkLoadError(error as Error)) {
       const key = "chunk-reload-at";
       const last = Number(sessionStorage.getItem(key) ?? 0);
       if (Date.now() - last > 10000) {
