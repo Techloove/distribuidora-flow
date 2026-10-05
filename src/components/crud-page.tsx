@@ -63,6 +63,13 @@ export type CrudField = {
   showWhen?: (form: Record<string, string | boolean>) => boolean;
   /** Título de seção exibido antes deste campo no formulário. */
   section?: string;
+  /** Bloco próprio exibido logo depois deste campo (largura total). */
+  after?: (ctx: {
+    form: Record<string, string | boolean>;
+    editing: Record<string, unknown> | null;
+    patch: (values: Record<string, string>) => void;
+    openRow: (row: Record<string, unknown>) => void;
+  }) => React.ReactNode;
   /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
   lookup?: string;
 };
@@ -822,6 +829,16 @@ export function CrudPage({
                   </>
                 )}
               </div>
+              {field.after ? (
+                <div className="sm:col-span-4">
+                  {field.after({
+                    form,
+                    editing,
+                    patch: (values) => setForm((f) => ({ ...f, ...values })),
+                    openRow: (row) => openEdit(row),
+                  })}
+                </div>
+              ) : null}
               </Fragment>
             ))}
           </div>
