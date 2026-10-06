@@ -179,6 +179,18 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const aprovar = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await client!.rpc("admin_aprovar_cadastro", { _user_id: userId });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Cadastro aprovado. O usuário já pode acessar os módulos autorizados.");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const remover = useMutation({
     mutationFn: async (userId: string) => {
       const { error } = await client!.rpc("admin_excluir_usuario", { _user_id: userId });
@@ -257,7 +269,7 @@ function UsuariosPage() {
                         <TableCell>
                           {String(p["nome"] || "—")}
                           {p["ativo"] === false ? (
-                            <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
+                            <span className="ml-2 text-xs font-medium text-amber-700">(pendente / sem acesso)</span>
                           ) : null}
                         </TableCell>
                         <TableCell>{String(p["email"] ?? "—")}</TableCell>
@@ -313,6 +325,17 @@ function UsuariosPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-1.5">
+                            {isAdmin && p["ativo"] === false ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={aprovar.isPending || current.length === 0}
+                                title={current.length === 0 ? "Atribua um papel antes de aprovar" : "Aprovar cadastro"}
+                                onClick={() => aprovar.mutate(String(p["id"]))}
+                              >
+                                Aprovar acesso
+                              </Button>
+                            ) : null}
                             <Button
                               size="sm"
                               variant="outline"
@@ -357,7 +380,7 @@ function UsuariosPage() {
             <DialogDescription>
               {editando
                 ? "Altere os dados do perfil. A senha só muda se você preencher o campo."
-                : "O usuário é criado já confirmado e pode entrar imediatamente com o e-mail e a senha."}
+                : "O usuário é criado com acesso pendente. Atribua um papel e aprove o cadastro para liberar os módulos."}
             </DialogDescription>
           </DialogHeader>
 
