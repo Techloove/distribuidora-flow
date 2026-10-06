@@ -21,7 +21,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 function AuthPage() {
-  const { client, session, loading, error } = useSupabase();
+  const { client, session, roles, loading, error, signOut } = useSupabase();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -31,8 +31,9 @@ function AuthPage() {
   const [cadastroEnviado, setCadastroEnviado] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (session) void navigate({ to: "/dashboard", replace: true });
-  }, [session, navigate]);
+    if (session && !loading && !error && roles.length > 0)
+      void navigate({ to: "/dashboard", replace: true });
+  }, [session, roles, loading, error, navigate]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!client || busy) return;
@@ -123,6 +124,13 @@ function AuthPage() {
               ? "Acesse o painel e acompanhe o dia a dia da sua distribuidora."
               : "Crie sua conta. O acesso aos módulos será liberado pelo administrador."}
           </p>
+          {session && error && (
+            <div className="mt-5 text-sm">
+              <Button variant="outline" onClick={() => void signOut().catch((e: Error) => toast.error(e.message))}>
+                Sair da conta pendente
+              </Button>
+            </div>
+          )}
           {error && (
             <p
               role="alert"
