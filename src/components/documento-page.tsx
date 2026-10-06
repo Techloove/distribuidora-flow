@@ -1346,8 +1346,11 @@ export function DocumentoPage({
                       <p className="text-xs text-muted-foreground">
                         Peso total {kg(pesoTotal)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Comissão {brl(doc["comissao_valor"])}
+                      <p className="mt-1 inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        Sua comissão {brl(doc["comissao_valor"])}
+                        {Number(doc["comissao_percentual"] ?? 0) > 0
+                          ? ` (${Number(doc["comissao_percentual"]).toLocaleString("pt-BR")}%)`
+                          : ""}
                       </p>
                     </>
                   ) : null}
