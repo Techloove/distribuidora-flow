@@ -245,7 +245,7 @@ export function CrudPage({
   uppercase?: boolean;
 }) {
   const isUpperField = (f: CrudField) =>
-    !f.type || f.type === "text" || (f.type === "select" && false);
+    !f.type || f.type === "text";
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
@@ -827,8 +827,9 @@ export function CrudPage({
                     }}
                     onChange={(e) =>
                       setForm((f) => {
-                        const next = { ...f, [field.name]: e.target.value };
-                        const patch = onFieldChange?.(field.name, e.target.value, next);
+                        const val = uppercase && isUpperField(field) ? e.target.value.toUpperCase() : e.target.value;
+                        const next = { ...f, [field.name]: val };
+                        const patch = onFieldChange?.(field.name, val, next);
                         return patch ? { ...next, ...patch } : next;
                       })
                     }
