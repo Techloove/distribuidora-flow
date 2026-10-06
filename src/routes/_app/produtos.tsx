@@ -179,7 +179,7 @@ function ProdutosPage() {
         </Button>
       }
     >
-      <CrudPage
+      <CrudPage uppercase
         table="produtos"
         fields={fields}
         orderBy="descricao"

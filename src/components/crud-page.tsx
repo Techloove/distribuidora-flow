@@ -202,6 +202,7 @@ export function CrudPage({
   extraFormTop,
   extraFormEnd,
   readOnly = false,
+  uppercase = false,
 }: {
   table: string;
   fields: CrudField[];
@@ -240,7 +241,11 @@ export function CrudPage({
   }) => React.ReactNode;
   /** Modo somente leitura: impede criar, editar, excluir e salvar. */
   readOnly?: boolean;
+  /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
+  uppercase?: boolean;
 }) {
+  const isUpperField = (f: CrudField) =>
+    !f.type || f.type === "text";
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
@@ -390,7 +395,8 @@ export function CrudPage({
           payload[field.name] = n;
         } else {
           if (raw === "" || raw == null) { if (editing) payload[field.name] = null; continue; }
-          payload[field.name] = raw;
+          payload[field.name] =
+            uppercase && isUpperField(field) ? String(raw).toUpperCase() : raw;
         }
       }
 
@@ -821,8 +827,9 @@ export function CrudPage({
                     }}
                     onChange={(e) =>
                       setForm((f) => {
-                        const next = { ...f, [field.name]: e.target.value };
-                        const patch = onFieldChange?.(field.name, e.target.value, next);
+                        const val = uppercase && isUpperField(field) ? e.target.value.toUpperCase() : e.target.value;
+                        const next = { ...f, [field.name]: val };
+                        const patch = onFieldChange?.(field.name, val, next);
                         return patch ? { ...next, ...patch } : next;
                       })
                     }

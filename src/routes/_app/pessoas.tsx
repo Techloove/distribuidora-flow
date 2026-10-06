@@ -233,7 +233,7 @@ function PessoasPage() {
       title="Cadastro unificado"
       description="Um único cadastro por pessoa ou empresa. Marque as funções (cliente, fornecedor, representante, usuário) e o sistema replica automaticamente nos módulos correspondentes."
     >
-      <CrudPage
+      <CrudPage uppercase
         table="pessoas"
         fields={camposComFormas}
         orderBy="razao_social"
