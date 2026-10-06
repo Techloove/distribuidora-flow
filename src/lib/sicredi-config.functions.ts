@@ -119,10 +119,10 @@ function publicConfig(row: DbRow | null) {
   };
 }
 
-export const sicrediConfigGet = createServerFn({ method: "GET" })
-  .inputValidator((data: { accessToken?: string }) => data)
+export const sicrediConfigGet = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string } | undefined) => data ?? {})
   .handler(async ({ data }) => {
-    await requireConfigAccess("sicredi_config_get", data.accessToken);
+    await requireConfigAccess("sicredi_config_get", data?.accessToken);
     return publicConfig(await currentConfig());
   });
 

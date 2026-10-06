@@ -187,8 +187,8 @@ function ConfiguracoesPage() {
   const saveSicrediConfig = useServerFn(sicrediConfigSave);
 
   const sicredi = useQuery({
-    queryKey: ["sicredi_config_segura"],
-    enabled: canManage,
+    queryKey: ["sicredi_config_segura", session?.access_token ?? ""],
+    enabled: canManage && !!session?.access_token,
     queryFn: () =>
       getSicrediConfig({
         data: session?.access_token ? { accessToken: session.access_token } : {},
