@@ -34,6 +34,10 @@ function AuthPage() {
   const [cadastroEnviado, setCadastroEnviado] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
+    if (session?.user.user_metadata?.troca_senha_obrigatoria === true) {
+      setTrocaInicial(true);
+      return;
+    }
     if (session && !trocaInicial) void navigate({ to: "/dashboard", replace: true });
   }, [session, navigate, trocaInicial]);
   async function handleSubmit(e: React.FormEvent) {
@@ -73,6 +77,10 @@ function AuthPage() {
           throw new Error("Usuário ou senha inválidos.");
         if (senha === "123456" && !entrada.includes("@")) {
           setTrocaInicial(true);
+          const { error: marcarErro } = await client.auth.updateUser({
+            data: { troca_senha_obrigatoria: true },
+          });
+          if (marcarErro) throw new Error("Não foi possível iniciar a troca de senha.");
           setNovaSenha("");
           setConfirmaNovaSenha("");
           return;
@@ -99,6 +107,10 @@ function AuthPage() {
     try {
       const { error: updateError } = await client.auth.updateUser({ password: novaSenha });
       if (updateError) throw new Error(updateError.message);
+      const { error: flagError } = await client.auth.updateUser({
+        data: { troca_senha_obrigatoria: false },
+      });
+      if (flagError) throw new Error("A senha foi alterada, mas não foi possível concluir a ativação.");
       setTrocaInicial(false);
       setSenha("");
       setNovaSenha("");
