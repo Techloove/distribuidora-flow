@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { CentrosPorUsuario } from "@/components/centros-por-usuario";
+import { AcessosRepresentantes } from "@/components/acessos-representantes";
 import { ErpLayout } from "@/components/erp-layout";
 import { MenusPorPerfil } from "@/components/menus-por-perfil";
 import { PapeisAdmin } from "@/components/papeis-admin";
@@ -282,6 +283,7 @@ function UsuariosPage() {
             </div>
           </section>
         ) : null}
+        <AcessosRepresentantes />
         <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />
