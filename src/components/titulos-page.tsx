@@ -334,6 +334,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     mutationFn: async () => {
       if (!novo.parceiro) throw new Error(`Selecione o ${config.partnerLabel.toLowerCase()}`);
       if (Number(novo.valor || 0) <= 0) throw new Error("Informe o valor do título");
+      if (!novo.categoria)
+        throw new Error(`Selecione a categoria de ${isReceber ? "receita" : "despesa"}`);
       const args: Record<string, unknown> = {
         _categoria_id: novo.categoria || null,
         _centro_id: novo.centro || null,

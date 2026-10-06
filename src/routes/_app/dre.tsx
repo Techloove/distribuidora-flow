@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { BarChart3, Loader2, Printer } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, Loader2, Printer } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 
 import { brl } from "@/components/documento-page";
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_app/dre")({
 });
 
 type Row = Record<string, unknown>;
-type Linha = { label: string; valor: number; nivel: 0 | 1 | 2; total?: boolean };
+type Linha = { label: string; valor: number; nivel: 0 | 1 | 2; total?: boolean; key: string; pai?: string; avo?: string; filhos?: number };
 
 const hoje = new Date();
 const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
@@ -48,6 +48,8 @@ function DrePage() {
   const perm = usePermissoesFin();
   const [de, setDe] = useState(iniMes);
   const [ate, setAte] = useState(fimMes);
+  const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const alternar = (k: string) => setAbertas((s) => ({ ...s, [k]: !s[k] }));
 
   const dre = useQuery({
     queryKey: ["vw_dre_base", "pagina", centro, de, ate],
@@ -97,14 +99,18 @@ function DrePage() {
     };
     const out: Linha[] = [];
     const secao = (s: string, titulo: string) => {
-      out.push({ label: titulo, valor: total(s), nivel: 0 });
       const m = secoes.get(s);
+      const sk = `s:${s}`;
+      out.push({ label: titulo, valor: total(s), nivel: 0, key: sk, filhos: m?.size ?? 0 });
       if (!m) return;
       for (const [cat, subs] of [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
         let t = 0;
         for (const v of subs.values()) t += v;
-        out.push({ label: cat, valor: t, nivel: 1 });
-        for (const [sub, v] of subs) if (sub) out.push({ label: `↳ ${sub}`, valor: v, nivel: 2 });
+        const ck = `${sk}:${cat}`;
+        const nSubs = [...subs.keys()].filter(Boolean).length;
+        out.push({ label: cat, valor: t, nivel: 1, key: ck, pai: sk, filhos: nSubs });
+        for (const [sub, v] of subs)
+          if (sub) out.push({ label: `↳ ${sub}`, valor: v, nivel: 2, key: `${ck}:${sub}`, pai: ck, avo: sk });
       }
     };
     const rb = total("receita");
@@ -113,10 +119,10 @@ function DrePage() {
     const rl = rb + total("deducao");
     secao("cpv", "(-) CUSTO DOS PRODUTOS VENDIDOS");
     const lb = rl + total("cpv");
-    out.push({ label: "(=) LUCRO BRUTO", valor: lb, nivel: 0, total: true });
+    out.push({ label: "(=) LUCRO BRUTO", valor: lb, nivel: 0, total: true, key: "t" + out.length });
     secao("despesa", "(-) DESPESAS OPERACIONAIS");
     const ro = lb + total("despesa");
-    out.push({ label: "(=) RESULTADO OPERACIONAL", valor: ro, nivel: 0, total: true });
+    out.push({ label: "(=) RESULTADO OPERACIONAL", valor: ro, nivel: 0, total: true, key: "t" + out.length });
     if (secoes.has("outras_receitas")) secao("outras_receitas", "(+) RECEITAS FINANCEIRAS / OUTRAS");
     if (secoes.has("financeira")) secao("financeira", "(-) DESPESAS FINANCEIRAS");
     out.push({
@@ -124,6 +130,7 @@ function DrePage() {
       valor: ro + total("outras_receitas") + total("financeira"),
       nivel: 0,
       total: true,
+      key: "t-final",
     });
     return { linhas: out, receita: rb };
   }, [dre.data]);
@@ -180,6 +187,18 @@ function DrePage() {
           <h2 className="flex items-center gap-2 px-6 pb-2 pt-6 text-lg font-semibold">
             <BarChart3 className="size-5" /> Demonstração do Resultado (DRE)
           </h2>
+          <div className="no-print flex gap-2 px-6 pb-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAbertas(Object.fromEntries(linhas.filter((l) => l.filhos).map((l) => [l.key, true])))}
+            >
+              Expandir tudo
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setAbertas({})}>
+              Recolher tudo
+            </Button>
+          </div>
           {dre.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -196,10 +215,13 @@ function DrePage() {
                 </tr>
               </thead>
               <tbody>
-                {linhas.map((l, i) => (
-                  <Fragment key={i}>
+                {linhas
+                  .filter((l) => (!l.pai || abertas[l.pai]) && (!l.avo || abertas[l.avo]))
+                  .map((l) => (
+                  <Fragment key={l.key}>
                     <tr
-                      className={`border-b border-border ${l.total ? "bg-muted/50" : ""} ${
+                      onClick={l.filhos ? () => alternar(l.key) : undefined}
+                      className={`border-b border-border ${l.filhos ? "cursor-pointer hover:bg-accent/50" : ""} ${l.total ? "bg-muted/50" : ""} ${
                         l.nivel === 2 ? "text-xs italic text-muted-foreground" : ""
                       }`}
                     >
@@ -208,7 +230,12 @@ function DrePage() {
                           l.nivel === 1 ? "pl-8 text-muted-foreground" : l.nivel === 2 ? "pl-12" : ""
                         }`}
                       >
-                        {l.label}
+                        <span className="inline-flex items-center gap-1">
+                          {l.filhos ? (
+                            abertas[l.key] ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />
+                          ) : null}
+                          {l.label}
+                        </span>
                       </td>
                       <td
                         className={`px-4 py-3 text-right ${l.nivel === 0 ? "font-semibold" : ""} ${
