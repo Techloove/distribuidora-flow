@@ -12,6 +12,8 @@ type SupabaseContextValue = {
   session: Session | null;
   user: User | null;
   roles: AppRole[];
+  mustChangePassword: boolean;
+  refreshPermissions: () => Promise<void>;
   loading: boolean;
   error: string | null;
   canManage: boolean;
@@ -79,20 +81,25 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     retry: 1,
     queryFn: async () => {
       const [profile, roles] = await Promise.all([
-        client!.from("profiles").select("ativo").eq("id", session!.user.id).single(),
+        client!.from("profiles").select("ativo, troca_senha_obrigatoria").eq("id", session!.user.id).single(),
         client!.from("user_roles").select("role").eq("user_id", session!.user.id),
       ]);
       if (profile.error || roles.error)
         throw new Error("Não foi possível verificar seu acesso. Tente novamente.");
       if (profile.data?.ativo !== true)
         throw new Error("Seu acesso está desativado. Procure o administrador.");
-      return (roles.data ?? []).map((r: { role: AppRole }) => r.role);
+      return { roles: (roles.data ?? []).map((r: { role: AppRole }) => r.role), mustChangePassword: profile.data.troca_senha_obrigatoria === true };
     },
   });
-  const roles = session && !permissions.isError ? (permissions.data ?? []) : [];
+  const roles = session && !permissions.isError ? (permissions.data?.roles ?? []) : [];
+  const mustChangePassword = !!session && permissions.data?.mustChangePassword === true;
   const loading = initializing || (!!session && permissions.isPending);
   const error =
     connectionError ?? (session && permissions.error ? permissions.error.message : null);
+  async function refreshPermissions() {
+    await permissions.refetch();
+    await router.invalidate();
+  }
   async function signOut() {
     const result = await client?.auth.signOut();
     if (result?.error) throw new Error("Não foi possível encerrar a sessão. Tente novamente.");
@@ -108,6 +115,8 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         session,
         user: session?.user ?? null,
         roles,
+        mustChangePassword,
+        refreshPermissions,
         loading,
         error,
         canManage: !loading && !error && (roles.includes("admin") || roles.includes("gestor")),
