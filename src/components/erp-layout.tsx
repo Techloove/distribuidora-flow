@@ -53,6 +53,7 @@ import { useCentro } from "@/lib/centro-store";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
+import { AlterarSenha } from "@/components/alterar-senha";
 
 const nav = [
   {
@@ -282,6 +283,7 @@ function SidebarContent({
             </p>
           </>
         )}
+        <AlterarSenha compact={compact} />
         <button
           onClick={onSignOut}
           aria-label="Sair"
@@ -432,4 +434,3 @@ export function ErpLayout({
     </div>
   );
 }
-
