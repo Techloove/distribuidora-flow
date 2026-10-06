@@ -72,7 +72,7 @@ function PlanejamentoPage() {
   const prod = (r: Row, k: string) => String(grupos.data?.get(String(r["produto_id"]))?.[k] ?? "");
 
   const opcoes = useMemo(() => {
-    const list = (lista.data ?? []).map((r) => ({ ...r, grupo: prod(r, "grupo"), marca: prod(r, "marca") }));
+    const list = (lista.data ?? []).map((r) => ({ ...r, grupo: prod(r, "grupo"), marca: prod(r, "marca") }) as Row);
     const uniq = (key: string) =>
       [...new Set(list.map((r) => String(r[key] ?? "")).filter(Boolean))]
         .sort()
