@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
+  UserPlus,
   Boxes,
   Loader2,
   Route as RouteIcon,
@@ -24,6 +25,10 @@ function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [nome, setNome] = useState("");
+  const [confirmacao, setConfirmacao] = useState("");
+  const [modo, setModo] = useState<"entrar" | "cadastrar">("entrar");
+  const [cadastroEnviado, setCadastroEnviado] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (session) void navigate({ to: "/dashboard", replace: true });
@@ -33,11 +38,30 @@ function AuthPage() {
     if (!client || busy) return;
     setBusy(true);
     try {
-      const result = await client.auth.signInWithPassword({ email: email.trim(), password: senha });
-      if (result.error)
-        throw new Error(
-          "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
-        );
+      if (modo === "cadastrar") {
+        if (nome.trim().length < 3) throw new Error("Informe seu nome completo.");
+        if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
+        if (senha !== confirmacao) throw new Error("As senhas informadas não conferem.");
+        const { error: cadastroErro } = await client.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password: senha,
+          options: { data: { nome: nome.trim() } },
+        });
+        if (cadastroErro) throw new Error(cadastroErro.message);
+        setCadastroEnviado(true);
+        setSenha("");
+        setConfirmacao("");
+        toast.success("Solicitação de cadastro recebida.");
+      } else {
+        const result = await client.auth.signInWithPassword({
+          email: email.trim(),
+          password: senha,
+        });
+        if (result.error)
+          throw new Error(
+            "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
+          );
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao entrar.");
     } finally {
@@ -89,11 +113,15 @@ function AuthPage() {
             <span className="font-semibold">Caparaó System</span>
           </div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Bem-vindo de volta
+            {modo === "entrar" ? "Bem-vindo de volta" : "Novo usuário"}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Entre na sua conta</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+            {modo === "entrar" ? "Entre na sua conta" : "Cadastre-se no sistema"}
+          </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Acesse o painel e acompanhe o dia a dia da sua distribuidora.
+            {modo === "entrar"
+              ? "Acesse o painel e acompanhe o dia a dia da sua distribuidora."
+              : "Crie sua conta. O acesso aos módulos será liberado pelo administrador."}
           </p>
           {error && (
             <p
@@ -103,9 +131,32 @@ function AuthPage() {
               {error}
             </p>
           )}
+          {cadastroEnviado && modo === "cadastrar" ? (
+            <div role="status" className="mt-8 space-y-4 rounded-xl border p-5 text-sm">
+              <p className="font-semibold">Solicitação recebida</p>
+              <p className="text-muted-foreground">
+                Se necessário, confirme seu e-mail pelo link enviado. Após a confirmação,
+                aguarde o administrador ativar seu acesso e atribuir um perfil.
+              </p>
+              <Button type="button" className="w-full" onClick={() => {
+                setModo("entrar");
+                setCadastroEnviado(false);
+              }}>
+                Voltar para o login
+              </Button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            {modo === "cadastrar" && (
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome completo</Label>
+                <Input className="h-12 rounded-xl" id="nome" type="text"
+                  autoComplete="name" value={nome} onChange={(e) => setNome(e.target.value)}
+                  minLength={3} maxLength={120} required />
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail corporativo</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 className="h-12 rounded-xl"
                 id="email"
@@ -123,12 +174,21 @@ function AuthPage() {
                 className="h-12 rounded-xl"
                 id="senha"
                 type="password"
-                autoComplete="current-password"
+                autoComplete={modo === "entrar" ? "current-password" : "new-password"}
+                minLength={modo === "cadastrar" ? 8 : undefined}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
               />
             </div>
+            {modo === "cadastrar" && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmacao">Confirme sua senha</Label>
+                <Input className="h-12 rounded-xl" id="confirmacao" type="password"
+                  autoComplete="new-password" minLength={8}
+                  value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} required />
+              </div>
+            )}
             <Button
               className="h-12 w-full rounded-xl"
               disabled={!client || loading || busy}
@@ -137,11 +197,23 @@ function AuthPage() {
               {busy ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <ArrowRight className="size-4" />
+                modo === "entrar" ? <ArrowRight className="size-4" /> : <UserPlus className="size-4" />
               )}{" "}
-              {busy ? "Entrando…" : "Acessar o sistema"}
+              {busy ? "Aguarde…" : modo === "entrar" ? "Acessar o sistema" : "Criar minha conta"}
             </Button>
           </form>
+          )}
+          <div className="mt-5 text-center text-sm">
+            <Button type="button" variant="link" disabled={busy}
+              onClick={() => {
+                setModo(modo === "entrar" ? "cadastrar" : "entrar");
+                setCadastroEnviado(false);
+                setSenha("");
+                setConfirmacao("");
+              }}>
+              {modo === "entrar" ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
+            </Button>
+          </div>
           <p className="mt-7 border-t pt-6 text-center text-xs leading-relaxed text-muted-foreground">
             Precisa de acesso ou ajuda com sua senha?
             <br />
