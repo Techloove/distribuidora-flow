@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,7 +10,6 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useCentro } from "@/lib/centro-store";
 import { OCORRENCIAS, type CnabConfig } from "@/lib/sicredi-cnab";
 import {
-  cnabGerarRemessa,
   cnabImportarRetorno,
   cnabPreverRetorno,
   cnabSalvarConfig,
@@ -28,7 +28,8 @@ function download(content: string, filename: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function SicrediCnabPanel() {
+type Mode = "configuracao" | "operacao";
+export function SicrediCnabPanel({ mode = "operacao" }: { mode?: Mode }) {
   const { centro } = useCentro();
   const { roles } = useSupabase();
   if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
@@ -36,30 +37,29 @@ export function SicrediCnabPanel() {
     <section className="no-print rounded-xl border bg-card p-4">
       <h2 className="font-semibold">Sicredi · CNAB 240</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Gere remessas e confira os retornos recebidos do Sicredi Internet Empresas.
+        {mode === "configuracao"
+          ? "Configure o convênio e as regras dos boletos por centro de custo."
+          : "Confira os retornos recebidos do Sicredi e consulte os arquivos gerados nos pedidos."}
       </p>
       {!centro ? (
         <p className="mt-3 text-sm">
           Selecione um centro de custo específico no filtro superior para trabalhar com CNAB.
         </p>
       ) : (
-        <CentroCnab key={centro} centro={centro} />
+        <CentroCnab key={centro} centro={centro} mode={mode} />
       )}
     </section>
   );
 }
-function CentroCnab({ centro }: { centro: string }) {
+function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
   const { client, session, roles } = useSupabase();
   const qc = useQueryClient();
   const admin = roles.includes("admin") || roles.includes("gestor");
   const save = useServerFn(cnabSalvarConfig),
-    generate = useServerFn(cnabGerarRemessa),
     preview = useServerFn(cnabPreverRetorno),
     apply = useServerFn(cnabImportarRetorno);
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState<string | null>(null),
-    [page, setPage] = useState(0);
-  const [selected, setSelected] = useState<string[]>([]);
+    [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState(""),
     [filename, setFilename] = useState(""),
     [confirmed, setConfirmed] = useState(false);
@@ -128,26 +128,9 @@ function CentroCnab({ centro }: { centro: string }) {
   useEffect(() => {
     if (cfg.data) setForm(cfg.data);
   }, [cfg.data]);
-  const pending = useQuery({
-    queryKey: ["cnab", "pendentes", centro, page],
-    enabled: !!client && !!cfg.data,
-    queryFn: async () => {
-      const { data, error, count } = await client!
-        .from("vw_boletos_pendentes")
-        .select("conta_receber_id,documento,parcela,razao_social,saldo,vencimento", {
-          count: "exact",
-        })
-        .eq("centro_id", centro)
-        .order("vencimento")
-        .order("conta_receber_id")
-        .range(page * 100, page * 100 + 99);
-      if (error) throw new Error(error.message);
-      return { rows: (data ?? []) as Row[], count: count ?? 0 };
-    },
-  });
   const history = useQuery({
     queryKey: ["cnab", "arquivos", centro],
-    enabled: !!client && !!cfg.data,
+    enabled: !!client && !!cfg.data && mode === "operacao",
     queryFn: async () => {
       const { data, error } = await client!
         .from("sicredi_cnab_arquivos")
@@ -207,231 +190,169 @@ function CentroCnab({ centro }: { centro: string }) {
           {error}
         </p>
       )}
-      <details open={!cfg.data}>
-        <summary className="cursor-pointer text-sm font-medium">
-          Configuração CNAB deste centro
-        </summary>
-        <p className="my-3 text-sm text-muted-foreground">
-          Manual Sicredi 2.9 (02/2026), layout 081/040, carteira simples, emissão pelo Sicredi e
-          distribuição pelo beneficiário. Os parâmetros da API são independentes. Confira os
-          sequenciais já utilizados com a cooperativa antes da primeira remessa.
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run(async () => {
-              await save({ data: { ...input(), config: form } });
-              await refresh();
-              toast.success("Configuração CNAB salva.");
-            });
-          }}
-        >
-          <fieldset
-            disabled={!admin || busy || cfg.isLoading || cfg.isError}
-            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      {mode === "configuracao" && (
+        <details open>
+          <summary className="cursor-pointer text-sm font-medium">
+            Configuração CNAB deste centro
+          </summary>
+          <p className="my-3 text-sm text-muted-foreground">
+            Manual Sicredi 2.9 (02/2026), layout 081/040, carteira simples, emissão pelo Sicredi e
+            distribuição pelo beneficiário. Os parâmetros da API são independentes. Confira os
+            sequenciais já utilizados com a cooperativa antes da primeira remessa.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                await save({ data: { ...input(), config: form } });
+                await refresh();
+                toast.success("Configuração CNAB salva.");
+              });
+            }}
           >
-            {textFields.map(([key, label]) => (
-              <div key={key} className="space-y-1">
-                <Label htmlFor={`cnab-${key}`}>{label}</Label>
-                <Input
-                  id={`cnab-${key}`}
+            <fieldset
+              disabled={!admin || busy || cfg.isLoading || cfg.isError}
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {textFields.map(([key, label]) => (
+                <div key={key} className="space-y-1">
+                  <Label htmlFor={`cnab-${key}`}>{label}</Label>
+                  <Input
+                    id={`cnab-${key}`}
+                    required
+                    value={String(form[key])}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <div className="space-y-1">
+                <Label htmlFor="cnab-conta-financeira">Conta financeira dos recebimentos</Label>
+                <select
+                  id="cnab-conta-financeira"
+                  className="h-10 w-full rounded-md border bg-background px-2"
                   required
-                  value={String(form[key])}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                />
+                  value={form.conta_financeira_id}
+                  onChange={(e) => setForm({ ...form, conta_financeira_id: e.target.value })}
+                >
+                  <option value="">Selecione a conta Sicredi</option>
+                  {(accounts.data ?? []).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.nome}
+                    </option>
+                  ))}
+                </select>
+                {accounts.isError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {accounts.error.message}
+                  </p>
+                )}
               </div>
-            ))}
-            <div className="space-y-1">
-              <Label htmlFor="cnab-conta-financeira">Conta financeira dos recebimentos</Label>
-              <select
-                id="cnab-conta-financeira"
-                className="h-10 w-full rounded-md border bg-background px-2"
-                required
-                value={form.conta_financeira_id}
-                onChange={(e) => setForm({ ...form, conta_financeira_id: e.target.value })}
-              >
-                <option value="">Selecione a conta Sicredi</option>
-                {(accounts.data ?? []).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.nome}
-                  </option>
-                ))}
-              </select>
-              {accounts.isError && (
-                <p role="alert" className="text-sm text-destructive">
-                  {accounts.error.message}
-                </p>
+              <div className="space-y-1">
+                <Label htmlFor="cnab-categoria-tarifa">Categoria das tarifas bancárias</Label>
+                <select
+                  id="cnab-categoria-tarifa"
+                  className="h-10 w-full rounded-md border bg-background px-2"
+                  value={form.categoria_tarifa_id ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, categoria_tarifa_id: e.target.value || null })
+                  }
+                >
+                  <option value="">Selecione para conciliar tarifas</option>
+                  {(categories.data ?? []).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.nome}
+                    </option>
+                  ))}
+                </select>
+                {categories.isError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {categories.error.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cnab-tipo">Tipo de boleto</Label>
+                <select
+                  id="cnab-tipo"
+                  className="h-10 w-full rounded-md border bg-background px-2"
+                  value={form.tipo_cobranca ?? "NORMAL"}
+                  onChange={(e) =>
+                    setForm({ ...form, tipo_cobranca: e.target.value as "NORMAL" | "HIBRIDO" })
+                  }
+                >
+                  <option value="NORMAL">Boleto normal</option>
+                  <option value="HIBRIDO">Boleto híbrido com PIX</option>
+                </select>
+              </div>
+              {form.tipo_cobranca === "HIBRIDO" && (
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="cnab-pix">
+                    Chave PIX aleatória vinculada ao convênio Sicredi
+                  </Label>
+                  <Input
+                    id="cnab-pix"
+                    required
+                    value={form.chave_pix ?? ""}
+                    onChange={(e) => setForm({ ...form, chave_pix: e.target.value.trim() })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Confirme a contratação do boleto híbrido com a cooperativa. O QR Code fica
+                    disponível após importar o retorno de registro com os dados PIX.
+                  </p>
+                </div>
               )}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="cnab-categoria-tarifa">Categoria das tarifas bancárias</Label>
-              <select
-                id="cnab-categoria-tarifa"
-                className="h-10 w-full rounded-md border bg-background px-2"
-                value={form.categoria_tarifa_id ?? ""}
-                onChange={(e) => setForm({ ...form, categoria_tarifa_id: e.target.value || null })}
-              >
-                <option value="">Selecione para conciliar tarifas</option>
-                {(categories.data ?? []).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.nome}
-                  </option>
-                ))}
-              </select>
-              {categories.isError && (
-                <p role="alert" className="text-sm text-destructive">
-                  {categories.error.message}
-                </p>
+              {numberFields.map(([key, label]) => (
+                <div key={key} className="space-y-1">
+                  <Label htmlFor={`cnab-${key}`}>{label}</Label>
+                  <Input
+                    id={`cnab-${key}`}
+                    type="number"
+                    min={key.includes("percentual") || key === "juros_mensal" ? 0 : 1}
+                    step={key.includes("percentual") || key === "juros_mensal" ? "0.01" : "1"}
+                    required
+                    value={Number(form[key])}
+                    onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
+                  />
+                </div>
+              ))}
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={form.homologado}
+                  onChange={(e) => setForm({ ...form, homologado: e.target.checked })}
+                />
+                A cooperativa confirmou a homologação CNAB deste convênio.
+              </label>
+              {admin && (
+                <Button type="submit" className="w-fit">
+                  Salvar configuração CNAB
+                </Button>
               )}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="cnab-tipo">Tipo de boleto</Label>
-              <select
-                id="cnab-tipo"
-                className="h-10 w-full rounded-md border bg-background px-2"
-                value={form.tipo_cobranca ?? "NORMAL"}
-                onChange={(e) =>
-                  setForm({ ...form, tipo_cobranca: e.target.value as "NORMAL" | "HIBRIDO" })
-                }
-              >
-                <option value="NORMAL">Boleto normal</option>
-                <option value="HIBRIDO">Boleto híbrido com PIX</option>
-              </select>
-            </div>
-            {form.tipo_cobranca === "HIBRIDO" && (
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="cnab-pix">Chave PIX aleatória vinculada ao convênio Sicredi</Label>
-                <Input
-                  id="cnab-pix"
-                  required
-                  value={form.chave_pix ?? ""}
-                  onChange={(e) => setForm({ ...form, chave_pix: e.target.value.trim() })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Confirme a contratação do boleto híbrido com a cooperativa. O QR Code fica
-                  disponível após importar o retorno de registro com os dados PIX.
-                </p>
-              </div>
-            )}
-            {numberFields.map(([key, label]) => (
-              <div key={key} className="space-y-1">
-                <Label htmlFor={`cnab-${key}`}>{label}</Label>
-                <Input
-                  id={`cnab-${key}`}
-                  type="number"
-                  min={key.includes("percentual") || key === "juros_mensal" ? 0 : 1}
-                  step={key.includes("percentual") || key === "juros_mensal" ? "0.01" : "1"}
-                  required
-                  value={Number(form[key])}
-                  onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
-                />
-              </div>
-            ))}
-            <label className="flex items-center gap-2 text-sm sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={form.homologado}
-                onChange={(e) => setForm({ ...form, homologado: e.target.checked })}
-              />
-              A cooperativa confirmou a homologação CNAB deste convênio.
-            </label>
-            {admin && (
-              <Button type="submit" className="w-fit">
-                Salvar configuração CNAB
-              </Button>
-            )}
-          </fieldset>
-        </form>
-        {!admin && (
-          <p className="mt-2 text-sm">A configuração é feita pelo administrador ou gestor.</p>
-        )}
-      </details>
-      {cfg.data && (
+            </fieldset>
+          </form>
+          {!admin && (
+            <p className="mt-2 text-sm">A configuração é feita pelo administrador ou gestor.</p>
+          )}
+        </details>
+      )}
+      {mode === "operacao" && !cfg.isLoading && !cfg.isError && !cfg.data && (
+        <p className="text-sm">
+          Convênio CNAB não configurado para este centro. Solicite a configuração ao administrador
+          em{" "}
+          <Link to="/configuracoes" className="underline">
+            Configurações do sistema
+          </Link>
+          .
+        </p>
+      )}
+      {mode === "operacao" && cfg.data && (
         <>
           {!cfg.data.homologado && (
             <p className="rounded-md border p-3 text-sm">
-              Convênio em homologação. Gere a remessa para validação com a cooperativa. A aplicação
-              de retornos ficará disponível após confirmar a homologação.
+              Convênio em homologação. Emita pelos pedidos e envie a remessa para validação com a
+              cooperativa. A aplicação de retornos ficará disponível após confirmar a homologação.
             </p>
           )}
-          <details>
-            <summary className="cursor-pointer text-sm font-medium">
-              Gerar remessa de novos títulos
-            </summary>
-            <p className="my-2 text-sm text-muted-foreground">
-              A remessa reserva os títulos como pendentes; o registro só é confirmado pelo retorno
-              do banco. Guarde o arquivo e envie pelo Sicredi Internet Empresas. A geração não
-              transmite ao banco.
-            </p>
-            {pending.isError && <p role="alert">{pending.error.message}</p>}
-            {pending.isLoading && <p role="status">Carregando títulos…</p>}
-            <div className="max-h-72 overflow-auto rounded-md border">
-              {(pending.data?.rows ?? []).map((r) => {
-                const id = String(r["conta_receber_id"]);
-                return (
-                  <label key={id} className="flex items-center gap-3 border-b p-2 text-sm">
-                    <input
-                      type="checkbox"
-                      disabled={busy}
-                      checked={selected.includes(id)}
-                      onChange={(e) =>
-                        setSelected(
-                          e.target.checked ? [...selected, id] : selected.filter((v) => v !== id),
-                        )
-                      }
-                    />
-                    <span>
-                      {String(r["razao_social"])} · {String(r["documento"] ?? "")} /{" "}
-                      {String(r["parcela"] ?? "")} · {String(r["vencimento"])} · R${" "}
-                      {String(r["saldo"])}
-                    </span>
-                  </label>
-                );
-              })}
-              {pending.data?.count === 0 && (
-                <p className="p-3 text-sm">Nenhum título disponível para remessa.</p>
-              )}
-            </div>
-            <div className="my-2 flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                disabled={busy || page === 0}
-                onClick={() => {
-                  setPage(page - 1);
-                  setSelected([]);
-                }}
-              >
-                Anterior
-              </Button>
-              <span className="text-sm">
-                Página {page + 1} · {pending.data?.count ?? 0} títulos
-              </span>
-              <Button
-                variant="outline"
-                disabled={busy || (page + 1) * 100 >= (pending.data?.count ?? 0)}
-                onClick={() => {
-                  setPage(page + 1);
-                  setSelected([]);
-                }}
-              >
-                Próxima
-              </Button>
-              <Button
-                disabled={busy || !selected.length}
-                onClick={() =>
-                  void run(async () => {
-                    const file = await generate({ data: { ...input(), conta_ids: selected } });
-                    download(file.content, file.filename);
-                    setSelected([]);
-                    await refresh();
-                    toast.success("Remessa gerada. Envie o arquivo ao Sicredi.");
-                  })
-                }
-              >
-                Gerar remessa ({selected.length})
-              </Button>
-            </div>
-          </details>
           <details>
             <summary className="cursor-pointer text-sm font-medium">
               Importar retorno CNAB 240

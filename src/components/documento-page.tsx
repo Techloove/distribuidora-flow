@@ -1,3 +1,4 @@
+import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -1389,6 +1390,14 @@ export function DocumentoPage({
               })() : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 {config.table === "pedidos" ? <ImprimirPedidos pedidoIds={[String(doc["id"])]} /> : null}
+                {config.table === "pedidos" &&
+                !["rascunho", "digitacao", "aprovado", "cancelado"].includes(String(doc["status"])) ? (
+                  <EmitirBoletosPedido
+                    key={String(doc["id"])}
+                    pedidoId={String(doc["id"])}
+                    centroId={String(doc["centro_id"] ?? "")}
+                  />
+                ) : null}
                 <Button
                   onClick={() => efetivar.mutate()}
                   disabled={

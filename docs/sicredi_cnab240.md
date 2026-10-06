@@ -5,14 +5,16 @@ Referências conferidas nos PDFs fornecidos: Manual Sicredi CNAB 240 **2.9, feve
 ## Ativação
 
 1. Aplicar `db/fase204_sicredi_cnab240.sql` após a fase203 no Supabase. Esta tarefa não aplicou a migração no banco de produção.
-2. Abrir **Faturamento → Sicredi · CNAB 240**, selecionar um centro de custo e configurar como administrador/gestor: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
+2. Abrir **Configurações do sistema → Cobrança Sicredi → Sicredi · CNAB 240**, selecionar um centro de custo e configurar como administrador/gestor: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
 3. Para boleto híbrido, selecionar **Boleto híbrido com PIX** e informar a chave PIX aleatória vinculada ao convênio. Confirmar a contratação e homologar arquivos normais/híbridos com a cooperativa. A opção de homologação libera a aplicação de retornos.
 
 Runtime do servidor: `EXT_SUPABASE_URL`, `EXT_SUPABASE_ANON_KEY`, `EXT_SUPABASE_SERVICE_ROLE_KEY`. O processamento de arquivos CNAB não exige API key Sicredi. A publicação do código no GitHub não executa migrações no Supabase nem homologa o convênio bancário.
 
 ## Remessa e retorno
 
-O financeiro seleciona títulos em aberto e gera uma remessa para enviar pelo Sicredi Internet Empresas. O ERP reserva os títulos como pendentes; não transmite ao banco nem os marca como registrados. Histórico permite baixar novamente o mesmo arquivo, sem gerar novos sequenciais.
+No pedido confirmado, o financeiro abre **Emitir boletos**, seleciona as parcelas em aberto do pedido e escolhe **Arquivo de remessa CNAB 240**. O sistema gera uma remessa para enviar pelo Sicredi Internet Empresas. O ERP reserva os títulos como pendentes; não transmite ao banco nem os marca como registrados. Em **Faturamento**, o histórico permite baixar novamente o mesmo arquivo, sem gerar novos sequenciais. A mesma tela mantém a importação de retornos e o acompanhamento; configuração e emissão ficam em seus respectivos locais.
+
+Para registro direto via API, usar o mesmo botão no pedido e selecionar **Registro direto no Sicredi (API)**. Somente administrador, gestor e financeiro podem emitir. As parcelas já cobradas ou pagas são excluídas da seleção, e as RPCs existentes revalidam a disponibilidade antes da gravação. Não há nova migração SQL para esta reorganização das telas.
 
 Remessa: registros ASCII de 240 posições com CRLF; header/lote, P/Q, R para multa, Y04 opcional para híbrido e trailers. Carteira simples, emissão pelo Sicredi e distribuição pelo beneficiário. O vencimento deve ser pelo menos sete dias após a emissão. Juros/multa começam no dia seguinte ao vencimento. Nosso número usa DV módulo 11 com cooperativa/posto/beneficiário e sequencial controlado. O limite de nosso número é 99.999, sem reset automático.
 

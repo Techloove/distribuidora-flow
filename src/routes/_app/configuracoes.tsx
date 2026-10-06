@@ -1,3 +1,4 @@
+import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -64,9 +65,19 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
   {
     titulo: "Credenciais da API",
     campos: [
-      { name: "api_key", label: "Chave de API (x-api-key)", span: 2, hint: "Por segurança, a chave atual nunca é enviada ao navegador. Deixe em branco para manter a existente." },
+      {
+        name: "api_key",
+        label: "Chave de API (x-api-key)",
+        span: 2,
+        hint: "Por segurança, a chave atual nunca é enviada ao navegador. Deixe em branco para manter a existente.",
+      },
       { name: "username", label: "Usuário" },
-      { name: "password", label: "Senha", type: "password", hint: "A senha atual fica somente no servidor. Deixe em branco para manter a existente." },
+      {
+        name: "password",
+        label: "Senha",
+        type: "password",
+        hint: "A senha atual fica somente no servidor. Deixe em branco para manter a existente.",
+      },
       { name: "cooperativa", label: "Cooperativa" },
       { name: "posto", label: "Posto" },
       { name: "codigo_beneficiario", label: "Código do beneficiário" },
@@ -146,7 +157,12 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         ],
       },
       { name: "valor_desconto1", label: "Valor/percentual do desconto", type: "number" },
-      { name: "dias_desconto1", label: "Desconto até (dias antes do venc.)", type: "number", hint: "O sistema converte os dias em dataDesconto1 ao emitir o boleto." },
+      {
+        name: "dias_desconto1",
+        label: "Desconto até (dias antes do venc.)",
+        type: "number",
+        hint: "O sistema converte os dias em dataDesconto1 ao emitir o boleto.",
+      },
     ],
   },
   {
@@ -234,7 +250,6 @@ function ConfiguracoesPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   const empresa = useQuery({
     queryKey: ["empresas", "principal"],
@@ -390,9 +405,7 @@ function ConfiguracoesPage() {
                         className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                         value={params[chave] ?? "true"}
                         disabled={!canManage}
-                        onChange={(e) =>
-                          setParams((f) => ({ ...f, [chave]: e.target.value }))
-                        }
+                        onChange={(e) => setParams((f) => ({ ...f, [chave]: e.target.value }))}
                       >
                         <option value="true">Sim</option>
                         <option value="false">Não</option>
@@ -401,9 +414,7 @@ function ConfiguracoesPage() {
                       <Input
                         value={params[chave] ?? ""}
                         disabled={!canManage}
-                        onChange={(e) =>
-                          setParams((f) => ({ ...f, [chave]: e.target.value }))
-                        }
+                        onChange={(e) => setParams((f) => ({ ...f, [chave]: e.target.value }))}
                       />
                     )}
                     <p className="mt-1 text-[11px] text-muted-foreground">{chave}</p>
@@ -422,13 +433,16 @@ function ConfiguracoesPage() {
       </div>
 
       <section className="mt-6 rounded-lg border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold">Cobrança Sicredi (API de boletos)</h2>
+        <h2 className="text-sm font-semibold">Cobrança Sicredi</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
-          aplicadas em todo boleto emitido no Faturamento.
+          aplicadas aos boletos emitidos nos pedidos. Configure a API abaixo e o convênio CNAB por
+          centro nesta mesma área.
         </p>
         {!canManage ? (
-          <p className="py-6 text-sm text-muted-foreground">Somente administradores e gestores podem alterar as credenciais bancárias.</p>
+          <p className="py-6 text-sm text-muted-foreground">
+            Somente administradores e gestores podem alterar as credenciais bancárias.
+          </p>
         ) : sicredi.isLoading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
@@ -489,6 +503,11 @@ function ConfiguracoesPage() {
             </Button>
           </div>
         )}
+        {canManage && (
+          <div className="mt-5">
+            <SicrediCnabPanel mode="configuracao" />
+          </div>
+        )}
       </section>
       {roles.includes("admin") && <LimparDados />}
     </ErpLayout>
@@ -534,7 +553,8 @@ function LimparDados() {
           variant="destructive"
           disabled={texto !== "LIMPAR" || limpar.isPending}
           onClick={() => {
-            if (confirm("Tem certeza? Todos os dados serão apagados definitivamente.")) limpar.mutate();
+            if (confirm("Tem certeza? Todos os dados serão apagados definitivamente."))
+              limpar.mutate();
           }}
         >
           {limpar.isPending && <Loader2 className="size-4 animate-spin" />} Apagar todos os dados
@@ -543,4 +563,3 @@ function LimparDados() {
     </section>
   );
 }
-

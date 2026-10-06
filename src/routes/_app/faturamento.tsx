@@ -1,8 +1,8 @@
 import { BoletoPix } from "@/components/boleto-pix";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Barcode, Copy, Loader2, Printer, RefreshCw } from "lucide-react";
+import { Copy, Loader2, Printer, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +23,6 @@ import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import {
   sicrediBaixarBoleto,
   sicrediConsultarBoleto,
-  sicrediEmitirBoleto,
   sicrediPdfBoleto,
   sicrediStatus,
 } from "@/lib/sicredi.functions";
@@ -78,10 +77,7 @@ function FaturamentoPage() {
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
-  const [selecao, setSelecao] = useState<Record<string, boolean>>({});
-  const [processando, setProcessando] = useState<string | null>(null);
 
-  const emitirFn = useServerFn(sicrediEmitirBoleto);
   const consultarFn = useServerFn(sicrediConsultarBoleto);
   const baixarFn = useServerFn(sicrediBaixarBoleto);
   const pdfFn = useServerFn(sicrediPdfBoleto);
@@ -92,19 +88,6 @@ function FaturamentoPage() {
       sicrediStatus({
         data: session?.access_token ? { accessToken: session.access_token } : {},
       }),
-  });
-
-  const pendentes = useQuery({
-    queryKey: ["vw_boletos_pendentes"],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data, error } = await client!
-        .from("vw_boletos_pendentes")
-        .select("*")
-        .order("vencimento");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
-    },
   });
 
   const boletos = useQuery({
@@ -142,31 +125,6 @@ function FaturamentoPage() {
     queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
   };
 
-  const pendentesFiltrados = useMemo(() => {
-    let list = filtrarCentro(pendentes.data ?? [], centro);
-    const f = filtros;
-    if (f["de"]) list = list.filter((r) => String(r["vencimento"] ?? "") >= f["de"]!);
-    if (f["ate"]) list = list.filter((r) => String(r["vencimento"] ?? "") <= f["ate"]!);
-    if (f["min"]) list = list.filter((r) => Number(r["saldo"] ?? 0) >= Number(f["min"]));
-    if (f["max"]) list = list.filter((r) => Number(r["saldo"] ?? 0) <= Number(f["max"]));
-    const termo = (f["busca"] ?? "").trim().toLowerCase();
-    if (termo) {
-      list = list.filter(
-        (r) =>
-          String(r["razao_social"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(r["documento"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(r["pedido_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo),
-      );
-    }
-    return list;
-  }, [pendentes.data, centro, filtros]);
-
   const boletosFiltrados = useMemo(() => {
     let list = filtrarCentro(boletos.data ?? [], centro);
     const f = filtros;
@@ -193,47 +151,6 @@ function FaturamentoPage() {
     }
     return list;
   }, [boletos.data, centro, filtros, clientes.data]);
-
-  /** Registra a parcela como boleto no Sicredi e grava o retorno. */
-  const emitirUm = async (row: Row) => {
-    const contaId = String(row["conta_receber_id"]);
-    try {
-      await emitirFn({
-        data: {
-          contaId,
-          ...(session?.access_token ? { accessToken: session.access_token } : {}),
-        },
-      });
-      return { ok: true as const };
-    } catch (e) {
-      return { ok: false as const, msg: (e as Error).message };
-    }
-  };
-
-  const emitir = useMutation({
-    mutationFn: async (rows: Row[]) => {
-      let ok = 0;
-      const erros: string[] = [];
-      for (const r of rows) {
-        setProcessando(String(r["conta_receber_id"]));
-        const res = await emitirUm(r);
-        if (res.ok) ok += 1;
-        else erros.push(res.msg);
-      }
-      setProcessando(null);
-      return { ok, erros };
-    },
-    onSuccess: ({ ok, erros }) => {
-      if (ok > 0) toast.success(`${ok} boleto(s) registrado(s) no Sicredi`);
-      if (erros.length > 0) toast.error(erros[0]!);
-      setSelecao({});
-      invalidate();
-    },
-    onError: (e: Error) => {
-      setProcessando(null);
-      toast.error(e.message);
-    },
-  });
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
@@ -285,8 +202,6 @@ function FaturamentoPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const selecionados = pendentesFiltrados.filter((r) => selecao[String(r["conta_receber_id"])]);
-  const totalSelecionado = selecionados.reduce((s, r) => s + Number(r["saldo"] ?? 0), 0);
   const emAberto = boletosFiltrados
     .filter((b) => b["status"] === "registrado")
     .reduce((s, b) => s + Number(b["valor"] ?? 0), 0);
@@ -308,25 +223,21 @@ function FaturamentoPage() {
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="size-4" /> Imprimir
           </Button>
-          <Button
-            disabled={!canFinance || selecionados.length === 0 || emitir.isPending}
-            onClick={() => emitir.mutate(selecionados)}
-          >
-            {emitir.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Barcode className="size-4" />
-            )}
-            Emitir {selecionados.length > 0 ? `${selecionados.length} boleto(s)` : "boletos"}
-          </Button>
         </div>
       }
     >
       <div className="space-y-6">
-        <SicrediCnabPanel />
+        <p className="text-sm text-muted-foreground">
+          A emissão de boletos é feita dentro de{" "}
+          <Link to="/pedidos" search={{ pedido: undefined }} className="font-medium underline">
+            Pedidos
+          </Link>
+          . As configurações do Sicredi ficam em Configurações do sistema.
+        </p>
+        <SicrediCnabPanel mode="operacao" />
         {config.data && !config.data.configurado ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-            <p className="font-medium text-destructive">Integração Sicredi não configurada</p>
+            <p className="font-medium text-destructive">Registro direto pela API não configurado</p>
             <p className="mt-1 text-muted-foreground">{config.data.erro}</p>
           </div>
         ) : config.data ? (
@@ -375,11 +286,7 @@ function FaturamentoPage() {
           />
         </FilterBar>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <article className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">Selecionado para emissão</p>
-            <p className="mt-2 text-2xl font-semibold">{brl(totalSelecionado)}</p>
-          </article>
+        <div className="grid gap-4 sm:grid-cols-2">
           <article className="rounded-lg border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">Boletos registrados (em aberto)</p>
             <p className="mt-2 text-2xl font-semibold">{brl(emAberto)}</p>
@@ -389,100 +296,6 @@ function FaturamentoPage() {
             <p className="mt-2 text-2xl font-semibold">{brl(liquidado)}</p>
           </article>
         </div>
-
-        <section className="print-area space-y-2">
-          <h2 className="text-sm font-semibold">
-            Parcelas aguardando boleto · {pendentesFiltrados.length}
-          </h2>
-          <div className="rounded-lg border border-border bg-card">
-            {pendentes.isLoading ? (
-              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Carregando...
-              </div>
-            ) : pendentes.isError ? (
-              <div className="p-6 text-sm text-destructive">
-                {(pendentes.error as Error).message}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Rode <code>db/fase16_boletos_sicredi.sql</code> no banco.
-                </p>
-              </div>
-            ) : pendentesFiltrados.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Nenhuma parcela em aberto sem boleto.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="no-print w-10">
-                      <input
-                        type="checkbox"
-                        aria-label="Selecionar todos"
-                        checked={
-                          selecionados.length > 0 &&
-                          selecionados.length === pendentesFiltrados.length
-                        }
-                        onChange={(e) =>
-                          setSelecao(
-                            e.target.checked
-                              ? Object.fromEntries(
-                                  pendentesFiltrados.map((r) => [
-                                    String(r["conta_receber_id"]),
-                                    true,
-                                  ]),
-                                )
-                              : {},
-                          )
-                        }
-                      />
-                    </TableHead>
-                    <TableHead>Parcela</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="no-print text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendentesFiltrados.map((r) => {
-                    const id = String(r["conta_receber_id"]);
-                    return (
-                      <TableRow key={id}>
-                        <TableCell className="no-print">
-                          <input
-                            type="checkbox"
-                            aria-label={`Selecionar ${id}`}
-                            checked={!!selecao[id]}
-                            onChange={(e) => setSelecao((s) => ({ ...s, [id]: e.target.checked }))}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {String(r["pedido_numero"] ?? r["documento"] ?? "—")}/
-                          {String(r["parcela"] ?? 1)}
-                        </TableCell>
-                        <TableCell>{String(r["razao_social"] ?? "—")}</TableCell>
-                        <TableCell>{dataBr(r["vencimento"])}</TableCell>
-                        <TableCell className="text-right">{brl(r["saldo"])}</TableCell>
-                        <TableCell className="no-print text-right">
-                          <Button
-                            size="sm"
-                            disabled={!canFinance || emitir.isPending}
-                            onClick={() => emitir.mutate([r])}
-                          >
-                            {processando === id ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : null}
-                            Emitir boleto
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-        </section>
 
         <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
