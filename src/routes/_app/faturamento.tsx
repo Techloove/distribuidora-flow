@@ -1,3 +1,4 @@
+import { BoletoPix } from "@/components/boleto-pix";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
+import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +41,8 @@ export const Route = createFileRoute("/_app/faturamento")({
       { property: "og:title", content: "Faturamento e boletos — ERP Distribuidora" },
       {
         property: "og:description",
-        content: "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
+        content:
+          "Registre boletos no Sicredi a partir das parcelas em aberto e acompanhe a liquidação.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -150,9 +153,15 @@ function FaturamentoPage() {
     if (termo) {
       list = list.filter(
         (r) =>
-          String(r["razao_social"] ?? "").toLowerCase().includes(termo) ||
-          String(r["documento"] ?? "").toLowerCase().includes(termo) ||
-          String(r["pedido_numero"] ?? "").toLowerCase().includes(termo),
+          String(r["razao_social"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["documento"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["pedido_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return list;
@@ -171,9 +180,15 @@ function FaturamentoPage() {
       list = list.filter(
         (b) =>
           cliName(b["cliente_id"]).toLowerCase().includes(termo) ||
-          String(b["nosso_numero"] ?? "").toLowerCase().includes(termo) ||
-          String(b["seu_numero"] ?? "").toLowerCase().includes(termo) ||
-          String(b["linha_digitavel"] ?? "").toLowerCase().includes(termo),
+          String(b["nosso_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(b["seu_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(b["linha_digitavel"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return list;
@@ -287,7 +302,7 @@ function FaturamentoPage() {
   return (
     <ErpLayout
       title="Faturamento (boletos Sicredi)"
-      description="As parcelas em aberto são registradas como boletos na API de cobrança do Sicredi. Este sistema não emite nota fiscal."
+      description="Cobrança Sicredi por API ou arquivos CNAB 240, com acompanhamento das parcelas."
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => window.print()}>
@@ -308,6 +323,7 @@ function FaturamentoPage() {
       }
     >
       <div className="space-y-6">
+        <SicrediCnabPanel />
         {config.data && !config.data.configurado ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
             <p className="font-medium text-destructive">Integração Sicredi não configurada</p>
@@ -437,9 +453,7 @@ function FaturamentoPage() {
                             type="checkbox"
                             aria-label={`Selecionar ${id}`}
                             checked={!!selecao[id]}
-                            onChange={(e) =>
-                              setSelecao((s) => ({ ...s, [id]: e.target.checked }))
-                            }
+                            onChange={(e) => setSelecao((s) => ({ ...s, [id]: e.target.checked }))}
                           />
                         </TableCell>
                         <TableCell>
@@ -471,18 +485,14 @@ function FaturamentoPage() {
         </section>
 
         <section className="print-area space-y-2">
-          <h2 className="text-sm font-semibold">
-            Boletos emitidos · {boletosFiltrados.length}
-          </h2>
+          <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
           <div className="rounded-lg border border-border bg-card">
             {boletos.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Carregando...
               </div>
             ) : boletos.isError ? (
-              <div className="p-6 text-sm text-destructive">
-                {(boletos.error as Error).message}
-              </div>
+              <div className="p-6 text-sm text-destructive">{(boletos.error as Error).message}</div>
             ) : boletosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum boleto emitido ainda.
@@ -535,7 +545,19 @@ function FaturamentoPage() {
                               <Copy className="size-4" />
                             </Button>
                           ) : null}
-                          {b["nosso_numero"] ? (
+                          {b["canal"] === "cnab240" ? (
+                            <div className="space-y-2">
+                              <span className="text-xs text-muted-foreground">
+                                CNAB 240 · acompanhe pelo retorno
+                              </span>
+                              {st === "registrado" && b["qrcode_pix"] && b["txid"] ? (
+                                <BoletoPix
+                                  payload={String(b["qrcode_pix"])}
+                                  txid={String(b["txid"])}
+                                />
+                              ) : null}
+                            </div>
+                          ) : b["nosso_numero"] ? (
                             <>
                               <Button
                                 size="sm"

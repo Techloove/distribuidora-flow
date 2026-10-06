@@ -5,6 +5,7 @@ const files = [
   "src/lib/inscricao-estadual.functions.ts",
   "src/lib/sicredi.functions.ts",
   "src/lib/sicredi-config.functions.ts",
+  "src/lib/sicredi-cnab.functions.ts",
 ];
 
 const errors = [];

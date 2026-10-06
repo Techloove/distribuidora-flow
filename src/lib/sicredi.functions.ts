@@ -4,11 +4,7 @@ import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./serve
 
 const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
 
-async function requireSicrediAccess(
-  action: string,
-  limit: number,
-  explicitAccessToken?: string,
-) {
+async function requireSicrediAccess(action: string, limit: number, explicitAccessToken?: string) {
   const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
   const user = await requireServerAuth(accessToken, SICREDI_ROLES);
   await enforceRateLimit(accessToken, action, limit, 60);
@@ -101,10 +97,12 @@ async function carregarBoleto(accessToken: string, boletoId: string): Promise<Db
   if (!id) throw new Error("Boleto não informado.");
   const rows = await userRest<DbRow>(
     accessToken,
-    `boletos?select=id,nosso_numero,status,centro_id,valor,conta_receber_id&id=eq.${encodeURIComponent(id)}&limit=1`,
+    `boletos?select=*&id=eq.${encodeURIComponent(id)}&limit=1`,
   );
   const row = rows[0];
   if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
+  if (row["canal"] === "cnab240")
+    throw new Error("Boleto CNAB 240 deve ser acompanhado pelo retorno do banco.");
   if (!String(row["nosso_numero"] ?? "").trim()) throw new Error("Boleto sem nosso número.");
   return row;
 }
@@ -222,7 +220,6 @@ async function conf(): Promise<Conf> {
   return c;
 }
 
-
 async function token(c: Conf): Promise<string> {
   const body = new URLSearchParams({
     username: c.username,
@@ -240,7 +237,8 @@ async function token(c: Conf): Promise<string> {
     body,
   });
   const txt = await res.text();
-  if (!res.ok) throw new Error(`Falha na autenticacao Sicredi (${res.status}): ${txt.slice(0, 300)}`);
+  if (!res.ok)
+    throw new Error(`Falha na autenticacao Sicredi (${res.status}): ${txt.slice(0, 300)}`);
   const json = JSON.parse(txt) as { access_token?: string };
   if (!json.access_token) throw new Error("Sicredi nao retornou access_token");
   return json.access_token;
@@ -260,27 +258,27 @@ function headers(c: Conf, tk: string) {
 export const sicrediStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken?: string }) => data)
   .handler(async ({ data }) => {
-  await requireSicrediAccess("sicredi_status", 30, data.accessToken);
-  try {
-    const c = await conf();
-    return {
-      configurado: true,
-      ambiente: c.ambiente,
-      cooperativa: c.cooperativa,
-      posto: c.posto,
-      beneficiario: c.beneficiario,
-      erro: null as string | null,
-    };
-  } catch (e) {
-    return {
-      configurado: false,
-      ambiente: (process.env["SICREDI_AMBIENTE"] ?? "homologacao").toLowerCase(),
-      cooperativa: "",
-      posto: "",
-      beneficiario: "",
-      erro: (e as Error).message,
-    };
-  }
+    await requireSicrediAccess("sicredi_status", 30, data.accessToken);
+    try {
+      const c = await conf();
+      return {
+        configurado: true,
+        ambiente: c.ambiente,
+        cooperativa: c.cooperativa,
+        posto: c.posto,
+        beneficiario: c.beneficiario,
+        erro: null as string | null,
+      };
+    } catch (e) {
+      return {
+        configurado: false,
+        ambiente: (process.env["SICREDI_AMBIENTE"] ?? "homologacao").toLowerCase(),
+        cooperativa: "",
+        posto: "",
+        beneficiario: "",
+        erro: (e as Error).message,
+      };
+    }
   });
 
 type EmitirInput = { contaId: string; accessToken?: string };
@@ -330,9 +328,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       seuNumero,
       dataVencimento: vencimento,
       valor: Number(Number(row["saldo"] ?? 0).toFixed(2)),
-      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" &&
-      c.valorDesconto1 > 0 &&
-      dataDesconto1
+      ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0 && dataDesconto1
         ? {
             tipoDesconto: c.tipoDesconto,
             valorDesconto1: c.valorDesconto1,
@@ -359,21 +355,23 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       ...(c.tipoProtesto === "NEGATIVAR" && diasProtesto > 0
         ? { diasNegativacaoAuto: diasProtesto }
         : {}),
-      ...(c.validadeAposVencimento > 0
-        ? { validadeAposVencimento: c.validadeAposVencimento }
-        : {}),
+      ...(c.validadeAposVencimento > 0 ? { validadeAposVencimento: c.validadeAposVencimento } : {}),
       ...(informativo ? { informativos: [informativo.slice(0, 80)] } : {}),
       ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
 
       pagador: {
-        tipoPessoa: String(row["tipo_pessoa"] ?? "").toUpperCase().startsWith("F")
+        tipoPessoa: String(row["tipo_pessoa"] ?? "")
+          .toUpperCase()
+          .startsWith("F")
           ? "PESSOA_FISICA"
           : "PESSOA_JURIDICA",
         documento: String(row["cnpj_cpf"] ?? "").replace(/\D/g, ""),
         nome: String(row["razao_social"] ?? "").slice(0, 40),
         endereco: (endereco || "Nao informado").slice(0, 40),
         cidade: String(row["cidade"] ?? "").slice(0, 25),
-        uf: String(row["uf"] ?? "").slice(0, 2).toUpperCase(),
+        uf: String(row["uf"] ?? "")
+          .slice(0, 2)
+          .toUpperCase(),
         cep: String(row["cep"] ?? "").replace(/\D/g, ""),
         ...(row["telefone"]
           ? { telefone: String(row["telefone"]).replace(/\D/g, "").slice(0, 11) }
@@ -524,11 +522,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
 export const sicrediPdfBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
   .handler(async ({ data }) => {
-    const { accessToken } = await requireSicrediAccess(
-      "sicredi_pdf_boleto",
-      20,
-      data.accessToken,
-    );
+    const { accessToken } = await requireSicrediAccess("sicredi_pdf_boleto", 20, data.accessToken);
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();

@@ -32,6 +32,9 @@ const protectedTables = new Set([
   "comissao_pagamentos",
   "comissao_pagamento_itens",
   "sicredi_config",
+  "sicredi_cnab_config",
+  "sicredi_cnab_arquivos",
+  "sicredi_cnab_eventos",
   "user_roles",
   "notas_saida",
 ]);
