@@ -42,16 +42,21 @@ function AuthPage() {
         if (nome.trim().length < 3) throw new Error("Informe seu nome completo.");
         if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
         if (senha !== confirmacao) throw new Error("As senhas informadas não conferem.");
-        const { error: cadastroErro } = await client.auth.signUp({
+        const { data: cadastro, error: cadastroErro } = await client.auth.signUp({
           email: email.trim().toLowerCase(),
           password: senha,
           options: { data: { nome: nome.trim() } },
         });
         if (cadastroErro) throw new Error(cadastroErro.message);
+        // O cadastro não deve manter uma sessão ativa antes da aprovação.
+        if (cadastro.session) {
+          const { error: sairErro } = await client.auth.signOut();
+          if (sairErro) throw new Error("Cadastro recebido. Encerre sua sessão e aguarde a aprovação.");
+        }
         setCadastroEnviado(true);
         setSenha("");
         setConfirmacao("");
-        toast.success("Solicitação de cadastro recebida.");
+        toast.success("Cadastro enviado para aprovação do administrador.");
       } else {
         const result = await client.auth.signInWithPassword({
           email: email.trim(),
@@ -121,7 +126,7 @@ function AuthPage() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {modo === "entrar"
               ? "Acesse o painel e acompanhe o dia a dia da sua distribuidora."
-              : "Crie sua conta. O acesso aos módulos será liberado pelo administrador."}
+              : "Envie sua solicitação de cadastro. Somente um administrador poderá aprovar e liberar seu acesso."}
           </p>
           {error && (
             <p
