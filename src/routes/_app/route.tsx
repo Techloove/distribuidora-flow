@@ -9,12 +9,16 @@ import { useSupabase } from "@/lib/supabase-provider";
 export const Route = createFileRoute("/_app")({ ssr: false, component: AppLayout });
 function AppLayout() {
   const { session, loading, error, signOut } = useSupabase();
+  const precisaTrocarSenha = session?.user.user_metadata?.troca_senha_obrigatoria === true;
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const acesso = useAcesso();
   const modulo = moduloDaRota(pathname);
   const bloqueado = !!session && !acesso.carregando && (!modulo || !acesso.pode(modulo));
   const destino = acesso.permitidos.has("/dashboard") ? "/dashboard" : [...acesso.permitidos][0];
+  useEffect(() => {
+    if (!loading && precisaTrocarSenha) void navigate({ to: "/auth", replace: true });
+  }, [loading, precisaTrocarSenha, navigate]);
   useEffect(() => {
     if (!loading && !session) void navigate({ to: "/auth", replace: true });
   }, [loading, session, navigate]);
@@ -31,7 +35,7 @@ function AppLayout() {
         <Loader2 className="size-5 animate-spin" /> Verificando seu acesso…
       </div>
     );
-  if (!session) return null;
+  if (!session || precisaTrocarSenha) return null;
   if (error || acesso.erro || bloqueado)
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background p-6">
