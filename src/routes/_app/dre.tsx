@@ -187,18 +187,9 @@ function DrePage() {
           <h2 className="flex items-center gap-2 px-6 pb-2 pt-6 text-lg font-semibold">
             <BarChart3 className="size-5" /> Demonstração do Resultado (DRE)
           </h2>
-          <div className="no-print flex gap-2 px-6 pb-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAbertas(Object.fromEntries(linhas.filter((l) => l.filhos).map((l) => [l.key, true])))}
-            >
-              Expandir tudo
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setAbertas({})}>
-              Recolher tudo
-            </Button>
-          </div>
+          <p className="no-print px-6 pb-2 text-xs text-muted-foreground">
+            Clique em um totalizador para ver as categorias, e numa categoria para ver as subcategorias.
+          </p>
           {dre.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
