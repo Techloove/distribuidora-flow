@@ -1,0 +1,27 @@
+:root { --paper: #fff; --ink: #171717; --rule: #888; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, sans-serif; font-size: 12px; }
+* { box-sizing: border-box; }
+@page { size: A4 portrait; margin: 12mm; }
+.order-sheet { max-width: 186mm; margin: 0 auto; padding: 8mm 0; break-after: page; }
+.order-sheet:last-child { break-after: auto; }
+.company { border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+.company h1 { font-size: 21px; margin: 0 0 6px; }
+.company p { margin: 4px 0; }
+.order-heading { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.customer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 6px 18px; padding: 12px 0; }
+.wide { grid-column: 1 / -1; }
+.customer div, .notes { overflow-wrap: anywhere; }
+.notes { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 10px 0; line-height: 1.5; }
+h2 { text-align: center; font-size: 14px; margin: 18px 0 10px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead { display: table-header-group; }
+th { border-bottom: 1px solid var(--rule); text-align: left; font-weight: normal; }
+th, td { padding: 6px 3px; vertical-align: top; overflow-wrap: anywhere; }
+tr { break-inside: avoid; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.totals { margin: 15px 0 0 auto; width: 280px; max-width: 100%; }
+.totals div { display: flex; justify-content: space-between; gap: 15px; padding: 4px 0; }
+.grand-total, .weight-total { font-size: 14px; font-weight: bold; border-top: 1px solid var(--rule); margin-top: 5px; }
+.signature { width: 250px; max-width: 70%; margin: 65px auto 25px; text-align: center; border-top: 1px solid var(--rule); padding-top: 6px; break-inside: avoid; }
+footer { border-top: 1px solid var(--rule); margin-top: 20px; padding-top: 6px; font-size: 10px; }
+@media print { .order-sheet { max-width: none; padding: 0; } }
