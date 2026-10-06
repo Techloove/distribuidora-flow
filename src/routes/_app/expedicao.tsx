@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { ImprimirPedidos } from "@/components/imprimir-pedidos";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -235,9 +236,12 @@ function ExpedicaoPage() {
       title="Expedição / entregas"
       description="Cada pedido confirmado gera um romaneio: separação, despacho e confirmação de entrega."
       actions={
+        <div className="flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => window.print()}>
-          <Printer className="size-4" /> Imprimir
+          <Printer className="size-4" /> Imprimir lista
         </Button>
+        <ImprimirPedidos pedidoIds={rows.map((r) => String(r["pedido_id"]))} label="Imprimir pedidos" />
+        </div>
       }
     >
       <div className="space-y-4">
@@ -370,6 +374,7 @@ function ExpedicaoPage() {
                         </span>
                       </td>
                       <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                        <ImprimirPedidos pedidoIds={[String(r["pedido_id"])]} compact />
                         <Button
                           size="sm"
                           variant="outline"

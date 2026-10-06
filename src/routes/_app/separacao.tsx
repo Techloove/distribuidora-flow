@@ -5,6 +5,7 @@ import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
+import { ImprimirPedidos } from "@/components/imprimir-pedidos";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -237,8 +238,9 @@ function SeparacaoPage() {
             Por onda
           </Button>
           <Button variant="secondary" onClick={() => window.print()} disabled={rows.length === 0}>
-            <Printer className="size-4" /> Imprimir
+            <Printer className="size-4" /> Imprimir lista
           </Button>
+          <ImprimirPedidos pedidoIds={pedidos.map(([id]) => id)} label="Imprimir pedidos" />
         </div>
       }
     >
@@ -443,6 +445,7 @@ function SeparacaoPage() {
                             ) : null}
                           </td>
                           <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                            <ImprimirPedidos pedidoIds={[id]} compact />
                             {p.status === "aprovado" || p.status === "confirmado" ? (
                               <Button
                                 size="sm"

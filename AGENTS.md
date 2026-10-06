@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep promotion management as a master-detail workspace on `/tabelas-preco`; this preserves fast campaign-to-product editing.
+- Share one client-side order print template and preview control across orders, picking and dispatch; existing authenticated reads preserve permissions without new server logic.

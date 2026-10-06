@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ImprimirPedidos } from "@/components/imprimir-pedidos";
 import {
   Dialog,
   DialogContent,
@@ -1000,6 +1001,7 @@ export function DocumentoPage({
     <div className="space-y-6">
       <section className={`space-y-3 ${listaVisivel ? "" : "hidden"}`}>
         <div className="flex justify-end">
+          {config.table === "pedidos" ? <ImprimirPedidos pedidoIds={docsFiltrados.map((d) => String(d["id"]))} label="Imprimir pedidos do filtro" /> : null}
           <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
             <Plus className="size-4" /> Novo Pedido
           </Button>
@@ -1352,6 +1354,7 @@ export function DocumentoPage({
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
+                {config.table === "pedidos" ? <ImprimirPedidos pedidoIds={[String(doc["id"])]} /> : null}
                 <Button
                   onClick={() => efetivar.mutate()}
                   disabled={

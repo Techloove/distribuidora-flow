@@ -47,6 +47,7 @@
 - [ ] Exportação PDF/Excel dos relatórios e importação de planilhas
 
 ## Novas demandas
+- [x] Impressão de pedidos em Pedidos, Separação e Expedição no modelo da foto, com peso total dos itens; modelo A4 e cálculo verificados, teste com sessão real indisponível.
 - [x] Configurações: chaves da API Sicredi + juros, multa, desconto e protesto
 - [x] Produtos: preço de custo, custo médio, markup e preço de venda na mesma linha, markup editável sobre o custo médio
 - [x] Promoções: painel moderno com resumo, campanhas, regras e preços dos produtos na mesma área

@@ -17,7 +17,14 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Entrar — Caparaó System" }] }),
+  head: () => ({ meta: [
+    { title: "Entrar — Caparaó System" },
+    { name: "description", content: "Entre no Caparaó System para acessar sua operação comercial e financeira." },
+    { property: "og:title", content: "Entrar — Caparaó System" },
+    { property: "og:description", content: "Acesso à operação comercial e financeira do Caparaó System." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AuthPage,
 });
 function AuthPage() {

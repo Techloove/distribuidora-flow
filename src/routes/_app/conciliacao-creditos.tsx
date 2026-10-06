@@ -15,6 +15,10 @@ export const Route = createFileRoute("/_app/conciliacao-creditos")({
     meta: [
       { title: "Conciliação de créditos — ERP Distribuidora" },
       { name: "description", content: "Conferência e migração segura dos antigos créditos DEV para créditos de clientes." },
+      { property: "og:title", content: "Conciliação de créditos — ERP Distribuidora" },
+      { property: "og:description", content: "Conferência dos créditos de clientes no Caparaó System." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ConciliacaoCreditosPage,
