@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_app/produtos")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
-  { name: "categoria", label: "Categoria", inTable: true, lookup: "cad_categorias" },
+  { name: "categoria", label: "Categoria Centro Custo", inTable: true, lookup: "cad_categorias" },
   { name: "marca", label: "Marca", lookup: "cad_marcas" },
   { name: "unidade", label: "Unidade" },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
