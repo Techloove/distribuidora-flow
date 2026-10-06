@@ -24,6 +24,9 @@ function AuthPage() {
   const { client, session, loading, error } = useSupabase();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [trocaInicial, setTrocaInicial] = useState(false);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmaNovaSenha, setConfirmaNovaSenha] = useState("");
   const [senha, setSenha] = useState("");
   const [nome, setNome] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -31,8 +34,8 @@ function AuthPage() {
   const [cadastroEnviado, setCadastroEnviado] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (session) void navigate({ to: "/dashboard", replace: true });
-  }, [session, navigate]);
+    if (session && !trocaInicial) void navigate({ to: "/dashboard", replace: true });
+  }, [session, navigate, trocaInicial]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!client || busy) return;
@@ -58,17 +61,52 @@ function AuthPage() {
         setConfirmacao("");
         toast.success("Cadastro enviado para aprovação do administrador.");
       } else {
+        const entrada = email.trim().toLowerCase();
+        const emailLogin = entrada.includes("@")
+          ? entrada
+          : entrada + "@rep-login.example.com";
         const result = await client.auth.signInWithPassword({
-          email: email.trim(),
+          email: emailLogin,
           password: senha,
         });
         if (result.error)
-          throw new Error(
-            "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
-          );
+          throw new Error("Usuário ou senha inválidos.");
+        if (senha === "123456" && !entrada.includes("@")) {
+          setTrocaInicial(true);
+          setNovaSenha("");
+          setConfirmaNovaSenha("");
+          return;
+        }
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao entrar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function alterarSenhaInicial(e: React.FormEvent) {
+    e.preventDefault();
+    if (!client || busy) return;
+    if (novaSenha.length < 8 || novaSenha === "123456") {
+      toast.error("Escolha uma senha diferente, com pelo menos 8 caracteres.");
+      return;
+    }
+    if (novaSenha !== confirmaNovaSenha) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: updateError } = await client.auth.updateUser({ password: novaSenha });
+      if (updateError) throw new Error(updateError.message);
+      setTrocaInicial(false);
+      setSenha("");
+      setNovaSenha("");
+      setConfirmaNovaSenha("");
+      toast.success("Senha alterada.");
+      void navigate({ to: "/dashboard", replace: true });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar senha.");
     } finally {
       setBusy(false);
     }
@@ -136,7 +174,20 @@ function AuthPage() {
               {error}
             </p>
           )}
-          {cadastroEnviado && modo === "cadastrar" ? (
+          {trocaInicial ? (
+            <form onSubmit={alterarSenhaInicial} className="mt-8 space-y-5">
+              <p className="text-sm text-muted-foreground">Por segurança, troque a senha temporária antes de utilizar o sistema.</p>
+              <div className="space-y-2">
+                <Label htmlFor="nova-senha">Nova senha</Label>
+                <Input id="nova-senha" type="password" autoComplete="new-password" minLength={8} value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmar-nova-senha">Confirme a nova senha</Label>
+                <Input id="confirmar-nova-senha" type="password" autoComplete="new-password" minLength={8} value={confirmaNovaSenha} onChange={(e) => setConfirmaNovaSenha(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy || !novaSenha || !confirmaNovaSenha}>Salvar nova senha</Button>
+            </form>
+          ) : cadastroEnviado && modo === "cadastrar" ? (
             <div role="status" className="mt-8 space-y-4 rounded-xl border p-5 text-sm">
               <p className="font-semibold">Solicitação recebida</p>
               <p className="text-muted-foreground">
@@ -165,9 +216,9 @@ function AuthPage() {
               <Input
                 className="h-12 rounded-xl"
                 id="email"
-                type="email"
+                type={modo === "entrar" ? "text" : "email"}
                 autoComplete="username"
-                placeholder="voce@empresa.com.br"
+                placeholder={modo === "entrar" ? "Seu primeiro nome" : "voce@empresa.com.br"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
