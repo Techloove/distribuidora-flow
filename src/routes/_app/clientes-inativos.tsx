@@ -40,20 +40,29 @@ type Row = Record<string, unknown>;
 const faixas = [15, 30, 45, 60, 90, 120];
 
 function InativosPage() {
-  const { client } = useSupabase();
+  const { client, user, roles, loading } = useSupabase();
+  const carteiraRestrita = roles.includes("representante") && !roles.includes("admin");
   const { centro } = useCentro();
   const [dias, setDias] = useState(60);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_clientes_inativos"],
-    enabled: !!client,
+    queryKey: ["vw_clientes_inativos", user?.id, carteiraRestrita],
+    enabled: !!client && !!user && !loading,
     queryFn: async () => {
-      const { data, error } = await client!
+      let representante: string | null = null;
+      if (carteiraRestrita) {
+        const vinculo = await client!.rpc("meu_representante_id");
+        if (vinculo.error) throw new Error(vinculo.error.message);
+        representante = vinculo.data as string | null;
+        if (!representante) return [] as Row[];
+      }
+      let consulta = client!
         .from("vw_clientes_inativos")
-        .select("*")
-        .order("dias_sem_comprar", { ascending: false });
+        .select("*");
+      if (carteiraRestrita) consulta = consulta.eq("representante_id", representante!);
+      const { data, error } = await consulta.order("dias_sem_comprar", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -127,12 +136,12 @@ function InativosPage() {
             value={filtros["diasMin"] ?? ""}
             onChange={(v) => setF("diasMin", v)}
           />
-          <FilterSelect
+          {!carteiraRestrita && <FilterSelect
             label="Representante"
             value={filtros["representante"] ?? ""}
             onChange={(v) => setF("representante", v)}
             options={opcoes.representantes}
-          />
+          />}
           <FilterSelect
             label="Centro de custo"
             value={filtros["centro"] ?? ""}
