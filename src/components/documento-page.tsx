@@ -1346,13 +1346,47 @@ export function DocumentoPage({
                       <p className="text-xs text-muted-foreground">
                         Peso total {kg(pesoTotal)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Comissão {brl(doc["comissao_valor"])}
+                      <p className="mt-1 inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        Sua comissão {brl(doc["comissao_valor"])}
+                        {Number(doc["comissao_percentual"] ?? 0) > 0
+                          ? ` (${Number(doc["comissao_percentual"]).toLocaleString("pt-BR")}%)`
+                          : ""}
                       </p>
                     </>
                   ) : null}
                 </div>
               </div>
+              {config.table === "pedidos" && (roles.includes("admin") || roles.includes("gestor")) ? (() => {
+                const custo = (itens.data ?? []).reduce((s, it) => {
+                  const p = (produtos.data ?? []).find((x) => x["id"] === it["produto_id"]);
+                  return s + Number(it["quantidade"] ?? 0) * Number(p?.["custo_medio"] ?? 0);
+                }, 0);
+                const venda = Number(doc["total_liquido"] ?? 0);
+                const comissao = Number(doc["comissao_valor"] ?? 0);
+                const lucro = venda - custo;
+                const liquido = lucro - comissao;
+                const markup = custo > 0 ? (venda / custo - 1) * 100 : 0;
+                const margem = venda > 0 ? (lucro / venda) * 100 : 0;
+                const pct = (n: number) => `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+                const cards: [string, string, boolean?][] = [
+                  ["Comissão", brl(comissao)],
+                  ["Custo", brl(custo)],
+                  ["Lucro bruto", brl(lucro), lucro < 0],
+                  ["Lucro após comissão", brl(liquido), liquido < 0],
+                  ["Markup", pct(markup), markup < 0],
+                  ["Margem", pct(margem), margem < 0],
+                ];
+                return (
+                  <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3 lg:grid-cols-6">
+                    {cards.map(([l, v, neg]) => (
+                      <div key={l}>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</p>
+                        <p className={`text-sm font-semibold ${neg ? "text-destructive" : ""}`}>{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })() : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 {config.table === "pedidos" ? <ImprimirPedidos pedidoIds={[String(doc["id"])]} /> : null}
                 <Button
