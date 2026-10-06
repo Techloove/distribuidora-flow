@@ -119,6 +119,23 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const criarAcessoRepresentante = useMutation({
+    mutationFn: async (repId: string) => {
+      const { data, error } = await client!.rpc("admin_criar_acesso_representante", {
+        _representante_id: repId,
+      });
+      if (error) throw new Error(error.message);
+      return String(data);
+    },
+    onSuccess: (usuario) => {
+      toast.success("Acesso criado. Usuário: " + usuario + ". Senha inicial: 123456. A troca será exigida no primeiro acesso.", {
+        duration: 15000,
+      });
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const recarregar = () => {
     queryClient.invalidateQueries({ queryKey: ["profiles"] });
     queryClient.invalidateQueries({ queryKey: ["user_roles"] });
@@ -218,6 +235,38 @@ function UsuariosPage() {
         <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />
+        {isAdmin ? (
+          <section className="rounded-lg border border-border bg-card p-5">
+            <h2 className="font-semibold">Acesso dos representantes</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Crie o login pelo primeiro nome, sem e-mail. Nomes repetidos recebem um número
+              (ex.: joao2). A senha inicial é 123456 e deverá ser alterada no primeiro acesso.
+            </p>
+            <div className="mt-4 space-y-2">
+              {(representantes.data ?? []).map((rep) => {
+                const vinculado = !!rep["profile_id"];
+                const usuario = (profiles.data ?? []).find((p) => p["id"] === rep["profile_id"]);
+                return (
+                  <div key={String(rep["id"])} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+                    <div className="text-sm">
+                      <strong>{String(rep["nome"] ?? "Representante")}</strong>
+                      <span className="ml-2 text-muted-foreground">
+                        {vinculado ? "Login: " + String(usuario?.["nome_usuario"] || usuario?.["email"] || "já vinculado") : "Sem login"}
+                      </span>
+                    </div>
+                    {!vinculado ? (
+                      <Button type="button" size="sm"
+                        disabled={criarAcessoRepresentante.isPending || rep["ativo"] === false}
+                        onClick={() => criarAcessoRepresentante.mutate(String(rep["id"]))}>
+                        Criar acesso
+                      </Button>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
         {!isAdmin ? (
           <p className="text-xs text-muted-foreground">
             Somente perfis <strong>admin</strong> podem cadastrar, editar, excluir usuários ou
@@ -243,7 +292,7 @@ function UsuariosPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Usuário</TableHead>
-                    <TableHead>E-mail</TableHead>
+                    <TableHead>Login</TableHead>
                     <TableHead>Representante / vendedor</TableHead>
                     <TableHead>Papéis</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -260,7 +309,7 @@ function UsuariosPage() {
                             <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
                           ) : null}
                         </TableCell>
-                        <TableCell>{String(p["email"] ?? "—")}</TableCell>
+                        <TableCell>{String(p["nome_usuario"] || p["email"] || "—")}</TableCell>
                         <TableCell>
                           <select
                             value={String(
