@@ -31,9 +31,10 @@ export const Route = createFileRoute("/_app/produtos")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
-  { name: "categoria", label: "Categoria Centro Custo", inTable: true, lookup: "cad_categorias" },
-  { name: "marca", label: "Marca", lookup: "cad_marcas" },
-  { name: "unidade", label: "Unidade" },
+  { name: "categoria", label: "Categoria Centro Custo", inTable: true, lookup: "cad_categorias", filter: true },
+  { name: "marca", label: "Marca", inTable: true, lookup: "cad_marcas", filter: true },
+  { name: "grupo", label: "Grupo", inTable: true, lookup: "cad_grupos", filter: true },
+  { name: "unidade", label: "Unidade", filter: true },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
   { name: "ultimo_custo", label: "Custo Compra", type: "number", step: "0.01", inTable: true, span: 1 },
   { name: "custo_medio", label: "Custo médio", type: "number", step: "0.01", inTable: true, span: 1 },
@@ -184,7 +185,7 @@ function ProdutosPage() {
         fields={fields}
         orderBy="descricao"
         emptyLabel="Nenhum produto cadastrado ainda."
-        searchColumns={["codigo", "descricao", "categoria", "marca"]}
+        searchColumns={["codigo", "descricao", "categoria", "marca", "grupo"]}
         onFieldChange={recalcularPreco}
         decorate={decorate}
         inlineEdit={["markup_percentual", "preco_venda"]}
