@@ -36,13 +36,14 @@ const cidades: CrudField[] = [
 function CadastrosPadraoPage() {
   return (
     <ErpLayout
-      title="Categorias, marcas e cidades"
+      title="Categorias, marcas, grupos e cidades"
       description="Cada nome é cadastrado uma única vez e usado em todo o sistema. Renomear aqui atualiza todos os registros."
     >
       <Tabs defaultValue="cat">
         <TabsList>
           <TabsTrigger value="cat">Categorias</TabsTrigger>
           <TabsTrigger value="marca">Marcas</TabsTrigger>
+          <TabsTrigger value="grupo">Grupos</TabsTrigger>
           <TabsTrigger value="cid">Cidades</TabsTrigger>
         </TabsList>
         <TabsContent value="cat">
@@ -50,6 +51,9 @@ function CadastrosPadraoPage() {
         </TabsContent>
         <TabsContent value="marca">
           <CrudPage table="cad_marcas" fields={simples} orderBy="nome" emptyLabel="Nenhuma marca." searchColumns={["nome"]} />
+        </TabsContent>
+        <TabsContent value="grupo">
+          <CrudPage table="cad_grupos" fields={simples} orderBy="nome" emptyLabel="Nenhum grupo." searchColumns={["nome"]} />
         </TabsContent>
         <TabsContent value="cid">
           <CrudPage table="cad_cidades" fields={cidades} orderBy="nome" emptyLabel="Nenhuma cidade." searchColumns={["nome", "uf", "codigo_ibge"]} />

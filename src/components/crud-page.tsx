@@ -73,6 +73,8 @@ export type CrudField = {
   }) => React.ReactNode;
   /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
   lookup?: string;
+  /** Gera filtro de seleção com os valores existentes na lista. */
+  filter?: boolean;
 };
 
 /** Sugestões textuais vindas de um cadastro padrão. */
@@ -283,6 +285,7 @@ export function CrudPage({
           (f.type === "select" && (f.options ?? []).length > 0) ||
           f.type === "checkbox" ||
           f.type === "date" ||
+          f.filter ||
           (f.type === "multicheck" && (f.checks ?? []).length > 0),
       ),
     [fields],
@@ -572,7 +575,13 @@ export function CrudPage({
                 label={f.label}
                 value={filtros[f.name] ?? ""}
                 onChange={(v) => setF(f.name, v)}
-                options={f.options ?? []}
+                options={
+                  f.filter && !(f.options ?? []).length
+                    ? [...new Set((query.data ?? []).map((r) => String(r[f.name] ?? "")).filter(Boolean))]
+                        .sort()
+                        .map((v) => ({ value: v, label: v }))
+                    : (f.options ?? [])
+                }
               />
             ),
           )}

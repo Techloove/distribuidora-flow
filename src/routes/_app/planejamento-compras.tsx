@@ -58,8 +58,21 @@ function PlanejamentoPage() {
     },
   });
 
+  const grupos = useQuery({
+    queryKey: ["produtos", "grupo-map"],
+    enabled: !!client,
+    queryFn: async () => {
+      const { data, error } = await client!.from("produtos").select("id, grupo, marca, categoria");
+      if (error) throw new Error(error.message);
+      const m = new Map<string, Row>();
+      for (const r of (data ?? []) as Row[]) m.set(String(r["id"]), r);
+      return m;
+    },
+  });
+  const prod = (r: Row, k: string) => String(grupos.data?.get(String(r["produto_id"]))?.[k] ?? "");
+
   const opcoes = useMemo(() => {
-    const list = lista.data ?? [];
+    const list = (lista.data ?? []).map((r) => ({ ...r, grupo: prod(r, "grupo"), marca: prod(r, "marca") }) as Row);
     const uniq = (key: string) =>
       [...new Set(list.map((r) => String(r[key] ?? "")).filter(Boolean))]
         .sort()
@@ -67,8 +80,10 @@ function PlanejamentoPage() {
     return {
       fornecedores: uniq("fornecedor"),
       centros: uniq("centro"),
+      grupos: uniq("grupo"),
+      marcas: uniq("marca"),
     };
-  }, [lista.data]);
+  }, [lista.data, grupos.data]);
 
   const rows = useMemo(() => {
     let list = lista.data ?? [];
@@ -82,6 +97,8 @@ function PlanejamentoPage() {
     if (filtros["fornecedor"]) {
       list = list.filter((r) => String(r["fornecedor"] ?? "") === filtros["fornecedor"]);
     }
+    if (filtros["grupo"]) list = list.filter((r) => prod(r, "grupo") === filtros["grupo"]);
+    if (filtros["marca"]) list = list.filter((r) => prod(r, "marca") === filtros["marca"]);
     if (filtros["centro"]) {
       list = list.filter((r) => String(r["centro"] ?? "") === filtros["centro"]);
     }
@@ -91,7 +108,7 @@ function PlanejamentoPage() {
       );
     }
     return list;
-  }, [lista.data, centro, filtros]);
+  }, [lista.data, centro, filtros, grupos.data]);
 
   return (
     <ErpLayout
@@ -119,6 +136,18 @@ function PlanejamentoPage() {
               options={opcoes.fornecedores}
             />
           )}
+          <FilterSelect
+            label="Grupo"
+            value={filtros["grupo"] ?? ""}
+            onChange={(v) => setF("grupo", v)}
+            options={opcoes.grupos}
+          />
+          <FilterSelect
+            label="Marca"
+            value={filtros["marca"] ?? ""}
+            onChange={(v) => setF("marca", v)}
+            options={opcoes.marcas}
+          />
           <FilterSelect
             label="Estoque"
             value={filtros["somenteAbaixo"] ?? ""}
