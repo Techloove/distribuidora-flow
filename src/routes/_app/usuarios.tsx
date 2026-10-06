@@ -232,7 +232,7 @@ function UsuariosPage() {
       }
     >
       <div className="space-y-4">
-        {isAdmin && (profiles.data ?? []).some((p) => p["ativo"] !== true) ? (
+        {isAdmin && (profiles.data ?? []).some((p) => p["pendente_aprovacao"] === true) ? (
           <section className="rounded-lg border border-border bg-card p-4">
             <h2 className="text-base font-semibold">Cadastros aguardando aprovação</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -241,7 +241,7 @@ function UsuariosPage() {
             </p>
             <div className="mt-4 space-y-3">
               {(profiles.data ?? [])
-                .filter((p) => p["ativo"] !== true)
+                .filter((p) => p["pendente_aprovacao"] === true)
                 .map((p) => {
                   const userId = String(p["id"]);
                   const role = papelAprovacao[userId] ?? "comercial";
@@ -323,7 +323,9 @@ function UsuariosPage() {
                       <TableRow key={String(p["id"])}>
                         <TableCell>
                           {String(p["nome"] || "—")}
-                          {p["ativo"] === false ? (
+                          {p["pendente_aprovacao"] === true ? (
+                            <span className="ml-2 text-xs font-medium text-amber-600">(aguardando aprovação)</span>
+                          ) : p["ativo"] === false ? (
                             <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
                           ) : null}
                         </TableCell>
@@ -424,7 +426,7 @@ function UsuariosPage() {
             <DialogDescription>
               {editando
                 ? "Altere os dados do perfil. A senha só muda se você preencher o campo."
-                : "O usuário é criado já confirmado e pode entrar imediatamente com o e-mail e a senha."}
+                : "O novo usuário será criado com acesso pendente até um administrador aprovar o cadastro."}
             </DialogDescription>
           </DialogHeader>
 
