@@ -70,6 +70,23 @@ function UsuariosPage() {
   const isAdmin = roles.includes("admin");
   const [form, setForm] = useState<Form | null>(null);
   const [excluir, setExcluir] = useState<Row | null>(null);
+  const [papelAprovacao, setPapelAprovacao] = useState<Record<string, AppRole>>({});
+
+  const aprovar = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+      const { error } = await client!.rpc("admin_aprovar_cadastro", {
+        _user_id: userId,
+        _role: role,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Cadastro aprovado e acesso liberado.");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const profiles = useQuery({
     queryKey: ["profiles", "admin"],
@@ -215,6 +232,56 @@ function UsuariosPage() {
       }
     >
       <div className="space-y-4">
+        {isAdmin && (profiles.data ?? []).some((p) => p["ativo"] !== true) ? (
+          <section className="rounded-lg border border-border bg-card p-4">
+            <h2 className="text-base font-semibold">Cadastros aguardando aprovação</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A conta foi criada, mas não pode acessar o ERP até a aprovação.
+              Selecione o perfil apropriado para cada usuário.
+            </p>
+            <div className="mt-4 space-y-3">
+              {(profiles.data ?? [])
+                .filter((p) => p["ativo"] !== true)
+                .map((p) => {
+                  const userId = String(p["id"]);
+                  const role = papelAprovacao[userId] ?? "comercial";
+                  return (
+                    <div key={userId} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
+                      <div className="min-w-48 flex-1">
+                        <p className="font-medium">{String(p["nome"] ?? "Sem nome")}</p>
+                        <p className="text-xs text-muted-foreground">{String(p["email"] ?? "")}</p>
+                      </div>
+                      <Label htmlFor={`aprovar-papel-${userId}`}>Perfil</Label>
+                      <select
+                        id={`aprovar-papel-${userId}`}
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        value={role}
+                        onChange={(e) =>
+                          setPapelAprovacao((prev) => ({
+                            ...prev,
+                            [userId]: e.target.value as AppRole,
+                          }))
+                        }
+                      >
+                        {papeis.map((papel) => (
+                          <option key={papel.codigo} value={papel.codigo}>
+                            {papel.nome}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        disabled={aprovar.isPending}
+                        onClick={() => aprovar.mutate({ userId, role })}
+                      >
+                        {aprovar.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                        Aprovar acesso
+                      </Button>
+                    </div>
+                  );
+                })}
+            </div>
+          </section>
+        ) : null}
         <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />
