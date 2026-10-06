@@ -53,13 +53,17 @@ function AuthPage() {
         setConfirmacao("");
         toast.success("Solicitação de cadastro recebida.");
       } else {
+        const identidade = email.trim().toLowerCase();
+        const login = identidade.includes("@")
+          ? identidade
+          : `${identidade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")}@login.caparaosystem.invalid`;
         const result = await client.auth.signInWithPassword({
-          email: email.trim(),
+          email: login,
           password: senha,
         });
         if (result.error)
           throw new Error(
-            "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
+            "Não foi possível entrar. Confira seu usuário e sua senha.",
           );
       }
     } catch (e) {
@@ -156,13 +160,13 @@ function AuthPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email">{modo === "entrar" ? "Usuário ou e-mail" : "E-mail"}</Label>
               <Input
                 className="h-12 rounded-xl"
                 id="email"
-                type="email"
+                type={modo === "entrar" ? "text" : "email"}
                 autoComplete="username"
-                placeholder="voce@empresa.com.br"
+                placeholder={modo === "entrar" ? "Ex.: joao" : "voce@empresa.com.br"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
