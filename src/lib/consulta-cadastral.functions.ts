@@ -205,84 +205,88 @@ function mapCpf(j: Record<string, unknown>): DadosCadastrais {
   };
 }
 
-async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
-  try {
-    const res = await fetchWithTimeout(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
-    if (res.status === 404) {
-      return {
-        ok: false,
-        documento: doc,
-        tipo: "PJ",
-        codigo: "nao_encontrado",
-        mensagem: "CNPJ não encontrado na base da Receita Federal.",
-      };
-    }
-    if (res.status === 429) {
-      return {
-        ok: false,
-        documento: doc,
-        tipo: "PJ",
-        codigo: "limite",
-        mensagem: "Limite de consultas atingido. Tente novamente em alguns minutos.",
-      };
-    }
-    if (res.ok) {
-      const j = (await res.json()) as Record<string, unknown>;
-      return {
-        ok: true,
-        documento: doc,
-        tipo: "PJ",
-        provedor: "brasilapi",
-        dados: mapBrasilApi(j),
-        validadeDias: 30,
-      };
-    }
-  } catch {
-    /* cai na alternativa */
-  }
-
-  try {
-    const res = await fetchWithTimeout(`https://receitaws.com.br/v1/cnpj/${doc}`);
-    if (res.status === 429) {
-      return {
-        ok: false,
-        documento: doc,
-        tipo: "PJ",
-        codigo: "limite",
-        mensagem: "Limite de consultas atingido. Tente novamente em alguns minutos.",
-      };
-    }
-    if (res.ok) {
-      const j = (await res.json()) as Record<string, unknown>;
-      if (String(j["status"] ?? "").toUpperCase() === "ERROR") {
-        return {
-          ok: false,
-          documento: doc,
-          tipo: "PJ",
-          codigo: "nao_encontrado",
-          mensagem: txt(j["message"]) ?? "CNPJ não encontrado.",
-        };
-      }
-      return {
-        ok: true,
-        documento: doc,
-        tipo: "PJ",
-        provedor: "receitaws",
-        dados: mapReceitaWs(j),
-        validadeDias: 30,
-      };
-    }
-  } catch {
-    /* indisponível */
-  }
-
+/** CNPJá aberto (open.cnpja.com): sem chave. */
+function mapCnpjaOpen(j: Record<string, unknown>): DadosCadastrais {
+  const o = (v: unknown) => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
+  const company = o(j["company"]);
+  const addr = o(j["address"]);
+  const main = o(j["mainActivity"]);
+  const phones = Array.isArray(j["phones"]) ? (j["phones"] as Record<string, unknown>[]) : [];
+  const emails = Array.isArray(j["emails"]) ? (j["emails"] as Record<string, unknown>[]) : [];
+  const sides = Array.isArray(j["sideActivities"])
+    ? (j["sideActivities"] as Record<string, unknown>[])
+        .map((a) => `${txt(a["id"]) ?? ""} ${txt(a["text"]) ?? ""}`.trim())
+        .filter(Boolean)
+        .join(" | ")
+    : undefined;
+  const p0 = phones[0];
   return {
-    ok: false,
-    documento: doc,
-    tipo: "PJ",
-    codigo: "indisponivel",
-    mensagem: "Serviço de consulta indisponível no momento. Tente novamente mais tarde.",
+    cnpj_cpf: txt(j["taxId"]),
+    razao_social: txt(company["name"]),
+    nome_fantasia: txt(j["alias"]),
+    situacao_cadastral: txt(o(j["status"])["text"]),
+    data_abertura: dataIso(j["founded"]),
+    natureza_juridica: txt(o(company["nature"])["text"]),
+    porte: txt(o(company["size"])["text"]),
+    cnae_principal: [txt(main["id"]), txt(main["text"])].filter(Boolean).join(" - ") || undefined,
+    cnae_secundarios: sides,
+    cep: txt(addr["zip"]),
+    logradouro: txt(addr["street"]),
+    numero: txt(addr["number"]),
+    complemento: txt(addr["details"]),
+    bairro: txt(addr["district"]),
+    cidade: txt(addr["city"]),
+    uf: txt(addr["state"]),
+    telefone: p0 ? `${txt(p0["area"]) ?? ""}${txt(p0["number"]) ?? ""}` || undefined : undefined,
+    email: emails[0] ? txt(emails[0]["address"]) : undefined,
   };
+}
+
+type Provedor = {
+  nome: string;
+  url: (doc: string) => string;
+  map: (j: Record<string, unknown>) => DadosCadastrais;
+  erroNoCorpo?: (j: Record<string, unknown>) => boolean;
+};
+
+/** Ordem de rotação: se um provedor der limite/falha, tenta o próximo. */
+const PROVEDORES_CNPJ: Provedor[] = [
+  { nome: "brasilapi", url: (d) => `https://brasilapi.com.br/api/cnpj/v1/${d}`, map: mapBrasilApi },
+  { nome: "minhareceita", url: (d) => `https://minhareceita.org/${d}`, map: mapBrasilApi },
+  { nome: "cnpja_aberto", url: (d) => `https://open.cnpja.com/office/${d}`, map: mapCnpjaOpen },
+  {
+    nome: "receitaws",
+    url: (d) => `https://receitaws.com.br/v1/cnpj/${d}`,
+    map: mapReceitaWs,
+    erroNoCorpo: (j) => String(j["status"] ?? "").toUpperCase() === "ERROR",
+  },
+];
+
+async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
+  let limites = 0;
+  let naoEncontrado = 0;
+  for (const p of PROVEDORES_CNPJ) {
+    try {
+      const res = await fetchWithTimeout(p.url(doc), { headers: { Accept: "application/json" } });
+      if (res.status === 429) { limites++; continue; }
+      if (res.status === 404) { naoEncontrado++; continue; }
+      if (!res.ok) continue;
+      const j = (await res.json()) as Record<string, unknown>;
+      if (p.erroNoCorpo?.(j)) { naoEncontrado++; continue; }
+      const dados = p.map(j);
+      if (!dados.razao_social) continue;
+      return { ok: true, documento: doc, tipo: "PJ", provedor: p.nome, dados, validadeDias: 30 };
+    } catch {
+      /* tenta o próximo provedor */
+    }
+  }
+  if (naoEncontrado >= 2) {
+    return { ok: false, documento: doc, tipo: "PJ", codigo: "nao_encontrado", mensagem: "CNPJ não encontrado na base da Receita Federal." };
+  }
+  if (limites === PROVEDORES_CNPJ.length) {
+    return { ok: false, documento: doc, tipo: "PJ", codigo: "limite", mensagem: "Todos os serviços de consulta estão no limite. Tente novamente em 1 minuto." };
+  }
+  return { ok: false, documento: doc, tipo: "PJ", codigo: "indisponivel", mensagem: "Serviço de consulta indisponível no momento. Tente novamente mais tarde." };
 }
 
 async function consultarCpf(doc: string): Promise<ConsultaResultado> {
