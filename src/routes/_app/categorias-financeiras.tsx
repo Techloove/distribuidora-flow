@@ -259,18 +259,6 @@ function CategoriaCard({
             {!cat.ativo ? <span className="ml-2 text-xs text-muted-foreground">(inativa)</span> : null}
           </p>
         )}
-        <select
-          className={selectCls}
-          value={cat.grupo_dre}
-          title="Grupo na DRE"
-          onChange={(e) => onSave(cat.id, { grupo_dre: e.target.value })}
-        >
-          {grupos.map((g) => (
-            <option key={g.value} value={g.value}>
-              DRE: {g.label}
-            </option>
-          ))}
-        </select>
         <Button size="sm" variant="ghost" onClick={onToggle}>
           <Settings2 className="size-4" /> Sub ({subs.length})
         </Button>
