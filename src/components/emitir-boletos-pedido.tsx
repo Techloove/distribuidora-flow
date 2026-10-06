@@ -33,7 +33,21 @@ export function EmitirBoletosPedido({
   return <EmissaoPedido key={pedidoId} pedidoId={pedidoId} centroId={centroId} />;
 }
 
-function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: string }) {
+export function EmitirBoletoTitulo({ contaId, centroId }: { contaId: string; centroId: string }) {
+  const { roles } = useSupabase();
+  if (!roles.some((role) => ["admin", "gestor", "financeiro"].includes(role))) return null;
+  return <EmissaoPedido key={contaId} contaId={contaId} centroId={centroId} />;
+}
+
+function EmissaoPedido({
+  pedidoId,
+  contaId,
+  centroId,
+}: {
+  pedidoId?: string;
+  contaId?: string;
+  centroId: string;
+}) {
   const { client, session } = useSupabase();
   const qc = useQueryClient();
   const api = useServerFn(sicrediEmitirBoleto);
@@ -44,13 +58,13 @@ function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: str
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const parcelas = useQuery({
-    queryKey: ["pedido-boletos", pedidoId],
+    queryKey: ["emissao-boletos", pedidoId, contaId],
     enabled: open && !!client && !!session,
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_boletos_pendentes")
         .select("conta_receber_id,parcela,vencimento,saldo")
-        .eq("pedido_id", pedidoId)
+        .eq(contaId ? "conta_receber_id" : "pedido_id", contaId ?? pedidoId!)
         .order("parcela");
       if (error) throw new Error("Não foi possível carregar as parcelas deste pedido.");
       return (data ?? []) as Parcela[];
@@ -96,11 +110,12 @@ function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: str
       setError(emitted > 0 ? `${emitted} boleto(s) emitido(s). ${message}` : message);
     } finally {
       await Promise.all([
-        qc.invalidateQueries({ queryKey: ["pedido-boletos", pedidoId] }),
+        qc.invalidateQueries({ queryKey: ["emissao-boletos", pedidoId, contaId] }),
         qc.invalidateQueries({ queryKey: ["boletos"] }),
         qc.invalidateQueries({ queryKey: ["cnab"] }),
         qc.invalidateQueries({ queryKey: ["vw_boletos_pendentes"] }),
         qc.invalidateQueries({ queryKey: ["contas_receber"] }),
+        qc.invalidateQueries({ queryKey: ["vw_titulos_receber"] }),
       ]);
       setBusy(false);
     }
@@ -115,7 +130,7 @@ function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: str
           setError(null);
         }}
       >
-        <Barcode className="size-4" /> Emitir boletos
+        <Barcode className="size-4" /> {contaId ? "Emitir boleto" : "Emitir boletos"}
       </Button>
       <Dialog
         open={open}
@@ -125,16 +140,18 @@ function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: str
       >
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Emitir boletos do pedido</DialogTitle>
+            <DialogTitle>
+              {contaId ? "Emitir boleto da parcela" : "Emitir boletos do pedido"}
+            </DialogTitle>
             <DialogDescription>
-              Selecione as parcelas em aberto deste pedido. As regras de cobrança são mantidas em
-              Configurações do sistema.
+              Selecione as parcelas em aberto. As regras de cobrança são mantidas em Configurações
+              do sistema.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor={`pedido-canal-${pedidoId}`}>Forma de emissão</Label>
+            <Label htmlFor={`pedido-canal-${contaId ?? pedidoId}`}>Forma de emissão</Label>
             <select
-              id={`pedido-canal-${pedidoId}`}
+              id={`pedido-canal-${contaId ?? pedidoId}`}
               className="h-10 w-full rounded-md border bg-background px-2"
               disabled={busy}
               value={canal}
@@ -149,7 +166,7 @@ function EmissaoPedido({ pedidoId, centroId }: { pedidoId: string; centroId: str
             {canal === "cnab240" && (
               <p className="text-sm text-muted-foreground">
                 O arquivo será baixado para envio ao Sicredi. O registro e o QR Code híbrido serão
-                confirmados pelo retorno em Faturamento.
+                confirmados pelo retorno em Boletos.
               </p>
             )}
           </div>

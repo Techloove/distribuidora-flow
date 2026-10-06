@@ -4,6 +4,7 @@ import {
   crc16,
   gerarBrCode,
   gerarRemessa,
+  gerarAlteracaoVencimento,
   nossoNumero,
   parseRetorno,
   type CnabConfig,
@@ -187,6 +188,7 @@ describe("Sicredi CNAB 240 — retorno", () => {
       tarifas: "3.00",
       outras_despesas: "0.00",
       outros_creditos: "0.00",
+      vencimento: "2026-10-30",
       data_ocorrencia: "2026-10-30",
       data_credito: "2026-10-31",
     });
@@ -283,5 +285,50 @@ describe("BR Code / boleto híbrido", () => {
     const [event] = parseRetorno(records.join("\r\n") + "\r\n", config);
     expect(event!.pix?.txid).toBe("100090400888000020210324000094507");
     expect(event!.pix?.url).toContain("pix-qrcode.sicredi.com.br");
+  });
+});
+
+describe("Alteração de vencimento CNAB", () => {
+  test("instrução 06 preserva nosso número, encargos e dados do pagador", () => {
+    const c = {
+      ...config,
+      juros_mensal: 1.5,
+      multa_percentual: 2,
+      tipo_cobranca: "HIBRIDO" as const,
+      chave_pix: "a1234567-1234-1234-1234-123456789abc",
+    };
+    const original = gerarRemessa(c, [titulo], "2026-10-06", "153000");
+    const altered = gerarAlteracaoVencimento(
+      { ...c, proxima_remessa: 18 },
+      original.content,
+      titulo.nosso_numero,
+      "2026-11-20",
+      "2026-10-06",
+      "154000",
+    );
+    const records = altered.content.split("\r\n").slice(0, -1);
+    expect(records).toHaveLength(7);
+    expect(records.every((r) => r.length === 240)).toBe(true);
+    expect(records[2]!.slice(15, 17)).toBe("06");
+    expect(records[2]!.slice(37, 57).trim()).toBe(titulo.nosso_numero);
+    expect(records[2]!.slice(77, 85)).toBe("20112026");
+    expect(records[2]!.slice(118, 141)).toBe("21112026000000000000150");
+    expect(records[4]!.slice(66, 74)).toBe("21112026");
+    expect(records.some((r) => r[13] === "Y")).toBe(false);
+    expect(altered.filename).toBe("00623A06.000018");
+    expect(() =>
+      gerarAlteracaoVencimento(
+        c,
+        original.content,
+        "999999999",
+        "2026-11-20",
+        "2026-10-06",
+        "154000",
+      ),
+    ).toThrow();
+  });
+  test("retorno 14 informa o vencimento efetivo do banco", () => {
+    const content = replaceField(retornoFixture("14"), 2, 74, "20112026");
+    expect(parseRetorno(content, config)[0]!.vencimento).toBe("2026-11-20");
   });
 });

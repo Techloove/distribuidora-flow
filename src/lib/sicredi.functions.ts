@@ -1,3 +1,4 @@
+import { validarNovoVencimento, vencimentoDoBanco } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
@@ -443,6 +444,16 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     const tk = await token(c);
+    if (
+      boleto["vencimento_solicitacao_id"] &&
+      (boleto["cooperativa"] !== c.cooperativa ||
+        boleto["posto"] !== c.posto ||
+        boleto["codigo_beneficiario"] !== c.beneficiario ||
+        boleto["ambiente"] !== c.ambiente)
+    )
+      throw new Error(
+        "O convênio ou ambiente atual não corresponde ao boleto com alteração pendente.",
+      );
     const consultaVersao = c.ambiente === "producao" ? "v2" : "v1";
     const url = `${c.base}/cobranca/boleto/${consultaVersao}/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
@@ -455,6 +466,17 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const txt = await res.text();
     if (!res.ok) throw new Error(`Consulta Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
     const json = JSON.parse(txt || "{}") as Record<string, unknown>;
+    if (
+      boleto["vencimento_solicitacao_id"] &&
+      vencimentoDoBanco(json["dataVencimento"]) === boleto["vencimento_solicitado"]
+    ) {
+      await serviceRpc("sicredi_finalizar_vencimento", {
+        _actor: user.id,
+        _solicitacao: boleto["vencimento_solicitacao_id"],
+        _estado: "confirmado",
+        _vencimento_banco: boleto["vencimento_solicitado"],
+      });
+    }
     const situacao = String(
       (json["situacao"] as string) ?? (json["situacaoBoleto"] as string) ?? "",
     ).toLowerCase();
@@ -541,4 +563,83 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
     let bin = "";
     for (const b of buf) bin += String.fromCharCode(b);
     return { base64: btoa(bin) };
+  });
+
+/** PATCH data-vencimento; atualização local somente após conferência na consulta bancária. */
+export const sicrediAlterarVencimento = createServerFn({ method: "POST" })
+  .inputValidator((data: { boletoId: string; vencimento: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_vencimento",
+      10,
+      data.accessToken,
+    );
+    validarNovoVencimento(data.vencimento);
+    const b = await carregarBoleto(accessToken, data.boletoId);
+    if (b["status"] !== "registrado")
+      throw new Error("Somente boletos registrados permitem alterar o vencimento.");
+    const c = await conf();
+    if (
+      b["cooperativa"] !== c.cooperativa ||
+      b["posto"] !== c.posto ||
+      b["codigo_beneficiario"] !== c.beneficiario ||
+      b["ambiente"] !== c.ambiente
+    )
+      throw new Error("O convênio atual não corresponde ao boleto emitido.");
+    const tk = await token(c);
+    const id = await serviceRpc<string>("sicredi_solicitar_vencimento", {
+      _actor: user.id,
+      _boleto: data.boletoId,
+      _vencimento: data.vencimento,
+      _anterior: b["vencimento"],
+      _arquivo: null,
+    });
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(
+        `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(String(b["nosso_numero"]))}/data-vencimento`,
+        {
+          method: "PATCH",
+          headers: headers(c, tk),
+          body: JSON.stringify({ dataVencimento: data.vencimento }),
+        },
+      );
+    } catch {
+      await serviceRpc("sicredi_finalizar_vencimento", {
+        _actor: user.id,
+        _solicitacao: id,
+        _estado: "incerto",
+        _vencimento_banco: null,
+      });
+      return {
+        pendente: true,
+        mensagem:
+          "Resposta do banco indisponível. Confira a alteração pela consulta; não reenvie a solicitação.",
+      };
+    }
+    if (!response.ok) {
+      const uncertain = response.status >= 500 || response.status === 408;
+      await serviceRpc("sicredi_finalizar_vencimento", {
+        _actor: user.id,
+        _solicitacao: id,
+        _estado: uncertain ? "incerto" : "rejeitado",
+        _vencimento_banco: null,
+      });
+      if (uncertain)
+        return {
+          pendente: true,
+          mensagem: "Resposta do banco inconclusiva. Confira a alteração pela consulta.",
+        };
+      throw new Error(`Sicredi rejeitou a alteração de vencimento (HTTP ${response.status}).`);
+    }
+    await serviceRpc("sicredi_finalizar_vencimento", {
+      _actor: user.id,
+      _solicitacao: id,
+      _estado: "enviado",
+      _vencimento_banco: null,
+    });
+    return {
+      pendente: true,
+      mensagem: "Alteração enviada ao Sicredi. Consulte o boleto para confirmar o novo vencimento.",
+    };
   });

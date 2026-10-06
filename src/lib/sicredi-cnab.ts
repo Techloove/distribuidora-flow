@@ -53,6 +53,7 @@ export type CnabEvento = {
   outras_despesas: string;
   outros_creditos: string;
   pix?: { url: string; txid: string; movimento: string };
+  vencimento: string | null;
   data_ocorrencia: string | null;
   data_credito: string | null;
 };
@@ -351,6 +352,8 @@ export const OCORRENCIAS: Record<string, string> = {
   "03": "Entrada rejeitada",
   "06": "Liquidação",
   "09": "Baixa confirmada",
+  "14": "Alteração de vencimento confirmada",
+  "26": "Instrução rejeitada",
   "17": "Liquidação após baixa",
   "61": "Liquidação PIX",
 };
@@ -429,6 +432,7 @@ export function parseRetorno(content: string, c: CnabConfig) {
           documento: field(pending, 59, 73).trim(),
           ocorrencia: field(l, 16, 17),
           motivos: field(pending, 214, 223).trim(),
+          vencimento: readDate(field(pending, 74, 81)),
           valor_titulo: readMoney(field(pending, 82, 96)),
           valor_recebido: readMoney(field(l, 78, 92)),
           valor_liquido: readMoney(field(l, 93, 107)),
@@ -514,4 +518,56 @@ export function gerarBrCode(location: string) {
     tlv("62", tlv("05", "***")) +
     "6304";
   return payload + crc16(payload);
+}
+
+/** Instrução 06: preserva os dados do boleto original e não aloca outro nosso número. */
+export function gerarAlteracaoVencimento(
+  c: CnabConfig,
+  original: string,
+  nn: string,
+  novaData: string,
+  isoDate: string,
+  time: string,
+) {
+  validateConfig(c);
+  dateField(novaData);
+  const lines = original.split(/\r\n|\n/).filter(Boolean);
+  if (lines.some((line) => line.length !== 240) || lines[0]?.slice(0, 8) !== "74800000")
+    throw new Error("Remessa original inválida.");
+  const index = lines.findIndex(
+    (line) => line[7] === "3" && line[13] === "P" && line.slice(37, 57).trim() === nn,
+  );
+  if (index < 0) throw new Error("Boleto não encontrado na remessa original.");
+  const replace = (line: string, start: number, end: number, value: string) => {
+    if (value.length !== end - start + 1) throw new Error("Tamanho inválido na instrução CNAB.");
+    return line.slice(0, start - 1) + value + line.slice(end);
+  };
+  const emissao = readDate(lines[index]!.slice(109, 117));
+  if (!emissao || Date.parse(novaData) - Date.parse(emissao) < 7 * 86400000)
+    throw new Error("Vencimento deve respeitar 7 dias após a emissão pelo Sicredi.");
+  const seguinte = dateField(new Date(Date.parse(novaData) + 86400000).toISOString().slice(0, 10));
+  const detalhes: string[] = [];
+  for (let i = index; i < lines.length && lines[i]![7] === "3"; i++) {
+    if (i > index && lines[i]![13] === "P") break;
+    if (lines[i]![13] === "Y") continue; // Y04 é exclusivo de entrada (movimento 01).
+    let line = replace(replace(lines[i]!, 9, 13, numeric(detalhes.length + 1, 5)), 16, 17, "06");
+    if (line[13] === "P") {
+      line = replace(line, 78, 85, dateField(novaData));
+      if (line[117] !== "3") line = replace(line, 119, 126, seguinte);
+    }
+    if (line[13] === "R" && line[65] !== "0") line = replace(line, 67, 74, seguinte);
+    detalhes.push(line);
+  }
+  if (detalhes[1]?.[13] !== "Q") throw new Error("Remessa original sem segmento Q.");
+  let header = replace(lines[0]!, 144, 151, dateField(isoDate));
+  header = replace(replace(header, 152, 157, time), 158, 163, numeric(c.proxima_remessa, 6));
+  let lote = replace(lines[1]!, 184, 191, numeric(c.proxima_remessa, 8));
+  lote = replace(lote, 192, 199, dateField(isoDate));
+  const trailer = replace(lines.at(-2)!, 18, 23, numeric(detalhes.length + 2, 6));
+  const final = replace(lines.at(-1)!, 24, 29, numeric(detalhes.length + 4, 6));
+  const month = "123456789ABC"[Number(isoDate.slice(5, 7)) - 1];
+  return {
+    content: [header, lote, ...detalhes, trailer, final].join("\r\n") + "\r\n",
+    filename: `${c.beneficiario}${month}${isoDate.slice(8, 10)}.${numeric(c.proxima_remessa, 6)}`,
+  };
 }

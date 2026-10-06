@@ -12,9 +12,9 @@ Runtime do servidor: `EXT_SUPABASE_URL`, `EXT_SUPABASE_ANON_KEY`, `EXT_SUPABASE_
 
 ## Remessa e retorno
 
-No pedido confirmado, o financeiro abre **Emitir boletos**, seleciona as parcelas em aberto do pedido e escolhe **Arquivo de remessa CNAB 240**. O sistema gera uma remessa para enviar pelo Sicredi Internet Empresas. O ERP reserva os títulos como pendentes; não transmite ao banco nem os marca como registrados. Em **Faturamento**, o histórico permite baixar novamente o mesmo arquivo, sem gerar novos sequenciais. A mesma tela mantém a importação de retornos e o acompanhamento; configuração e emissão ficam em seus respectivos locais.
+No pedido confirmado, o financeiro abre **Emitir boletos**, seleciona as parcelas em aberto do pedido e escolhe **Arquivo de remessa CNAB 240**. O sistema gera uma remessa para enviar pelo Sicredi Internet Empresas. O ERP reserva os títulos como pendentes; não transmite ao banco nem os marca como registrados. Em **Boletos**, o histórico permite baixar novamente o mesmo arquivo, sem gerar novos sequenciais. A mesma tela mantém a importação de retornos e o acompanhamento; configuração e emissão ficam em seus respectivos locais.
 
-Para registro direto via API, usar o mesmo botão no pedido e selecionar **Registro direto no Sicredi (API)**. Somente administrador, gestor e financeiro podem emitir. As parcelas já cobradas ou pagas são excluídas da seleção, e as RPCs existentes revalidam a disponibilidade antes da gravação. Não há nova migração SQL para esta reorganização das telas.
+Para registro direto via API, usar o mesmo botão no pedido e selecionar **Registro direto no Sicredi (API)**. Somente administrador, gestor e financeiro podem emitir. As parcelas já cobradas ou pagas são excluídas da seleção, e as RPCs existentes revalidam a disponibilidade antes da gravação. A emissão também está disponível por parcela em **Financeiro → Contas a receber**. Há um único menu **Boletos**; a rota antiga `/faturamento` redireciona para `/boletos`, preservando permissões legadas.
 
 Remessa: registros ASCII de 240 posições com CRLF; header/lote, P/Q, R para multa, Y04 opcional para híbrido e trailers. Carteira simples, emissão pelo Sicredi e distribuição pelo beneficiário. O vencimento deve ser pelo menos sete dias após a emissão. Juros/multa começam no dia seguinte ao vencimento. Nosso número usa DV módulo 11 com cooperativa/posto/beneficiário e sequencial controlado. O limite de nosso número é 99.999, sem reset automático.
 
@@ -30,7 +30,7 @@ Na remessa híbrida, Y04 informa a chave aleatória; TXID fica em branco para ge
 
 BR Code dinâmico: formato 01, iniciação 12, GUI `br.gov.bcb.pix`, location sem protocolo em 26/25, moeda 986, país BR, nome PIX, cidade Cidade e referência `***`, conforme exemplo do Sicredi. O TXID e os valores são obtidos pelo aplicativo pagador na location; o ERP não inventa uma cobrança PIX estática. CRC-16/CCITT-FALSE usa polinômio 1021, inicial FFFF, incluindo `6304`. QR é renderizado localmente, sem serviço externo de imagens. URLs aceitas neste módulo são do domínio de produção `pix-qrcode.sicredi.com.br`; outra location exige conferir o manual/convênio antes de ampliar o suporte.
 
-A impressão do boleto emitido pelo Sicredi continua pelo banco. O módulo não fabrica PDF, código de barras ou linha digitável a partir do arquivo CNAB. Solicitações de alteração/baixa, descontos negociados na remessa, protesto e carteiras adicionais não estão implementados; executar essas instruções pelo banco e importar o retorno correspondente.
+A impressão do boleto emitido pelo Sicredi continua pelo banco. O módulo não fabrica PDF, código de barras ou linha digitável a partir do arquivo CNAB. Baixa por remessa CNAB, alteração de valor, descontos negociados na remessa, protesto e carteiras adicionais não estão implementados; executar essas instruções pelo banco e importar o retorno correspondente.
 
 ## Segurança e validação
 
@@ -55,3 +55,18 @@ NODE_PATH=/tmp/cnab-db-tests/node_modules node scripts/check-cnab-database.cjs
 Validação local: 25 testes passaram, assim como typecheck, build e checks SQL/migrações/servidor. O teste de banco isolado passou. Chromium verificou o fluxo financeiro normal e híbrido; um leitor independente (jsQR) decodificou o QR exibido e confirmou o PIX copia e cola.
 
 Testes sintéticos verificam posições, CRC com vetores independentes, remessa híbrida, leitura Y04, conciliação de bruto/líquido, duplicidade e rollback. Eles não substituem homologação bancária ou validação no Supabase real. O check:surface tem uma falha preexistente em `auth.tsx` (auth.signUp no cliente), independente desta implementação.
+
+## Alteração de vencimento — fase205
+
+Aplicar `db/fase205_sicredi_alteracao_vencimento.sql` **após a fase204**. A migração cria solicitações auditadas, RLS por centro, trava de uma solicitação ativa por boleto e RPCs exclusivas do servidor. Não reaplicar a fase204 depois da fase205: a fase205 mantém a função financeira anterior como auxiliar privada e acrescenta o tratamento de confirmação de vencimento na mesma transação.
+
+Em Contas a receber ou Boletos, **Alterar vencimento** fica disponível para boleto Sicredi registrado. O novo vencimento não pode estar no passado. Boletos e títulos com data divergente, pagos/cancelados ou com solicitação pendente são bloqueados. A data do boleto e da parcela só muda após confirmação bancária; o nosso número é preservado e nenhum novo recebimento é lançado.
+
+- API: `PATCH /cobranca/boleto/v1/boletos/{nossoNumero}/data-vencimento`, corpo `{dataVencimento: "YYYY-MM-DD"}`. Envio aceito fica pendente; **Conferir no Sicredi** consulta o banco e confirma apenas quando a data devolvida coincide. Timeout/HTTP 5xx ficam inconclusivos, sem reenvio automático. Convênio e ambiente devem corresponder ao boleto original.
+- CNAB: gera uma remessa de instrução **06**, preservando os dados originais e ajustando datas de juros/multa. Usa novo sequencial de remessa, sem consumir nosso número. Y04 é exclusivo de entrada e não é enviado na alteração. Enviar pelo Internet Empresas e importar o retorno: **14** confirma, **26** rejeita. Data divergente impede importação. O arquivo pode ser baixado novamente pelo histórico.
+
+O endpoint API foi conferido no código público ACBr (`Fontes/ACBrBoleto/WS/ACBrBoletoW_Sicredi_APIV2.pas`, commit `2784a56ad10f60b9fa412c8d172e495e9d93a0e7` do espelho frones/ACBr). A documentação oficial HTTP não estava acessível neste ambiente; essa referência complementa os testes locais e não substitui homologação bancária. A instrução CNAB usa o manual Sicredi 2.9 fornecido.
+
+Validação adicional: testes de requisição API simulada (envio, timeout, rejeição, contrato divergente e confirmação por consulta), vetores CNAB06/retorno14 e transações reais em PostgreSQL isolado (confirmação/rejeição/divergência, sem alteração financeira). Migração de produção não executada pelo agente.
+
+Resultado da validação desta alteração: 33 testes passaram, typecheck e build passaram, checks SQL/migrações/servidor passaram. Chromium verificou menu único, permissões antigas, filtros com/sem boleto, emissão por parcela e alteração CNAB com vencimento preservado até confirmação. O teste PostgreSQL isolado também verificou reaplicação idempotente da fase205.

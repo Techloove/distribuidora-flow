@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePapeis } from "@/lib/papeis";
-import { MENUS_PADRAO, MODULOS, PAPEIS_TOTAIS } from "@/lib/permissoes";
+import { MENUS_PADRAO, MODULOS, normalizarModulo, PAPEIS_TOTAIS } from "@/lib/permissoes";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
 export function MenusPorPerfil() {
@@ -30,7 +30,9 @@ export function MenusPorPerfil() {
     queryFn: async () => {
       const { data, error } = await client!.from("role_menus").select("path").eq("role", papel);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((r) => String((r as { path: string }).path));
+      return [
+        ...new Set((data ?? []).map((r) => normalizarModulo(String((r as { path: string }).path)))),
+      ];
     },
   });
 

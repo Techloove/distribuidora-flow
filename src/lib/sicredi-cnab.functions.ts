@@ -1,3 +1,4 @@
+import { validarNovoVencimento } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
@@ -6,6 +7,7 @@ import {
   digits,
   gerarRemessa,
   gerarBrCode,
+  gerarAlteracaoVencimento,
   nossoNumero,
   parseRetorno,
   validateConfig,
@@ -42,7 +44,8 @@ async function rest<T>(path: string, token: string, service = false, body?: unkn
   });
   if (!response.ok) {
     const text = await response.text();
-    let message = "Falha na rotina CNAB. Confira se a migração fase204 foi aplicada.";
+    let message =
+      "Falha na rotina CNAB. Confira se as migrações fase204 e fase205 foram aplicadas.";
     try {
       const error = JSON.parse(text);
       if (error.code === "P0001") message = String(error.message);
@@ -183,7 +186,7 @@ async function analyze(data: Input & { content: string }, token: string) {
   }));
   const numbers = [...new Set(events.map((e) => e.nosso_numero))];
   const boletos = await rest<Row[]>(
-    `boletos?select=id,nosso_numero,seu_numero,valor,status,valor_liquidado&canal=eq.cnab240&centro_id=eq.${data.centro_id}&nosso_numero=in.(${numbers.join(",")})&limit=500`,
+    `boletos?select=*&canal=eq.cnab240&centro_id=eq.${data.centro_id}&nosso_numero=in.(${numbers.join(",")})&limit=500`,
     token,
   );
   return {
@@ -201,29 +204,33 @@ async function analyze(data: Input & { content: string }, token: string) {
             ? "Valor nominal divergente"
             : b["seu_numero"] !== e.documento
               ? "Documento divergente"
-              : ["06", "17", "61"].includes(e.ocorrencia) &&
-                  (!e.data_ocorrencia || cents(e.valor_recebido) <= 0n)
-                ? "Liquidação sem valor ou data"
+              : e.ocorrencia === "14" &&
+                  b["vencimento_solicitacao_id"] &&
+                  b["vencimento_solicitado"] !== e.vencimento
+                ? "Vencimento confirmado pelo banco diverge da solicitação"
                 : ["06", "17", "61"].includes(e.ocorrencia) &&
-                    cents(e.valor_recebido) !==
-                      cents(e.valor_titulo) +
-                        cents(e.juros) -
-                        cents(e.desconto) -
-                        cents(e.abatimento)
-                  ? "Liquidação parcial ou valores de encargos divergentes: concilie manualmente"
-                  : ["06", "17", "61"].includes(e.ocorrencia) && cents(e.iof) !== 0n
-                    ? "IOF exige conciliação manual"
-                    : ["06", "17", "61"].includes(e.ocorrencia) &&
-                        (cents(e.outras_despesas) !== 0n || cents(e.outros_creditos) !== 0n)
-                      ? "Outras despesas/créditos exigem conciliação manual"
+                    (!e.data_ocorrencia || cents(e.valor_recebido) <= 0n)
+                  ? "Liquidação sem valor ou data"
+                  : ["06", "17", "61"].includes(e.ocorrencia) &&
+                      cents(e.valor_recebido) !==
+                        cents(e.valor_titulo) +
+                          cents(e.juros) -
+                          cents(e.desconto) -
+                          cents(e.abatimento)
+                    ? "Liquidação parcial ou valores de encargos divergentes: concilie manualmente"
+                    : ["06", "17", "61"].includes(e.ocorrencia) && cents(e.iof) !== 0n
+                      ? "IOF exige conciliação manual"
                       : ["06", "17", "61"].includes(e.ocorrencia) &&
-                          cents(e.valor_liquido) > cents(e.valor_recebido)
-                        ? "Valor líquido superior ao recebido"
+                          (cents(e.outras_despesas) !== 0n || cents(e.outros_creditos) !== 0n)
+                        ? "Outras despesas/créditos exigem conciliação manual"
                         : ["06", "17", "61"].includes(e.ocorrencia) &&
-                            cents(e.valor_recebido) > cents(e.valor_liquido) &&
-                            !c.categoria_tarifa_id
-                          ? "Configure a categoria de tarifas bancárias"
-                          : null,
+                            cents(e.valor_liquido) > cents(e.valor_recebido)
+                          ? "Valor líquido superior ao recebido"
+                          : ["06", "17", "61"].includes(e.ocorrencia) &&
+                              cents(e.valor_recebido) > cents(e.valor_liquido) &&
+                              !c.categoria_tarifa_id
+                            ? "Configure a categoria de tarifas bancárias"
+                            : null,
       };
     }),
   };
@@ -254,4 +261,47 @@ export const cnabImportarRetorno = createServerFn({ method: "POST" })
       _eventos: result.events,
     });
     return { id };
+  });
+
+export const cnabAlterarVencimento = createServerFn({ method: "POST" })
+  .validator((data: Input & { boleto_id: string; vencimento: string }) => data)
+  .handler(async ({ data }) => {
+    const { actor, token } = await authorize(data, "cnab_vencimento");
+    if (!UUID.test(data.boleto_id)) throw new Error("Boleto inválido.");
+    validarNovoVencimento(data.vencimento);
+    const c = await config(data.centro_id, token);
+    const [b] = await rest<Row[]>(
+      `boletos?select=*&id=eq.${data.boleto_id}&centro_id=eq.${data.centro_id}&canal=eq.cnab240`,
+      token,
+    );
+    if (!b || b["status"] !== "registrado" || !UUID.test(String(b["cnab_remessa_id"])))
+      throw new Error("Boleto não apto para alteração CNAB.");
+    const [original] = await rest<Row[]>(
+      `sicredi_cnab_arquivos?select=conteudo&id=eq.${b["cnab_remessa_id"]}&centro_id=eq.${data.centro_id}`,
+      token,
+    );
+    if (!original) throw new Error("Remessa original não encontrada.");
+    const stamp = today();
+    const file = gerarAlteracaoVencimento(
+      c,
+      String(original["conteudo"]),
+      String(b["nosso_numero"]),
+      data.vencimento,
+      stamp.date,
+      stamp.time,
+    );
+    await rest("rpc/sicredi_solicitar_vencimento", token, true, {
+      _actor: actor.id,
+      _boleto: data.boleto_id,
+      _vencimento: data.vencimento,
+      _anterior: b["vencimento"],
+      _arquivo: {
+        versao: c.updated_at,
+        sequencia: c.proxima_remessa,
+        nome: file.filename,
+        conteudo: file.content,
+        sha256: await sha256(file.content),
+      },
+    });
+    return file;
   });

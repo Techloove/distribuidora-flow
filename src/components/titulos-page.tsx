@@ -1,3 +1,5 @@
+import { EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
+import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -84,8 +86,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [openNovo, setOpenNovo] = useState(false);
   const [novo, setNovo] = useState({ ...novoTituloVazio });
-  const setN = (k: keyof typeof novoTituloVazio, v: string) =>
-    setNovo((s) => ({ ...s, [k]: v }));
+  const setN = (k: keyof typeof novoTituloVazio, v: string) => setNovo((s) => ({ ...s, [k]: v }));
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
@@ -94,10 +95,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     queryKey: [config.view],
     enabled: !!client,
     queryFn: async () => {
-      const { data: rows, error } = await client!
-        .from(config.view)
-        .select("*")
-        .order("vencimento");
+      const { data: rows, error } = await client!.from(config.view).select("*").order("vencimento");
       if (error) throw new Error(error.message);
       return (rows ?? []) as Row[];
     },
@@ -175,10 +173,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     queryKey: ["boletos", "por-conta"],
     enabled: !!client && isReceber,
     queryFn: async () => {
-      const { data: rows, error } = await client!
-        .from("boletos")
-        .select("id, conta_receber_id, status, nosso_numero, linha_digitavel, created_at")
-        .order("created_at");
+      const { data: rows, error } = await client!.from("boletos").select("*").order("created_at");
       if (error) throw new Error(error.message);
       return (rows ?? []) as Row[];
     },
@@ -189,7 +184,14 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     for (const b of boletos.data ?? []) {
       const key = String(b["conta_receber_id"] ?? "");
       if (!key) continue;
-      if (String(b["status"]) === "cancelado" && map.has(key)) continue;
+      const previous = map.get(key);
+      const active = ["pendente", "em_processamento", "registrado", "liquidado"];
+      if (
+        previous &&
+        active.includes(String(previous["status"])) &&
+        !active.includes(String(b["status"]))
+      )
+        continue;
       map.set(key, b);
     }
     return map;
@@ -198,6 +200,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const boletoLabel = (r: Row) => {
     if (!isReceber) return "—";
     const b = boletoPorConta.get(String(r["id"]));
+    if (boletos.isError) return "Consulta indisponível";
+    if (boletos.isLoading) return "Carregando…";
     if (!b) return "Sem boleto";
     return String(b["status"] ?? "—");
   };
@@ -209,16 +213,19 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
     if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
     if (filtros["forma"]) list = list.filter((r) => r["forma_pagamento_id"] === filtros["forma"]);
-    if (filtros["pgde"]) list = list.filter((r) => String(r["data_pagamento"] ?? "") >= filtros["pgde"]!);
+    if (filtros["pgde"])
+      list = list.filter((r) => String(r["data_pagamento"] ?? "") >= filtros["pgde"]!);
     if (filtros["pgate"])
       list = list.filter(
         (r) => !!r["data_pagamento"] && String(r["data_pagamento"]) <= filtros["pgate"]!,
       );
     const f = filtros;
     if (isReceber && f["boleto"]) {
+      if (boletos.isError || boletos.isLoading) return [];
       list = list.filter((r) => {
         const b = boletoPorConta.get(String(r["id"]));
         if (f["boleto"] === "sem") return !b;
+        if (f["boleto"] === "com") return !!b;
         return !!b && String(b["status"]) === f["boleto"];
       });
     }
@@ -255,11 +262,25 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         const nome = String(
           partners.data?.find((p) => p["id"] === r[config.partnerKey])?.["razao_social"] ?? "",
         ).toLowerCase();
-        return String(r["documento"] ?? "").toLowerCase().includes(termo) || nome.includes(termo);
+        return (
+          String(r["documento"] ?? "")
+            .toLowerCase()
+            .includes(termo) || nome.includes(termo)
+        );
       });
     }
     return list;
-  }, [titulos.data, status, filtros, partners.data, config.partnerKey, isReceber, boletoPorConta]);
+  }, [
+    titulos.data,
+    status,
+    filtros,
+    partners.data,
+    config.partnerKey,
+    isReceber,
+    boletoPorConta,
+    boletos.isError,
+    boletos.isLoading,
+  ]);
 
   const totalFiltrado = rows.reduce(
     (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
@@ -267,10 +288,15 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   );
 
   const totals = useMemo(() => {
-    const abertos = (titulos.data ?? []).filter((r) => r["status"] !== "pago" && r["status"] !== "cancelado");
+    const abertos = (titulos.data ?? []).filter(
+      (r) => r["status"] !== "pago" && r["status"] !== "cancelado",
+    );
     const hoje = new Date().toISOString().slice(0, 10);
     return {
-      aberto: abertos.reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0),
+      aberto: abertos.reduce(
+        (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
+        0,
+      ),
       vencido: abertos
         .filter((r) => String(r["vencimento"]) < hoje)
         .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0),
@@ -497,6 +523,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             onChange={(v) => setF("boleto", v)}
             options={[
               { value: "sem", label: "Sem boleto" },
+              { value: "com", label: "Com boleto" },
               { value: "pendente", label: "Pendente" },
               { value: "em_processamento", label: "Em processamento" },
               { value: "registrado", label: "Registrado" },
@@ -568,9 +595,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       aria-label="Selecionar título"
                       className="size-4"
                       disabled={
-                        !canFinance ||
-                        r["status"] === "pago" ||
-                        r["status"] === "cancelado"
+                        !canFinance || r["status"] === "pago" || r["status"] === "cancelado"
                       }
                       checked={selecionados.includes(String(r["id"]))}
                       onChange={(e) =>
@@ -603,6 +628,13 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       >
                         {boletoLabel(r)}
                       </span>
+                      {boletoPorConta.get(String(r["id"]))?.["vencimento_solicitado"] ? (
+                        <span className="block text-xs text-muted-foreground">
+                          Vencimento solicitado:{" "}
+                          {String(boletoPorConta.get(String(r["id"]))!["vencimento_solicitado"])} ·
+                          aguardando Sicredi
+                        </span>
+                      ) : null}
                       {boletoPorConta.get(String(r["id"]))?.["nosso_numero"] ? (
                         <span className="block text-xs text-muted-foreground">
                           {String(boletoPorConta.get(String(r["id"]))!["nosso_numero"])}
@@ -611,10 +643,32 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                     </TableCell>
                   ) : null}
                   <TableCell className="no-print text-right">
+                    {isReceber &&
+                    canFinance &&
+                    !boletos.isLoading &&
+                    !boletos.isError &&
+                    !["pago", "cancelado"].includes(String(r["status"])) &&
+                    Number(r["saldo"] ?? 0) > 0 &&
+                    (!boletoPorConta.get(String(r["id"])) ||
+                      ["erro", "baixado", "cancelado"].includes(
+                        String(boletoPorConta.get(String(r["id"]))?.["status"]),
+                      )) ? (
+                      <EmitirBoletoTitulo
+                        contaId={String(r["id"])}
+                        centroId={String(r["centro_id"] ?? "")}
+                      />
+                    ) : null}
+                    {isReceber &&
+                    canFinance &&
+                    boletoPorConta.get(String(r["id"]))?.["status"] === "registrado" ? (
+                      <AlterarVencimentoBoleto boleto={boletoPorConta.get(String(r["id"]))!} />
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={!canFinance || r["status"] === "pago" || r["status"] === "cancelado"}
+                      disabled={
+                        !canFinance || r["status"] === "pago" || r["status"] === "cancelado"
+                      }
                       onClick={() => {
                         setTarget(r);
                         setValor(String(Number(r["saldo"] ?? 0)));

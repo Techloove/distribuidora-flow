@@ -39,7 +39,7 @@ export function SicrediCnabPanel({ mode = "operacao" }: { mode?: Mode }) {
       <p className="mt-1 text-sm text-muted-foreground">
         {mode === "configuracao"
           ? "Configure o convênio e as regras dos boletos por centro de custo."
-          : "Confira os retornos recebidos do Sicredi e consulte os arquivos gerados nos pedidos."}
+          : "Confira os retornos do Sicredi e consulte os arquivos de cobrança."}
       </p>
       {!centro ? (
         <p className="mt-3 text-sm">
@@ -391,6 +391,7 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
                         <th className="p-2">Nosso número</th>
                         <th>Ocorrência</th>
                         <th>Recebido</th>
+                        <th>Vencimento</th>
                         <th>Conferência</th>
                       </tr>
                     </thead>
@@ -403,6 +404,7 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
                               `Ocorrência ${e.ocorrencia}: registrada sem alterar títulos`}
                           </td>
                           <td>R$ {e.valor_recebido}</td>
+                          <td>{e.vencimento ?? "—"}</td>
                           <td>
                             {e.problema ?? `Localizado · ${e.status_atual}`}
                             {e.motivos && ` · motivos ${e.motivos}`}

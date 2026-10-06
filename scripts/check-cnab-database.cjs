@@ -35,6 +35,13 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
     await db.exec(sql.slice(start, end));
   }
   await db.exec(fs.readFileSync(path.join(repo, "db/fase204_sicredi_cnab240.sql"), "utf8"));
+  await db.exec(
+    fs.readFileSync(path.join(repo, "db/fase205_sicredi_alteracao_vencimento.sql"), "utf8"),
+  );
+  // A fase205 pode ser repetida sem substituir o processamento financeiro original.
+  await db.exec(
+    fs.readFileSync(path.join(repo, "db/fase205_sicredi_alteracao_vencimento.sql"), "utf8"),
+  );
   const actor = "00000000-0000-4000-8000-000000000001",
     centro = "00000000-0000-4000-8000-000000000002",
     conta = "00000000-0000-4000-8000-000000000003",
@@ -146,6 +153,16 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
     JSON.stringify([{ ...event, ocorrencia: "61" }]),
   ]);
   assert.equal((await db.query("select count(*)::int n from movimentos_financeiros")).rows[0].n, 2);
+  // Um retorno reemitido pela versão nova inclui metadados ausentes na liquidação anterior.
+  await db.query("select cnab_gravar_retorno($1,$2,$3,$4,$5,$6::jsonb)", [
+    actor,
+    centro,
+    "metadata.crt",
+    "metadata",
+    "8".repeat(64),
+    JSON.stringify([{ ...event, vencimento: "2026-10-30", qrcode_pix: "metadata-fixture" }]),
+  ]);
+  assert.equal((await db.query("select count(*)::int n from movimentos_financeiros")).rows[0].n, 2);
   // Híbrido: reserva com tipo correto e QR somente após confirmação bancária.
   const cfgNow = (await db.query("select * from sicredi_cnab_config")).rows[0];
   await db.query("select cnab_salvar_config($1,$2::jsonb)", [
@@ -216,12 +233,128 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
   assert.equal(hybrid.status, "registrado");
   assert.equal(hybrid.qrcode_pix, qr);
   assert.equal(hybrid.txid, register.pix.txid);
+  // Não muda vencimento antes da confirmação; duplicidade, divergência e rejeição são transacionais.
+  const boletoHybrid = (
+    await db.query("select * from boletos where conta_receber_id=$1", [hybridTitle])
+  ).rows[0];
+  async function solicitar(data, anterior, hash) {
+    const configAtual = (await db.query("select * from sicredi_cnab_config")).rows[0];
+    return (
+      await db.query("select sicredi_solicitar_vencimento($1,$2,$3,$4,$5::jsonb) id", [
+        actor,
+        boletoHybrid.id,
+        data,
+        anterior,
+        JSON.stringify({
+          versao: configAtual.updated_at,
+          sequencia: configAtual.proxima_remessa,
+          nome: "alteracao.rem",
+          conteudo: "fixture",
+          sha256: hash.repeat(64),
+        }),
+      ])
+    ).rows[0].id;
+  }
+  const seqNosso = (await db.query("select proximo_nosso_numero from sicredi_cnab_config")).rows[0]
+    .proximo_nosso_numero;
+  const change = await solicitar("2099-11-20", "2026-10-30", "2");
+  assert.equal(
+    (await db.query("select vencimento::text from boletos where id=$1", [boletoHybrid.id])).rows[0]
+      .vencimento,
+    "2026-10-30",
+  );
+  assert.equal(
+    (await db.query("select proximo_nosso_numero from sicredi_cnab_config")).rows[0]
+      .proximo_nosso_numero,
+    seqNosso,
+  );
+  await assert.rejects(() => solicitar("2099-11-21", "2026-10-30", "3"));
+  await assert.rejects(() =>
+    db.query("select cnab_gravar_retorno($1,$2,$3,$4,$5,$6::jsonb)", [
+      actor,
+      centro,
+      "divergente.crt",
+      "fixture",
+      "4".repeat(64),
+      JSON.stringify([{ ...register, ocorrencia: "14", vencimento: "2099-11-21" }]),
+    ]),
+  );
+  await db.query("select cnab_gravar_retorno($1,$2,$3,$4,$5,$6::jsonb)", [
+    actor,
+    centro,
+    "confirmado.crt",
+    "fixture",
+    "5".repeat(64),
+    JSON.stringify([{ ...register, ocorrencia: "14", vencimento: "2099-11-20" }]),
+  ]);
+  assert.equal(
+    (
+      await db.query("select vencimento::text,vencimento_solicitacao_id from boletos where id=$1", [
+        boletoHybrid.id,
+      ])
+    ).rows[0].vencimento,
+    "2099-11-20",
+  );
+  assert.equal(
+    (await db.query("select vencimento::text from contas_receber where id=$1", [hybridTitle]))
+      .rows[0].vencimento,
+    "2099-11-20",
+  );
+  assert.equal(
+    (await db.query("select estado from sicredi_boleto_alteracoes where id=$1", [change])).rows[0]
+      .estado,
+    "confirmado",
+  );
+  const rejected = await solicitar("2099-11-25", "2099-11-20", "6");
+  await db.query("select cnab_gravar_retorno($1,$2,$3,$4,$5,$6::jsonb)", [
+    actor,
+    centro,
+    "rejeitado.crt",
+    "fixture",
+    "7".repeat(64),
+    JSON.stringify([{ ...register, ocorrencia: "26", vencimento: "2099-11-20" }]),
+  ]);
+  assert.equal(
+    (await db.query("select estado from sicredi_boleto_alteracoes where id=$1", [rejected])).rows[0]
+      .estado,
+    "rejeitado",
+  );
+  assert.equal(
+    (await db.query("select vencimento::text from boletos where id=$1", [boletoHybrid.id])).rows[0]
+      .vencimento,
+    "2099-11-20",
+  );
+  // Fixture API: envio pendente e confirmação bancária explícita, sem alterar movimentos.
+  await db.query("update boletos set canal='api' where id=$1", [boletoHybrid.id]);
+  const apiChange = (
+    await db.query("select sicredi_solicitar_vencimento($1,$2,'2099-11-26','2099-11-20',null) id", [
+      actor,
+      boletoHybrid.id,
+    ])
+  ).rows[0].id;
+  await db.query("select sicredi_finalizar_vencimento($1,$2,'enviado',null)", [actor, apiChange]);
+  await assert.rejects(() =>
+    db.query("select sicredi_finalizar_vencimento($1,$2,'confirmado','2099-11-27')", [
+      actor,
+      apiChange,
+    ]),
+  );
+  await db.query("select sicredi_finalizar_vencimento($1,$2,'confirmado','2099-11-26')", [
+    actor,
+    apiChange,
+  ]);
+  assert.equal(
+    (await db.query("select vencimento::text from contas_receber where id=$1", [hybridTitle]))
+      .rows[0].vencimento,
+    "2099-11-26",
+  );
+  assert.equal((await db.query("select count(*)::int n from movimentos_financeiros")).rows[0].n, 2);
   await db.exec("select set_config('request.jwt.claim.role','authenticated',false)");
   await assert.rejects(() =>
     db.query("select cnab_salvar_config($1,$2::jsonb)", [actor, JSON.stringify(cfg)]),
   );
   console.log(
-    "CNAB DB: migration parsed; atomic remessa; duplicate protection; receipt with interest/discount; bank fee; rollback; hybrid QR registration; PIX duplicate protection; service-only writes PASS",
+    "CNAB DB: migration parsed; atomic remessa; duplicate protection; receipt with interest/discount; bank fee; rollback; hybrid QR registration; PIX duplicate protection; CNAB/API due-date confirmation/rejection; service-only writes PASS",
   );
   await db.close();
 })().catch((e) => {

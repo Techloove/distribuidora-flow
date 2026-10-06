@@ -35,6 +35,7 @@ const protectedTables = new Set([
   "sicredi_cnab_config",
   "sicredi_cnab_arquivos",
   "sicredi_cnab_eventos",
+  "sicredi_boleto_alteracoes",
   "user_roles",
   "notas_saida",
 ]);

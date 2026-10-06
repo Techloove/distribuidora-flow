@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
+export function normalizarModulo(path: string) {
+  return path === "/faturamento" ? "/boletos" : path;
+}
+
 /** Todos os módulos do sistema, na ordem do menu. */
 export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/dashboard", label: "Dashboard", grupo: "Visão geral" },
@@ -26,7 +30,6 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
   { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
   { path: "/expedicao", label: "Expedição", grupo: "Operação" },
-  { path: "/faturamento", label: "Faturamento (boletos)", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
 
   { path: "/financeiro", label: "Dashboard financeiro", grupo: "Financeiro" },
@@ -68,7 +71,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/relatorios-financeiros",
     "/rota-despesas",
     "/pessoas",
-    "/faturamento",
     "/notas",
     "/boletos",
     "/conciliacao-creditos",
@@ -109,7 +111,14 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/metas",
     "/comissoes",
   ],
-  estoque: ["/dashboard", "/produtos", "/estoque", "/separacao", "/compras", "/planejamento-compras"],
+  estoque: [
+    "/dashboard",
+    "/produtos",
+    "/estoque",
+    "/separacao",
+    "/compras",
+    "/planejamento-compras",
+  ],
   expedicao: ["/dashboard", "/separacao", "/cargas", "/expedicao", "/rotas"],
 };
 
@@ -131,7 +140,10 @@ export function useAcesso(): Acesso {
     queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && roles.length > 0 && !total,
     queryFn: async () => {
-      const { data, error } = await client!.from("role_menus").select("role, path").in("role", roles);
+      const { data, error } = await client!
+        .from("role_menus")
+        .select("role, path")
+        .in("role", roles);
       if (error) throw new Error("Não foi possível carregar as permissões.");
       return (data ?? []) as { role: AppRole; path: string }[];
     },
@@ -148,7 +160,9 @@ export function useAcesso(): Acesso {
 
   const carregando = loading || (roles.length > 0 && q.isPending);
   const doBanco = q.data;
-  const permitidos = new Set<string>(q.isError ? [] : (doBanco ?? []).map((r) => r.path));
+  const permitidos = new Set<string>(
+    q.isError ? [] : (doBanco ?? []).map((r) => normalizarModulo(r.path)),
+  );
 
   return {
     total: false,
@@ -161,6 +175,7 @@ export function useAcesso(): Acesso {
 
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
+  "/faturamento": "/boletos",
   "/clientes": "/pessoas",
   "/fornecedores": "/pessoas",
   "/transportadoras": "/pessoas",

@@ -92,7 +92,6 @@ const nav = [
       { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
       { to: "/cargas", label: "Cargas de entrega", icon: Truck },
       { to: "/expedicao", label: "Expedição", icon: Truck },
-      { to: "/faturamento", label: "Faturamento (boletos)", icon: FileText },
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
     ],
   },
