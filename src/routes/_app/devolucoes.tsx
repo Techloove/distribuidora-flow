@@ -2,7 +2,7 @@ import { TrocaDevolucao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -91,7 +91,7 @@ function DevolucoesPage() {
   });
 
   const centros = useQuery({
-    queryKey: ["centros", "options"],
+    queryKey: ["centros", "options", "devolucoes"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("centros").select("id, nome").order("nome");
@@ -116,7 +116,7 @@ function DevolucoesPage() {
   });
 
   const produtos = useQuery({
-    queryKey: ["produtos", "options"],
+    queryKey: ["produtos", "options", "devolucoes"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -147,8 +147,10 @@ function DevolucoesPage() {
     const p = produtos.data?.find((x) => x["id"] === id);
     return p ? `${String(p["codigo"] ?? "")} ${String(p["descricao"])}`.trim() : "—";
   };
-  const cliName = (id: unknown) =>
-    String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—");
+  const cliName = useCallback(
+    (id: unknown) => String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—"),
+    [clientes.data],
+  );
   const centroName = (id: unknown) =>
     String(centros.data?.find((c) => c["id"] === id)?.["nome"] ?? "—");
 
@@ -173,7 +175,7 @@ function DevolucoesPage() {
       );
     }
     return list;
-  }, [devolucoes.data, filtros, clientes.data]);
+  }, [devolucoes.data, filtros, cliName]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["devolucoes"] });

@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/fluxo-caixa")({
@@ -47,12 +48,15 @@ type Periodo = {
 
 function FluxoCaixaPage() {
   const { client } = useSupabase();
+  const { centro, isLoading: centrosCarregando, error: centrosErro } = useCentroValido();
 
   const fluxo = useQuery({
-    queryKey: ["vw_fluxo_caixa"],
-    enabled: !!client,
+    queryKey: ["vw_fluxo_caixa", centro],
+    enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
-      const { data, error } = await client!.from("vw_fluxo_caixa").select("*");
+      let q = client!.from("vw_fluxo_caixa").select("*");
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -63,15 +67,13 @@ function FluxoCaixaPage() {
     for (const row of fluxo.data ?? []) {
       const key = String(row["periodo"] ?? "");
       if (!key) continue;
-      const item =
-        map.get(key) ??
-        {
-          periodo: key,
-          previstoEntrada: 0,
-          realizadoEntrada: 0,
-          previstoSaida: 0,
-          realizadoSaida: 0,
-        };
+      const item = map.get(key) ?? {
+        periodo: key,
+        previstoEntrada: 0,
+        realizadoEntrada: 0,
+        previstoSaida: 0,
+        realizadoSaida: 0,
+      };
       item.previstoEntrada += Number(row["previsto_entrada"] ?? 0);
       item.realizadoEntrada += Number(row["realizado_entrada"] ?? 0);
       item.previstoSaida += Number(row["previsto_saida"] ?? 0);
@@ -97,31 +99,34 @@ function FluxoCaixaPage() {
       description="Consolidação mensal por vencimento, somando o que já foi baixado e o que ainda está em aberto."
     >
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <article className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">Entradas</p>
-            <p className="mt-2 text-xl font-semibold">{brl(totalEntradas)}</p>
-          </article>
-          <article className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">Saídas</p>
-            <p className="mt-2 text-xl font-semibold">{brl(totalSaidas)}</p>
-          </article>
-          <article className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">Saldo projetado</p>
-            <p className="mt-2 text-xl font-semibold">{brl(totalEntradas - totalSaidas)}</p>
-          </article>
-        </div>
+        {!fluxo.isLoading && !centrosCarregando && !fluxo.isError && !centrosErro && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <article className="rounded-lg border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Entradas</p>
+              <p className="mt-2 text-xl font-semibold">{brl(totalEntradas)}</p>
+            </article>
+            <article className="rounded-lg border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Saídas</p>
+              <p className="mt-2 text-xl font-semibold">{brl(totalSaidas)}</p>
+            </article>
+            <article className="rounded-lg border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Saldo projetado</p>
+              <p className="mt-2 text-xl font-semibold">{brl(totalEntradas - totalSaidas)}</p>
+            </article>
+          </div>
+        )}
 
         <div className="rounded-lg border border-border bg-card">
-          {fluxo.isLoading ? (
+          {fluxo.isLoading || centrosCarregando ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Carregando...
             </div>
-          ) : fluxo.isError ? (
+          ) : fluxo.isError || centrosErro ? (
             <div className="p-6 text-sm text-destructive">
-              {(fluxo.error as Error).message}
+              {(fluxo.error ?? centrosErro)?.message}
               <p className="mt-2 text-xs text-muted-foreground">
-                Rode <code>db/fase6_faturamento_fluxo_caixa.sql</code> no SQL Editor do Supabase.
+                Rode <code>db/fase210_correcao_fluxo_caixa_centros.sql</code> no SQL Editor do
+                Supabase.
               </p>
             </div>
           ) : linhas.length === 0 ? (

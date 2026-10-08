@@ -4,7 +4,7 @@ mock.module("@tanstack/react-start", () => ({
     const builder = {
       inputValidator: () => builder,
       validator: () => builder,
-      handler: (fn: Function) => (input: unknown) => fn(input),
+      handler: (fn: (input: unknown) => unknown) => (input: unknown) => fn(input),
     };
     return builder;
   },

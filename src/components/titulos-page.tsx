@@ -32,6 +32,14 @@ import {
 } from "@/components/ui/table";
 import { useSupabase } from "@/lib/supabase-provider";
 
+import { hojeSaoPaulo } from "@/lib/painel-trabalho";
+import {
+  saldoTitulo,
+  selecaoVisivel,
+  tituloNoStatus,
+  totaisTitulos,
+} from "@/lib/integridade-consultas";
+
 type Row = Record<string, unknown>;
 
 export type TitulosConfig = {
@@ -49,7 +57,7 @@ export type TitulosConfig = {
   rpcCriar: "criar_receita" | "criar_despesa";
 };
 
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeSaoPaulo;
 
 const novoTituloVazio = {
   parceiro: "",
@@ -79,7 +87,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   }, [centroGlobal]);
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
-  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(hojeSaoPaulo());
   const [contaId, setContaId] = useState("");
   const [formaId, setFormaId] = useState("");
   const [juros, setJuros] = useState("");
@@ -210,8 +218,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
 
   const rows = useMemo(() => {
     let list = titulos.data ?? [];
-    if (status !== "todos")
-      list = list.filter((r) => (r["status_efetivo"] ?? r["status"]) === status);
+    if (status !== "todos") list = list.filter((r) => tituloNoStatus(r, status));
     if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
     if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
     if (filtros["forma"]) list = list.filter((r) => r["forma_pagamento_id"] === filtros["forma"]);
@@ -231,7 +238,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         return !!b && String(b["status"]) === f["boleto"];
       });
     }
-    const hoje = new Date().toISOString().slice(0, 10);
+    const hoje = hojeSaoPaulo();
     if (f["parceiro"])
       list = list.filter((r) => String(r[config.partnerKey] ?? "") === f["parceiro"]);
     if (f["de"]) list = list.filter((r) => String(r["vencimento"] ?? "") >= f["de"]!);
@@ -250,14 +257,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           r["status"] !== "pago" &&
           r["status"] !== "cancelado",
       );
-    if (f["min"])
-      list = list.filter(
-        (r) => Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0) >= Number(f["min"]),
-      );
-    if (f["max"])
-      list = list.filter(
-        (r) => Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0) <= Number(f["max"]),
-      );
+    if (f["min"]) list = list.filter((r) => saldoTitulo(r) >= Number(f["min"]));
+    if (f["max"]) list = list.filter((r) => saldoTitulo(r) <= Number(f["max"]));
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
       list = list.filter((r) => {
@@ -284,33 +285,16 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     boletos.isLoading,
   ]);
 
-  const totalFiltrado = rows.reduce(
-    (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
-    0,
-  );
+  const totalFiltrado = rows.reduce((s, r) => s + saldoTitulo(r), 0);
 
-  const totals = useMemo(() => {
-    const abertos = (titulos.data ?? []).filter(
-      (r) => r["status"] !== "pago" && r["status"] !== "cancelado",
-    );
-    const hoje = new Date().toISOString().slice(0, 10);
-    return {
-      aberto: abertos.reduce(
-        (s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0),
-        0,
-      ),
-      vencido: abertos
-        .filter((r) => String(r["vencimento"]) < hoje)
-        .reduce((s, r) => s + Number(r["valor"] ?? 0) - Number(r["valor_pago"] ?? 0), 0),
-      pago: (titulos.data ?? []).reduce((s, r) => s + Number(r["valor_pago"] ?? 0), 0),
-      hoje: abertos
-        .filter((r) => String(r["vencimento"]) === hoje)
-        .reduce((s, r) => s + Number(r["saldo"] ?? 0), 0),
-      futuros: abertos
-        .filter((r) => String(r["vencimento"]) > hoje)
-        .reduce((s, r) => s + Number(r["saldo"] ?? 0), 0),
-    };
-  }, [titulos.data]);
+  const totals = useMemo(
+    () => totaisTitulos(titulos.data ?? [], filtros["centro"] ?? "", hojeSaoPaulo()),
+    [titulos.data, filtros],
+  );
+  const idsVisiveis = useMemo(() => selecaoVisivel(selecionados, rows), [selecionados, rows]);
+  useEffect(() => {
+    if (idsVisiveis.length !== selecionados.length) setSelecionados(idsVisiveis);
+  }, [idsVisiveis, selecionados.length]);
 
   const baixar = useMutation({
     mutationFn: async () => {
@@ -340,10 +324,10 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
 
   const baixarLote = useMutation({
     mutationFn: async () => {
-      if (selecionados.length === 0) throw new Error("Selecione os títulos");
+      if (idsVisiveis.length === 0) throw new Error("Selecione os títulos");
       const { error } = await client!.rpc("baixar_titulos_lote", {
         _tabela: config.table,
-        _ids: selecionados,
+        _ids: idsVisiveis,
         _data: data,
         _conta_id: contaId || null,
         _forma_id: formaId || null,
@@ -351,7 +335,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success(`${selecionados.length} título(s) baixado(s)`);
+      toast.success(`${idsVisiveis.length} título(s) baixado(s)`);
       setSelecionados([]);
       queryClient.invalidateQueries();
     },
@@ -384,7 +368,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     onSuccess: () => {
       toast.success("Título lançado");
       setOpenNovo(false);
-      setNovo({ ...novoTituloVazio });
+      setNovo({ ...novoTituloVazio, vencimento: hoje() });
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -404,14 +388,14 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
       </div>
 
       <FilterBar
-        onClear={() => setFiltros({})}
+        onClear={() => setFiltros({ centro: centroGlobal })}
         extra={
           <div className="flex gap-2">
             <Button
               size="sm"
               disabled={!canFinance}
               onClick={() => {
-                setNovo((s) => ({ ...s, centro: s.centro || centroGlobal }));
+                setNovo((s) => ({ ...s, vencimento: hoje(), centro: centroGlobal }));
                 setOpenNovo(true);
               }}
             >
@@ -422,11 +406,11 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             </Button>
             <Button
               size="sm"
-              disabled={!canFinance || selecionados.length === 0 || baixarLote.isPending}
+              disabled={!canFinance || idsVisiveis.length === 0 || baixarLote.isPending}
               onClick={() => baixarLote.mutate()}
             >
               {baixarLote.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Baixar {selecionados.length} selecionado(s)
+              Baixar {idsVisiveis.length} selecionado(s)
             </Button>
           </div>
         }
@@ -564,7 +548,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
           <div className="p-6 text-sm text-destructive">
             {(titulos.error as Error).message}
             <p className="mt-2 text-xs text-muted-foreground">
-              Rode <code>db/fase2_vendas_estoque_financeiro.sql</code> no SQL Editor do Supabase.
+              Tente atualizar a página. Se o problema continuar, solicite a conferência das
+              permissões e da versão do banco ao administrador.
             </p>
           </div>
         ) : rows.length === 0 ? (

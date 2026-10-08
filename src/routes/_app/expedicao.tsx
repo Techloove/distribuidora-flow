@@ -2,7 +2,7 @@ import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
@@ -144,12 +144,15 @@ function ExpedicaoPage() {
     },
   });
 
-  const pedidoLabel = (id: unknown) => {
-    const p = pedidos.data?.find((x) => x["id"] === id);
-    if (!p) return "—";
-    const cli = clientes.data?.find((c) => c["id"] === p["cliente_id"]);
-    return `#${String(p["numero"])} · ${String(cli?.["razao_social"] ?? "—")}`;
-  };
+  const pedidoLabel = useCallback(
+    (id: unknown) => {
+      const p = pedidos.data?.find((x) => x["id"] === id);
+      if (!p) return "—";
+      const cli = clientes.data?.find((c) => c["id"] === p["cliente_id"]);
+      return `#${String(p["numero"])} · ${String(cli?.["razao_social"] ?? "—")}`;
+    },
+    [pedidos.data, clientes.data],
+  );
 
   const rows = useMemo(() => {
     let list = filtrarCentro(expedicoes.data ?? [], centro);
@@ -163,7 +166,7 @@ function ExpedicaoPage() {
       list = list.filter((r) => pedidoLabel(r["pedido_id"]).toLowerCase().includes(termo));
     }
     return list;
-  }, [expedicoes.data, status, centro, filtros, pedidos.data, clientes.data]);
+  }, [expedicoes.data, status, centro, filtros, pedidoLabel]);
 
   const totals = useMemo(() => {
     const list = expedicoes.data ?? [];

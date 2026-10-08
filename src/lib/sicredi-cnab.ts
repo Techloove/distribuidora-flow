@@ -110,7 +110,7 @@ export function ascii(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
-    .replace(/[^A-Z0-9 !*\-()\[\]{},.;:/%+=]/g, " ");
+    .replace(/[^A-Z0-9 !*\-()[\]{},.;:/%+=]/g, " ");
 }
 export function cents(value: string) {
   if (!/^\d+(\.\d{1,2})?$/.test(value))

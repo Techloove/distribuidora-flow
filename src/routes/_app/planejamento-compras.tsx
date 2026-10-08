@@ -2,7 +2,7 @@ import { ReposicaoInteligente } from "@/components/rotinas-distribuidora";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { ErpLayout } from "@/components/erp-layout";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
@@ -70,7 +70,10 @@ function PlanejamentoPage() {
       return m;
     },
   });
-  const prod = (r: Row, k: string) => String(grupos.data?.get(String(r["produto_id"]))?.[k] ?? "");
+  const prod = useCallback(
+    (r: Row, k: string) => String(grupos.data?.get(String(r["produto_id"]))?.[k] ?? ""),
+    [grupos.data],
+  );
 
   const opcoes = useMemo(() => {
     const list = (lista.data ?? []).map(
@@ -86,7 +89,7 @@ function PlanejamentoPage() {
       grupos: uniq("grupo"),
       marcas: uniq("marca"),
     };
-  }, [lista.data, grupos.data]);
+  }, [lista.data, prod]);
 
   const rows = useMemo(() => {
     let list = lista.data ?? [];
@@ -107,7 +110,7 @@ function PlanejamentoPage() {
       list = list.filter((r) => Number(r["estoque_atual"] ?? 0) < Number(r["estoque_minimo"] ?? 0));
     }
     return list;
-  }, [lista.data, centro, filtros, grupos.data]);
+  }, [lista.data, filtros, prod]);
 
   return (
     <ErpLayout

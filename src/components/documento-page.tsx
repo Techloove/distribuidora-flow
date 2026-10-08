@@ -1,6 +1,6 @@
 import { MargemPedido } from "@/components/rotinas-distribuidora";
 import { ResumoPedido } from "@/components/resumo-pedido";
-import { conferirPedido, type PedidoConferencia } from "@/lib/painel-trabalho";
+import { conferirPedido, hojeSaoPaulo, type PedidoConferencia } from "@/lib/painel-trabalho";
 import { ProgressoDescontoPeso } from "@/components/progresso-desconto-peso";
 import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,7 @@ import { usePodeAlterarPreco } from "@/lib/papeis";
 import { useSupabase } from "@/lib/supabase-provider";
 
 import { brl } from "@/lib/formatacao";
+import { deslocarDataISO } from "@/lib/integridade-consultas";
 export { brl } from "@/lib/formatacao";
 
 type Row = Record<string, unknown>;
@@ -122,7 +123,7 @@ export function DocumentoPage({
   });
 
   const produtos = useQuery({
-    queryKey: ["produtos", "options"],
+    queryKey: ["produtos", "options", "documentos"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -152,7 +153,7 @@ export function DocumentoPage({
   });
 
   const centros = useQuery({
-    queryKey: ["centros", "options"],
+    queryKey: ["centros", "options", "documentos"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -180,7 +181,7 @@ export function DocumentoPage({
   });
 
   const representantes = useQuery({
-    queryKey: ["representantes", "options"],
+    queryKey: ["representantes", "options", "documentos"],
     enabled: !!client && config.table === "pedidos",
     queryFn: async () => {
       const { data, error } = await client!
@@ -234,12 +235,8 @@ export function DocumentoPage({
     },
   });
 
-  /** Data de hoje (fuso local) usada como filtro inicial dos pedidos. */
-  const hoje = useMemo(() => {
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 10);
-  }, []);
+  /** Dia comercial de São Paulo, independentemente do fuso do navegador. */
+  const hoje = hojeSaoPaulo();
 
   /** Filtros da listagem de documentos: pedidos abrem já no dia atual. */
   const [filtros, setFiltros] = useState<Record<string, string>>(() =>
@@ -249,11 +246,7 @@ export function DocumentoPage({
 
   /** Presets rápidos de período. */
   const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
-  const diasAtras = (n: number) => {
-    const d = new Date(`${hoje}T00:00:00`);
-    d.setDate(d.getDate() - n);
-    return d.toISOString().slice(0, 10);
-  };
+  const diasAtras = (n: number) => deslocarDataISO(hoje, -n);
 
   /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
   const soMeusPedidos =
@@ -388,7 +381,7 @@ export function DocumentoPage({
     mutationFn: async () => {
       const payload: Record<string, unknown> = {
         [config.partnerKey]: header["partner"] || null,
-        [config.dateField]: header["data"] || new Date().toISOString().slice(0, 10),
+        [config.dateField]: header["data"] || hojeSaoPaulo(),
         centro_id: header["centro"] || centro || null,
         observacoes: header["observacoes"] || null,
       };
@@ -591,16 +584,15 @@ export function DocumentoPage({
     const qtd = Math.max(1, Number(formaSelecionada["parcelas_padrao"] ?? 1));
     const dias1 = Number(formaSelecionada["dias_primeira_parcela"] ?? 0);
     const intervalo = Number(formaSelecionada["intervalo_dias"] ?? 0);
-    const base = new Date(String(doc[config.dateField] ?? new Date().toISOString().slice(0, 10)));
+    const base = String(doc[config.dateField] ?? hojeSaoPaulo()).slice(0, 10);
     const valor = Math.round((total / qtd) * 100) / 100;
     let saldo = total;
     const list: { parcela: number; valor: number; vencimento: string }[] = [];
     for (let n = 1; n <= qtd; n++) {
       const v = n === qtd ? Math.round(saldo * 100) / 100 : valor;
       saldo = Math.round((saldo - v) * 100) / 100;
-      const d = new Date(base);
-      d.setDate(d.getDate() + dias1 + (n - 1) * intervalo);
-      list.push({ parcela: n, valor: v, vencimento: d.toLocaleDateString("pt-BR") });
+      const vencimento = deslocarDataISO(base, dias1 + (n - 1) * intervalo);
+      list.push({ parcela: n, valor: v, vencimento: vencimento.split("-").reverse().join("/") });
     }
     return list;
   })();
@@ -982,7 +974,7 @@ export function DocumentoPage({
                 {titulosAbertos.data!.map((t) => {
                   const saldo = Number(t["valor"] ?? 0) - Number(t["valor_pago"] ?? 0);
                   const venc = String(t["vencimento"] ?? "");
-                  const atrasado = venc < new Date().toISOString().slice(0, 10);
+                  const atrasado = venc < hojeSaoPaulo();
                   return (
                     <TableRow key={String(t["id"])}>
                       <TableCell>
@@ -2073,7 +2065,7 @@ export function DocumentoPage({
               <Label>{config.dateLabel}</Label>
               <Input
                 type="date"
-                value={header["data"] ?? new Date().toISOString().slice(0, 10)}
+                value={header["data"] ?? hojeSaoPaulo()}
                 onChange={(e) => setHeader((h) => ({ ...h, data: e.target.value }))}
               />
             </div>

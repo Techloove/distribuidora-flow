@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, Loader2, Printer, RefreshCw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -95,8 +95,10 @@ export function BoletosPage() {
     },
   });
 
-  const cliName = (id: unknown) =>
-    String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—");
+  const cliName = useCallback(
+    (id: unknown) => String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—"),
+    [clientes.data],
+  );
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["vw_boletos_pendentes"] });
@@ -129,7 +131,7 @@ export function BoletosPage() {
       );
     }
     return list;
-  }, [boletos.data, centro, filtros, clientes.data]);
+  }, [boletos.data, centro, filtros, cliName]);
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {

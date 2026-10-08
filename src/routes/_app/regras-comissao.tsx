@@ -30,7 +30,7 @@ function RegrasComissaoPage() {
   const { client } = useSupabase();
 
   const representantes = useQuery({
-    queryKey: ["representantes", "options"],
+    queryKey: ["pessoas", "representantes", "options"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
@@ -17,7 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
+import { saldosPorProduto } from "@/lib/integridade-consultas";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/estoque")({
@@ -42,7 +43,7 @@ type Row = Record<string, unknown>;
 
 function EstoquePage() {
   const { client, roles } = useSupabase();
-  const { centro } = useCentro();
+  const { centro, isLoading: centrosCarregando, error: centrosErro } = useCentroValido();
   const queryClient = useQueryClient();
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
@@ -75,12 +76,13 @@ function EstoquePage() {
 
   const saldos = useQuery({
     queryKey: ["estoque_saldos", centro],
-    enabled: !!client && !!centro,
+    enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
-      const { data, error } = await client!
+      let q = client!
         .from("estoque_saldos")
-        .select("produto_id, centro_id, quantidade, custo_medio")
-        .eq("centro_id", centro!);
+        .select("produto_id, centro_id, quantidade, custo_medio");
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -128,15 +130,16 @@ function EstoquePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const saldoProduto = (id: unknown) =>
-    Number(
-      saldos.data?.find((s) => s["produto_id"] === id)?.["quantidade"] ??
-        produtos.data?.find((p) => p["id"] === id)?.["estoque_atual"] ??
-        0,
-    );
+  const mapaSaldos = useMemo(
+    () => saldosPorProduto(saldos.data ?? [], centro),
+    [saldos.data, centro],
+  );
+  const saldoProduto = useCallback((id: unknown) => mapaSaldos.get(String(id)) ?? 0, [mapaSaldos]);
 
-  const produtoName = (id: unknown) =>
-    String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
+  const produtoName = useCallback(
+    (id: unknown) => String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—"),
+    [produtos.data],
+  );
 
   const produtosFiltrados = useMemo(() => {
     let list = produtos.data ?? [];
@@ -145,28 +148,33 @@ function EstoquePage() {
     if (termo) {
       list = list.filter(
         (p) =>
-          String(p["descricao"] ?? "").toLowerCase().includes(termo) ||
-          String(p["codigo"] ?? "").toLowerCase().includes(termo),
+          String(p["descricao"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(p["codigo"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     if (f["somenteAbaixo"] === "1") {
       list = list.filter((p) => saldoProduto(p["id"]) <= Number(p["estoque_minimo"] ?? 0));
     }
     return list;
-  }, [produtos.data, saldos.data, centro, filtros]);
+  }, [produtos.data, filtros, saldoProduto]);
 
   const movimentosFiltrados = useMemo(() => {
     let list = movimentos.data ?? [];
     const f = filtros;
     if (f["tipo"]) list = list.filter((m) => String(m["tipo"]) === f["tipo"]);
     if (f["de"]) list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) >= f["de"]!);
-    if (f["ate"]) list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) <= f["ate"]!);
+    if (f["ate"])
+      list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) <= f["ate"]!);
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
       list = list.filter((m) => produtoName(m["produto_id"]).toLowerCase().includes(termo));
     }
     return list;
-  }, [movimentos.data, produtos.data, centro, filtros]);
+  }, [movimentos.data, filtros, produtoName]);
 
   return (
     <ErpLayout
@@ -263,7 +271,10 @@ function EstoquePage() {
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={() => lancar.mutate()} disabled={!canStock || !centro || lancar.isPending}>
+            <Button
+              onClick={() => lancar.mutate()}
+              disabled={!canStock || !centro || lancar.isPending}
+            >
               {lancar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Lançar
             </Button>
@@ -284,10 +295,12 @@ function EstoquePage() {
         <div className="print-area">
           <h2 className="mb-2 text-sm font-semibold text-foreground">Saldos por produto</h2>
           <div className="rounded-lg border border-border bg-card">
-            {produtos.isLoading ? (
+            {produtos.isLoading || saldos.isLoading || centrosCarregando ? (
               <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
-            ) : produtos.isError ? (
-              <p className="p-6 text-sm text-destructive">{(produtos.error as Error).message}</p>
+            ) : produtos.isError || saldos.isError || centrosErro ? (
+              <p role="alert" className="p-6 text-sm text-destructive">
+                {(produtos.error ?? saldos.error ?? centrosErro)?.message}
+              </p>
             ) : (
               <Table>
                 <TableHeader>
@@ -330,8 +343,8 @@ function EstoquePage() {
               <div className="p-6 text-sm text-destructive">
                 {(movimentos.error as Error).message}
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Rode <code>db/fase2_vendas_estoque_financeiro.sql</code> no SQL Editor do
-                  Supabase.
+                  Tente atualizar a página. Se o problema continuar, solicite a conferência do
+                  acesso e da versão do banco ao administrador.
                 </p>
               </div>
             ) : movimentosFiltrados.length === 0 ? (

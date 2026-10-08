@@ -66,7 +66,7 @@ function NotificacoesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const all = notificacoes.data ?? [];
+  const all = useMemo(() => notificacoes.data ?? [], [notificacoes.data]);
   const unread = all.filter((r) => !r["lida"]);
 
   const rows = useMemo(() => {
