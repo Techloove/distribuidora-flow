@@ -169,12 +169,14 @@ export function useAcesso(): Acesso {
     permitidos,
     carregando,
     erro: q.error?.message,
-    pode: (path: string) => permitidos.has(path === "/pendencias" ? "/dashboard" : path),
+    pode: (path: string) => permitidos.has(ALIASES[path] ?? path),
   };
 }
 
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
+  "/agenda-comercial": "/lead-rota",
+  "/cobranca": "/receber",
   "/pendencias": "/dashboard",
   "/faturamento": "/boletos",
   "/clientes": "/pessoas",

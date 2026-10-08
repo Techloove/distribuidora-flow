@@ -1,3 +1,4 @@
+import { ReposicaoInteligente } from "@/components/rotinas-distribuidora";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -72,7 +73,9 @@ function PlanejamentoPage() {
   const prod = (r: Row, k: string) => String(grupos.data?.get(String(r["produto_id"]))?.[k] ?? "");
 
   const opcoes = useMemo(() => {
-    const list = (lista.data ?? []).map((r) => ({ ...r, grupo: prod(r, "grupo"), marca: prod(r, "marca") }) as Row);
+    const list = (lista.data ?? []).map(
+      (r) => ({ ...r, grupo: prod(r, "grupo"), marca: prod(r, "marca") }) as Row,
+    );
     const uniq = (key: string) =>
       [...new Set(list.map((r) => String(r[key] ?? "")).filter(Boolean))]
         .sort()
@@ -90,9 +93,7 @@ function PlanejamentoPage() {
 
     const term = (filtros["busca"] ?? "").trim().toLowerCase();
     if (term) {
-      list = list.filter((r) =>
-        `${r["codigo"]} ${r["descricao"]}`.toLowerCase().includes(term),
-      );
+      list = list.filter((r) => `${r["codigo"]} ${r["descricao"]}`.toLowerCase().includes(term));
     }
     if (filtros["fornecedor"]) {
       list = list.filter((r) => String(r["fornecedor"] ?? "") === filtros["fornecedor"]);
@@ -103,9 +104,7 @@ function PlanejamentoPage() {
       list = list.filter((r) => String(r["centro"] ?? "") === filtros["centro"]);
     }
     if (filtros["somenteAbaixo"] === "1") {
-      list = list.filter(
-        (r) => Number(r["estoque_atual"] ?? 0) < Number(r["estoque_minimo"] ?? 0),
-      );
+      list = list.filter((r) => Number(r["estoque_atual"] ?? 0) < Number(r["estoque_minimo"] ?? 0));
     }
     return list;
   }, [lista.data, centro, filtros, grupos.data]);
@@ -121,6 +120,7 @@ function PlanejamentoPage() {
       }
     >
       <div className="space-y-4">
+        <ReposicaoInteligente />
         <FilterBar onClear={() => setFiltros({})}>
           <FilterText
             label="Buscar produto"
@@ -190,7 +190,7 @@ function PlanejamentoPage() {
               </TableHeader>
               <TableBody>
                 {rows.map((r) => (
-                  <TableRow key={String(r["produto_id"])}>
+                  <TableRow key={`${r["centro_id"]}-${r["produto_id"]}`}>
                     <TableCell className="max-w-[16rem] truncate">
                       {String(r["codigo"])} · {String(r["descricao"])}
                     </TableCell>

@@ -1,3 +1,4 @@
+import { CapacidadeCarga } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -117,7 +118,10 @@ function CargasPage() {
     queryKey: ["vw_pedidos_para_carga"],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!.from("vw_pedidos_para_carga").select("*").order("numero");
+      const { data, error } = await client!
+        .from("vw_pedidos_para_carga")
+        .select("*")
+        .order("numero");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -136,7 +140,9 @@ function CargasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const lista = (cargas.data ?? []).filter((c) => !centro || !c["centro_id"] || c["centro_id"] === centro);
+  const lista = (cargas.data ?? []).filter(
+    (c) => !centro || !c["centro_id"] || c["centro_id"] === centro,
+  );
   const cargaAtual = lista.find((c) => c["id"] === aberta) ?? null;
   const candidatos = (disponiveis.data ?? []).filter(
     (p) =>
@@ -244,9 +250,11 @@ function CargasPage() {
 
         {cargaAtual ? (
           <div className="grid gap-4 lg:grid-cols-2">
+            <CapacidadeCarga key={String(cargaAtual["id"])} carga={cargaAtual} />
             <section className="space-y-2 rounded-lg border border-border bg-card p-4">
               <h2 className="text-sm font-semibold">
-                Pedidos da carga #{String(cargaAtual["numero"])} · {String(cargaAtual["rota"] ?? "—")}
+                Pedidos da carga #{String(cargaAtual["numero"])} ·{" "}
+                {String(cargaAtual["rota"] ?? "—")}
               </h2>
               {(itensCarga.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum pedido nesta carga.</p>

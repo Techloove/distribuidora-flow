@@ -1,3 +1,4 @@
+import { ConciliacaoExtrato } from "@/components/conciliacao-extrato";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, Undo2 } from "lucide-react";
@@ -76,7 +77,11 @@ function MovimentacoesPage() {
     queryKey: ["vw_extrato_conta", "todos", centro],
     enabled: !!client,
     queryFn: async () => {
-      let q = client!.from("vw_extrato_conta").select("*").order("data", { ascending: false }).limit(500);
+      let q = client!
+        .from("vw_extrato_conta")
+        .select("*")
+        .order("data", { ascending: false })
+        .limit(500);
       if (centro) q = q.eq("centro_id", centro);
       const { data, error } = await q;
       if (error) throw new Error(error.message);
@@ -138,7 +143,10 @@ function MovimentacoesPage() {
 
   const estornar = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client!.rpc("estornar_movimento_financeiro", { _movimento_id: id, _motivo: "Estorno manual" });
+      const { error } = await client!.rpc("estornar_movimento_financeiro", {
+        _movimento_id: id,
+        _motivo: "Estorno manual",
+      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -180,6 +188,7 @@ function MovimentacoesPage() {
       description="Toda movimentação tem origem (recebimento, pagamento, transferência ou ajuste) e pode ser estornada, nunca apagada."
     >
       <div className="space-y-4">
+        <ConciliacaoExtrato />
         <div className="grid gap-4 sm:grid-cols-3">
           <article className="rounded-lg border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">Entradas no filtro</p>
@@ -329,9 +338,7 @@ function MovimentacoesPage() {
                         size="sm"
                         variant="outline"
                         disabled={
-                          m["status"] !== "ativo" ||
-                          !perm.pode("bancos_ver") ||
-                          estornar.isPending
+                          m["status"] !== "ativo" || !perm.pode("bancos_ver") || estornar.isPending
                         }
                         onClick={() => estornar.mutate(String(m["id"]))}
                       >

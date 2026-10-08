@@ -1,3 +1,4 @@
+import { MargemPedido } from "@/components/rotinas-distribuidora";
 import { ResumoPedido } from "@/components/resumo-pedido";
 import { conferirPedido, type PedidoConferencia } from "@/lib/painel-trabalho";
 import { ProgressoDescontoPeso } from "@/components/progresso-desconto-peso";
@@ -451,6 +452,10 @@ export function DocumentoPage({
       setHeader({});
       setSelected(String(data["id"]));
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -487,6 +492,10 @@ export function DocumentoPage({
       queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
       queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -509,6 +518,10 @@ export function DocumentoPage({
       queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
       queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -554,6 +567,10 @@ export function DocumentoPage({
       toast.success("Forma de pagamento salva");
       setPagamento({});
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -632,6 +649,10 @@ export function DocumentoPage({
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -661,6 +682,10 @@ export function DocumentoPage({
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -681,6 +706,10 @@ export function DocumentoPage({
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
       queryClient.invalidateQueries({ queryKey: [config.table] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+        queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1380,6 +1409,7 @@ export function DocumentoPage({
                 carregando={itens.isPending || itens.isFetching || edicaoPendente}
               />
             )}
+            {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
             <div className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>

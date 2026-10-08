@@ -76,6 +76,38 @@ export function usePendencias() {
       statuses: [],
       high: true,
     },
+    {
+      id: "agenda",
+      label: "Contatos comerciais atrasados",
+      table: "acompanhamentos" as const,
+      module: "/agenda-comercial",
+      statuses: ["aberto"],
+      high: false,
+    },
+    {
+      id: "cobranca",
+      label: "Ações de cobrança atrasadas",
+      table: "acompanhamentos" as const,
+      module: "/cobranca",
+      statuses: ["aberto"],
+      high: true,
+    },
+    {
+      id: "comissao",
+      label: "Ajustes de comissão a conferir",
+      table: "comissao_ajustes" as const,
+      module: "/comissoes",
+      statuses: ["pendente"],
+      high: true,
+    },
+    {
+      id: "extrato",
+      label: "Extrato sem conciliação",
+      table: "extrato_bancario_linhas" as const,
+      module: "/movimentacoes",
+      statuses: [],
+      high: false,
+    },
   ].filter((k) => acesso.pode(k.module));
   return useQuery({
     queryKey: [
@@ -92,7 +124,16 @@ export function usePendencias() {
       const results = await Promise.all(
         kinds.map(async (k) => {
           let q = client!.from(k.table).select("*", { count: "exact" }).limit(40);
-          if (centro && k.id !== "cadastro") q = q.eq("centro_id", centro);
+          if (centro && !["cadastro", "extrato", "agenda", "cobranca"].includes(k.id))
+            q = q.eq("centro_id", centro);
+          if (["agenda", "cobranca"].includes(k.id)) {
+            q = q
+              .eq("tipo", k.id === "agenda" ? "comercial" : "cobranca")
+              .lt("proxima_acao", today)
+              .order("proxima_acao");
+            if (centro) q = q.or(`centro_id.eq.${centro},centro_id.is.null`);
+          }
+          if (k.id === "extrato") q = q.is("movimento_id", null).order("data");
           if (k.statuses.length) q = q.in(k.id === "vencimento" ? "estado" : "status", k.statuses);
           if (k.id === "vencido") q = q.lt("vencimento", today).order("vencimento");
           if (k.id === "cadastro") {
@@ -119,22 +160,32 @@ export function usePendencias() {
             categoria: k.label,
             prioridade: k.high ? ("alta" as const) : ("normal" as const),
             to: k.module,
-            titulo:
-              k.id === "cadastro"
-                ? String(r["razao_social"] ?? "Cliente")
-                : k.module === "/pedidos" || k.id === "divergencia"
-                  ? `Pedido #${String(r["numero"] ?? "—")}`
-                  : String(r["documento"] ?? r["nosso_numero"] ?? "Parcela / boleto"),
-            detalhe:
-              k.id === "cadastro"
-                ? "Confira documento, cidade e UF."
-                : k.id === "vencimento"
-                  ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
-                  : String(
-                      r["erro"] ??
-                        r["divergencia_obs"] ??
-                        (k.id === "vencido" ? `Vencimento ${r["vencimento"]}` : k.label),
-                    ),
+            titulo: ["agenda", "cobranca"].includes(k.id)
+              ? String(r["resultado"] ?? "Contato pendente")
+              : k.id === "extrato"
+                ? `Extrato · ${r["referencia"]}`
+                : k.id === "comissao"
+                  ? "Ajuste de comissão paga"
+                  : k.id === "cadastro"
+                    ? String(r["razao_social"] ?? "Cliente")
+                    : k.module === "/pedidos" || k.id === "divergencia"
+                      ? `Pedido #${String(r["numero"] ?? "—")}`
+                      : String(r["documento"] ?? r["nosso_numero"] ?? "Parcela / boleto"),
+            detalhe: ["agenda", "cobranca"].includes(k.id)
+              ? `Próxima ação ${r["proxima_acao"]} · ${r["observacao"] ?? "Confira a agenda"}`
+              : k.id === "extrato"
+                ? String(r["descricao"] ?? "Vincule ao movimento correspondente.")
+                : k.id === "comissao"
+                  ? `Valor a conferir: R$ ${Number(r["valor"]).toFixed(2)}`
+                  : k.id === "cadastro"
+                    ? "Confira documento, cidade e UF."
+                    : k.id === "vencimento"
+                      ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
+                      : String(
+                          r["erro"] ??
+                            r["divergencia_obs"] ??
+                            (k.id === "vencido" ? `Vencimento ${r["vencimento"]}` : k.label),
+                        ),
             ...(k.module === "/pedidos" ? { pedido: String(r["id"]) } : {}),
             centro: String(r["centro_id"] ?? ""),
           }));

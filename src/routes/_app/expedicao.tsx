@@ -1,3 +1,4 @@
+import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -18,7 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { filtrarCentro, useCentro } from "@/lib/centro-store";
+import { filtrarCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/expedicao")({
@@ -66,7 +68,7 @@ const statusTone = (s: string) => {
 
 function ExpedicaoPage() {
   const { client, roles } = useSupabase();
-  const { centro } = useCentro();
+  const { centro, isLoading: centrosCarregando, error: centrosErro } = useCentroValido();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statuses)[number]>("todos");
   const [editing, setEditing] = useState<Row | null>(null);
@@ -83,13 +85,11 @@ function ExpedicaoPage() {
 
   const expedicoes = useQuery({
     queryKey: ["expedicoes", centro],
-    enabled: !!client && !!centro,
+    enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("expedicoes")
-        .select("*")
-        .eq("centro_id", centro!)
-        .order("numero", { ascending: false });
+      let q = client!.from("expedicoes").select("*");
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q.order("numero", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -97,9 +97,11 @@ function ExpedicaoPage() {
 
   const pedidos = useQuery({
     queryKey: ["pedidos", "expedicao", centro],
-    enabled: !!client && !!centro,
+    enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
-      const { data, error } = await client!.from("pedidos").select("id, numero, cliente_id, status").eq("centro_id", centro!);
+      let q = client!.from("pedidos").select("id, numero, cliente_id, status");
+      if (centro) q = q.eq("centro_id", centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -154,10 +156,8 @@ function ExpedicaoPage() {
     if (status !== "todos") list = list.filter((r) => r["status"] === status);
     const f = filtros;
     if (f["rota"]) list = list.filter((r) => String(r["rota_id"] ?? "") === f["rota"]);
-    if (f["de"])
-      list = list.filter((r) => String(r["previsao_entrega"] ?? "") >= f["de"]!);
-    if (f["ate"])
-      list = list.filter((r) => String(r["previsao_entrega"] ?? "") <= f["ate"]!);
+    if (f["de"]) list = list.filter((r) => String(r["previsao_entrega"] ?? "") >= f["de"]!);
+    if (f["ate"]) list = list.filter((r) => String(r["previsao_entrega"] ?? "") <= f["ate"]!);
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
       list = list.filter((r) => pedidoLabel(r["pedido_id"]).toLowerCase().includes(termo));
@@ -237,10 +237,13 @@ function ExpedicaoPage() {
       description="Cada pedido confirmado gera um romaneio: separação, despacho e confirmação de entrega."
       actions={
         <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => window.print()}>
-          <Printer className="size-4" /> Imprimir lista
-        </Button>
-        <ImprimirPedidos pedidoIds={rows.map((r) => String(r["pedido_id"]))} label="Imprimir pedidos" />
+          <Button variant="secondary" onClick={() => window.print()}>
+            <Printer className="size-4" /> Imprimir lista
+          </Button>
+          <ImprimirPedidos
+            pedidoIds={rows.map((r) => String(r["pedido_id"]))}
+            label="Imprimir pedidos"
+          />
         </div>
       }
     >
@@ -386,20 +389,23 @@ function ExpedicaoPage() {
                         >
                           Transporte
                         </Button>
-                        {(next[String(r["status"])] ?? []).map((a) => (
-                          <Button
-                            key={a.status}
-                            size="sm"
-                            variant={a.status === "cancelada" ? "outline" : "default"}
-                            disabled={!canShip || avancar.isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              avancar.mutate({ id: r["id"], novo: a.status });
-                            }}
-                          >
-                            {a.label}
-                          </Button>
-                        ))}
+                        {canShip && <RegistroEntrega expedicao={r} />}
+                        {(next[String(r["status"])] ?? [])
+                          .filter((a) => a.status !== "entregue")
+                          .map((a) => (
+                            <Button
+                              key={a.status}
+                              size="sm"
+                              variant={a.status === "cancelada" ? "outline" : "default"}
+                              disabled={!canShip || avancar.isPending}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                avancar.mutate({ id: r["id"], novo: a.status });
+                              }}
+                            >
+                              {a.label}
+                            </Button>
+                          ))}
                       </td>
                     </tr>
                   );
@@ -408,7 +414,6 @@ function ExpedicaoPage() {
             </table>
           )}
         </div>
-
 
         {!canShip ? (
           <p className="text-xs text-muted-foreground">
@@ -525,4 +530,3 @@ function ExpedicaoPage() {
     </ErpLayout>
   );
 }
-

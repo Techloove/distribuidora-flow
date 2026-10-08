@@ -1,3 +1,4 @@
+import { TrocaDevolucao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
@@ -54,7 +55,12 @@ function DevolucoesPage() {
     data_devolucao: new Date().toISOString().slice(0, 10),
     motivo: "",
   });
-  const [item, setItem] = useState({ produto_id: "", quantidade: "1", preco_unitario: "0" });
+  const [item, setItem] = useState({
+    produto_id: "",
+    quantidade: "1",
+    preco_unitario: "0",
+    condicao: "revenda",
+  });
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
@@ -157,9 +163,13 @@ function DevolucoesPage() {
     if (termo) {
       list = list.filter(
         (d) =>
-          String(d["numero"] ?? "").toLowerCase().includes(termo) ||
+          String(d["numero"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
           cliName(d["cliente_id"]).toLowerCase().includes(termo) ||
-          String(d["motivo"] ?? "").toLowerCase().includes(termo),
+          String(d["motivo"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return list;
@@ -207,11 +217,12 @@ function DevolucoesPage() {
         produto_id: item.produto_id,
         quantidade: Number(item.quantidade || 0),
         preco_unitario: Number(item.preco_unitario || 0),
+        condicao: item.condicao,
       });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      setItem({ produto_id: "", quantidade: "1", preco_unitario: "0" });
+      setItem({ produto_id: "", quantidade: "1", preco_unitario: "0", condicao: "revenda" });
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -436,6 +447,7 @@ function DevolucoesPage() {
             </p>
           ) : (
             <>
+              <TrocaDevolucao key={String(doc["id"])} devolucao={doc} />
               <div className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -489,6 +501,20 @@ function DevolucoesPage() {
                         onChange={(e) => setItem((f) => ({ ...f, preco_unitario: e.target.value }))}
                       />
                     </div>
+                    <label className="block text-sm sm:col-span-2">
+                      Condição do produto
+                      <select
+                        className="mt-1 w-full rounded border bg-background p-2"
+                        aria-label="Condição do produto"
+                        value={item.condicao}
+                        onChange={(e) => setItem((i) => ({ ...i, condicao: e.target.value }))}
+                      >
+                        <option value="revenda">Apto para revenda: retorna ao estoque</option>
+                        <option value="avaria">
+                          Avariado: crédito sem retornar ao estoque disponível
+                        </option>
+                      </select>
+                    </label>
                     <div className="sm:col-span-2 flex gap-2">
                       <Button
                         variant="outline"
@@ -545,7 +571,14 @@ function DevolucoesPage() {
                     <TableBody>
                       {itens.data!.map((i) => (
                         <TableRow key={String(i["id"])}>
-                          <TableCell>{nomeProduto(i["produto_id"])}</TableCell>
+                          <TableCell>
+                            {nomeProduto(i["produto_id"])}
+                            <p className="text-xs text-muted-foreground">
+                              {i["condicao"] === "avaria"
+                                ? "Avariado — fora do estoque disponível"
+                                : "Apto para revenda"}
+                            </p>
+                          </TableCell>
                           <TableCell className="text-right">
                             {Number(i["quantidade"] ?? 0)}
                           </TableCell>

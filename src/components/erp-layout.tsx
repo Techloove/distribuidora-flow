@@ -81,6 +81,7 @@ const nav = [
     items: [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
       { to: "/lead-rota", label: "Lead Rota", icon: Compass },
+      { to: "/agenda-comercial", label: "Agenda comercial", icon: CalendarClock },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
     ],
@@ -109,6 +110,7 @@ const nav = [
       { to: "/dre", label: "DRE gerencial", icon: BarChart3 },
       { to: "/relatorios-financeiros", label: "Relatórios financeiros", icon: FileText },
       { to: "/rota-despesas", label: "Custos de rota", icon: Route },
+      { to: "/cobranca", label: "Agenda de cobrança", icon: CalendarClock },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/conciliacao-creditos" as never, label: "Conciliação de créditos", icon: Undo2 },

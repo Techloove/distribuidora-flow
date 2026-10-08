@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppAgendaComercialRouteImport } from './routes/_app/agenda-comercial'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
 import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
@@ -20,6 +21,7 @@ import { Route as AppCategoriasFinanceirasRouteImport } from './routes/_app/cate
 import { Route as AppCentrosRouteImport } from './routes/_app/centros'
 import { Route as AppClientesRouteImport } from './routes/_app/clientes'
 import { Route as AppClientesInativosRouteImport } from './routes/_app/clientes-inativos'
+import { Route as AppCobrancaRouteImport } from './routes/_app/cobranca'
 import { Route as AppComissaoFaixasRouteImport } from './routes/_app/comissao-faixas'
 import { Route as AppComissoesRouteImport } from './routes/_app/comissoes'
 import { Route as AppComprasRouteImport } from './routes/_app/compras'
@@ -76,6 +78,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAgendaComercialRoute = AppAgendaComercialRouteImport.update({
+  id: '/agenda-comercial',
+  path: '/agenda-comercial',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
   id: '/auditoria',
   path: '/auditoria',
@@ -115,6 +122,11 @@ const AppClientesRoute = AppClientesRouteImport.update({
 const AppClientesInativosRoute = AppClientesInativosRouteImport.update({
   id: '/clientes-inativos',
   path: '/clientes-inativos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCobrancaRoute = AppCobrancaRouteImport.update({
+  id: '/cobranca',
+  path: '/cobranca',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppComissaoFaixasRoute = AppComissaoFaixasRouteImport.update({
@@ -327,6 +339,7 @@ const AppUsuariosRoute = AppUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/agenda-comercial': typeof AppAgendaComercialRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
   '/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -335,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
+  '/cobranca': typeof AppCobrancaRoute
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
@@ -380,6 +394,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/agenda-comercial': typeof AppAgendaComercialRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
   '/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -388,6 +403,7 @@ export interface FileRoutesByTo {
   '/centros': typeof AppCentrosRoute
   '/clientes': typeof AppClientesRoute
   '/clientes-inativos': typeof AppClientesInativosRoute
+  '/cobranca': typeof AppCobrancaRoute
   '/comissao-faixas': typeof AppComissaoFaixasRoute
   '/comissoes': typeof AppComissoesRoute
   '/compras': typeof AppComprasRoute
@@ -435,6 +451,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_app/agenda-comercial': typeof AppAgendaComercialRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
   '/_app/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -443,6 +460,7 @@ export interface FileRoutesById {
   '/_app/centros': typeof AppCentrosRoute
   '/_app/clientes': typeof AppClientesRoute
   '/_app/clientes-inativos': typeof AppClientesInativosRoute
+  '/_app/cobranca': typeof AppCobrancaRoute
   '/_app/comissao-faixas': typeof AppComissaoFaixasRoute
   '/_app/comissoes': typeof AppComissoesRoute
   '/_app/compras': typeof AppComprasRoute
@@ -490,6 +508,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/agenda-comercial'
     | '/auditoria'
     | '/boletos'
     | '/cadastros-padrao'
@@ -498,6 +517,7 @@ export interface FileRouteTypes {
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
+    | '/cobranca'
     | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
@@ -543,6 +563,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/agenda-comercial'
     | '/auditoria'
     | '/boletos'
     | '/cadastros-padrao'
@@ -551,6 +572,7 @@ export interface FileRouteTypes {
     | '/centros'
     | '/clientes'
     | '/clientes-inativos'
+    | '/cobranca'
     | '/comissao-faixas'
     | '/comissoes'
     | '/compras'
@@ -597,6 +619,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/_app/agenda-comercial'
     | '/_app/auditoria'
     | '/_app/boletos'
     | '/_app/cadastros-padrao'
@@ -605,6 +628,7 @@ export interface FileRouteTypes {
     | '/_app/centros'
     | '/_app/clientes'
     | '/_app/clientes-inativos'
+    | '/_app/cobranca'
     | '/_app/comissao-faixas'
     | '/_app/comissoes'
     | '/_app/compras'
@@ -677,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/agenda-comercial': {
+      id: '/_app/agenda-comercial'
+      path: '/agenda-comercial'
+      fullPath: '/agenda-comercial'
+      preLoaderRoute: typeof AppAgendaComercialRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/auditoria': {
       id: '/_app/auditoria'
       path: '/auditoria'
@@ -731,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/clientes-inativos'
       fullPath: '/clientes-inativos'
       preLoaderRoute: typeof AppClientesInativosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/cobranca': {
+      id: '/_app/cobranca'
+      path: '/cobranca'
+      fullPath: '/cobranca'
+      preLoaderRoute: typeof AppCobrancaRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/comissao-faixas': {
@@ -1024,6 +1062,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppAgendaComercialRoute: typeof AppAgendaComercialRoute
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
   AppCadastrosPadraoRoute: typeof AppCadastrosPadraoRoute
@@ -1032,6 +1071,7 @@ interface AppRouteRouteChildren {
   AppCentrosRoute: typeof AppCentrosRoute
   AppClientesRoute: typeof AppClientesRoute
   AppClientesInativosRoute: typeof AppClientesInativosRoute
+  AppCobrancaRoute: typeof AppCobrancaRoute
   AppComissaoFaixasRoute: typeof AppComissaoFaixasRoute
   AppComissoesRoute: typeof AppComissoesRoute
   AppComprasRoute: typeof AppComprasRoute
@@ -1076,6 +1116,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAgendaComercialRoute: AppAgendaComercialRoute,
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
   AppCadastrosPadraoRoute: AppCadastrosPadraoRoute,
@@ -1084,6 +1125,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCentrosRoute: AppCentrosRoute,
   AppClientesRoute: AppClientesRoute,
   AppClientesInativosRoute: AppClientesInativosRoute,
+  AppCobrancaRoute: AppCobrancaRoute,
   AppComissaoFaixasRoute: AppComissaoFaixasRoute,
   AppComissoesRoute: AppComissoesRoute,
   AppComprasRoute: AppComprasRoute,

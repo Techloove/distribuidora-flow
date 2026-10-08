@@ -1,3 +1,4 @@
+import { AjustesComissao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -230,9 +231,15 @@ function ComissoesPage() {
     if (termo) {
       lista = lista.filter(
         (r) =>
-          String(r["representante"] ?? "").toLowerCase().includes(termo) ||
-          String(r["cliente"] ?? "").toLowerCase().includes(termo) ||
-          String(r["pedido_numero"] ?? "").toLowerCase().includes(termo),
+          String(r["representante"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["cliente"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["pedido_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return lista;
@@ -289,6 +296,7 @@ function ComissoesPage() {
       }
     >
       <div className="space-y-4">
+        <AjustesComissao />
         <FilterBar
           onClear={() => {
             setFiltros({ de: inicioAno, ate: hoje.toISOString().slice(0, 10) });

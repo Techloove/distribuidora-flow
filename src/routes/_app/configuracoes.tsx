@@ -319,6 +319,18 @@ function ConfiguracoesPage() {
 
   const salvarParametros = useMutation({
     mutationFn: async () => {
+      if (
+        params["comissao_fato_gerador"] &&
+        !["venda", "recebimento"].includes(params["comissao_fato_gerador"])
+      )
+        throw new Error("Fato gerador da comissão inválido");
+      if (
+        params["margem_liquida_minima"] !== undefined &&
+        (!Number.isFinite(Number(params["margem_liquida_minima"])) ||
+          Number(params["margem_liquida_minima"]) < 0 ||
+          Number(params["margem_liquida_minima"]) > 100)
+      )
+        throw new Error("Margem mínima deve estar entre 0 e 100");
       const rows = Object.entries(params).map(([chave, valor]) => ({ chave, valor }));
       if (!rows.length) return;
       const { error } = await client!.from("parametros").upsert(rows, { onConflict: "chave" });
@@ -400,7 +412,18 @@ function ConfiguracoesPage() {
                 return (
                   <div key={chave}>
                     <Label>{String(p["descricao"] ?? chave)}</Label>
-                    {isBool ? (
+                    {chave === "comissao_fato_gerador" ? (
+                      <select
+                        aria-label="Fato gerador da comissão"
+                        className="h-9 w-full rounded border bg-background px-3 text-sm"
+                        value={params[chave] ?? "venda"}
+                        disabled={!canManage}
+                        onChange={(e) => setParams((f) => ({ ...f, [chave]: e.target.value }))}
+                      >
+                        <option value="venda">Venda</option>
+                        <option value="recebimento">Recebimento integral do pedido</option>
+                      </select>
+                    ) : isBool ? (
                       <select
                         className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                         value={params[chave] ?? "true"}
@@ -412,6 +435,10 @@ function ConfiguracoesPage() {
                       </select>
                     ) : (
                       <Input
+                        type={chave === "margem_liquida_minima" ? "number" : "text"}
+                        min={chave === "margem_liquida_minima" ? 0 : undefined}
+                        max={chave === "margem_liquida_minima" ? 100 : undefined}
+                        step={chave === "margem_liquida_minima" ? "0.01" : undefined}
                         value={params[chave] ?? ""}
                         disabled={!canManage}
                         onChange={(e) => setParams((f) => ({ ...f, [chave]: e.target.value }))}
