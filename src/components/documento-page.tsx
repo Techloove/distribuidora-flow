@@ -1,3 +1,4 @@
+import { ProgressoDescontoPeso } from "@/components/progresso-desconto-peso";
 import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -223,11 +224,15 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from(config.itemsTable)
-        .select("*")
+        .select(
+          (config.table === "pedidos"
+            ? "*, produto_peso:produtos(peso_kg,categoria)"
+            : "*") as string,
+        )
         .eq(config.parentKey, selected!)
         .order("created_at");
       if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return (data ?? []) as unknown as Row[];
     },
   });
 
@@ -615,6 +620,9 @@ export function DocumentoPage({
     onSuccess: () => {
       setItem({ ...emptyItem });
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
+      }
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -641,6 +649,9 @@ export function DocumentoPage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
+      }
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -658,6 +669,9 @@ export function DocumentoPage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      if (config.table === "pedidos") {
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
+      }
       queryClient.invalidateQueries({ queryKey: [config.table] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1655,6 +1669,24 @@ export function DocumentoPage({
                 </Table>
               )}
             </div>
+
+            {config.table === "pedidos" && (
+              <ProgressoDescontoPeso
+                carregando={itens.isPending || itens.isFetching}
+                erro={itens.isError || (itens.data ?? []).some((it) => !it["produto_peso"])}
+                itens={(itens.data ?? []).map((it) => {
+                  const produto = it["produto_peso"] as {
+                    peso_kg: number | null;
+                    categoria: string | null;
+                  } | null;
+                  return {
+                    quantidade: Number(it["quantidade"] ?? 0),
+                    peso_kg: Number(produto?.peso_kg ?? 0),
+                    categoria: produto?.categoria ?? null,
+                  };
+                })}
+              />
+            )}
 
             {config.table === "pedidos" && descontoPeso.data ? (
               <div className="rounded-lg border border-border bg-card p-4">
