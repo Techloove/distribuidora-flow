@@ -426,6 +426,98 @@ const root = path.resolve(__dirname, "..");
     db.query("select concluir_acompanhamento($1)", [agenda]),
     /permission denied/,
   );
+  await db.exec(`reset role;
+    create type app_role as enum ('admin','gestor','financeiro','comercial','representante','estoque','expedicao');
+    alter table role_menus alter column role type app_role using role::app_role;
+    alter table role_menus add primary key(role,path);
+    create table papeis(codigo text primary key);
+    insert into papeis select unnest(enum_range(null::app_role))::text;
+    create table permissoes(codigo text primary key,nome text,grupo text,ordem int);
+    create table role_permissoes(role text,permissao text references permissoes,primary key(role,permissao));
+    insert into permissoes values('financeiro_ver','Financeiro','Financeiro',1);
+    insert into role_permissoes values('financeiro','financeiro_ver');
+    insert into role_menus values('representante','/lead-rota'),('representante','/pedidos'),('representante','/dashboard'),('financeiro','/receber'),('financeiro','/movimentacoes');
+    grant select on papeis,permissoes,role_permissoes to authenticated;
+    delete from user_roles where user_id='${uuid(2)}' and role='gestor';
+  `);
+  const acessoSql = fs.readFileSync(path.join(root, "db/fase211_acessos_rotinas.sql"), "utf8");
+  await db.exec(acessoSql);
+  await db.exec(acessoSql);
+  await login(2);
+  assert.equal((await db.query("select pode_rotina('comercial_acompanhar') ok")).rows[0].ok, true);
+  assert.equal((await db.query("select pode_rotina('extrato_ver') ok")).rows[0].ok, false);
+  await assert.rejects(
+    db.query("select admin_salvar_acesso('representante',array['/pedidos'],array[]::text[])"),
+    /Somente administrador/,
+  );
+  await login(1);
+  await assert.rejects(
+    db.query("select admin_salvar_acesso('representante',array['/desconhecido'],array[]::text[])"),
+    /Menu desconhecido/,
+  );
+  await db.query(
+    "select admin_salvar_acesso('representante',array['/lead-rota','/pedidos'],array['margem_pedido_ver','comercial_acompanhar'])",
+  );
+  await login(2);
+  assert.equal((await db.query("select pode_rotina('comercial_acompanhar') ok")).rows[0].ok, false);
+  await assert.rejects(
+    db.query("select registrar_acompanhamento($1,$2,'comercial',current_date,'Teste bloqueado')", [
+      uuid(30),
+      uuid(10),
+    ]),
+    /Ação não liberada/,
+  );
+  assert.equal((await db.query("select * from vw_carteira_comercial_209")).rows.length, 0);
+  await login(1);
+  await db.query(
+    "select admin_salvar_acesso('financeiro',array['/movimentacoes','/cobranca'],array['financeiro_ver','extrato_ver'])",
+  );
+  await login(4);
+  assert.equal((await db.query("select pode_rotina('extrato_ver') ok")).rows[0].ok, true);
+  await assert.rejects(
+    db.query("select importar_extrato_bancario($1,$2::jsonb)", [uuid(80), "[]"]),
+    /Ação não liberada/,
+  );
+  await assert.rejects(
+    db.query("delete from role_permissoes where role='financeiro'"),
+    /permission denied/,
+  );
+  await login(5);
+  await assert.rejects(
+    db.query("select definir_permissao('financeiro','extrato_importar',true)"),
+    /Somente administrador ativo/,
+  );
+  await db.exec("reset role");
+  await db.exec(acessoSql);
+  assert.equal(
+    (
+      await db.query(
+        "select * from role_permissoes where role='financeiro' and permissao='extrato_importar'",
+      )
+    ).rows.length,
+    0,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select * from role_menus where role='representante' and path='/agenda-comercial'",
+      )
+    ).rows.length,
+    0,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select * from role_permissoes where role='financeiro' and permissao='financeiro_ver'",
+      )
+    ).rows.length,
+    1,
+  );
+  await login(1);
+  await db.query("select admin_salvar_acesso('financeiro',array[]::text[],array[]::text[])");
+  assert.equal((await db.query("select * from role_menus where role='financeiro'")).rows.length, 0);
+  await db.exec("reset role;set role anon");
+  await assert.rejects(db.query("select pode_rotina('extrato_ver')"), /permission denied/);
   await db.close();
   console.log(
     "Rotinas OK: migração reaplicável, margem/custo capturado, reposição, carteiras, cobrança única, importação idempotente, conciliação, entrega, capacidade, comissões, devolução/avaria/cancelamento e auditoria sem segredos.",

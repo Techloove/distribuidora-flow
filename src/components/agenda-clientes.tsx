@@ -1,3 +1,4 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -12,6 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export function AgendaClientes({ tipo }: { tipo: "comercial" | "cobranca" }) {
+  const permissoes = usePermissoesRotinas();
+  const podeAcompanhar = permissoes.pode(
+    tipo === "comercial" ? "comercial_acompanhar" : "cobranca_acompanhar",
+  );
   const { client, user, canManage } = useSupabase();
   const cv = useCentroValido();
   const hoje = hojeSaoPaulo();
@@ -30,7 +35,7 @@ export function AgendaClientes({ tipo }: { tipo: "comercial" | "cobranca" }) {
   const fonte = tipo === "comercial" ? "vw_carteira_comercial_209" : "vw_cobranca_clientes_209";
   const q = useQuery({
     queryKey: [fonte, user?.id, cv.centro, busca, pagina],
-    enabled: !!client && !cv.isLoading && !cv.error,
+    enabled: !!client && podeAcompanhar && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!.from(fonte).select("*", { count: "exact" });
       if (cv.centro)
@@ -52,7 +57,7 @@ export function AgendaClientes({ tipo }: { tipo: "comercial" | "cobranca" }) {
   });
   const atividades = useQuery({
     queryKey: ["acompanhamentos", user?.id, tipo, cv.centro, cliente?.["cliente_id"], status],
-    enabled: !!client && !cv.isLoading && !cv.error,
+    enabled: !!client && podeAcompanhar && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!
         .from("acompanhamentos")
@@ -68,7 +73,7 @@ export function AgendaClientes({ tipo }: { tipo: "comercial" | "cobranca" }) {
   });
   const parcelas = useQuery({
     queryKey: ["cobranca-parcelas", user?.id, cliente?.["cliente_id"], cv.centro],
-    enabled: !!client && !!cliente && tipo === "cobranca",
+    enabled: !!client && podeAcompanhar && !!cliente && tipo === "cobranca",
     queryFn: async () => {
       let r = client!
         .from("contas_receber")
@@ -81,6 +86,14 @@ export function AgendaClientes({ tipo }: { tipo: "comercial" | "cobranca" }) {
       return { rows: (data ?? []) as Registro[], count };
     },
   });
+  if (!podeAcompanhar)
+    return (
+      <p role="status" className="rounded border p-4 text-sm">
+        {permissoes.carregando
+          ? "Verificando acesso…"
+          : "Seu perfil não tem permissão para acompanhar esta agenda."}
+      </p>
+    );
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="rounded border bg-card p-4 space-y-3">

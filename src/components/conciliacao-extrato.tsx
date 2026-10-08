@@ -1,3 +1,4 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { exportarCsv } from "@/lib/exportar";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { useQuery } from "@tanstack/react-query";
@@ -17,8 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function ConciliacaoExtrato() {
+  const permissoes = usePermissoesRotinas();
   const { client, user, roles } = useSupabase();
   const permitido =
+    permissoes.pode("extrato_ver") &&
     roles.some((r) => ["admin", "gestor", "financeiro"].includes(r)) &&
     (!roles.includes("representante") || roles.includes("admin"));
   const [conta, setConta] = useState("");
@@ -149,7 +152,7 @@ export function ConciliacaoExtrato() {
             <Input
               type="file"
               accept=".csv,text/csv"
-              disabled={rpc.isPending}
+              disabled={!permissoes.pode("extrato_importar") || rpc.isPending}
               onChange={(e) => void arquivo(e.target.files?.[0])}
             />
           </label>
@@ -161,7 +164,7 @@ export function ConciliacaoExtrato() {
                 {brl(-linhas.filter((l) => l.valor < 0).reduce((s, l) => s + l.valor, 0))}
               </p>
               <Button
-                disabled={rpc.isPending}
+                disabled={!permissoes.pode("extrato_importar") || rpc.isPending}
                 onClick={() =>
                   rpc.mutate(
                     {
@@ -220,7 +223,11 @@ export function ConciliacaoExtrato() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={rpc.isPending || !motivos[id]?.trim()}
+                          disabled={
+                            !permissoes.pode("extrato_desconciliar") ||
+                            rpc.isPending ||
+                            !motivos[id]?.trim()
+                          }
                           onClick={() =>
                             rpc.mutate({
                               nome: "desconciliar_extrato",
@@ -254,7 +261,9 @@ export function ConciliacaoExtrato() {
                       </select>
                       <Button
                         size="sm"
-                        disabled={rpc.isPending || !escolhas[id]}
+                        disabled={
+                          !permissoes.pode("extrato_conciliar") || rpc.isPending || !escolhas[id]
+                        }
                         onClick={() =>
                           rpc.mutate({
                             nome: "conciliar_extrato",

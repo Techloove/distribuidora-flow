@@ -1,3 +1,4 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRotinaRpc } from "@/lib/use-rotina-rpc";
@@ -27,11 +28,12 @@ export function AvisoRotina({ erro }: { erro: Error | null }) {
 }
 
 export function MargemPedido({ pedido }: { pedido: Registro }) {
+  const permissoes = usePermissoesRotinas();
   const { client, user, canManage } = useSupabase();
   const [frete, setFrete] = useState("");
   const q = useQuery({
     queryKey: ["vw_margem_pedido_209", user?.id, pedido["id"]],
-    enabled: !!client,
+    enabled: !!client && permissoes.pode("margem_pedido_ver"),
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_margem_pedido_209")
@@ -44,7 +46,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
   });
   const itens = useQuery({
     queryKey: ["margem-produtos", user?.id, pedido["id"]],
-    enabled: !!client,
+    enabled: !!client && permissoes.pode("margem_pedido_ver"),
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedido_itens")
@@ -57,6 +59,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
     },
   });
   const rpc = useRotinaRpc(["vw_margem_pedido_209", "pedidos"]);
+  if (!permissoes.pode("margem_pedido_ver")) return null;
   return (
     <section className="rounded-lg border bg-card p-4 space-y-3">
       <h2 className="text-sm font-semibold">Margem de contribuição do pedido</h2>
@@ -91,6 +94,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
             atual.
           </p>
           {canManage &&
+            permissoes.pode("frete_pedido_editar") &&
             ["rascunho", "digitacao", "aguardando_aprovacao", "aprovado"].includes(
               String(pedido["status"]),
             ) && (
@@ -157,12 +161,13 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
 }
 
 export function ReposicaoInteligente() {
+  const permissoes = usePermissoesRotinas();
   const { client, user } = useSupabase();
   const cv = useCentroValido();
   const [filtro, setFiltro] = useState("repor");
   const q = useQuery({
     queryKey: ["vw_reposicao_209", user?.id, cv.centro, filtro],
-    enabled: !!client && !cv.isLoading && !cv.error,
+    enabled: !!client && permissoes.pode("reposicao_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!.from("vw_reposicao_209").select("*", { count: "exact" });
       if (cv.centro) r = r.eq("centro_id", cv.centro);
@@ -174,6 +179,7 @@ export function ReposicaoInteligente() {
       return { rows: (data ?? []) as Registro[], count };
     },
   });
+  if (!permissoes.pode("reposicao_ver")) return null;
   return (
     <section className="rounded-lg border bg-card p-4 space-y-3">
       <h2 className="text-sm font-semibold">Reposição inteligente</h2>
@@ -231,6 +237,7 @@ export function ReposicaoInteligente() {
 }
 
 export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
+  const permissoes = usePermissoesRotinas();
   const { client, user } = useSupabase();
   const [aberto, setAberto] = useState(false);
   const [tipo, setTipo] = useState("ocorrencia");
@@ -240,7 +247,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
   const rpc = useRotinaRpc(["entrega_registros", "expedicoes", "vw_expedicoes"]);
   const q = useQuery({
     queryKey: ["entrega_registros", user?.id, expedicao["id"]],
-    enabled: !!client && aberto,
+    enabled: !!client && permissoes.pode("entrega_registrar") && aberto,
     queryFn: async () => {
       const { data, error } = await client!
         .from("entrega_registros")
@@ -252,6 +259,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
       return (data ?? []) as Registro[];
     },
   });
+  if (!permissoes.pode("entrega_registrar")) return null;
   return (
     <>
       <Button
@@ -360,6 +368,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
 }
 
 export function CapacidadeCarga({ carga }: { carga: Registro }) {
+  const permissoes = usePermissoesRotinas();
   const { client, user } = useSupabase();
   const [valor, setValor] = useState("");
   const rpc = useRotinaRpc(["cargas", "vw_cargas", "capacidade-carga"]);
@@ -390,40 +399,46 @@ export function CapacidadeCarga({ carga }: { carga: Registro }) {
             : "capacidade ainda não informada"}
         </p>
       )}
-      {["aberta", "em_preparacao"].includes(String(q.data?.["status"])) && (
-        <div className="flex gap-2">
-          <Input
-            aria-label="Capacidade do veículo em kg"
-            type="number"
-            min="0.001"
-            value={valor}
-            placeholder="Capacidade em kg"
-            onChange={(e) => setValor(e.target.value)}
-          />
-          <Button
-            disabled={rpc.isPending || !Number.isFinite(Number(valor)) || Number(valor) <= 0}
-            onClick={() =>
-              rpc.mutate({
-                nome: "definir_capacidade_carga",
-                args: { _carga_id: carga["id"], _capacidade: Number(valor) },
-              })
-            }
-          >
-            Salvar
-          </Button>
-        </div>
-      )}
+      {permissoes.pode("carga_capacidade_editar") &&
+        ["aberta", "em_preparacao"].includes(String(q.data?.["status"])) && (
+          <div className="flex gap-2">
+            <Input
+              aria-label="Capacidade do veículo em kg"
+              type="number"
+              min="0.001"
+              value={valor}
+              placeholder="Capacidade em kg"
+              onChange={(e) => setValor(e.target.value)}
+            />
+            <Button
+              disabled={rpc.isPending || !Number.isFinite(Number(valor)) || Number(valor) <= 0}
+              onClick={() =>
+                rpc.mutate({
+                  nome: "definir_capacidade_carga",
+                  args: { _carga_id: carga["id"], _capacidade: Number(valor) },
+                })
+              }
+            >
+              Salvar
+            </Button>
+          </div>
+        )}
     </section>
   );
 }
 
 export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
+  const permissoes = usePermissoesRotinas();
   const { client, user, canManage } = useSupabase();
   const [pedido, setPedido] = useState("");
   const rpc = useRotinaRpc(["devolucoes"]);
   const q = useQuery({
     queryKey: ["pedidos-troca", user?.id, devolucao["id"]],
-    enabled: !!client && canManage && devolucao["status"] === "confirmada",
+    enabled:
+      !!client &&
+      permissoes.pode("troca_vincular") &&
+      canManage &&
+      devolucao["status"] === "confirmada",
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedidos")
@@ -450,7 +465,7 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
         <p>Pedido vinculado: {String(devolucao["pedido_troca_id"])}</p>
       )}
       <AvisoRotina erro={q.error} />
-      {canManage && (
+      {canManage && permissoes.pode("troca_vincular") && (
         <div className="flex flex-wrap gap-2">
           <select
             aria-label="Novo pedido da troca"
@@ -483,14 +498,17 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
 }
 
 export function AjustesComissao() {
+  const permissoes = usePermissoesRotinas();
   const { client, user, roles } = useSupabase();
   const cv = useCentroValido();
-  const pode = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
+  const pode =
+    permissoes.pode("comissao_ajustes_conferir") &&
+    roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
   const [resolucoes, setResolucoes] = useState<Record<string, string>>({});
   const rpc = useRotinaRpc(["comissao_ajustes"]);
   const regra = useQuery({
     queryKey: ["parametros", "comissao", user?.id],
-    enabled: !!client,
+    enabled: !!client && permissoes.pode("comissao_ajustes_ver"),
     queryFn: async () => {
       const { data, error } = await client!
         .from("parametros")
@@ -503,7 +521,7 @@ export function AjustesComissao() {
   });
   const q = useQuery({
     queryKey: ["comissao_ajustes", user?.id, cv.centro],
-    enabled: !!client && !cv.isLoading && !cv.error,
+    enabled: !!client && permissoes.pode("comissao_ajustes_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!
         .from("comissao_ajustes")
@@ -515,6 +533,7 @@ export function AjustesComissao() {
       return { rows: (data ?? []) as Registro[], count };
     },
   });
+  if (!permissoes.pode("comissao_ajustes_ver")) return null;
   return (
     <section className="rounded border bg-card p-4 space-y-3">
       <h2 className="text-sm font-semibold">Conferência de comissões e devoluções</h2>

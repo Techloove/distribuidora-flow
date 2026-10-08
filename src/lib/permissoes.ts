@@ -9,6 +9,7 @@ export function normalizarModulo(path: string) {
 /** Todos os módulos do sistema, na ordem do menu. */
 export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/dashboard", label: "Dashboard", grupo: "Visão geral" },
+  { path: "/pendencias", label: "Central de pendências", grupo: "Visão geral" },
   { path: "/pessoas", label: "Cadastro unificado / Clientes", grupo: "Cadastros" },
   { path: "/produtos", label: "Produtos", grupo: "Cadastros" },
   { path: "/tabelas-preco", label: "Promoção", grupo: "Cadastros" },
@@ -20,6 +21,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/pedidos", label: "Pedidos", grupo: "Comercial" },
   { path: "/representantes", label: "Vendedores", grupo: "Comercial" },
   { path: "/lead-rota", label: "Lead Rota", grupo: "Comercial" },
+  { path: "/agenda-comercial", label: "Agenda comercial", grupo: "Comercial" },
   { path: "/metas", label: "Metas", grupo: "Comercial" },
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
 
@@ -41,6 +43,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/relatorios-financeiros", label: "Relatórios financeiros", grupo: "Financeiro" },
   { path: "/rota-despesas", label: "Custos de rota", grupo: "Financeiro" },
   { path: "/receber", label: "Contas a receber", grupo: "Financeiro" },
+  { path: "/cobranca", label: "Agenda de cobrança", grupo: "Financeiro" },
   { path: "/boletos", label: "Boletos", grupo: "Financeiro" },
   { path: "/conciliacao-creditos", label: "Conciliação de créditos", grupo: "Financeiro" },
   { path: "/pagar", label: "Contas a pagar", grupo: "Financeiro" },
@@ -63,6 +66,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   gestor: MODULOS.map((m) => m.path),
   financeiro: [
     "/dashboard",
+    "/pendencias",
     "/financeiro",
     "/contas",
     "/categorias-financeiras",
@@ -76,6 +80,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/conciliacao-creditos",
     "/fluxo-caixa",
     "/receber",
+    "/cobranca",
     "/pagar",
     "/relatorios",
     "/relatorio-vendas",
@@ -84,6 +89,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   ],
   comercial: [
     "/dashboard",
+    "/pendencias",
     "/pessoas",
     "/produtos",
     "/tabelas-preco",
@@ -94,6 +100,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/pedidos",
     "/representantes",
     "/lead-rota",
+    "/agenda-comercial",
     "/metas",
     "/comissoes",
     "/relatorios",
@@ -103,23 +110,26 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   ],
   representante: [
     "/dashboard",
+    "/pendencias",
     "/pessoas",
     "/produtos",
     "/tabelas-preco",
     "/pedidos",
     "/lead-rota",
+    "/agenda-comercial",
     "/metas",
     "/comissoes",
   ],
   estoque: [
     "/dashboard",
+    "/pendencias",
     "/produtos",
     "/estoque",
     "/separacao",
     "/compras",
     "/planejamento-compras",
   ],
-  expedicao: ["/dashboard", "/separacao", "/cargas", "/expedicao", "/rotas"],
+  expedicao: ["/dashboard", "/pendencias", "/separacao", "/cargas", "/expedicao", "/rotas"],
 };
 
 export type Acesso = {
@@ -139,6 +149,7 @@ export function useAcesso(): Acesso {
   const q = useQuery({
     queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && roles.length > 0 && !total,
+    refetchInterval: 30_000,
     queryFn: async () => {
       const { data, error } = await client!
         .from("role_menus")
@@ -175,9 +186,6 @@ export function useAcesso(): Acesso {
 
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
-  "/agenda-comercial": "/lead-rota",
-  "/cobranca": "/receber",
-  "/pendencias": "/dashboard",
   "/faturamento": "/boletos",
   "/clientes": "/pessoas",
   "/fornecedores": "/pessoas",

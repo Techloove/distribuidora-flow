@@ -1,3 +1,4 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { TrocaDevolucao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -45,7 +46,9 @@ export const Route = createFileRoute("/_app/devolucoes")({
 type Row = Record<string, unknown>;
 
 function DevolucoesPage() {
-  const { client, canManage } = useSupabase();
+  const { client, canManage: gestao } = useSupabase();
+  const permissoes = usePermissoesRotinas();
+  const canManage = gestao && permissoes.pode("devolucao_operar");
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [head, setHead] = useState({
