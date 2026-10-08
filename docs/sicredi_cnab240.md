@@ -1,10 +1,10 @@
 # Sicredi CNAB 240 e boleto híbrido
 
-Referências conferidas nos PDFs fornecidos: Manual Sicredi CNAB 240 **2.9, fevereiro/2026** (arquivo 081, lote 040) e Manual BR Code do Banco Central **2.0.1, agosto/2020**. A versão editorial do manual não corresponde ao código do layout do arquivo.
+Referências conferidas nos PDFs fornecidos: Manual Sicredi CNAB 240 **3.0, maio/2026** (com retorno Y04 legado da versão 2.9) (arquivo 081, lote 040) e Manual BR Code do Banco Central **2.0.1, agosto/2020**. A versão editorial do manual não corresponde ao código do layout do arquivo.
 
 ## Ativação
 
-1. Aplicar `db/fase204_sicredi_cnab240.sql` após a fase203 no Supabase. Esta tarefa não aplicou a migração no banco de produção.
+1. Para a instalação existente, com as fases204–206 já aplicadas, executar somente `db/fase207_sicredi_cnab30.sql`. Ela permite CPF numérico ou CNPJ alfanumérico sem substituir RPCs, RLS, sequenciais ou histórico. Não reaplicar a fase204 por cima das posteriores. Esta tarefa não executou a fase207 no banco de produção.
 2. Abrir **Configurações do sistema → Cobrança Sicredi → Sicredi · CNAB 240**, selecionar um centro de custo e configurar como administrador/gestor: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
 3. Para boleto híbrido, selecionar **Boleto híbrido com PIX** e informar a chave PIX aleatória vinculada ao convênio. Confirmar a contratação e homologar arquivos normais/híbridos com a cooperativa. A opção de homologação libera a aplicação de retornos.
 
@@ -14,11 +14,17 @@ Runtime do servidor: `EXT_SUPABASE_URL`, `EXT_SUPABASE_ANON_KEY`, `EXT_SUPABASE_
 
 No pedido confirmado, o financeiro abre **Emitir boletos**, seleciona as parcelas em aberto do pedido e escolhe **Arquivo de remessa CNAB 240**. O sistema gera uma remessa para enviar pelo Sicredi Internet Empresas. O ERP reserva os títulos como pendentes; não transmite ao banco nem os marca como registrados. Em **Boletos**, o histórico permite baixar novamente o mesmo arquivo, sem gerar novos sequenciais. A mesma tela mantém a importação de retornos e o acompanhamento; configuração e emissão ficam em seus respectivos locais.
 
+No histórico de remessas há **Baixar .CRM para homologação**. A cópia preserva todos os registros e não reserva novos títulos ou sequenciais. O nome usa os códigos de mês `123456789OND`; a data do header corrige o nome da cópia de arquivos antigos que usavam A/B/C. O arquivo original permanece no histórico.
+
+O portal de homologação exige validação externa. Para emissão pelo beneficiário, a cartilha recomenda cinco títulos e PDF correspondente; para híbrido, exige também QR gerado com a location de teste fornecida pelo portal. O ERP não gera esse PDF de homologação nem substitui a location de produção por uma de teste. O download CRM facilita a submissão, mas não significa aprovação bancária.
+
+CPF/CNPJ nos registros CNAB seguem o formato alfanumérico do manual 3.0, com zeros à esquerda. A validação aqui confere formato, não calcula os dígitos verificadores. O cadastro de clientes deve fornecer o documento completo; funcionalidades externas de consulta cadastral precisam aceitar o novo formato para uso com CNPJ alfanumérico.
+
 Para registro direto via API, usar o mesmo botão no pedido e selecionar **Registro direto no Sicredi (API)**. Somente administrador, gestor e financeiro podem emitir. As parcelas já cobradas ou pagas são excluídas da seleção, e as RPCs existentes revalidam a disponibilidade antes da gravação. A emissão também está disponível por parcela em **Financeiro → Contas a receber**. Há um único menu **Boletos**; a rota antiga `/faturamento` redireciona para `/boletos`, preservando permissões legadas.
 
-Remessa: registros ASCII de 240 posições com CRLF; header/lote, P/Q, R para multa, Y04 opcional para híbrido e trailers. Carteira simples, emissão pelo Sicredi e distribuição pelo beneficiário. O vencimento deve ser pelo menos sete dias após a emissão. Juros/multa começam no dia seguinte ao vencimento. Nosso número usa DV módulo 11 com cooperativa/posto/beneficiário e sequencial controlado. O limite de nosso número é 99.999, sem reset automático.
+Remessa: registros ASCII de 240 posições com CRLF; header/lote, P/Q, R para multa, Y04 obrigatório quando o título é híbrido e trailers. Carteira simples, emissão pelo Sicredi e distribuição pelo beneficiário. O vencimento deve ser pelo menos sete dias após a emissão. Juros/multa começam no dia seguinte ao vencimento. Nosso número usa DV módulo 11 com cooperativa/posto/beneficiário e sequencial controlado. O limite de nosso número é 99.999, sem reset automático.
 
-Retorno: prévia obrigatória, identificação de conta/beneficiário, layout, pares T/U, Y04, sequências, totalizadores, documentos e valores. Operador confirma a origem bancária. Uma divergência impede a aplicação de todo o arquivo.
+Retorno: prévia obrigatória, identificação de conta/beneficiário, layout, pares T/U, Y03 (Y04 legado também aceito), sequências, totalizadores, documentos e valores. Operador confirma a origem bancária. Uma divergência impede a aplicação de todo o arquivo.
 
 Ocorrências: 02 registra, 03 rejeita entrada, 06 liquida, 09 confirma baixa, 17 liquida após baixa, 61 liquida PIX. Outras ocorrências ficam auditadas sem modificar títulos. O processamento só concilia boletos deste centro gerados pelo canal CNAB; operações API continuam independentes.
 
@@ -70,3 +76,7 @@ O endpoint API foi conferido no código público ACBr (`Fontes/ACBrBoleto/WS/ACB
 Validação adicional: testes de requisição API simulada (envio, timeout, rejeição, contrato divergente e confirmação por consulta), vetores CNAB06/retorno14 e transações reais em PostgreSQL isolado (confirmação/rejeição/divergência, sem alteração financeira). Migração de produção não executada pelo agente.
 
 Resultado da validação desta alteração: 33 testes passaram, typecheck e build passaram, checks SQL/migrações/servidor passaram. Chromium verificou menu único, permissões antigas, filtros com/sem boleto, emissão por parcela e alteração CNAB com vencimento preservado até confirmação. O teste PostgreSQL isolado também verificou reaplicação idempotente da fase205.
+
+## Atualização para manual 3.0 — fase207
+
+Validação desta atualização: 42 testes passaram; typecheck e build passaram. O PostgreSQL isolado validou a reaplicação da fase207, aceitação de CPF/CNPJ alfanumérico e rejeição de formatos inválidos, mantendo os testes financeiros e de duplicidade das fases anteriores. Os checks de migrações e segurança do servidor passaram. O cadastro convencional e as consultas cadastrais externas ainda usam documento numérico; o suporte alfanumérico desta atualização se aplica à configuração e ao processamento bancário.

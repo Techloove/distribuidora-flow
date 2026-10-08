@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
   cents,
+  documentoFiscal,
+  nomeRemessa,
+  nomeRemessaHomologacao,
+  ascii,
   crc16,
   gerarBrCode,
   gerarRemessa,
@@ -131,7 +135,7 @@ describe("Sicredi CNAB 240 — remessa", () => {
     const file = gerarRemessa(config, [titulo], "2026-10-06", "153000");
     const records = file.content.trimEnd().split("\r\n");
     expect(records).toHaveLength(6);
-    expect(file.filename).toBe("00623A06.000017");
+    expect(file.filename).toBe("00623O06.000017");
     for (const r of file.content.split("\r\n").slice(0, -1)) {
       expect(r.length).toBe(240);
       expect(new TextEncoder().encode(r).length).toBe(240);
@@ -260,32 +264,33 @@ describe("BR Code / boleto híbrido", () => {
       gerarRemessa({ ...config, tipo_cobranca: "HIBRIDO" }, [titulo], "2026-10-06", "153000"),
     ).toThrow();
   });
-  test("retorno Y04 vincula URL e TXID ao T/U anterior", () => {
-    const records = retornoFixture("02").split("\r\n").slice(0, -1);
-    records.splice(
-      4,
-      0,
-      line([
-        [1, "7480001300003Y"],
-        [16, "02"],
-        [18, "04"],
-        [82, "pix-qrcode.sicredi.com.br/qr/v2/cobv/040360d740164ea286651ad210d76bc1"],
-        [159, "100090400888000020210324000094507"],
-      ]),
-    );
-    records[5] = line([
-      [1, "74800015"],
-      [18, "000005"],
-    ]);
-    records[6] = line([
-      [1, "74899999"],
-      [18, "000001"],
-      [24, "000007"],
-    ]);
-    const [event] = parseRetorno(records.join("\r\n") + "\r\n", config);
-    expect(event!.pix?.txid).toBe("100090400888000020210324000094507");
-    expect(event!.pix?.url).toContain("pix-qrcode.sicredi.com.br");
-  });
+  for (const subtype of ["03", "04"])
+    test(`retorno Y${subtype} vincula URL e TXID ao T/U anterior`, () => {
+      const records = retornoFixture("02").split("\r\n").slice(0, -1);
+      records.splice(
+        4,
+        0,
+        line([
+          [1, "7480001300003Y"],
+          [16, "02"],
+          [18, subtype],
+          [82, "pix-qrcode.sicredi.com.br/qr/v2/cobv/040360d740164ea286651ad210d76bc1"],
+          [159, "100090400888000020210324000094507"],
+        ]),
+      );
+      records[5] = line([
+        [1, "74800015"],
+        [18, "000005"],
+      ]);
+      records[6] = line([
+        [1, "74899999"],
+        [18, "000001"],
+        [24, "000007"],
+      ]);
+      const [event] = parseRetorno(records.join("\r\n") + "\r\n", config);
+      expect(event!.pix?.txid).toBe("100090400888000020210324000094507");
+      expect(event!.pix?.url).toContain("pix-qrcode.sicredi.com.br");
+    });
 });
 
 describe("Alteração de vencimento CNAB", () => {
@@ -315,7 +320,7 @@ describe("Alteração de vencimento CNAB", () => {
     expect(records[2]!.slice(118, 141)).toBe("21112026000000000000150");
     expect(records[4]!.slice(66, 74)).toBe("21112026");
     expect(records.some((r) => r[13] === "Y")).toBe(false);
-    expect(altered.filename).toBe("00623A06.000018");
+    expect(altered.filename).toBe("00623O06.000018");
     expect(() =>
       gerarAlteracaoVencimento(
         c,
@@ -330,5 +335,45 @@ describe("Alteração de vencimento CNAB", () => {
   test("retorno 14 informa o vencimento efetivo do banco", () => {
     const content = replaceField(retornoFixture("14"), 2, 74, "20112026");
     expect(parseRetorno(content, config)[0]!.vencimento).toBe("2026-11-20");
+  });
+});
+
+describe("Manual Sicredi 3.0", () => {
+  test("meses usam os códigos oficiais e CRM mantém a remessa sem consumir sequencial", () => {
+    for (let month = 1; month <= 12; month++) {
+      expect(nomeRemessa("00623", `2026-${String(month).padStart(2, "0")}-06`, 17)).toBe(
+        `00623${"123456789OND"[month - 1]}06.000017`,
+      );
+    }
+    const remessa = gerarRemessa(config, [titulo], "2026-10-06", "153000");
+    expect(nomeRemessaHomologacao(remessa.filename, remessa.content)).toBe("00623O06.CRM");
+    expect(nomeRemessaHomologacao("00623A06.000017", remessa.content)).toBe("00623O06.CRM");
+    expect(() => nomeRemessaHomologacao("retorno.CRT")).toThrow();
+    expect(config.proxima_remessa).toBe(17);
+  });
+  test("preserva CNPJ alfanumérico nos headers e no pagador", () => {
+    const doc = "12.ABC.345/01DE-35";
+    expect(documentoFiscal(doc.toLowerCase())).toBe("12ABC34501DE35");
+    const generated = gerarRemessa(
+      { ...config, documento: doc },
+      [{ ...titulo, cpf_cnpj: doc }],
+      "2026-10-06",
+      "153000",
+    );
+    const records = generated.content.split("\r\n");
+    expect(records[0]!.slice(18, 32)).toBe("12ABC34501DE35");
+    expect(records[1]!.slice(18, 33)).toBe("012ABC34501DE35");
+    expect(records[3]!.slice(18, 33)).toBe("012ABC34501DE35");
+    expect(() => documentoFiscal("ABCDEF12345")).toThrow();
+    expect(() => documentoFiscal("12ABC34501DEAB")).toThrow();
+  });
+  test("retorno identifica o beneficiário alfanumérico sem coerção numérica", () => {
+    let content = replaceField(retornoFixture(), 0, 19, "12ABC34501DE35");
+    content = replaceField(content, 1, 19, "012ABC34501DE35");
+    expect(parseRetorno(content, { ...config, documento: "12ABC34501DE35" })).toHaveLength(1);
+    expect(() => parseRetorno(content, { ...config, documento: "12ABC34501DF35" })).toThrow();
+  });
+  test("campos descritivos seguem a lista de caracteres permitidos", () => {
+    expect(ascii("João @ $ # & !*-()[]{},.;:/%+=")).toBe("JOAO         !*-()[]{},.;:/%+=");
   });
 });

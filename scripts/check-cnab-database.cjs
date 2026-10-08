@@ -42,6 +42,9 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
   await db.exec(
     fs.readFileSync(path.join(repo, "db/fase205_sicredi_alteracao_vencimento.sql"), "utf8"),
   );
+  for (let repeat = 0; repeat < 2; repeat++) {
+    await db.exec(fs.readFileSync(path.join(repo, "db/fase207_sicredi_cnab30.sql"), "utf8"));
+  }
   const actor = "00000000-0000-4000-8000-000000000001",
     centro = "00000000-0000-4000-8000-000000000002",
     conta = "00000000-0000-4000-8000-000000000003",
@@ -68,6 +71,16 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
     multa_percentual: 0,
   };
   await db.query("select cnab_salvar_config($1,$2::jsonb)", [actor, JSON.stringify(cfg)]);
+  await db.query("update sicredi_cnab_config set documento=$1", ["12ABC34501DE35"]);
+  assert.equal(
+    (await db.query("select documento from sicredi_cnab_config")).rows[0].documento,
+    "12ABC34501DE35",
+  );
+  await db.query("update sicredi_cnab_config set documento=$1", ["12345678909"]);
+  for (const invalid of ["ABCDEF12345", "12ABC34501DEAB", "12abc34501de35", "123"]) {
+    await assert.rejects(db.query("update sicredi_cnab_config set documento=$1", [invalid]));
+  }
+  await db.query("update sicredi_cnab_config set documento=$1", [cfg.documento]);
   const c = (await db.query("select * from sicredi_cnab_config")).rows[0];
   const titles = JSON.stringify([
     {

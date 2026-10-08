@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useCentro } from "@/lib/centro-store";
-import { OCORRENCIAS, type CnabConfig } from "@/lib/sicredi-cnab";
+import { OCORRENCIAS, nomeRemessaHomologacao, type CnabConfig } from "@/lib/sicredi-cnab";
 import {
   cnabImportarRetorno,
   cnabPreverRetorno,
@@ -196,7 +196,7 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
             Configuração CNAB deste centro
           </summary>
           <p className="my-3 text-sm text-muted-foreground">
-            Manual Sicredi 2.9 (02/2026), layout 081/040, carteira simples, emissão pelo Sicredi e
+            Manual Sicredi 3.0 (05/2026), layout 081/040, carteira simples, emissão pelo Sicredi e
             distribuição pelo beneficiário. Os parâmetros da API são independentes. Confira os
             sequenciais já utilizados com a cooperativa antes da primeira remessa.
           </p>
@@ -482,6 +482,33 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
                 >
                   Baixar arquivo
                 </Button>
+                {a["tipo"] === "remessa" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        const { data, error } = await client!
+                          .from("sicredi_cnab_arquivos")
+                          .select("conteudo,nome")
+                          .eq("id", a["id"])
+                          .eq("centro_id", centro)
+                          .single();
+                        if (error) throw new Error("Não foi possível recuperar a remessa.");
+                        download(
+                          String(data.conteudo),
+                          nomeRemessaHomologacao(String(data.nome), String(data.conteudo)),
+                        );
+                        toast.info(
+                          "Cópia para homologação. Nenhum título ou sequencial novo foi gerado.",
+                        );
+                      })
+                    }
+                  >
+                    Baixar .CRM para homologação
+                  </Button>
+                )}
               </div>
             ))}
           </details>

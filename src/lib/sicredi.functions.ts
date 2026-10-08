@@ -1,3 +1,4 @@
+import { documentoFiscal } from "./sicredi-cnab";
 import { validarNovoVencimento, vencimentoDoBanco } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchWithTimeout } from "./fetch-timeout";
@@ -294,6 +295,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       data.accessToken,
     );
     const row = await carregarTituloBoleto(accessToken, data.contaId);
+    const documentoPagador = documentoFiscal(String(row["cnpj_cpf"] ?? ""));
     const c = await conf();
     const tk = await token(c);
     // Reserva a emissão antes da chamada externa: serializa concorrência e
@@ -361,12 +363,8 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
 
       pagador: {
-        tipoPessoa: String(row["tipo_pessoa"] ?? "")
-          .toUpperCase()
-          .startsWith("F")
-          ? "PESSOA_FISICA"
-          : "PESSOA_JURIDICA",
-        documento: String(row["cnpj_cpf"] ?? "").replace(/\D/g, ""),
+        tipoPessoa: documentoPagador.length === 11 ? "PESSOA_FISICA" : "PESSOA_JURIDICA",
+        documento: documentoPagador,
         nome: String(row["razao_social"] ?? "").slice(0, 40),
         endereco: (endereco || "Nao informado").slice(0, 40),
         cidade: String(row["cidade"] ?? "").slice(0, 25),

@@ -1,8 +1,8 @@
-/** Sicredi CNAB 240, manual v2.9 (02/2026), arquivo 081 / lote 040.
+/** Sicredi CNAB 240, manual v3.0 (05/2026), arquivo 081 / lote 040.
  * Posições abaixo são inclusivas e começam em 1, como no manual do banco.
  */
 export const CNAB_LAYOUT = "SICREDI-081-040";
-export const CNAB_MANUAL_VERSION = "2.9";
+export const CNAB_MANUAL_VERSION = "3.0";
 export type CnabConfig = {
   conta_financeira_id: string;
   categoria_tarifa_id: string | null;
@@ -61,6 +61,44 @@ export type CnabEvento = {
 export function digits(value: string) {
   return value.replace(/[.\-/\s]/g, "");
 }
+/** CPF numérico ou CNPJ com 12 caracteres alfanuméricos e dois DVs numéricos. */
+export function documentoFiscal(value: string) {
+  const documento = digits(value).toUpperCase();
+  if (!/^(?:[0-9]{11}|[A-Z0-9]{12}[0-9]{2})$/.test(documento))
+    throw new Error(
+      "CPF/CNPJ inválido: informe CPF com 11 dígitos ou CNPJ com 14 caracteres e DVs numéricos.",
+    );
+  return documento;
+}
+function campoDocumento(value: string, size: number) {
+  return documentoFiscal(value).padStart(size, "0");
+}
+/** Códigos oficiais: outubro O, novembro N, dezembro D (não hexadecimal). */
+export function nomeRemessa(beneficiario: string, isoDate: string, sequencia: number) {
+  dateField(isoDate);
+  return `${numeric(beneficiario, 5)}${"123456789OND"[Number(isoDate.slice(5, 7)) - 1]}${isoDate.slice(8, 10)}.${numeric(sequencia, 6)}`;
+}
+/** Só muda a extensão da cópia; não gera título, sequencial ou movimento financeiro. */
+export function nomeRemessaHomologacao(filename: string, content?: string) {
+  if (!/^[0-9]{5}[1-9ONDABC][0-9]{2}\.[0-9]{6}$/.test(filename))
+    throw new Error("Nome de remessa fora do padrão Sicredi.");
+  let base = filename;
+  if (content) {
+    const header = content.split("\r\n")[0]!;
+    if (header.length !== 240 || header.slice(0, 3) !== "748" || header[7] !== "0")
+      throw new Error("Cabeçalho de remessa inválido.");
+    const date = header.slice(143, 151);
+    base = nomeRemessa(
+      filename.slice(0, 5),
+      `${date.slice(4)}-${date.slice(2, 4)}-${date.slice(0, 2)}`,
+      Number(filename.slice(9)),
+    );
+  } else if (/[ABC]/.test(base)) {
+    throw new Error("Informe o conteúdo da remessa para conferir a data do arquivo legado.");
+  }
+  return base.replace(/\.[0-9]{6}$/, ".CRM");
+}
+
 function numeric(value: string | number, size: number) {
   const s = String(value);
   if (!/^\d+$/.test(s) || s.length > size)
@@ -72,7 +110,7 @@ export function ascii(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
-    .replace(/[^\x20-\x7e]/g, " ");
+    .replace(/[^A-Z0-9 !*\-()\[\]{},.;:/%+=]/g, " ");
 }
 export function cents(value: string) {
   if (!/^\d+(\.\d{1,2})?$/.test(value))
@@ -129,8 +167,7 @@ export function validateConfig(c: CnabConfig) {
     throw new Error("Selecione a conta financeira para os recebimentos.");
   if (!c.nome.trim() || c.nome.length > 30)
     throw new Error("Nome do beneficiário deve ter até 30 caracteres.");
-  if (!/^(\d{11}|\d{14})$/.test(digits(c.documento)))
-    throw new Error("CPF/CNPJ do beneficiário inválido.");
+  documentoFiscal(c.documento);
   for (const [name, value, size] of [
     ["Cooperativa", c.cooperativa, 4],
     ["Posto", c.posto, 2],
@@ -186,12 +223,12 @@ export function gerarRemessa(c: CnabConfig, titulos: CnabTitulo[], isoDate: stri
   validateConfig(c);
   if (!titulos.length || titulos.length > 500) throw new Error("Selecione de 1 a 500 títulos.");
   if (!/^\d{6}$/.test(time)) throw new Error("Hora inválida.");
-  const doc = digits(c.documento),
+  const doc = documentoFiscal(c.documento),
     type = doc.length === 14 ? "2" : "1",
     date = dateField(isoDate);
   const header = base("0", 0)
     .put(18, 18, type)
-    .put(19, 32, doc, "num")
+    .put(19, 32, campoDocumento(doc, 14), "raw")
     .put(53, 57, c.cooperativa, "num")
     .put(59, 70, c.conta, "num")
     .put(71, 71, c.conta_dv)
@@ -208,7 +245,7 @@ export function gerarRemessa(c: CnabConfig, titulos: CnabTitulo[], isoDate: stri
     .put(10, 11, "01")
     .put(14, 16, "040")
     .put(18, 18, type)
-    .put(19, 33, doc, "num")
+    .put(19, 33, campoDocumento(doc, 15), "raw")
     .put(54, 58, c.cooperativa, "num")
     .put(60, 71, c.conta, "num")
     .put(72, 72, c.conta_dv)
@@ -236,11 +273,8 @@ export function gerarRemessa(c: CnabConfig, titulos: CnabTitulo[], isoDate: stri
       throw new Error(
         "Na emissão pelo Sicredi, o vencimento deve ser pelo menos 7 dias após a emissão.",
       );
-    if (
-      !/^(\d{11}|\d{14})$/.test(digits(t.cpf_cnpj)) ||
-      !/^\d{8}$/.test(digits(t.cep)) ||
-      !/^[A-Z]{2}$/.test(t.uf)
-    )
+    documentoFiscal(t.cpf_cnpj);
+    if (!/^\d{8}$/.test(digits(t.cep)) || !/^[A-Z]{2}$/.test(t.uf))
       throw new Error("CPF/CNPJ, CEP ou UF do pagador inválido.");
     if (![t.nome, t.endereco, t.bairro, t.cidade].every((s) => s.trim()))
       throw new Error("Complete nome e endereço do pagador.");
@@ -282,8 +316,8 @@ export function gerarRemessa(c: CnabConfig, titulos: CnabTitulo[], isoDate: stri
       .put(228, 229, "09")
       .put(230, 239, 0, "num");
     const q = detail("Q", ++seq)
-      .put(18, 18, digits(t.cpf_cnpj).length === 14 ? "2" : "1")
-      .put(19, 33, digits(t.cpf_cnpj), "num")
+      .put(18, 18, documentoFiscal(t.cpf_cnpj).length === 14 ? "2" : "1")
+      .put(19, 33, campoDocumento(t.cpf_cnpj, 15), "raw")
       .put(34, 73, ascii(t.nome).slice(0, 40))
       .put(74, 113, ascii(t.endereco).slice(0, 40))
       .put(114, 128, ascii(t.bairro).slice(0, 15))
@@ -340,10 +374,9 @@ export function gerarRemessa(c: CnabConfig, titulos: CnabTitulo[], isoDate: stri
       .put(30, 35, 0, "num")
       .text(),
   );
-  const month = "123456789ABC"[Number(isoDate.slice(5, 7)) - 1];
   return {
     content: records.join("\r\n") + "\r\n",
-    filename: `${c.beneficiario}${month}${isoDate.slice(8, 10)}.${numeric(c.proxima_remessa, 6)}`,
+    filename: nomeRemessa(c.beneficiario, isoDate, c.proxima_remessa),
   };
 }
 
@@ -368,7 +401,7 @@ export function parseRetorno(content: string, c: CnabConfig) {
   if (field(h, 1, 8) !== "74800000" || field(h, 143, 143) !== "2" || field(h, 164, 166) !== "081")
     throw new Error("Retorno deve ser Sicredi, arquivo 081, código retorno 2.");
   if (
-    BigInt(field(h, 19, 32)) !== BigInt(digits(c.documento)) ||
+    field(h, 19, 32) !== campoDocumento(c.documento, 14) ||
     field(h, 53, 57) !== numeric(c.cooperativa, 5) ||
     field(h, 59, 70) !== numeric(c.conta, 12) ||
     field(h, 71, 71) !== c.conta_dv
@@ -397,7 +430,7 @@ export function parseRetorno(content: string, c: CnabConfig) {
       )
         throw new Error("Header de lote inválido.");
       if (
-        BigInt(field(l, 19, 33)) !== BigInt(digits(c.documento)) ||
+        field(l, 19, 33) !== campoDocumento(c.documento, 15) ||
         field(l, 54, 58) !== numeric(c.cooperativa, 5) ||
         field(l, 60, 71) !== numeric(c.conta, 12) ||
         field(l, 72, 72) !== c.conta_dv
@@ -447,10 +480,10 @@ export function parseRetorno(content: string, c: CnabConfig) {
           data_credito: readDate(field(l, 146, 153)),
         });
         pending = null;
-      } else if (segment === "Y" && field(l, 18, 19) === "04") {
+      } else if (segment === "Y" && ["03", "04"].includes(field(l, 18, 19))) {
         const previous = events.at(-1);
         if (pending || !previous || previous.pix || field(lines[i - 1]!, 14, 14) !== "U")
-          throw new Error("Segmento Y04 sem par T/U correspondente.");
+          throw new Error("Segmento Y03/Y04 sem par T/U correspondente.");
         previous.pix = {
           url: field(l, 82, 158).trim(),
           txid: field(l, 159, 193).trim(),
@@ -458,7 +491,7 @@ export function parseRetorno(content: string, c: CnabConfig) {
         };
         if (previous.pix.url || previous.pix.txid) {
           if (!/^[a-zA-Z0-9]{26,35}$/.test(previous.pix.txid))
-            throw new Error("TXID inválido no retorno Y04.");
+            throw new Error("TXID inválido no retorno híbrido Y03/Y04.");
           gerarBrCode(previous.pix.url);
         }
       } else throw new Error(`Segmento de retorno não suportado: ${segment}.`);
@@ -500,7 +533,7 @@ export function crc16(payload: string) {
 export function gerarBrCode(location: string) {
   const url = location.replace(/^https:\/\//, "");
   if (url.length > 77 || !/^pix-qrcode\.sicredi\.com\.br\/qr\/[a-z0-9/._-]+$/.test(url))
-    throw new Error("URL PIX Sicredi inválida no retorno Y04.");
+    throw new Error("URL PIX Sicredi inválida no retorno híbrido.");
   const tlv = (id: string, value: string) => {
     const length = new TextEncoder().encode(value).length;
     if (length > 99) throw new Error("Campo BR Code excede 99 bytes.");
@@ -565,9 +598,8 @@ export function gerarAlteracaoVencimento(
   lote = replace(lote, 192, 199, dateField(isoDate));
   const trailer = replace(lines.at(-2)!, 18, 23, numeric(detalhes.length + 2, 6));
   const final = replace(lines.at(-1)!, 24, 29, numeric(detalhes.length + 4, 6));
-  const month = "123456789ABC"[Number(isoDate.slice(5, 7)) - 1];
   return {
     content: [header, lote, ...detalhes, trailer, final].join("\r\n") + "\r\n",
-    filename: `${c.beneficiario}${month}${isoDate.slice(8, 10)}.${numeric(c.proxima_remessa, 6)}`,
+    filename: nomeRemessa(c.beneficiario, isoDate, c.proxima_remessa),
   };
 }

@@ -4,7 +4,7 @@ import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./serve
 import { fetchWithTimeout } from "./fetch-timeout";
 import {
   cents,
-  digits,
+  documentoFiscal,
   gerarRemessa,
   gerarBrCode,
   gerarAlteracaoVencimento,
@@ -45,7 +45,7 @@ async function rest<T>(path: string, token: string, service = false, body?: unkn
   if (!response.ok) {
     const text = await response.text();
     let message =
-      "Falha na rotina CNAB. Confira se as migrações fase204 e fase205 foram aplicadas.";
+      "Falha na rotina CNAB. Confira se as migrações fase204, fase205 e fase207 foram aplicadas.";
     try {
       const error = JSON.parse(text);
       if (error.code === "P0001") message = String(error.message);
@@ -95,7 +95,7 @@ export const cnabSalvarConfig = createServerFn({ method: "POST" })
     const c = {
       ...data.config,
       centro_id: data.centro_id,
-      documento: digits(data.config.documento),
+      documento: documentoFiscal(data.config.documento),
     };
     validateConfig(c);
     await rest("rpc/cnab_salvar_config", token, true, { _actor: actor.id, _config: c });
