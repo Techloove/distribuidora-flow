@@ -22,3 +22,10 @@ test("todos os destinos do menu lateral e ações têm módulo configurável", (
     expect(MODULOS.some((modulo) => modulo.path === path)).toBe(true);
   }
 });
+
+// O SQL Editor pode executar comandos separadamente; o catálogo não deve depender de sessão temporária.
+test("migração de acessos não depende de tabela temporária entre comandos", () => {
+  const sql = readFileSync(new URL("../db/fase211_acessos_rotinas.sql", import.meta.url), "utf8");
+  expect(sql).not.toMatch(/create\s+temporary\s+table/i);
+  expect(sql).not.toContain("catalogo_rotinas_211");
+});

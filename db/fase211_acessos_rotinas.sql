@@ -19,9 +19,13 @@ do $$ begin
  end if;
 end $$;
 
-create temporary table catalogo_rotinas_211(codigo text,nome text,grupo text,ordem int,modulo text,padroes text) on commit drop;
-insert into catalogo_rotinas_211 values
-  ('margem_pedido_ver','Visualizar margem do pedido','Pedidos',100,'/pedidos','financeiro,comercial,representante,estoque,expedicao'),
+-- Catálogo processado em um único bloco, sem tabela temporária entre comandos.
+-- Grants padrão apenas para códigos novos: reaplicar preserva revogações.
+do $$
+declare r record; novo text;
+begin
+ for r in select * from (values
+('margem_pedido_ver','Visualizar margem do pedido','Pedidos',100,'/pedidos','financeiro,comercial,representante,estoque,expedicao'),
   ('frete_pedido_editar','Editar custo do transporte do pedido','Pedidos',101,'/pedidos',''),
   ('reposicao_ver','Consultar reposição inteligente','Compras',102,'/planejamento-compras','financeiro,comercial,representante,estoque,expedicao'),
   ('comercial_acompanhar','Registrar e concluir acompanhamento comercial','Agenda comercial',103,'/agenda-comercial','comercial,representante'),
@@ -36,20 +40,22 @@ insert into catalogo_rotinas_211 values
   ('extrato_importar','Importar extrato bancário CSV','Extrato',112,'/movimentacoes','financeiro'),
   ('extrato_conciliar','Conciliar linha com movimento financeiro','Extrato',113,'/movimentacoes','financeiro'),
   ('extrato_desconciliar','Desfazer conciliação com justificativa','Extrato',114,'/movimentacoes','financeiro'),
-  ('configuracao_rotinas_editar','Alterar margem mínima e regra de comissão','Configurações',115,'/configuracoes','');
--- Grants padrão apenas para códigos que ainda não existiam: reaplicar não desfaz revogações.
-with novas as (
- insert into public.permissoes(codigo,nome,grupo,ordem,modulo)
- select codigo,nome,grupo,ordem,modulo from catalogo_rotinas_211
- on conflict(codigo) do nothing returning codigo
-)
-insert into public.role_permissoes(role,permissao)
-select papel,n.codigo from novas n join catalogo_rotinas_211 c using(codigo)
-cross join lateral unnest(string_to_array(c.padroes,',')) papel
-where papel<>'' and exists(select 1 from public.papeis p where p.codigo=papel)
-on conflict do nothing;
-update public.permissoes p set nome=c.nome,grupo=c.grupo,ordem=c.ordem,modulo=c.modulo
-from catalogo_rotinas_211 c where c.codigo=p.codigo;
+  ('configuracao_rotinas_editar','Alterar margem mínima e regra de comissão','Configurações',115,'/configuracoes','')
+ ) c(codigo,nome,grupo,ordem,modulo,padroes) loop
+  novo := null;
+  insert into public.permissoes(codigo,nome,grupo,ordem,modulo)
+  values(r.codigo,r.nome,r.grupo,r.ordem,r.modulo)
+  on conflict(codigo) do nothing returning codigo into novo;
+  if novo is not null then
+   insert into public.role_permissoes(role,permissao)
+   select papel,r.codigo from unnest(string_to_array(r.padroes,',')) papel
+   where papel<>'' and exists(select 1 from public.papeis p where p.codigo=papel)
+   on conflict do nothing;
+  end if;
+  update public.permissoes set nome=r.nome,grupo=r.grupo,ordem=r.ordem,modulo=r.modulo
+  where codigo=r.codigo;
+ end loop;
+end $$;
 
 create or replace function public.pode_rotina(_acao text)
 returns boolean language sql stable security definer set search_path=public as $$
