@@ -38,10 +38,12 @@ export function SicrediCnabPanel({ mode = "operacao" }: { mode?: Mode }) {
       <h2 className="font-semibold">Sicredi · CNAB 240</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {mode === "configuracao"
-          ? "Configure o convênio e as regras dos boletos por centro de custo."
+          ? "Uma configuração e uma sequência de remessas e boletos compartilhadas por todos os centros."
           : "Confira os retornos do Sicredi e consulte os arquivos de cobrança."}
       </p>
-      {!centro ? (
+      {mode === "configuracao" ? (
+        <CentroCnab key="configuracao-global" centro="" mode={mode} />
+      ) : !centro ? (
         <p className="mt-3 text-sm">
           Selecione um centro de custo específico no filtro superior para trabalhar com CNAB.
         </p>
@@ -54,7 +56,7 @@ export function SicrediCnabPanel({ mode = "operacao" }: { mode?: Mode }) {
 function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
   const { client, session, roles } = useSupabase();
   const qc = useQueryClient();
-  const admin = roles.includes("admin") || roles.includes("gestor");
+  const admin = roles.includes("admin");
   const save = useServerFn(cnabSalvarConfig),
     preview = useServerFn(cnabPreverRetorno),
     apply = useServerFn(cnabImportarRetorno);
@@ -85,14 +87,14 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
   });
   const input = () => ({ centro_id: centro, accessToken: session!.access_token });
   const accounts = useQuery({
-    queryKey: ["cnab", "contas", centro],
+    queryKey: ["cnab", "contas", "compartilhadas"],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
         .from("contas_financeiras")
         .select("id,nome")
         .eq("ativo", true)
-        .or(`centro_id.eq.${centro},centro_id.is.null`)
+        .is("centro_id", null)
         .order("nome");
       if (error) throw new Error("Não foi possível carregar as contas financeiras.");
       return (data ?? []) as { id: string; nome: string }[];
@@ -112,22 +114,27 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
     },
   });
   const cfg = useQuery({
-    queryKey: ["cnab", "config", centro],
+    queryKey: ["cnab", "config", "compartilhada"],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("sicredi_cnab_config")
-        .select("*")
-        .eq("centro_id", centro)
-        .maybeSingle();
+      const { data, error } = await client!.from("sicredi_cnab_config").select("*").maybeSingle();
       if (error)
-        throw new Error("Não foi possível carregar CNAB. Aplique a migração fase204 no Supabase.");
+        throw new Error("Não foi possível carregar CNAB. Aplique a migração fase208 no Supabase.");
       return data as CnabConfig | null;
     },
   });
   useEffect(() => {
     if (cfg.data) setForm(cfg.data);
   }, [cfg.data]);
+  const centers = useQuery({
+    queryKey: ["cnab", "centros"],
+    enabled: !!client && mode === "operacao",
+    queryFn: async () => {
+      const { data, error } = await client!.from("centros").select("id,nome");
+      if (error) throw new Error("Não foi possível carregar os centros.");
+      return data ?? [];
+    },
+  });
   const history = useQuery({
     queryKey: ["cnab", "arquivos", centro],
     enabled: !!client && !!cfg.data && mode === "operacao",
@@ -193,12 +200,17 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
       {mode === "configuracao" && (
         <details open>
           <summary className="cursor-pointer text-sm font-medium">
-            Configuração CNAB deste centro
+            Configuração CNAB única para todos os centros
           </summary>
           <p className="my-3 text-sm text-muted-foreground">
             Manual Sicredi 3.0 (05/2026), layout 081/040, carteira simples, emissão pelo Sicredi e
             distribuição pelo beneficiário. Os parâmetros da API são independentes. Confira os
             sequenciais já utilizados com a cooperativa antes da primeira remessa.
+          </p>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Os próximos números são únicos para todos os centros. Emitir em um centro avança a mesma
+            sequência usada pelo outro. Vendas, boletos e recebimentos mantêm seu centro de origem.
+            A conta financeira deve ser compartilhada, sem centro exclusivo.
           </p>
           <form
             onSubmit={(e) => {
@@ -325,20 +337,19 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
               </label>
               {admin && (
                 <Button type="submit" className="w-fit">
-                  Salvar configuração CNAB
+                  Salvar configuração compartilhada
                 </Button>
               )}
             </fieldset>
           </form>
           {!admin && (
-            <p className="mt-2 text-sm">A configuração é feita pelo administrador ou gestor.</p>
+            <p className="mt-2 text-sm">A configuração compartilhada é feita pelo administrador.</p>
           )}
         </details>
       )}
       {mode === "operacao" && !cfg.isLoading && !cfg.isError && !cfg.data && (
         <p className="text-sm">
-          Convênio CNAB não configurado para este centro. Solicite a configuração ao administrador
-          em{" "}
+          Convênio CNAB compartilhado não configurado. Solicite a configuração ao administrador em{" "}
           <Link to="/configuracoes" className="underline">
             Configurações do sistema
           </Link>
@@ -389,6 +400,7 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
                     <thead>
                       <tr>
                         <th className="p-2">Nosso número</th>
+                        <th>Centro da venda</th>
                         <th>Ocorrência</th>
                         <th>Recebido</th>
                         <th>Vencimento</th>
@@ -399,6 +411,7 @@ function CentroCnab({ centro, mode }: { centro: string; mode: Mode }) {
                       {result.eventos.map((e, i) => (
                         <tr key={i} className="border-t">
                           <td className="p-2">{e.nosso_numero}</td>
+                          <td>{centers.data?.find((c) => c.id === e.centro_id)?.nome ?? "—"}</td>
                           <td>
                             {OCORRENCIAS[e.ocorrencia] ??
                               `Ocorrência ${e.ocorrencia}: registrada sem alterar títulos`}

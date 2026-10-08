@@ -20,11 +20,11 @@ type ConfigRow = CnabConfig & { updated_at: string };
 type Row = Record<string, unknown>;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 async function authorize(data: Input, action: string, admin = false) {
-  if (!UUID.test(data.centro_id)) throw new Error("Selecione um centro de custo.");
+  if (!admin && !UUID.test(data.centro_id)) throw new Error("Selecione um centro de custo.");
   const token = data.accessToken || requestAccessToken();
   const actor = await requireServerAuth(
     token,
-    admin ? ["admin", "gestor"] : ["admin", "gestor", "financeiro"],
+    admin ? ["admin"] : ["admin", "gestor", "financeiro"],
   );
   await enforceRateLimit(token, action, 20, 60);
   return { actor, token: token! };
@@ -45,7 +45,7 @@ async function rest<T>(path: string, token: string, service = false, body?: unkn
   if (!response.ok) {
     const text = await response.text();
     let message =
-      "Falha na rotina CNAB. Confira se as migrações fase204, fase205 e fase207 foram aplicadas.";
+      "Falha na rotina CNAB. Confira se as migrações fase204, fase205, fase207 e fase208 foram aplicadas.";
     try {
       const error = JSON.parse(text);
       if (error.code === "P0001") message = String(error.message);
@@ -57,12 +57,10 @@ async function rest<T>(path: string, token: string, service = false, body?: unkn
   const text = await response.text();
   return (text ? JSON.parse(text) : null) as T;
 }
-async function config(centro: string, token: string) {
-  const rows = await rest<ConfigRow[]>(
-    `sicredi_cnab_config?centro_id=eq.${centro}&select=*`,
-    token,
-  );
-  if (!rows[0]) throw new Error("Configure o CNAB 240 deste centro antes de continuar.");
+async function config(token: string) {
+  const rows = await rest<ConfigRow[]>("sicredi_cnab_config?select=*&limit=2", token);
+  if (rows.length > 1) throw new Error("Aplique a fase208 para unificar a configuração Sicredi.");
+  if (!rows[0]) throw new Error("Configure o convênio CNAB 240 compartilhado antes de continuar.");
   return rows[0];
 }
 async function sha256(text: string) {
@@ -94,11 +92,14 @@ export const cnabSalvarConfig = createServerFn({ method: "POST" })
     const { actor, token } = await authorize(data, "cnab_config", true);
     const c = {
       ...data.config,
-      centro_id: data.centro_id,
+      centro_id: data.config.centro_id,
       documento: documentoFiscal(data.config.documento),
     };
     validateConfig(c);
-    await rest("rpc/cnab_salvar_config", token, true, { _actor: actor.id, _config: c });
+    await rest("rpc/cnab_salvar_config", token, true, {
+      _actor: actor.id,
+      _config: { ...c, centro_id: c.centro_id || undefined },
+    });
     return { ok: true };
   });
 
@@ -115,7 +116,7 @@ export const cnabGerarRemessa = createServerFn({ method: "POST" })
       ids.some((id) => !UUID.test(id))
     )
       throw new Error("Selecione de 1 a 500 títulos distintos.");
-    const c = await config(data.centro_id, token);
+    const c = await config(token);
     const rows = await rest<Row[]>(
       `contas_receber?select=*&centro_id=eq.${data.centro_id}&id=in.(${ids.join(",")})&order=id&limit=500`,
       token,
@@ -179,14 +180,14 @@ export const cnabGerarRemessa = createServerFn({ method: "POST" })
   });
 
 async function analyze(data: Input & { content: string }, token: string) {
-  const c = await config(data.centro_id, token);
+  const c = await config(token);
   const events = parseRetorno(data.content, c).map((e) => ({
     ...e,
     ...(e.pix?.url ? { qrcode_pix: gerarBrCode(e.pix.url) } : {}),
   }));
   const numbers = [...new Set(events.map((e) => e.nosso_numero))];
   const boletos = await rest<Row[]>(
-    `boletos?select=*&canal=eq.cnab240&centro_id=eq.${data.centro_id}&nosso_numero=in.(${numbers.join(",")})&limit=500`,
+    `boletos?select=*&canal=eq.cnab240&cooperativa=eq.${c.cooperativa}&posto=eq.${c.posto}&codigo_beneficiario=eq.${c.beneficiario}&nosso_numero=in.(${numbers.join(",")})&limit=500`,
     token,
   );
   return {
@@ -198,8 +199,9 @@ async function analyze(data: Input & { content: string }, token: string) {
         ...e,
         boleto_id: b ? String(b["id"]) : null,
         status_atual: b ? String(b["status"]) : null,
+        centro_id: b ? String(b["centro_id"]) : null,
         problema: !b
-          ? "Nosso número não encontrado neste centro"
+          ? "Nosso número não encontrado no convênio ou sem acesso ao centro"
           : cents(String(b["valor"])) !== cents(e.valor_titulo)
             ? "Valor nominal divergente"
             : b["seu_numero"] !== e.documento
@@ -269,7 +271,7 @@ export const cnabAlterarVencimento = createServerFn({ method: "POST" })
     const { actor, token } = await authorize(data, "cnab_vencimento");
     if (!UUID.test(data.boleto_id)) throw new Error("Boleto inválido.");
     validarNovoVencimento(data.vencimento);
-    const c = await config(data.centro_id, token);
+    const c = await config(token);
     const [b] = await rest<Row[]>(
       `boletos?select=*&id=eq.${data.boleto_id}&centro_id=eq.${data.centro_id}&canal=eq.cnab240`,
       token,

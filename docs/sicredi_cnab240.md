@@ -4,8 +4,8 @@ Referências conferidas nos PDFs fornecidos: Manual Sicredi CNAB 240 **3.0, maio
 
 ## Ativação
 
-1. Para a instalação existente, com as fases204–206 já aplicadas, executar somente `db/fase207_sicredi_cnab30.sql`. Ela permite CPF numérico ou CNPJ alfanumérico sem substituir RPCs, RLS, sequenciais ou histórico. Não reaplicar a fase204 por cima das posteriores. Esta tarefa não executou a fase207 no banco de produção.
-2. Abrir **Configurações do sistema → Cobrança Sicredi → Sicredi · CNAB 240**, selecionar um centro de custo e configurar como administrador/gestor: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
+1. Para a instalação existente, com as fases204–206 já aplicadas, executar `db/fase207_sicredi_cnab30.sql` e, depois, `db/fase208_sicredi_configuracao_compartilhada.sql`. Ela permite CPF numérico ou CNPJ alfanumérico sem substituir RPCs, RLS, sequenciais ou histórico. Não reaplicar a fase204 por cima das posteriores. A aplicação no Supabase de produção é uma etapa separada da publicação do código.
+2. Abrir **Configurações do sistema → Cobrança Sicredi → Sicredi · CNAB 240**, configurar uma única vez como administrador, independentemente do filtro de centro: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
 3. Para boleto híbrido, selecionar **Boleto híbrido com PIX** e informar a chave PIX aleatória vinculada ao convênio. Confirmar a contratação e homologar arquivos normais/híbridos com a cooperativa. A opção de homologação libera a aplicação de retornos.
 
 Runtime do servidor: `EXT_SUPABASE_URL`, `EXT_SUPABASE_ANON_KEY`, `EXT_SUPABASE_SERVICE_ROLE_KEY`. O processamento de arquivos CNAB não exige API key Sicredi. A publicação do código no GitHub não executa migrações no Supabase nem homologa o convênio bancário.
@@ -26,7 +26,7 @@ Remessa: registros ASCII de 240 posições com CRLF; header/lote, P/Q, R para mu
 
 Retorno: prévia obrigatória, identificação de conta/beneficiário, layout, pares T/U, Y03 (Y04 legado também aceito), sequências, totalizadores, documentos e valores. Operador confirma a origem bancária. Uma divergência impede a aplicação de todo o arquivo.
 
-Ocorrências: 02 registra, 03 rejeita entrada, 06 liquida, 09 confirma baixa, 17 liquida após baixa, 61 liquida PIX. Outras ocorrências ficam auditadas sem modificar títulos. O processamento só concilia boletos deste centro gerados pelo canal CNAB; operações API continuam independentes.
+Ocorrências: 02 registra, 03 rejeita entrada, 06 liquida, 09 confirma baixa, 17 liquida após baixa, 61 liquida PIX. Outras ocorrências ficam auditadas sem modificar títulos. O processamento só concilia boletos do convênio compartilhado gerados pelo canal CNAB; operações API continuam independentes.
 
 Liquidação reutiliza as funções financeiras existentes: recebido bruto, juros e descontos/abatimentos, mais a diferença entre bruto/líquido como tarifa bancária. IOF, outras despesas/créditos, liquidação parcial, saldo alterado ou encargos incompatíveis exigem conciliação manual. Identificação por arquivo/evento e conferência de liquidação anterior impedem crédito duplicado, inclusive quando a mesma liquidação chega como 06 e 61.
 
@@ -80,3 +80,15 @@ Resultado da validação desta alteração: 33 testes passaram, typecheck e buil
 ## Atualização para manual 3.0 — fase207
 
 Validação desta atualização: 42 testes passaram; typecheck e build passaram. O PostgreSQL isolado validou a reaplicação da fase207, aceitação de CPF/CNPJ alfanumérico e rejeição de formatos inválidos, mantendo os testes financeiros e de duplicidade das fases anteriores. Os checks de migrações e segurança do servidor passaram. O cadastro convencional e as consultas cadastrais externas ainda usam documento numérico; o suporte alfanumérico desta atualização se aplica à configuração e ao processamento bancário.
+
+## Configuração e sequenciais compartilhados — fase208
+
+Aplicar `db/fase208_sicredi_configuracao_compartilhada.sql` após a fase207. Há uma única configuração CNAB, válida para todos os centros, na mesma seção das configurações do sistema. O campo legado `centro_id` da configuração preserva apenas sua origem; a emissão não o utiliza para escolher convênio ou contador. Somente administrador pode editar o convênio global. A API Sicredi já tinha configuração global e continua com sua numeração fornecida pelo banco.
+
+A migração preserva o histórico, os números reservados, as solicitações de vencimento e as políticas de carteira. O próximo nosso número é pelo menos o maior sequencial CNAB já reservado para o convênio mais um; a próxima remessa é pelo menos a maior remessa histórica mais um. Arquivos de teste, rejeitados e baixados não liberam números para reutilização. A configuração existente é aproveitada e sua conta financeira passa a ser compartilhada (`centro_id = null`). Nenhuma venda, título, boleto ou movimento troca de centro. Novas configurações exigem conta financeira compartilhada. Se existir mais de uma configuração bancária distinta, a transação inteira é bloqueada para evitar escolher um convênio incorreto.
+
+As RPCs de emissão e alteração de vencimento travam a mesma linha global. Se duas emissões forem calculadas com a mesma versão/numeração, só uma grava; a outra recebe “Configuração mudou. Atualize e gere novamente”, sem arquivo, boleto ou avanço parcial. Repetir a emissão após atualizar usa o próximo número. Há também índice único de sequencial global para as novas remessas e o índice bancário existente protege o nosso número em todos os centros. Alterar vencimento consome apenas o sequencial de remessa.
+
+Um retorno pode reunir boletos dos dois centros: a prévia mostra o centro de cada venda, e o banco concilia cada evento no centro do título, em uma única transação. Uma divergência ou falta de acesso a qualquer centro impede o processamento inteiro. Recebimentos e tarifas mantêm os centros de origem na mesma conta financeira. Uma cópia de retorno misto no histórico só é visível para quem pode acessar todos os centros contidos no arquivo; isso evita expor dados de outro centro pelo conteúdo bruto.
+
+Validação em PostgreSQL isolado: reaplicação da fase208, recuperação dos maiores números do histórico, primeira configuração sem filtro de centro, duas emissões com a mesma versão, rejeição e nova tentativa sem duplicidade, alteração de vencimento do segundo centro, retorno misto com rollback integral, acesso restrito ao arquivo misto e liquidação sem duplicidade com movimentos separados por centro. Chromium com dados simulados verificou configuração sem centro selecionado, um único par de campos de sequência, alternância entre os dois centros e Todos, e gravação pelo servidor. A migração ainda precisa ser aplicada no Supabase de produção; os testes não substituem a homologação Sicredi.

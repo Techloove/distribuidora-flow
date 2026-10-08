@@ -20,6 +20,10 @@ create function can_finance(u uuid) returns boolean language sql as $$select exi
 create function usuario_pode_acessar_centro(c uuid) returns boolean language sql as $$select has_role(auth.uid(),'admin') or exists(select 1 from usuario_centros where user_id=auth.uid() and centro_id=c)$$;
 create function ator_financeiro_pode_acessar_centro(u uuid,c uuid) returns boolean language sql as $$select can_finance(u) and (has_role(u,'admin') or exists(select 1 from usuario_centros where user_id=u and centro_id=c))$$;
 create table contas_financeiras(id uuid primary key,nome text,centro_id uuid,ativo boolean,created_at timestamptz default now());
+create table clientes(id uuid primary key,representante_id uuid);
+create table pedidos(id uuid primary key,cliente_id uuid,representante_id uuid,onda_id uuid);
+create function meu_representante_id() returns uuid language sql as $$select null::uuid$$;
+create function usuario_ativo() returns boolean language sql security definer set search_path=public as $$select exists(select 1 from profiles where id=auth.uid() and ativo)$$;
 create table categorias_financeiras(id uuid primary key,nome text,tipo text,grupo_dre text,parent_id uuid,ordem int);
 create table contas_receber(id uuid primary key,cliente_id uuid,centro_id uuid,pedido_id uuid,documento text,parcela int,status text,valor numeric(14,2),juros numeric(14,2) default 0,multa numeric(14,2) default 0,acrescimo numeric(14,2) default 0,desconto numeric(14,2) default 0,valor_pago numeric(14,2) default 0,vencimento date,conta_financeira_id uuid,forma_pagamento_id uuid,data_pagamento date,categoria_id uuid,observacao text);
 create table boletos(id uuid primary key default gen_random_uuid(),conta_receber_id uuid,cliente_id uuid,centro_id uuid,pedido_id uuid,documento text,parcela int,banco text,seu_numero text,nosso_numero text,valor numeric(14,2),valor_liquidado numeric(14,2) default 0,vencimento date,data_liquidacao date,status text,created_by uuid,cooperativa text,posto text,codigo_beneficiario text,tipo_cobranca text,qrcode_pix text,txid text,erro text);
@@ -42,6 +46,7 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
   await db.exec(
     fs.readFileSync(path.join(repo, "db/fase205_sicredi_alteracao_vencimento.sql"), "utf8"),
   );
+  await db.exec(fs.readFileSync(path.join(repo, "db/fase206_carteira_representante.sql"), "utf8"));
   for (let repeat = 0; repeat < 2; repeat++) {
     await db.exec(fs.readFileSync(path.join(repo, "db/fase207_sicredi_cnab30.sql"), "utf8"));
   }
@@ -81,6 +86,17 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
     await assert.rejects(db.query("update sicredi_cnab_config set documento=$1", [invalid]));
   }
   await db.query("update sicredi_cnab_config set documento=$1", [cfg.documento]);
+  const migration208 = fs.readFileSync(
+    path.join(repo, "db/fase208_sicredi_configuracao_compartilhada.sql"),
+    "utf8",
+  );
+  await db.exec(migration208);
+  await db.exec(migration208);
+  assert.equal(
+    (await db.query("select centro_id from contas_financeiras where id=$1", [conta])).rows[0]
+      .centro_id,
+    null,
+  );
   const c = (await db.query("select * from sicredi_cnab_config")).rows[0];
   const titles = JSON.stringify([
     {
@@ -362,6 +378,251 @@ create table auditoria(id uuid default gen_random_uuid(),tabela text,registro_id
     "2099-11-26",
   );
   assert.equal((await db.query("select count(*)::int n from movimentos_financeiros")).rows[0].n, 2);
+
+  // Mesmo convênio nos dois centros: uma versão e um contador compartilhados.
+  const centro2 = "00000000-0000-4000-8000-000000000070";
+  const titleA = "00000000-0000-4000-8000-000000000071";
+  const titleB = "00000000-0000-4000-8000-000000000072";
+  const finance2 = "00000000-0000-4000-8000-000000000073";
+  await db.query("insert into centros values($1)", [centro2]);
+  for (const [id, center] of [
+    [titleA, centro],
+    [titleB, centro2],
+  ]) {
+    await db.query(
+      "insert into contas_receber(id,centro_id,documento,parcela,status,valor,vencimento) values($1,$2,'TESTE208',1,'aberto',1234.56,'2026-10-30')",
+      [id, center],
+    );
+  }
+  const shared = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  function args208(config, center, id, suffix) {
+    return [
+      actor,
+      center,
+      config.updated_at,
+      config.proxima_remessa,
+      config.proximo_nosso_numero,
+      `remessa208-${suffix}.rem`,
+      "fixture",
+      suffix.repeat(63) + "0",
+      JSON.stringify([
+        {
+          conta_id: id,
+          documento: `C208${suffix}`,
+          nosso_numero: `262${String(config.proximo_nosso_numero).padStart(5, "0")}0`,
+          valor: "1234.56",
+          vencimento: "2026-10-30",
+        },
+      ]),
+    ];
+  }
+  const emissionSql = "select cnab_gravar_remessa($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)";
+  const attempts = await Promise.allSettled([
+    db.query(emissionSql, args208(shared, centro, titleA, "a")),
+    db.query(emissionSql, args208(shared, centro2, titleB, "b")),
+  ]);
+  assert.equal(attempts.filter((v) => v.status === "fulfilled").length, 1);
+  assert.equal(attempts.filter((v) => v.status === "rejected").length, 1);
+  assert.match(attempts.find((v) => v.status === "rejected").reason.message, /Configuracao mudou/);
+  const loser = attempts[0].status === "rejected" ? [centro, titleA, "a"] : [centro2, titleB, "b"];
+  await db.query(
+    emissionSql,
+    args208((await db.query("select * from sicredi_cnab_config")).rows[0], ...loser),
+  );
+  const issued = (
+    await db.query("select * from boletos where conta_receber_id in ($1,$2) order by centro_id", [
+      titleA,
+      titleB,
+    ])
+  ).rows;
+  assert.equal(issued.length, 2);
+  assert.notEqual(issued[0].nosso_numero, issued[1].nosso_numero);
+  const advanced = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  assert.equal(advanced.proximo_nosso_numero, shared.proximo_nosso_numero + 2);
+  assert.equal(advanced.proxima_remessa, shared.proxima_remessa + 2);
+  assert.equal((await db.query("select count(*)::int n from sicredi_cnab_config")).rows[0].n, 1);
+  await assert.rejects(
+    db.query("select cnab_salvar_config($1,$2::jsonb)", [
+      actor,
+      JSON.stringify({ ...advanced, proximo_nosso_numero: 1 }),
+    ]),
+    /nao podem retroceder/,
+  );
+  await assert.rejects(
+    db.query(
+      "insert into sicredi_cnab_arquivos(centro_id,tipo,sequencia,nome,conteudo,sha256,quantidade,created_by) values($1,'remessa',$2,'duplicado','fixture',$3,1,$4)",
+      [centro2, shared.proxima_remessa, "f".repeat(64), actor],
+    ),
+    /sicredi_cnab_remessa_global_uniq/,
+  );
+
+  await db.query("insert into auth.users values($1)", [finance2]);
+  await db.query("insert into profiles values($1,true,false)", [finance2]);
+  await db.query("insert into user_roles values($1,'financeiro')", [finance2]);
+  await db.query("insert into usuario_centros values($1,$2)", [finance2, centro2]);
+  const mixed = issued.map((b) => ({
+    ...event,
+    nosso_numero: b.nosso_numero,
+    documento: b.seu_numero,
+    ocorrencia: "02",
+  }));
+  const import208 = [
+    actor,
+    centro,
+    "misto208.crt",
+    "fixture-misto208",
+    "8".repeat(63) + "a",
+    JSON.stringify(mixed),
+  ];
+  const returnSql = "select cnab_gravar_retorno($1,$2,$3,$4,$5,$6::jsonb)";
+  const filesBefore = (await db.query("select count(*)::int n from sicredi_cnab_arquivos")).rows[0]
+    .n;
+  await assert.rejects(
+    db.query(returnSql, [finance2, centro2, ...import208.slice(2)]),
+    /Sem acesso financeiro/,
+  );
+  await assert.rejects(
+    db.query("select cnab_salvar_config($1,$2::jsonb)", [finance2, JSON.stringify(advanced)]),
+    /Somente administrador/,
+  );
+  // Falha no segundo centro desfaz o registro no primeiro e todos os arquivos.
+  await assert.rejects(
+    db.query(returnSql, [
+      ...import208.slice(0, 5),
+      JSON.stringify([mixed[0], { ...mixed[1], valor_titulo: "999.00" }]),
+    ]),
+    /Valor nominal divergente/,
+  );
+  assert.equal(
+    (await db.query("select count(*)::int n from sicredi_cnab_arquivos")).rows[0].n,
+    filesBefore,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from boletos where id in($1,$2) and status='pendente'",
+        issued.map((b) => b.id),
+      )
+    ).rows[0].n,
+    2,
+  );
+  await db.query(returnSql, import208);
+  await db.query(returnSql, import208);
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from boletos where id in($1,$2) and status='registrado'",
+        issued.map((b) => b.id),
+      )
+    ).rows[0].n,
+    2,
+  );
+
+  // Financeiro restrito ao centro2 vê a configuração, mas não o arquivo misto.
+  await db.exec(
+    "grant usage on schema auth to authenticated; grant select on user_roles,usuario_centros to authenticated;",
+  );
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [finance2]);
+  await db.exec(
+    "select set_config('request.jwt.claim.role','authenticated',false); set role authenticated;",
+  );
+  assert.equal((await db.query("select count(*)::int n from sicredi_cnab_config")).rows[0].n, 1);
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from sicredi_cnab_arquivos where cardinality(centros_retorno)>1",
+      )
+    ).rows[0].n,
+    0,
+  );
+  assert.equal(
+    (await db.query("select count(*)::int n from sicredi_cnab_arquivos where tipo='remessa'"))
+      .rows[0].n,
+    1,
+  );
+  await db.exec("reset role; select set_config('request.jwt.claim.role','service_role',false);");
+
+  // Alteração do centro2 também consome a sequência global, sem novo nosso número.
+  const beforeChange = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  const b2 = issued.find((b) => b.centro_id === centro2);
+  await db.query("select sicredi_solicitar_vencimento($1,$2,'2099-11-20','2026-10-30',$3::jsonb)", [
+    actor,
+    b2.id,
+    JSON.stringify({
+      versao: beforeChange.updated_at,
+      sequencia: beforeChange.proxima_remessa,
+      nome: "alterar208.rem",
+      conteudo: "fixture",
+      sha256: "9".repeat(64),
+    }),
+  ]);
+  const afterChange = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  assert.equal(afterChange.proxima_remessa, beforeChange.proxima_remessa + 1);
+  assert.equal(afterChange.proximo_nosso_numero, beforeChange.proximo_nosso_numero);
+  await db.query(returnSql, [
+    actor,
+    centro,
+    "venc208.crt",
+    "fixture",
+    "0".repeat(64),
+    JSON.stringify([
+      {
+        ...mixed.find((e) => e.nosso_numero === b2.nosso_numero),
+        ocorrencia: "14",
+        vencimento: "2099-11-20",
+      },
+    ]),
+  ]);
+  assert.equal(
+    (await db.query("select vencimento::text from contas_receber where id=$1", [titleB])).rows[0]
+      .vencimento,
+    "2099-11-20",
+  );
+
+  // Liquidação mista mantém os centros nas entradas e nas tarifas da mesma conta.
+  const paid = mixed.map((e) => ({ ...e, ocorrencia: "06" }));
+  await db.query(returnSql, [
+    actor,
+    centro,
+    "pago208.crt",
+    "fixture",
+    "1".repeat(63) + "b",
+    JSON.stringify(paid),
+  ]);
+  await db.query(returnSql, [
+    actor,
+    centro2,
+    "pago208.crt",
+    "fixture",
+    "1".repeat(63) + "b",
+    JSON.stringify(paid),
+  ]);
+  assert.equal((await db.query("select count(*)::int n from movimentos_financeiros")).rows[0].n, 6);
+  assert.equal(
+    (
+      await db.query("select count(*)::int n from movimentos_financeiros where centro_id=$1", [
+        centro2,
+      ])
+    ).rows[0].n,
+    2,
+  );
+  const beforeRerun = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  await db.exec("update sicredi_cnab_config set proxima_remessa=1,proximo_nosso_numero=1");
+  await db.exec(migration208);
+  const afterRerun = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  assert.equal(afterRerun.proximo_nosso_numero, beforeRerun.proximo_nosso_numero);
+  assert.equal(afterRerun.proxima_remessa, beforeRerun.proxima_remessa);
+  // Primeira configuração (ou restauração) também respeita os números do histórico.
+  await db.exec("delete from sicredi_cnab_config");
+  const fresh = { ...beforeRerun, proxima_remessa: 1, proximo_nosso_numero: 1 };
+  delete fresh.centro_id;
+  await db.query("select cnab_salvar_config($1,$2::jsonb)", [actor, JSON.stringify(fresh)]);
+  const restored = (await db.query("select * from sicredi_cnab_config")).rows[0];
+  assert.equal(restored.proxima_remessa, beforeRerun.proxima_remessa);
+  assert.equal(restored.proximo_nosso_numero, beforeRerun.proximo_nosso_numero);
+  console.log(
+    "CNAB compartilhado: dois centros; versão concorrente rejeitada; retry sem duplicidade; sequência de vencimento; retorno misto atômico; RLS de arquivo misto; movimentos por centro; reaplicação sem reset PASS",
+  );
   await db.exec("select set_config('request.jwt.claim.role','authenticated',false)");
   await assert.rejects(() =>
     db.query("select cnab_salvar_config($1,$2::jsonb)", [actor, JSON.stringify(cfg)]),
