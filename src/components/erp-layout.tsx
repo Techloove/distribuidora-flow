@@ -58,7 +58,10 @@ import { AlterarSenha } from "@/components/alterar-senha";
 const nav = [
   {
     group: "Visão geral",
-    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/pendencias", label: "Central de pendências", icon: Bell },
+    ],
   },
   {
     group: "Cadastros",
@@ -234,7 +237,9 @@ function SidebarContent({
           .map((section, i) => (
             <div key={section.group} className={i > 0 ? "mt-2" : undefined}>
               {compact ? (
-                i > 0 ? <div className="mx-auto mb-1 h-px w-5 bg-sidebar-border" /> : null
+                i > 0 ? (
+                  <div className="mx-auto mb-1 h-px w-5 bg-sidebar-border" />
+                ) : null
               ) : (
                 <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
                   {section.group}
@@ -311,6 +316,16 @@ export function ErpLayout({
   children: ReactNode;
 }) {
   const { user, roles, signOut } = useSupabase();
+  const { centro, lista, isLoading: centroLoading, error: centroError } = useCentroValido();
+  const centroNome = centroError
+    ? "Centro indisponível"
+    : centroLoading
+      ? "Carregando centro…"
+      : !lista.length
+        ? "Nenhum centro disponível"
+        : centro
+          ? (lista.find((c) => c.id === centro)?.nome ?? "Centro selecionado")
+          : "Todos os centros permitidos";
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
@@ -424,6 +439,13 @@ export function ErpLayout({
             </div>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
+            <span
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
+              aria-label="Centro em uso"
+            >
+              <Building2 className="size-3.5 shrink-0" />
+              <span className="truncate">{centroNome}</span>
+            </span>
             <CentroFiltro />
             {actions}
           </div>

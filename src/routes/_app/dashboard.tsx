@@ -1,3 +1,7 @@
+import { CentralPendencias } from "@/components/central-pendencias";
+import { PainelRepresentante } from "@/components/painel-representante";
+import { perfilPainel, hojeSaoPaulo } from "@/lib/painel-trabalho";
+import { useAcesso } from "@/lib/permissoes";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "lucide-react";
@@ -28,7 +32,15 @@ export const Route = createFileRoute("/_app/dashboard")({
 type Row = Record<string, unknown>;
 
 function Dashboard() {
-  const { client, user } = useSupabase();
+  const { client, user, roles } = useSupabase();
+  const acesso = useAcesso();
+  const perfil = perfilPainel(roles);
+  const rotulo = {
+    representante: "Meu painel comercial",
+    financeiro: "Painel financeiro",
+    gestao: "Visão da gestão",
+    operacao: "Painel da operação",
+  }[perfil];
   const { centro, isLoading: centrosLoading, error: centroError } = useCentroValido();
 
   const data = useQuery({
@@ -56,17 +68,23 @@ function Dashboard() {
 
   return (
     <ErpLayout
-      title="Visão geral"
+      title={rotulo}
       description="Acompanhe os indicadores e as próximas etapas da operação."
     >
       <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-primary p-6 text-primary-foreground">
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest opacity-75">
-            Painel da operação
-          </p>
-          <h2 className="mt-2 text-xl font-semibold">Uma visão clara para decidir melhor.</h2>
+          <p className="text-xs font-medium uppercase tracking-widest opacity-75">{rotulo}</p>
+          <h2 className="mt-2 text-xl font-semibold">
+            {perfil === "representante"
+              ? "Sua carteira, suas metas e seus próximos pedidos."
+              : perfil === "financeiro"
+                ? "Vencimentos e cobranças que precisam de atenção."
+                : "Resultados e prioridades da operação."}
+          </h2>
           <p className="mt-2 text-sm opacity-80">
-            Vendas e financeiro por centro. Cadastros e estoque consolidado.
+            {perfil === "representante"
+              ? "Os dados respeitam a sua carteira de clientes."
+              : "Indicadores dos centros permitidos. Use o filtro para acompanhar cada operação."}
           </p>
         </div>
         <button
@@ -88,68 +106,90 @@ function Dashboard() {
           administrador.
         </div>
       )}
+      {perfil === "representante" && <PainelRepresentante />}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Kpi
-          label="Vendas confirmadas"
-          value={d ? brl(d.vendasConfirmadas) : "—"}
-          icon={ClipboardList}
-          to="/pedidos"
-          hint={d ? `${d.pedidosAbertos} pedidos em rascunho` : undefined}
-        />
-        <Kpi
-          label="A receber em aberto"
-          value={d ? brl(d.receber) : "—"}
-          icon={Wallet}
-          to="/receber"
-          hint={d ? `${brl(d.receberVencido)} vencido` : undefined}
-        />
-        <Kpi
-          label="A pagar em aberto"
-          value={d ? brl(d.pagar) : "—"}
-          icon={Coins}
-          to="/pagar"
-          hint={d ? `${brl(d.pagarVencido)} vencido` : undefined}
-        />
-        <Kpi
-          label="Comissões a liberar"
-          value={d ? brl(d.comissoes) : "—"}
-          icon={Users}
-          to="/comissoes"
-        />
-        <Kpi label="Clientes" value={d ? String(d.clientes) : "—"} icon={Users} to="/clientes" />
-        <Kpi label="Produtos" value={d ? String(d.produtos) : "—"} icon={Package} to="/produtos" />
+        {acesso.pode("/pedidos") && (
+          <Kpi
+            label="Vendas confirmadas"
+            value={d ? brl(d.vendasConfirmadas) : "—"}
+            icon={ClipboardList}
+            to="/pedidos"
+            hint={d ? `${d.pedidosAbertos} pedidos em rascunho` : undefined}
+          />
+        )}
+        {acesso.pode("/receber") && perfil !== "representante" && (
+          <Kpi
+            label="A receber em aberto"
+            value={d ? brl(d.receber) : "—"}
+            icon={Wallet}
+            to="/receber"
+            hint={d ? `${brl(d.receberVencido)} vencido` : undefined}
+          />
+        )}
+        {acesso.pode("/pagar") && perfil !== "representante" && (
+          <Kpi
+            label="A pagar em aberto"
+            value={d ? brl(d.pagar) : "—"}
+            icon={Coins}
+            to="/pagar"
+            hint={d ? `${brl(d.pagarVencido)} vencido` : undefined}
+          />
+        )}
+        {acesso.pode("/comissoes") && (
+          <Kpi
+            label="Comissões a liberar"
+            value={d ? brl(d.comissoes) : "—"}
+            icon={Users}
+            to="/comissoes"
+          />
+        )}
+        {acesso.pode("/pessoas") && perfil !== "representante" && (
+          <Kpi label="Clientes" value={d ? String(d.clientes) : "—"} icon={Users} to="/pessoas" />
+        )}
+        {acesso.pode("/produtos") && perfil !== "representante" && (
+          <Kpi
+            label="Produtos"
+            value={d ? String(d.produtos) : "—"}
+            icon={Package}
+            to="/produtos"
+          />
+        )}
       </div>
 
-      <FluxoOperacional />
+      <div className="mt-6">
+        <CentralPendencias compact />
+      </div>
+      {(perfil === "gestao" || perfil === "operacao") && <FluxoOperacional />}
+      {perfil === "gestao" && <RankingRotas />}
 
-      <RankingRotas />
-
-      <section className="mt-6 rounded-lg border border-border bg-card p-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <AlertTriangle className="size-4 text-destructive" />
-          Alertas de estoque mínimo
-        </h2>
-        {!d ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {data.isError ? "Dados indisponíveis." : "Carregando…"}
-          </p>
-        ) : d.alertas.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Nenhum produto abaixo do estoque mínimo.
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-1.5 text-sm">
-            {d.alertas.slice(0, 8).map((p) => (
-              <li key={String(p["id"])} className="flex justify-between gap-4">
-                <span className="truncate">{String(p["descricao"])}</span>
-                <span className="text-destructive">
-                  {String(p["estoque_atual"])} / mín. {String(p["estoque_minimo"])}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {acesso.pode("/estoque") && (
+        <section className="mt-6 rounded-lg border border-border bg-card p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <AlertTriangle className="size-4 text-destructive" />
+            Alertas de estoque mínimo
+          </h2>
+          {!d ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {data.isError ? "Dados indisponíveis." : "Carregando…"}
+            </p>
+          ) : d.alertas.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Nenhum produto abaixo do estoque mínimo.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-1.5 text-sm">
+              {d.alertas.slice(0, 8).map((p) => (
+                <li key={String(p["id"])} className="flex justify-between gap-4">
+                  <span className="truncate">{String(p["descricao"])}</span>
+                  <span className="text-destructive">
+                    {String(p["estoque_atual"])} / mín. {String(p["estoque_minimo"])}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </ErpLayout>
   );
 }
@@ -200,7 +240,7 @@ const ETAPAS: { campo: string; label: string; to: string }[] = [
 function RankingRotas() {
   const { client } = useSupabase();
   const { centro } = useCentroValido();
-  const de = `${new Date().toISOString().slice(0, 7)}-01`;
+  const de = `${hojeSaoPaulo().slice(0, 7)}-01`;
 
   const ranking = useQuery({
     queryKey: ["dashboard_rankings", centro, de],
@@ -267,6 +307,7 @@ function RankingRotas() {
 
 /** Painel do fluxo operacional: pedido → separação → faturamento → carga → entrega. */
 function FluxoOperacional() {
+  const acesso = useAcesso();
   const { client } = useSupabase();
   const fluxo = useQuery({
     queryKey: ["vw_fluxo_operacional"],
@@ -287,7 +328,7 @@ function FluxoOperacional() {
         Pedido → aprovação → separação → conferência → faturamento → nota fiscal → carga → entrega.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-4">
-        {ETAPAS.map((e) => (
+        {ETAPAS.filter((e) => acesso.pode(e.to)).map((e) => (
           <Link
             key={e.campo}
             to={e.to}

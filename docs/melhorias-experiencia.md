@@ -1,0 +1,19 @@
+# Melhorias da experiência de trabalho
+
+Esta atualização usa os dados e as permissões já existentes. Não exige nova migração SQL. A central de pendências herda a permissão do dashboard; cada categoria depende também da liberação de seu próprio módulo. Todas as consultas usam o JWT do usuário e continuam sujeitas ao RLS por carteira e centro. Não há alterações na emissão do boleto híbrido ou no PDF de homologação.
+
+## Onde encontrar
+
+- **Cabeçalho e cadastros:** centro em uso sempre visível, estados padronizados e ações/filtros que se reorganizam em telas pequenas. No celular, tabelas dos cadastros, itens do pedido e títulos viram cartões com rótulos. A impressão mantém o formato de tabela e o template compartilhado de pedidos.
+- **Pedidos:** resumo fixo com peso, itens, descontos, frete e total. O peso usa o dado do produto vinculado ao item, mesmo quando ele não está no catálogo carregado. Campos obrigatórios, itens inválidos e total não positivo são apontados antes da confirmação. Alterações comerciais ainda não salvas e gravações em andamento impedem confirmar valores antigos. A verificação de crédito, aprovação e estoque continua nas RPCs existentes; não é substituída pelo checklist visual. Os valores exibidos são os gravados no pedido.
+- **Dashboard:** o perfil de representante prioriza sua carteira, meta mensal e pedidos; o financeiro prioriza recebíveis, pagamentos e cobranças; a gestão mantém os resultados e o fluxo operacional. Administrador é a exceção ao escopo de representante; representante com outro papel continua com o painel comercial. Atalhos levam apenas aos módulos permitidos. A meta mensal usa o acompanhamento existente e está identificada como relativa a todos os centros permitidos, independentemente do filtro do painel.
+- **Contas a receber → Histórico:** cada parcela mostra criação (quando houver data), solicitações de emissão, situação atual dos boletos, ocorrências CNAB, recebimentos, liquidação bancária e alterações de vencimento. São até 100 registros por fonte. Horários são apresentados no fuso de São Paulo. Não são inventados horários para estados sem evento persistido; os estados atuais aparecem como informação da solicitação. Erros de consulta são explícitos, inclusive quando apenas parte do histórico está disponível.
+- **Central de pendências:** pedidos aguardando aprovação/rascunhos, boletos com erro, vencimentos bancários pendentes/incertos, parcelas vencidas, clientes sem documento/cidade/UF e divergências na separação. A página permite buscar e filtrar tipo/prioridade. O botão Revisar seleciona o centro do registro e abre o módulo responsável; pedidos têm link direto para o documento, com leitura por ID quando ele não está na lista carregada. Outras categorias abrem seu módulo para revisão. Não há resolução automática ou marcação fictícia de concluído: a pendência desaparece quando sua origem é corrigida.
+
+## Limites dos dados
+
+Os contadores da central usam a contagem do banco; a lista mostra até 40 registros por categoria e comunica esse limite. Uma falha em uma categoria aparece como indisponível, sem ser apresentada como zero. Divergências de separação vêm da view por item, não de uma contagem distinta de pedidos. Erros de retorno CNAB que não chegaram a gerar registros continuam no fluxo de importação; esta atualização não persiste um arquivo rejeitado como se fosse retorno processado.
+
+## Verificação
+
+45 testes unitários passaram, além do typecheck e build. Os testes PostgreSQL isolados verificaram carteira/RLS e o fluxo financeiro CNAB compartilhado. Chromium com dados simulados verificou os três perfis, central filtrada e link para pedido, falha parcial visível, resumo com bloqueio/liberação e pagamento não salvo, histórico financeiro e telas de pedidos, cadastros e recebíveis com largura de 390 px sem rolagem horizontal da página. Esses testes não constituem validação de dados no Supabase de produção.

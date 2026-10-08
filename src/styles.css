@@ -248,3 +248,68 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Layout compartilhado: controles acessíveis ao toque e cartões de tabela no celular. */
+.erp-shell main {
+  overflow-wrap: anywhere;
+}
+.erp-shell h2 {
+  letter-spacing: -0.015em;
+}
+.erp-shell input:focus-visible,
+.erp-shell select:focus-visible {
+  outline-offset: 3px;
+}
+@media screen and (max-width: 639px) {
+  .erp-shell button,
+  [role="dialog"] button,
+  [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
+  [role="dialog"] select,
+  .erp-shell input:not([type="checkbox"]):not([type="radio"]),
+  .erp-shell select {
+    min-height: 44px;
+  }
+  .erp-shell nav a {
+    min-height: 44px;
+  }
+  .mobile-cards,
+  .mobile-cards tbody {
+    display: block;
+    width: 100%;
+  }
+  .mobile-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .mobile-cards tbody tr {
+    display: block;
+    margin: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+  }
+  .mobile-cards tbody td {
+    display: grid;
+    grid-template-columns: minmax(80px, 0.7fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    white-space: normal;
+    text-align: left;
+  }
+  .mobile-cards tbody td::before {
+    content: attr(data-label);
+    color: var(--muted-foreground);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .mobile-cards tbody td:not([data-label]) {
+    display: block;
+  }
+  .mobile-cards tbody td:empty {
+    display: none;
+  }
+}

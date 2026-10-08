@@ -1,3 +1,4 @@
+import { StatusBadge } from "@/components/status-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -28,14 +29,7 @@ import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export type FieldType =
-  | "text"
-  | "email"
-  | "number"
-  | "date"
-  | "select"
-  | "checkbox"
-  | "multicheck"
-  | "ref";
+  "text" | "email" | "number" | "date" | "select" | "checkbox" | "multicheck" | "ref";
 
 export type CrudField = {
   name: string;
@@ -84,7 +78,11 @@ function LookupList({ id, table }: { id: string; table: string }) {
     queryKey: ["lookup", table],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!.from(table).select("nome, ativo").eq("ativo", true).order("nome");
+      const { data, error } = await client!
+        .from(table)
+        .select("nome, ativo")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw new Error(error.message);
       return (data ?? []) as { nome: string }[];
     },
@@ -113,7 +111,7 @@ function useRefOptions(field: CrudField) {
         .select(`id, ${ref!.labelField}`)
         .order(ref!.labelField);
       if (error) throw new Error(error.message);
-      return ((data ?? []) as unknown) as Record<string, unknown>[];
+      return (data ?? []) as unknown as Record<string, unknown>[];
     },
   });
 }
@@ -121,7 +119,8 @@ function useRefOptions(field: CrudField) {
 /** Nome legível de um registro relacionado, exibido na grade. */
 function RefLabel({ field, value }: { field: CrudField; value: unknown }) {
   const options = useRefOptions(field);
-  if (value === null || value === undefined || value === "") return <>{field.ref?.emptyLabel ?? "—"}</>;
+  if (value === null || value === undefined || value === "")
+    return <>{field.ref?.emptyLabel ?? "—"}</>;
   const row = (options.data ?? []).find((r) => String(r["id"]) === String(value));
   return <>{row ? String(row[field.ref!.labelField] ?? "—") : options.isLoading ? "…" : "—"}</>;
 }
@@ -155,7 +154,6 @@ function RefSelect({
     </select>
   );
 }
-
 
 export type Row = Record<string, unknown>;
 
@@ -246,8 +244,7 @@ export function CrudPage({
   /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
   uppercase?: boolean;
 }) {
-  const isUpperField = (f: CrudField) =>
-    !f.type || f.type === "text";
+  const isUpperField = (f: CrudField) => !f.type || f.type === "text";
   const { client, canManage } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
@@ -322,7 +319,11 @@ export function CrudPage({
     const term = search.trim().toLowerCase();
     if (!term) return list;
     return list.filter((row) =>
-      searchColumns.some((col) => String(row[col] ?? "").toLowerCase().includes(term)),
+      searchColumns.some((col) =>
+        String(row[col] ?? "")
+          .toLowerCase()
+          .includes(term),
+      ),
     );
   }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate]);
 
@@ -354,7 +355,6 @@ export function CrudPage({
     setOpen(true);
   }
 
-
   function traduzErro(message: string) {
     if (/row-level security|violates row-level/i.test(message)) {
       return "Seu usuário não tem permissão para gravar aqui. É necessário o papel admin ou gestor (tela Usuários e papéis).";
@@ -371,13 +371,14 @@ export function CrudPage({
     if (/not-null|null value in column/i.test(message)) {
       const col = message.match(/column "([^"]+)"/)?.[1];
       const label = fields.find((f) => f.name === col)?.label ?? col;
-      return label ? `Preencha o campo obrigatório: ${label}.` : "Preencha todos os campos obrigatórios.";
+      return label
+        ? `Preencha o campo obrigatório: ${label}.`
+        : "Preencha todos os campos obrigatórios.";
     }
     return message;
   }
 
   const save = useMutation({
-
     mutationFn: async () => {
       assertDirectWriteAllowed();
       const payload: Record<string, unknown> = {};
@@ -391,15 +392,23 @@ export function CrudPage({
         if (field.type === "checkbox") {
           payload[field.name] = Boolean(raw);
         } else if (field.type === "number") {
-          const txt = String(raw ?? "").trim().replace(/\./g, "").replace(",", ".");
+          const txt = String(raw ?? "")
+            .trim()
+            .replace(/\./g, "")
+            .replace(",", ".");
           const n = txt === "" ? NaN : Number(/,/.test(String(raw)) ? txt : String(raw).trim());
           // vazio/inválido: não envia (o banco aplica o padrão, ex. 0)
-          if (Number.isNaN(n)) { if (editing) payload[field.name] = null; continue; }
+          if (Number.isNaN(n)) {
+            if (editing) payload[field.name] = null;
+            continue;
+          }
           payload[field.name] = n;
         } else {
-          if (raw === "" || raw == null) { if (editing) payload[field.name] = null; continue; }
-          payload[field.name] =
-            uppercase && isUpperField(field) ? String(raw).toUpperCase() : raw;
+          if (raw === "" || raw == null) {
+            if (editing) payload[field.name] = null;
+            continue;
+          }
+          payload[field.name] = uppercase && isUpperField(field) ? String(raw).toUpperCase() : raw;
         }
       }
 
@@ -503,7 +512,9 @@ export function CrudPage({
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 p-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Dados visíveis na lista</p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Dados visíveis na lista
+              </p>
               <div className="max-h-72 space-y-1 overflow-y-auto">
                 {fields.map((f) => (
                   <label key={f.name} className="flex items-center gap-2 text-sm">
@@ -577,7 +588,11 @@ export function CrudPage({
                 onChange={(v) => setF(f.name, v)}
                 options={
                   f.filter && !(f.options ?? []).length
-                    ? [...new Set((query.data ?? []).map((r) => String(r[f.name] ?? "")).filter(Boolean))]
+                    ? [
+                        ...new Set(
+                          (query.data ?? []).map((r) => String(r[f.name] ?? "")).filter(Boolean),
+                        ),
+                      ]
                         .sort()
                         .map((v) => ({ value: v, label: v }))
                     : (f.options ?? [])
@@ -619,7 +634,7 @@ export function CrudPage({
         ) : rows.length === 0 ? (
           <div className="py-14 text-center text-sm text-muted-foreground">{emptyLabel}</div>
         ) : (
-          <Table>
+          <Table className="mobile-cards">
             <TableHeader>
               <TableRow>
                 {tableFields.map((f) => (
@@ -632,8 +647,10 @@ export function CrudPage({
               {rows.map((row) => (
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
-                    <TableCell key={f.name}>
-                      {inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
+                    <TableCell key={f.name} data-label={f.label}>
+                      {f.name === "status" ? (
+                        <StatusBadge value={row[f.name]} />
+                      ) : inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
                         <Input
                           key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
                           type="number"
@@ -672,21 +689,21 @@ export function CrudPage({
                       ) : f.type === "ref" && f.ref ? (
                         <RefLabel field={f} value={row[f.name]} />
                       ) : f.type === "select" && f.options?.length ? (
-                        f.options.find((o) => o.value === String(row[f.name] ?? ""))?.label ??
-                        String(row[f.name] ?? "—")
+                        (f.options.find((o) => o.value === String(row[f.name] ?? ""))?.label ??
+                        String(row[f.name] ?? "—"))
                       ) : (
                         String(row[f.name] ?? "—")
                       )}
                     </TableCell>
                   ))}
 
-
-                  <TableCell className="no-print text-right">
+                  <TableCell data-label="Ações" className="no-print text-right">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         disabled={directWriteBlocked || !canManage}
+                        aria-label="Editar registro"
                         onClick={() => openEdit(row)}
                       >
                         <Pencil className="size-4" />
@@ -695,6 +712,7 @@ export function CrudPage({
                         variant="ghost"
                         size="icon"
                         disabled={directWriteBlocked || !canManage}
+                        aria-label="Excluir registro"
                         onClick={() => remove.mutate(row["id"] as string)}
                       >
                         <Trash2 className="size-4 text-destructive" />
@@ -733,131 +751,137 @@ export function CrudPage({
                   (!f.showWhen || f.showWhen(form)),
               )
               .map((field) => (
-              <Fragment key={field.name}>
-              {field.section ? (
-                <h3 className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-4">
-                  {field.section}
-                </h3>
-              ) : null}
-              <div
-                key={field.name}
-                className={`space-y-1.5 ${
-                  field.span === 2
-                    ? "sm:col-span-4"
-                    : field.span === 1
-                      ? "sm:col-span-1"
-                      : "sm:col-span-2"
-                }`}
-              >
-                <Label htmlFor={field.name}>{field.label}</Label>
-                {field.auto ? (
-                  <Input
-                    id={field.name}
-                    readOnly
-                    disabled
-                    value={String(form[field.name] ?? "")}
-                    placeholder="Gerado automaticamente"
-                  />
-                ) : field.type === "multicheck" ? (
-                  <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
-                    {(field.checks ?? []).map((c) => (
-                      <label
-                        key={c.name}
-                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                          form[c.name]
-                            ? "border-primary bg-primary/10 text-foreground"
-                            : "border-input text-muted-foreground hover:bg-accent/40"
-                        }`}
+                <Fragment key={field.name}>
+                  {field.section ? (
+                    <h3 className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-4">
+                      {field.section}
+                    </h3>
+                  ) : null}
+                  <div
+                    key={field.name}
+                    className={`space-y-1.5 ${
+                      field.span === 2
+                        ? "sm:col-span-4"
+                        : field.span === 1
+                          ? "sm:col-span-1"
+                          : "sm:col-span-2"
+                    }`}
+                  >
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    {field.auto ? (
+                      <Input
+                        id={field.name}
+                        readOnly
+                        disabled
+                        value={String(form[field.name] ?? "")}
+                        placeholder="Gerado automaticamente"
+                      />
+                    ) : field.type === "multicheck" ? (
+                      <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
+                        {(field.checks ?? []).map((c) => (
+                          <label
+                            key={c.name}
+                            className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                              form[c.name]
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-input text-muted-foreground hover:bg-accent/40"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(form[c.name])}
+                              disabled={directWriteBlocked}
+                              onChange={(e) =>
+                                setForm((f) => ({ ...f, [c.name]: e.target.checked }))
+                              }
+                              className="size-4 accent-primary"
+                            />
+                            {c.label}
+                          </label>
+                        ))}
+                      </div>
+                    ) : field.type === "ref" ? (
+                      <RefSelect
+                        field={field}
+                        value={String(form[field.name] ?? "")}
+                        disabled={directWriteBlocked}
+                        onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
+                      />
+                    ) : field.type === "select" ? (
+                      <select
+                        id={field.name}
+                        value={String(form[field.name] ?? "")}
+                        onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                       >
+                        <option value="">—</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === "checkbox" ? (
+                      <div className="flex h-9 items-center">
                         <input
+                          id={field.name}
                           type="checkbox"
-                          checked={Boolean(form[c.name])}
+                          checked={Boolean(form[field.name])}
                           disabled={directWriteBlocked}
                           onChange={(e) =>
-                            setForm((f) => ({ ...f, [c.name]: e.target.checked }))
+                            setForm((f) => ({ ...f, [field.name]: e.target.checked }))
                           }
                           className="size-4 accent-primary"
                         />
-                        {c.label}
-                      </label>
-                    ))}
+                      </div>
+                    ) : (
+                      <>
+                        {field.lookup ? (
+                          <LookupList id={`lk-${field.name}`} table={field.lookup} />
+                        ) : null}
+                        <Input
+                          id={field.name}
+                          list={field.lookup ? `lk-${field.name}` : undefined}
+                          autoComplete={field.lookup ? "off" : undefined}
+                          type={field.type === "number" ? "number" : (field.type ?? "text")}
+                          step={field.step}
+                          value={String(form[field.name] ?? "")}
+                          disabled={directWriteBlocked}
+                          onBlur={(e) => {
+                            if (field.type !== "number" || !field.step) return;
+                            const dec = (field.step.split(".")[1] ?? "").length;
+                            const raw = e.target.value;
+                            if (raw === "" || Number.isNaN(Number(raw))) return;
+                            const fixed = Number(raw).toFixed(dec);
+                            if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
+                          }}
+                          onChange={(e) =>
+                            setForm((f) => {
+                              const val =
+                                uppercase && isUpperField(field)
+                                  ? e.target.value.toUpperCase()
+                                  : e.target.value;
+                              const next = { ...f, [field.name]: val };
+                              const patch = onFieldChange?.(field.name, val, next);
+                              return patch ? { ...next, ...patch } : next;
+                            })
+                          }
+                        />
+                      </>
+                    )}
                   </div>
-                ) : field.type === "ref" ? (
-                  <RefSelect
-                    field={field}
-                    value={String(form[field.name] ?? "")}
-                    disabled={directWriteBlocked}
-                    onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
-                  />
-                ) : field.type === "select" ? (
-
-                  <select
-                    id={field.name}
-                    value={String(form[field.name] ?? "")}
-                    onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">—</option>
-                    {field.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : field.type === "checkbox" ? (
-                  <div className="flex h-9 items-center">
-                    <input
-                      id={field.name}
-                      type="checkbox"
-                      checked={Boolean(form[field.name])}
-                      disabled={directWriteBlocked}
-                      onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.checked }))}
-                      className="size-4 accent-primary"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    {field.lookup ? <LookupList id={`lk-${field.name}`} table={field.lookup} /> : null}
-                    <Input
-                    id={field.name}
-                    list={field.lookup ? `lk-${field.name}` : undefined}
-                    autoComplete={field.lookup ? "off" : undefined}
-                    type={field.type === "number" ? "number" : field.type ?? "text"}
-                    step={field.step}
-                    value={String(form[field.name] ?? "")}
-                    disabled={directWriteBlocked}
-                    onBlur={(e) => {
-                      if (field.type !== "number" || !field.step) return;
-                      const dec = (field.step.split(".")[1] ?? "").length;
-                      const raw = e.target.value;
-                      if (raw === "" || Number.isNaN(Number(raw))) return;
-                      const fixed = Number(raw).toFixed(dec);
-                      if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
-                    }}
-                    onChange={(e) =>
-                      setForm((f) => {
-                        const val = uppercase && isUpperField(field) ? e.target.value.toUpperCase() : e.target.value;
-                        const next = { ...f, [field.name]: val };
-                        const patch = onFieldChange?.(field.name, val, next);
-                        return patch ? { ...next, ...patch } : next;
-                      })
-                    }
-                  />
-                  </>
-                )}
-              </div>
-              {field.after ? (
-                <div className="sm:col-span-4">
-                  {field.after({
-                    form,
-                    editing,
-                    patch: (values) => setForm((f) => ({ ...f, ...values })),
-                    openRow: (row) => openEdit(row),
-                  })}
-                </div>
-              ) : null}
-              </Fragment>
-            ))}
+                  {field.after ? (
+                    <div className="sm:col-span-4">
+                      {field.after({
+                        form,
+                        editing,
+                        patch: (values) => setForm((f) => ({ ...f, ...values })),
+                        openRow: (row) => openEdit(row),
+                      })}
+                    </div>
+                  ) : null}
+                </Fragment>
+              ))}
           </div>
           {extraFormEnd ? (
             <div className="mt-4">

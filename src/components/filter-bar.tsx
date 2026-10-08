@@ -15,11 +15,11 @@ export function FilterBar({
 }) {
   return (
     <div className="no-print rounded-lg border border-border bg-card p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Filter className="size-3.5" /> Filtros
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2 [&>div]:flex-wrap">
           {extra}
           {onClear ? (
             <Button size="sm" variant="ghost" onClick={onClear}>

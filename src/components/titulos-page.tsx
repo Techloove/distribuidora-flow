@@ -1,3 +1,5 @@
+import { StatusBadge } from "@/components/status-badge";
+import { HistoricoTitulo } from "@/components/historico-titulo";
 import { EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
 import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -570,7 +572,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             Nenhum título neste filtro.
           </p>
         ) : (
-          <Table>
+          <Table className="mobile-cards">
             <TableHeader>
               <TableRow>
                 <TableHead className="no-print w-8" />
@@ -589,7 +591,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={String(r["id"])}>
-                  <TableCell className="no-print">
+                  <TableCell data-label="Selecionar" className="no-print">
                     <input
                       type="checkbox"
                       aria-label="Selecionar título"
@@ -607,16 +609,26 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       }
                     />
                   </TableCell>
-                  <TableCell>{String(r["documento"] ?? "—")}</TableCell>
-                  <TableCell>{partnerName(r[config.partnerKey])}</TableCell>
-                  <TableCell>{String(r["parcela"])}</TableCell>
-                  <TableCell>{String(r["vencimento"])}</TableCell>
-                  <TableCell className="text-right">{brl(r["valor"])}</TableCell>
-                  <TableCell className="text-right">{brl(r["valor_pago"])}</TableCell>
-                  <TableCell className="text-right">{brl(r["saldo"])}</TableCell>
-                  <TableCell>{String(r["status_efetivo"] ?? r["status"])}</TableCell>
+                  <TableCell data-label="Documento">{String(r["documento"] ?? "—")}</TableCell>
+                  <TableCell data-label="Cliente / fornecedor">
+                    {partnerName(r[config.partnerKey])}
+                  </TableCell>
+                  <TableCell data-label="Parcela">{String(r["parcela"])}</TableCell>
+                  <TableCell data-label="Vencimento">{String(r["vencimento"])}</TableCell>
+                  <TableCell data-label="Valor" className="text-right">
+                    {brl(r["valor"])}
+                  </TableCell>
+                  <TableCell data-label="Pago" className="text-right">
+                    {brl(r["valor_pago"])}
+                  </TableCell>
+                  <TableCell data-label="Saldo" className="text-right">
+                    {brl(r["saldo"])}
+                  </TableCell>
+                  <TableCell data-label="Situação">
+                    <StatusBadge value={r["status_efetivo"] ?? r["status"]} />
+                  </TableCell>
                   {isReceber ? (
-                    <TableCell>
+                    <TableCell data-label="Boleto">
                       <span
                         className={
                           boletoLabel(r) === "Sem boleto"
@@ -642,7 +654,8 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       ) : null}
                     </TableCell>
                   ) : null}
-                  <TableCell className="no-print text-right">
+                  <TableCell data-label="Ações" className="no-print text-right">
+                    {isReceber && <HistoricoTitulo titulo={r} />}
                     {isReceber &&
                     canFinance &&
                     !boletos.isLoading &&
