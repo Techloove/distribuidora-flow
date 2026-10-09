@@ -518,6 +518,7 @@ const root = path.resolve(__dirname, "..");
   assert.equal((await db.query("select * from role_menus where role='financeiro'")).rows.length, 0);
   await db.exec("reset role;set role anon");
   await assert.rejects(db.query("select pode_rotina('extrato_ver')"), /permission denied/);
+  await require("./check-expansao-database.cjs")(db, uuid, login, root);
   await db.close();
   console.log(
     "Rotinas OK: migração reaplicável, margem/custo capturado, reposição, carteiras, cobrança única, importação idempotente, conciliação, entrega, capacidade, comissões, devolução/avaria/cancelamento e auditoria sem segredos.",

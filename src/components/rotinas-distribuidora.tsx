@@ -1,3 +1,4 @@
+import { EntregaPorItem, AbrirComprovante } from "@/components/entrega-por-item";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -31,16 +32,23 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
   const permissoes = usePermissoesRotinas();
   const { client, user, canManage } = useSupabase();
   const [frete, setFrete] = useState("");
+  const [tributos, setTributos] = useState(String(pedido["tributos_estimados"] ?? 0));
+  const [despesas, setDespesas] = useState(String(pedido["despesas_variaveis"] ?? 0));
   const q = useQuery({
     queryKey: ["vw_margem_pedido_209", user?.id, pedido["id"]],
     enabled: !!client && permissoes.pode("margem_pedido_ver"),
     queryFn: async () => {
       const { data, error } = await client!
-        .from("vw_margem_pedido_209")
+        .from("vw_resultado_estimado_215")
         .select("*")
         .eq("pedido_id", pedido["id"])
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error(
+          error.message.includes("schema cache") || error.message.includes("does not exist")
+            ? "Aplique a fase215 no Supabase para consultar resultado estimado."
+            : error.message,
+        );
       return data as Registro;
     },
   });
@@ -75,6 +83,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
               ["Custo do frete", brl(q.data["custo_frete"])],
               ["Contribuição", brl(q.data["resultado"])],
               ["Margem", `${q.data["margem"] ?? "—"}%`],
+              ["Resultado estimado antes das despesas fixas", brl(q.data["resultado_estimado"])],
             ].map(([l, v]) => (
               <div key={l}>
                 <p className="text-xs text-muted-foreground">{l}</p>
@@ -93,6 +102,51 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
             calculado no pedido. Custo atual até confirmar; pedidos antigos sem captura usam custo
             atual.
           </p>
+          {canManage &&
+            permissoes.pode("rentabilidade_editar") &&
+            ["rascunho", "digitacao", "aguardando_aprovacao", "aprovado"].includes(
+              String(pedido["status"]),
+            ) && (
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="text-xs">
+                  Tributos estimados (R$)
+                  <Input
+                    aria-label="Tributos estimados do pedido"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={tributos}
+                    onChange={(e) => setTributos(e.target.value)}
+                  />
+                </label>
+                <label className="text-xs">
+                  Despesas variáveis (R$)
+                  <Input
+                    aria-label="Despesas variáveis do pedido"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={despesas}
+                    onChange={(e) => setDespesas(e.target.value)}
+                  />
+                </label>
+                <Button
+                  disabled={rpc.isPending || Number(tributos) < 0 || Number(despesas) < 0}
+                  onClick={() =>
+                    rpc.mutate({
+                      nome: "definir_rentabilidade_215",
+                      args: {
+                        _pedido: pedido["id"],
+                        _tributos: Number(tributos),
+                        _despesas: Number(despesas),
+                      },
+                    })
+                  }
+                >
+                  Salvar estimativas
+                </Button>
+              </div>
+            )}
           {canManage &&
             permissoes.pode("frete_pedido_editar") &&
             ["rascunho", "digitacao", "aguardando_aprovacao", "aprovado"].includes(
@@ -282,6 +336,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
               Registre a ocorrência ou confirme a entrega com recebedor e referência do comprovante.
             </DialogDescription>
           </DialogHeader>
+          <EntregaPorItem expedicao={expedicao} />
           <label className="text-sm">
             Tipo
             <select
@@ -358,6 +413,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
                   {String(r["recebedor"] ?? "")} {String(r["observacao"] ?? "")}
                 </p>
                 <p className="break-words">{String(r["comprovante"] ?? "")}</p>
+                {r["arquivo_path"] ? <AbrirComprovante path={String(r["arquivo_path"])} /> : null}
               </article>
             ))}
           </div>

@@ -29,3 +29,38 @@ test("migração de acessos não depende de tabela temporária entre comandos", 
   expect(sql).not.toMatch(/create\s+temporary\s+table/i);
   expect(sql).not.toContain("catalogo_rotinas_211");
 });
+
+test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da interface", () => {
+  const novas = [
+    "receber_renegociar",
+    "comissao_proporcional_operar",
+    "compra_xml_importar",
+    "pix_gerar",
+    "indicadores_comparar",
+    "deposito_operar",
+    "inventario_contar",
+    "inventario_conferir",
+    "entrega_parcial_operar",
+    "rentabilidade_editar",
+    "integridade_ver",
+  ] as const;
+  const files = [
+    "fase212_reservas_estoque.sql",
+    "fase213_depositos_inventario.sql",
+    "fase214_entregas_parciais.sql",
+    "fase215_comissoes_e_rentabilidade.sql",
+    "fase216_renegociacao.sql",
+    "fase217_comissao_proporcional.sql",
+    "fase218_compras_xml.sql",
+    "fase219_pix_por_chave.sql",
+    "fase220_indicadores_auditoria.sql",
+  ];
+  const sql = files
+    .map((file) => readFileSync(new URL("../db/" + file, import.meta.url), "utf8"))
+    .join("\n");
+  for (const code of novas) {
+    expect(sql).toMatch(
+      new RegExp("\\('" + code + "','[^']+','[^']+',\\d+,'" + ACOES_ROTINAS[code] + "'\\)"),
+    );
+  }
+});

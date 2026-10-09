@@ -77,8 +77,20 @@ function FaixasPage() {
       ],
     },
     { name: "valor_min", label: "De (R$)", type: "number", step: "0.01", inTable: true },
-    { name: "valor_max", label: "Até (R$) — vazio = sem limite", type: "number", step: "0.01", inTable: true },
+    {
+      name: "valor_max",
+      label: "Até (R$) — vazio = sem limite",
+      type: "number",
+      step: "0.01",
+      inTable: true,
+    },
     { name: "percentual", label: "Comissão (%)", type: "number", step: "0.01", inTable: true },
+    {
+      name: "progressiva",
+      label: "Progressiva (cada trecho do volume usa sua faixa)",
+      type: "checkbox",
+      inTable: true,
+    },
     { name: "ativo", label: "Ativa", type: "checkbox", inTable: true },
   ];
 

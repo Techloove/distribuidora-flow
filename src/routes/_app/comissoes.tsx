@@ -1,3 +1,4 @@
+import { ComissaoProporcional } from "@/components/financeiro-novas-rotinas";
 import { AjustesComissao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -296,6 +297,7 @@ function ComissoesPage() {
       }
     >
       <div className="space-y-4">
+        <ComissaoProporcional />
         <AjustesComissao />
         <FilterBar
           onClear={() => {

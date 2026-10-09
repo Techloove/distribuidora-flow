@@ -3,6 +3,17 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 
 export const ACOES_ROTINAS = {
+  integridade_ver: "/configuracoes",
+  receber_renegociar: "/receber",
+  comissao_proporcional_operar: "/comissoes",
+  compra_xml_importar: "/compras",
+  pix_gerar: "/receber",
+  indicadores_comparar: "/relatorios",
+  deposito_operar: "/estoque",
+  inventario_contar: "/estoque",
+  inventario_conferir: "/estoque",
+  entrega_parcial_operar: "/expedicao",
+  rentabilidade_editar: "/pedidos",
   margem_pedido_ver: "/pedidos",
   frete_pedido_editar: "/pedidos",
   reposicao_ver: "/planejamento-compras",
@@ -21,6 +32,20 @@ export const ACOES_ROTINAS = {
   configuracao_rotinas_editar: "/configuracoes",
 } as const;
 export type AcaoRotina = keyof typeof ACOES_ROTINAS;
+
+const CAPACIDADES: Partial<Record<AcaoRotina, readonly string[]>> = {
+  deposito_operar: ["estoque"],
+  inventario_contar: ["estoque"],
+  inventario_conferir: ["estoque"],
+  entrega_parcial_operar: ["expedicao", "estoque"],
+  receber_renegociar: ["financeiro"],
+  pix_gerar: ["financeiro"],
+  comissao_proporcional_operar: ["financeiro"],
+  compra_xml_importar: ["estoque", "expedicao", "financeiro"],
+  indicadores_comparar: [],
+  integridade_ver: [],
+  rentabilidade_editar: [],
+};
 
 /** Ação e menu são necessários; o servidor continua conferindo papel, centro e carteira. */
 export function usePermissoesRotinas() {
@@ -47,6 +72,7 @@ export function usePermissoesRotinas() {
       !acesso.erro &&
       !q.isError &&
       acesso.pode(ACOES_ROTINAS[acao]) &&
+      (total || !CAPACIDADES[acao] || roles.some((role) => CAPACIDADES[acao]!.includes(role))) &&
       (total || (!carregando && (q.data ?? []).includes(acao))),
   };
 }

@@ -1,3 +1,4 @@
+import { DiagnosticoIntegridade } from "@/components/diagnostico-integridade";
 import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -537,6 +538,7 @@ function ConfiguracoesPage() {
         )}
       </section>
       {roles.includes("admin") && <LimparDados />}
+      <DiagnosticoIntegridade />
     </ErpLayout>
   );
 }

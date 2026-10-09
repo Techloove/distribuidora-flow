@@ -81,6 +81,9 @@ const fields: CrudField[] = [
     type: "ref",
     ref: { table: "centros", labelField: "nome" },
   },
+  { name: "chave_pix", label: "Chave Pix Sicredi" },
+  { name: "pix_beneficiario", label: "Beneficiário do Pix" },
+  { name: "pix_cidade", label: "Cidade do beneficiário Pix" },
   { name: "observacoes", label: "Observações", span: 2 },
   { name: "ativo", label: "Ativa", type: "checkbox", inTable: true },
 ];
@@ -236,7 +239,9 @@ function ContasPage() {
                     <TableCell className="text-right">{brl(r["entradas"])}</TableCell>
                     <TableCell className="text-right">{brl(r["saidas"])}</TableCell>
                     <TableCell className="text-right">{brl(r["transferencias"])}</TableCell>
-                    <TableCell className="text-right font-medium">{brl(r["saldo_atual"])}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {brl(r["saldo_atual"])}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => setExtrato(r)}>
                         <ScrollText className="size-3.5" /> Ver
@@ -332,10 +337,7 @@ function ContasPage() {
             <Button
               onClick={() => transferencia.mutate()}
               disabled={
-                transferencia.isPending ||
-                !form.origem ||
-                !form.destino ||
-                Number(form.valor) <= 0
+                transferencia.isPending || !form.origem || !form.destino || Number(form.valor) <= 0
               }
             >
               {transferencia.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

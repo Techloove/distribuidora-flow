@@ -1,3 +1,4 @@
+import { ComparativoCentros } from "@/components/comparativo-centros";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -63,6 +64,7 @@ function RelatoriosPage() {
     >
       <RelatorioRotas />
 
+      <ComparativoCentros />
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel
           title="Vendas por mês"

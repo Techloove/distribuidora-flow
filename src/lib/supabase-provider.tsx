@@ -93,6 +93,20 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   const loading = initializing || (!!session && permissions.isPending);
   const error =
     connectionError ?? (session && permissions.error ? permissions.error.message : null);
+  useEffect(() => {
+    if (!client || !session || loading || error) return;
+    try {
+      const encoded = session.access_token.split(".")[1];
+      if (!encoded) return;
+      const claims = JSON.parse(atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))) as {
+        session_id?: string;
+      };
+      if (claims.session_id)
+        void client.rpc("registrar_acesso_220", { _sessao: claims.session_id }).then(() => {});
+    } catch {
+      /* Sessões sem identificador não interrompem o acesso ao ERP. */
+    }
+  }, [client, session, loading, error]);
   async function signOut() {
     const result = await client?.auth.signOut();
     if (result?.error) throw new Error("Não foi possível encerrar a sessão. Tente novamente.");

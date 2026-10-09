@@ -1,3 +1,5 @@
+import { lerPaginas } from "@/lib/paginacao";
+import { DepositosInventario } from "@/components/depositos-inventario";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -65,12 +67,13 @@ function EstoquePage() {
     queryKey: ["produtos", "estoque"],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("produtos")
-        .select("id, codigo, descricao, unidade, estoque_atual, estoque_minimo, custo_medio")
-        .order("descricao");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return await lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("produtos")
+          .select("id,codigo,descricao,unidade,estoque_atual,estoque_minimo,custo_medio")
+          .order("id")
+          .range(inicio, fim),
+      );
     },
   });
 
@@ -78,16 +81,36 @@ function EstoquePage() {
     queryKey: ["estoque_saldos", centro],
     enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
-      let q = client!
-        .from("estoque_saldos")
-        .select("produto_id, centro_id, quantidade, custo_medio");
-      if (centro) q = q.eq("centro_id", centro);
-      const { data, error } = await q;
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return await lerPaginas<Row>((inicio, fim) => {
+        let q = client!
+          .from("estoque_saldos")
+          .select("produto_id,centro_id,quantidade,custo_medio")
+          .order("produto_id")
+          .order("centro_id");
+        if (centro) q = q.eq("centro_id", centro);
+        return q.range(inicio, fim);
+      });
     },
   });
 
+  const disponibilidade = useQuery({
+    queryKey: ["estoque_disponivel", centro],
+    enabled: !!client && !centrosCarregando && !centrosErro,
+    queryFn: async () =>
+      await lerPaginas<Row>((inicio, fim) => {
+        let q = client!
+          .from("vw_estoque_disponivel_212")
+          .select("*")
+          .order("produto_id")
+          .order("centro_id");
+        if (centro) q = q.eq("centro_id", centro);
+        return q.range(inicio, fim);
+      }),
+  });
+  const reservadoProduto = (produto: unknown) =>
+    disponibilidade.data
+      ?.filter((r) => r["produto_id"] === produto)
+      .reduce((s, r) => s + Number(r["reservado"]), 0);
   const movimentos = useQuery({
     queryKey: ["estoque_movimentos", centro],
     enabled: !!client,
@@ -187,6 +210,12 @@ function EstoquePage() {
       }
     >
       <div className="space-y-6">
+        {disponibilidade.error && (
+          <p role="alert" className="text-sm text-destructive">
+            Não foi possível consultar reservas. Aplique a fase212 e atualize a página.
+          </p>
+        )}
+        <DepositosInventario key={centro} centro={centro} produtos={produtos.data ?? []} />
         <FilterBar onClear={() => setFiltros({})}>
           <FilterText
             label="Busca (código ou descrição)"
@@ -307,7 +336,9 @@ function EstoquePage() {
                   <TableRow>
                     <TableHead>Produto</TableHead>
                     <TableHead>Un.</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead className="text-right">Físico</TableHead>
+                    <TableHead className="text-right">Reservado</TableHead>
+                    <TableHead className="text-right">Disponível</TableHead>
                     <TableHead className="text-right">Mínimo</TableHead>
                     <TableHead>Situação</TableHead>
                   </TableRow>
@@ -321,6 +352,18 @@ function EstoquePage() {
                         <TableCell>{String(p["descricao"])}</TableCell>
                         <TableCell>{String(p["unidade"] ?? "UN")}</TableCell>
                         <TableCell className="text-right">{saldoProduto(p["id"])}</TableCell>
+                        <TableCell className="text-right">
+                          {disponibilidade.isError
+                            ? "Indisponível"
+                            : (reservadoProduto(p["id"]) ?? "…")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {disponibilidade.isError
+                            ? "Indisponível"
+                            : disponibilidade.data
+                              ? saldo - (reservadoProduto(p["id"]) ?? 0)
+                              : "…"}
+                        </TableCell>
                         <TableCell className="text-right">{String(p["estoque_minimo"])}</TableCell>
                         <TableCell className={baixo ? "text-destructive" : "text-muted-foreground"}>
                           {baixo ? "repor" : "ok"}

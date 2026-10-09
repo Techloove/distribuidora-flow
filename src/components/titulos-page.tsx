@@ -1,3 +1,4 @@
+import { AcoesFinanceirasTitulo } from "@/components/financeiro-novas-rotinas";
 import { StatusBadge } from "@/components/status-badge";
 import { HistoricoTitulo } from "@/components/historico-titulo";
 import { EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
@@ -641,6 +642,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                   ) : null}
                   <TableCell data-label="Ações" className="no-print text-right">
                     {isReceber && <HistoricoTitulo titulo={r} />}
+                    {isReceber && <AcoesFinanceirasTitulo titulo={r} />}
                     {isReceber &&
                     canFinance &&
                     !boletos.isLoading &&

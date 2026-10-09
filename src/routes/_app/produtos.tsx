@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { HistoricoProduto } from "@/components/historico-produto";
 import { useSupabase } from "@/lib/supabase-provider";
 
-
 export const Route = createFileRoute("/_app/produtos")({
   head: () => ({
     meta: [
@@ -31,15 +30,55 @@ export const Route = createFileRoute("/_app/produtos")({
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
-  { name: "categoria", label: "Categoria Centro Custo", inTable: true, lookup: "cad_categorias", filter: true },
+  {
+    name: "categoria",
+    label: "Categoria Centro Custo",
+    inTable: true,
+    lookup: "cad_categorias",
+    filter: true,
+  },
   { name: "marca", label: "Marca", inTable: true, lookup: "cad_marcas", filter: true },
   { name: "grupo", label: "Grupo", inTable: true, lookup: "cad_grupos", filter: true },
   { name: "unidade", label: "Unidade", filter: true },
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
-  { name: "ultimo_custo", label: "Custo Compra", type: "number", step: "0.01", inTable: true, span: 1 },
-  { name: "custo_medio", label: "Custo médio", type: "number", step: "0.01", inTable: true, span: 1 },
-  { name: "markup_percentual", label: "% Markup", type: "number", step: "0.01", inTable: true, span: 1 },
-  { name: "preco_venda", label: "Preço de venda", type: "number", step: "0.01", inTable: true, span: 1 },
+  {
+    name: "comissao_fixa_unidade",
+    label: "Comissão fixa por unidade (vazio = percentual)",
+    type: "number",
+    step: "0.0001",
+  },
+  {
+    name: "ultimo_custo",
+    label: "Custo Compra",
+    type: "number",
+    step: "0.01",
+    inTable: true,
+    span: 1,
+  },
+  {
+    name: "custo_medio",
+    label: "Custo médio",
+    type: "number",
+    step: "0.01",
+    inTable: true,
+    span: 1,
+  },
+  {
+    name: "markup_percentual",
+    label: "% Markup",
+    type: "number",
+    step: "0.01",
+    inTable: true,
+    span: 1,
+  },
+  {
+    name: "preco_venda",
+    label: "Preço de venda",
+    type: "number",
+    step: "0.01",
+    inTable: true,
+    span: 1,
+  },
   { name: "promo_preco", label: "Preço de Promoção", inTable: true, auto: true, virtual: true },
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
@@ -52,10 +91,14 @@ const fields: CrudField[] = [
     type: "checkbox",
     inTable: true,
   },
-  { name: "centro_id", label: "Centro de custo", type: "ref", ref: { table: "centros", labelField: "nome" } },
+  {
+    name: "centro_id",
+    label: "Centro de custo",
+    type: "ref",
+    ref: { table: "centros", labelField: "nome" },
+  },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
-
 
 /**
  * Markup e preço de venda andam juntos, sempre sobre o custo médio:
@@ -140,7 +183,9 @@ function ProdutosPage() {
       }
       return rows.map((r) => {
         const p = mapa.get(String(r["id"]));
-        const promoBase = p ? Number(p["preco_promocional"] ?? 0) : Number(r["preco_promocional"] ?? 0);
+        const promoBase = p
+          ? Number(p["preco_promocional"] ?? 0)
+          : Number(r["preco_promocional"] ?? 0);
         const comprado = comprados.data?.get(String(r["id"])) ?? 0;
         return {
           ...r,
@@ -180,7 +225,8 @@ function ProdutosPage() {
         </Button>
       }
     >
-      <CrudPage uppercase
+      <CrudPage
+        uppercase
         table="produtos"
         fields={fields}
         orderBy="descricao"

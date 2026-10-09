@@ -1,3 +1,4 @@
+import { lerExtratoOfx } from "@/lib/importacoes-distribuidora";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { exportarCsv } from "@/lib/exportar";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
@@ -37,7 +38,7 @@ export function ConciliacaoExtrato() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("contas_financeiras")
-        .select("id,nome")
+        .select("id,nome,banco_codigo,agencia,conta")
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
@@ -94,7 +95,15 @@ export function ConciliacaoExtrato() {
     if (!file) return;
     try {
       if (file.size > 2_000_000) throw new Error("Arquivo excede 2 MB.");
-      setLinhas(lerExtratoCsv(await file.text()));
+      setLinhas(
+        file.name.toLowerCase().endsWith(".ofx")
+          ? lerExtratoOfx(await file.text(), {
+              banco: String(contas.data?.find((c) => c["id"] === conta)?.["banco_codigo"] ?? ""),
+              agencia: String(contas.data?.find((c) => c["id"] === conta)?.["agencia"] ?? ""),
+              numero: String(contas.data?.find((c) => c["id"] === conta)?.["conta"] ?? ""),
+            })
+          : lerExtratoCsv(await file.text()),
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "CSV inválido");
     }
@@ -119,10 +128,10 @@ export function ConciliacaoExtrato() {
         Baixar modelo CSV
       </Button>
       <p className="text-xs text-muted-foreground">
-        Importe CSV com cabeçalho referencia;data;valor;descricao. Data AAAA-MM-DD, entradas
-        positivas e saídas negativas. Use a referência única do banco. Exemplo:
-        TX001;2026-10-08;125,50;Recebimento. A importação não baixa parcelas; vincule a movimentação
-        já registrada.
+        Importe OFX do Sicredi (referência FITID) ou CSV com cabeçalho
+        referencia;data;valor;descricao. Data AAAA-MM-DD, entradas positivas e saídas negativas. Use
+        a referência única do banco. Exemplo: TX001;2026-10-08;125,50;Recebimento. A importação não
+        baixa parcelas; vincule a movimentação já registrada.
       </p>
       <AvisoRotina erro={contas.error} />
       <label className="block text-sm">
@@ -148,10 +157,10 @@ export function ConciliacaoExtrato() {
       {conta && (
         <>
           <label className="block text-sm">
-            Extrato CSV
+            Extrato CSV ou OFX
             <Input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.ofx,text/csv,application/x-ofx"
               disabled={!permissoes.pode("extrato_importar") || rpc.isPending}
               onChange={(e) => void arquivo(e.target.files?.[0])}
             />

@@ -1,3 +1,4 @@
+import { ImportarCompraXml } from "@/components/importar-compra-xml";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DocumentoPage, type DocumentoConfig } from "@/components/documento-page";
@@ -43,6 +44,7 @@ function ComprasPage() {
       title="Compras / NF de entrada"
       description="Ao receber a NF, o estoque entra, o custo médio é recalculado e as parcelas do contas a pagar são criadas."
     >
+      <ImportarCompraXml />
       <DocumentoPage config={config} />
     </ErpLayout>
   );
