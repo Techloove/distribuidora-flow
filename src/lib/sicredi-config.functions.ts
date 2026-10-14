@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { documentoFiscal, validateConfig, type CnabConfig } from "./sicredi-cnab";
 import { fetchWithTimeout } from "./fetch-timeout";
 
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
@@ -9,6 +10,8 @@ type DbRow = Record<string, unknown>;
 
 export type SicrediConfigInput = {
   accessToken?: string;
+  cnab?: CnabConfig | null;
+  confirmar_unificacao?: boolean;
   api_key?: string;
   username?: string;
   password?: string;
@@ -34,8 +37,12 @@ export type SicrediConfigInput = {
 
 async function requireConfigAccess(action: string, explicitAccessToken?: string) {
   const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
-  await requireServerAuth(accessToken, CONFIG_ROLES);
+  const actor = await requireServerAuth(
+    accessToken,
+    action === "sicredi_config_save" ? ["admin"] : CONFIG_ROLES,
+  );
   await enforceRateLimit(accessToken, action, 30, 60);
+  return actor;
 }
 
 function env() {
@@ -60,7 +67,14 @@ async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = await res.text();
   if (!res.ok) {
-    throw new Error("Não foi possível acessar a configuração Sicredi com segurança.");
+    let message = "Não foi possível salvar o convênio. Confira a migração fase223 no Supabase.";
+    try {
+      const error = JSON.parse(body);
+      if (error.code === "P0001") message = String(error.message);
+    } catch {
+      /* resposta externa não exposta */
+    }
+    throw new Error(message);
   }
   return (body ? JSON.parse(body) : null) as T;
 }
@@ -101,9 +115,8 @@ function publicConfig(row: DbRow | null) {
     posto: text(row?.["posto"]),
     codigo_beneficiario: text(row?.["codigo_beneficiario"]),
     ambiente: text(row?.["ambiente"]) || "homologacao",
-    tipo_cobranca: text(row?.["tipo_cobranca"]) || "HIBRIDO",
-    especie_documento:
-      text(row?.["especie_documento"]) || "DUPLICATA_MERCANTIL_INDICACAO",
+    tipo_cobranca: text(row?.["cooperativa"]) ? text(row?.["tipo_cobranca"]) || "NORMAL" : "NORMAL",
+    especie_documento: text(row?.["especie_documento"]) || "DUPLICATA_MERCANTIL_INDICACAO",
     tipo_juro: text(row?.["tipo_juro"]) || "ISENTO",
     juros: Number(row?.["juros"] ?? 0),
     multa: Number(row?.["multa"] ?? 0),
@@ -123,13 +136,15 @@ export const sicrediConfigGet = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken?: string } | undefined) => data ?? {})
   .handler(async ({ data }) => {
     await requireConfigAccess("sicredi_config_get", data?.accessToken);
-    return publicConfig(await currentConfig());
+    const cnab = await serviceRequest<CnabConfig[]>("sicredi_cnab_config?select=*&limit=2");
+    if (cnab.length > 1) throw new Error("Aplique a fase208 para compartilhar o convênio.");
+    return { ...publicConfig(await currentConfig()), cnab: cnab[0] ?? null };
   });
 
 export const sicrediConfigSave = createServerFn({ method: "POST" })
   .inputValidator((data: SicrediConfigInput) => data)
   .handler(async ({ data }) => {
-    await requireConfigAccess("sicredi_config_save", data.accessToken);
+    const actor = await requireConfigAccess("sicredi_config_save", data.accessToken);
 
     const atual = await currentConfig();
 
@@ -137,13 +152,13 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
     const posto = text(data.posto).trim();
     const beneficiario = text(data.codigo_beneficiario).trim();
 
-    if (cooperativa && !/^\d{4}$/.test(cooperativa)) {
+    if (!/^\d{4}$/.test(cooperativa)) {
       throw new Error("Cooperativa deve ter 4 dígitos.");
     }
-    if (posto && !/^\d{2}$/.test(posto)) {
+    if (!/^\d{2}$/.test(posto)) {
       throw new Error("Posto deve ter 2 dígitos.");
     }
-    if (beneficiario && !/^\d{5}$/.test(beneficiario)) {
+    if (!/^\d{5}$/.test(beneficiario)) {
       throw new Error("Código do beneficiário deve ter 5 dígitos.");
     }
 
@@ -158,12 +173,11 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
         "ambiente",
       ),
       tipo_cobranca: oneOf(
-        text(data.tipo_cobranca || "HIBRIDO"),
+        text(data.tipo_cobranca || "NORMAL"),
         ["HIBRIDO", "NORMAL"],
         "tipo de cobrança",
       ),
-      especie_documento:
-        text(data.especie_documento).trim() || "DUPLICATA_MERCANTIL_INDICACAO",
+      especie_documento: text(data.especie_documento).trim() || "DUPLICATA_MERCANTIL_INDICACAO",
       tipo_juro: oneOf(
         text(data.tipo_juro || "ISENTO"),
         ["ISENTO", "PERCENTUAL", "VALOR"],
@@ -202,22 +216,31 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
     if (password) payload["password"] = password;
     else if (!atual) payload["password"] = null;
 
-    if (atual?.["id"]) {
-      await serviceRequest<unknown>(
-        `sicredi_config?id=eq.${encodeURIComponent(String(atual["id"]))}`,
-        {
-          method: "PATCH",
-          headers: { Prefer: "return=minimal" },
-          body: JSON.stringify(payload),
-        },
-      );
-    } else {
-      await serviceRequest<unknown>("sicredi_config", {
-        method: "POST",
-        headers: { Prefer: "return=minimal" },
-        body: JSON.stringify(payload),
-      });
+    let cnab = data.cnab ?? null;
+    if (cnab) {
+      if (payload["tipo_juro"] === "VALOR")
+        throw new Error("Para compartilhar juros com CNAB, use percentual mensal ou isento.");
+      cnab = {
+        ...cnab,
+        documento: documentoFiscal(cnab.documento),
+        cooperativa,
+        posto,
+        beneficiario,
+        tipo_cobranca: payload["tipo_cobranca"] as "NORMAL" | "HIBRIDO",
+        juros_mensal: payload["tipo_juro"] === "ISENTO" ? 0 : Number(payload["juros"]),
+        multa_percentual: Number(payload["multa"]),
+      };
+      validateConfig(cnab);
     }
+    await serviceRequest("rpc/sicredi_salvar_convenio_223", {
+      method: "POST",
+      body: JSON.stringify({
+        _actor: actor.id,
+        _api: payload,
+        _cnab: cnab,
+        _confirmar: data.confirmar_unificacao === true,
+      }),
+    });
 
     return publicConfig(await currentConfig());
   });

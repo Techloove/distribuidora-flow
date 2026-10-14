@@ -219,7 +219,7 @@ export function BoletosPage() {
           </Link>
           . As configurações do Sicredi ficam em Configurações do sistema.
         </p>
-        <SicrediCnabPanel mode="operacao" />
+        <SicrediCnabPanel />
         {config.data && !config.data.configurado ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
             <p className="font-medium text-destructive">Registro direto pela API não configurado</p>

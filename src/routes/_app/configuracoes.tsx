@@ -1,5 +1,5 @@
 import { DiagnosticoIntegridade } from "@/components/diagnostico-integridade";
-import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
+import { type CnabConfig } from "@/lib/sicredi-cnab";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -64,11 +64,28 @@ type CampoSicredi = {
 /** Campos conforme a API de cobranca do Sicredi. */
 const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
   {
-    titulo: "Credenciais da API",
+    titulo: "Convênio único · todos os centros",
+    campos: [
+      { name: "cooperativa", label: "Cooperativa" },
+      { name: "posto", label: "Posto" },
+      { name: "codigo_beneficiario", label: "Código do beneficiário" },
+      {
+        name: "ambiente",
+        label: "Ambiente da API",
+        options: [
+          { value: "homologacao", label: "Homologação (sandbox)" },
+          { value: "producao", label: "Produção" },
+        ],
+      },
+    ],
+  },
+  {
+    titulo: "Acesso à API Sicredi",
     campos: [
       {
         name: "api_key",
         label: "Chave de API (x-api-key)",
+        type: "password",
         span: 2,
         hint: "Por segurança, a chave atual nunca é enviada ao navegador. Deixe em branco para manter a existente.",
       },
@@ -79,17 +96,6 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         type: "password",
         hint: "A senha atual fica somente no servidor. Deixe em branco para manter a existente.",
       },
-      { name: "cooperativa", label: "Cooperativa" },
-      { name: "posto", label: "Posto" },
-      { name: "codigo_beneficiario", label: "Código do beneficiário" },
-      {
-        name: "ambiente",
-        label: "Ambiente",
-        options: [
-          { value: "homologacao", label: "Homologação (sandbox)" },
-          { value: "producao", label: "Produção" },
-        ],
-      },
     ],
   },
   {
@@ -99,8 +105,8 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         name: "tipo_cobranca",
         label: "Tipo de cobrança",
         options: [
-          { value: "HIBRIDO", label: "Híbrido (boleto + PIX)" },
           { value: "NORMAL", label: "Normal (só boleto)" },
+          { value: "HIBRIDO", label: "Híbrido (convênio já habilitado)" },
         ],
       },
       {
@@ -198,6 +204,9 @@ function ConfiguracoesPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Record<string, string>>({});
   const [params, setParams] = useState<Record<string, string>>({});
+  const [cnab, setCnab] = useState<CnabConfig | null>(null);
+  const [confirmar, setConfirmar] = useState(false);
+  const adminSicredi = roles.includes("admin");
   const [sic, setSic] = useState<Record<string, string>>({});
 
   const getSicrediConfig = useServerFn(sicrediConfigGet);
@@ -214,6 +223,8 @@ function ConfiguracoesPage() {
 
   useEffect(() => {
     const row = sicredi.data;
+    setCnab(row?.cnab ?? null);
+    setConfirmar(false);
     const next: Record<string, string> = {};
     for (const g of gruposSicredi) {
       for (const campo of g.campos) {
@@ -224,6 +235,15 @@ function ConfiguracoesPage() {
     // Segredos nunca voltam ao navegador; campos vazios significam "manter o valor atual".
     next["api_key"] = "";
     next["password"] = "";
+    if (row?.cnab && !row.cooperativa) {
+      next["cooperativa"] = row.cnab.cooperativa;
+      next["posto"] = row.cnab.posto;
+      next["codigo_beneficiario"] = row.cnab.beneficiario;
+      next["tipo_cobranca"] = row.cnab.tipo_cobranca ?? "NORMAL";
+      next["tipo_juro"] = row.cnab.juros_mensal ? "PERCENTUAL" : "ISENTO";
+      next["juros"] = String(row.cnab.juros_mensal);
+      next["multa"] = String(row.cnab.multa_percentual);
+    }
     setSic(next);
   }, [sicredi.data]);
 
@@ -239,6 +259,8 @@ function ConfiguracoesPage() {
       return saveSicrediConfig({
         data: {
           ...payload,
+          cnab,
+          confirmar_unificacao: confirmar,
           ...(session?.access_token ? { accessToken: session.access_token } : {}),
         },
       });
@@ -248,9 +270,50 @@ function ConfiguracoesPage() {
       setSic((s) => ({ ...s, api_key: "", password: "" }));
       queryClient.invalidateQueries({ queryKey: ["sicredi_config_segura"] });
       queryClient.invalidateQueries({ queryKey: ["sicredi", "status"] });
+      queryClient.invalidateQueries({ queryKey: ["cnab"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const contasSicredi = useQuery({
+    queryKey: ["sicredi", "contas-compartilhadas"],
+    enabled: !!client && canManage,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("contas_financeiras")
+        .select("id,nome")
+        .eq("ativo", true)
+        .is("centro_id", null)
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+  const categoriasSicredi = useQuery({
+    queryKey: ["sicredi", "categorias-tarifa"],
+    enabled: !!client && canManage,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("categorias_financeiras")
+        .select("id,nome")
+        .eq("tipo", "despesa")
+        .order("nome");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+  const legado = sicredi.data?.cnab;
+  const divergente = !!(
+    legado &&
+    sicredi.data?.cooperativa &&
+    (legado.cooperativa !== sicredi.data.cooperativa ||
+      legado.posto !== sicredi.data.posto ||
+      legado.beneficiario !== sicredi.data.codigo_beneficiario ||
+      legado.tipo_cobranca !== sicredi.data.tipo_cobranca ||
+      legado.multa_percentual !== sicredi.data.multa ||
+      legado.juros_mensal !== (sicredi.data.tipo_juro === "ISENTO" ? 0 : sicredi.data.juros) ||
+      sicredi.data.tipo_juro === "VALOR")
+  );
 
   const empresa = useQuery({
     queryKey: ["empresas", "principal"],
@@ -362,7 +425,7 @@ function ConfiguracoesPage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {campos.map((c) => (
                 <div key={c.name} className={"span" in c && c.span === 2 ? "sm:col-span-2" : ""}>
-                  <Label>{c.label}</Label>
+                  <Label htmlFor={`sicredi-${c.name}`}>{c.label}</Label>
                   <Input
                     value={form[c.name] ?? ""}
                     disabled={!canManage}
@@ -464,12 +527,12 @@ function ConfiguracoesPage() {
         <h2 className="text-sm font-semibold">Cobrança Sicredi</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
-          aplicadas aos boletos emitidos nos pedidos. Configure a API abaixo e o convênio CNAB por
-          centro nesta mesma área.
+          aplicadas aos boletos. Um único convênio para API e CNAB, com sequências compartilhadas
+          entre os centros de custo. A API usa sandbox; os testes CNAB são enviados à cooperativa.
         </p>
         {!canManage ? (
           <p className="py-6 text-sm text-muted-foreground">
-            Somente administradores e gestores podem alterar as credenciais bancárias.
+            Somente administradores e gestores podem consultar esta configuração.
           </p>
         ) : sicredi.isLoading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
@@ -479,7 +542,7 @@ function ConfiguracoesPage() {
           <div className="py-6 text-sm text-destructive">
             {(sicredi.error as Error).message}
             <p className="mt-2 text-xs text-muted-foreground">
-              Rode <code>db/fase18_sicredi_config.sql</code> no banco.
+              Rode <code>db/fase223_sicredi_convenio_unificado.sql</code> no banco.
             </p>
           </div>
         ) : (
@@ -492,26 +555,35 @@ function ConfiguracoesPage() {
                 <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {g.campos.map((c) => (
                     <div key={c.name} className={c.span === 2 ? "sm:col-span-2" : ""}>
-                      <Label>{c.label}</Label>
+                      <Label htmlFor={`sicredi-${c.name}`}>{c.label}</Label>
                       {c.options ? (
                         <select
+                          id={`sicredi-${c.name}`}
                           value={sic[c.name] ?? ""}
-                          disabled={!canManage}
+                          disabled={!adminSicredi}
                           onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
                           className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                         >
-                          {c.options.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                          ))}
+                          {c.options
+                            .filter(
+                              (o) =>
+                                o.value !== "HIBRIDO" ||
+                                sicredi.data?.tipo_cobranca === "HIBRIDO" ||
+                                sicredi.data?.cnab?.tipo_cobranca === "HIBRIDO",
+                            )
+                            .map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                         </select>
                       ) : (
                         <Input
+                          id={`sicredi-${c.name}`}
                           type={c.type ?? "text"}
                           step={c.type === "number" ? "0.0001" : undefined}
                           value={sic[c.name] ?? ""}
-                          disabled={!canManage}
+                          disabled={!adminSicredi}
                           onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}
                         />
                       )}
@@ -523,17 +595,196 @@ function ConfiguracoesPage() {
                 </div>
               </div>
             ))}
+            {!adminSicredi && (
+              <p className="text-sm text-muted-foreground">
+                Somente administradores podem salvar o convênio.
+              </p>
+            )}
+            {divergente && (
+              <div role="alert" className="rounded-lg border border-amber-500 p-3 text-sm">
+                <p>
+                  Os cadastros anteriores têm diferenças. CNAB atual: cooperativa{" "}
+                  {legado?.cooperativa}, posto {legado?.posto}, beneficiário {legado?.beneficiario};
+                  juros {legado?.juros_mensal}% ao mês e multa {legado?.multa_percentual}%, cobrança{" "}
+                  {legado?.tipo_cobranca}.
+                </p>
+                <label className="mt-2 flex gap-2">
+                  <input
+                    type="checkbox"
+                    checked={confirmar}
+                    disabled={!adminSicredi}
+                    onChange={(e) => setConfirmar(e.target.checked)}
+                  />
+                  Conferi os valores acima e autorizo usar os dados do formulário nos dois canais.
+                </label>
+              </div>
+            )}
+            <div className="space-y-3 rounded-lg border p-4">
+              <h3 className="font-semibold">Arquivo CNAB 240 · dados complementares</h3>
+              <p className="text-sm text-muted-foreground">
+                Cooperativa, posto, beneficiário, tipo de boleto, juros e multa são os mesmos dados
+                informados acima. Juros por valor diário são exclusivos da API; para CNAB use
+                percentual mensal ou isento.
+              </p>
+              {!cnab ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!adminSicredi}
+                  onClick={() =>
+                    setCnab({
+                      centro_id: "",
+                      nome: "",
+                      documento: "",
+                      cooperativa: "",
+                      posto: "",
+                      beneficiario: "",
+                      conta: "",
+                      conta_dv: "",
+                      conta_financeira_id: "",
+                      categoria_tarifa_id: null,
+                      proxima_remessa: 1,
+                      proximo_nosso_numero: 1,
+                      homologado: false,
+                      juros_mensal: 0,
+                      multa_percentual: 0,
+                      tipo_cobranca: "NORMAL",
+                    })
+                  }
+                >
+                  Preparar configuração CNAB
+                </Button>
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(
+                      [
+                        ["nome", "Nome do beneficiário (até 30 caracteres)"],
+                        ["documento", "CPF/CNPJ do beneficiário"],
+                        ["conta", "Conta corrente sem dígito"],
+                        ["conta_dv", "Dígito da conta"],
+                      ] as const
+                    ).map(([field, label]) => (
+                      <div key={field}>
+                        <Label htmlFor={`cnab-${field}`}>{label}</Label>
+                        <Input
+                          id={`cnab-${field}`}
+                          value={cnab[field]}
+                          disabled={!adminSicredi}
+                          onChange={(e) => setCnab({ ...cnab, [field]: e.target.value })}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <Label htmlFor="sicredi-conta">Conta financeira compartilhada</Label>
+                      <select
+                        id="sicredi-conta"
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        disabled={!adminSicredi || contasSicredi.isLoading || contasSicredi.isError}
+                        value={cnab.conta_financeira_id}
+                        onChange={(e) => setCnab({ ...cnab, conta_financeira_id: e.target.value })}
+                      >
+                        <option value="">Selecione</option>
+                        {contasSicredi.data?.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="sicredi-tarifa">Categoria de tarifas</Label>
+                      <select
+                        id="sicredi-tarifa"
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        disabled={
+                          !adminSicredi || categoriasSicredi.isLoading || categoriasSicredi.isError
+                        }
+                        value={cnab.categoria_tarifa_id ?? ""}
+                        onChange={(e) =>
+                          setCnab({ ...cnab, categoria_tarifa_id: e.target.value || null })
+                        }
+                      >
+                        <option value="">Sem categoria</option>
+                        {categoriasSicredi.data?.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {sic["tipo_cobranca"] === "HIBRIDO" && (
+                      <div>
+                        <Label>Chave Pix do convênio já habilitado</Label>
+                        <Input
+                          value={cnab.chave_pix ?? ""}
+                          disabled={!adminSicredi}
+                          onChange={(e) => setCnab({ ...cnab, chave_pix: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {(contasSicredi.isError || categoriasSicredi.isError) && (
+                    <p role="alert" className="text-sm text-destructive">
+                      Não foi possível carregar contas ou categorias. Recarregue antes de salvar.
+                    </p>
+                  )}
+                  {!legado && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(
+                        [
+                          ["proxima_remessa", "Sequencial inicial de remessa"],
+                          ["proximo_nosso_numero", "Sequencial inicial de nosso número"],
+                        ] as const
+                      ).map(([field, label]) => (
+                        <div key={field}>
+                          <Label htmlFor={`cnab-${field}`}>{label}</Label>
+                          <Input
+                            id={`cnab-${field}`}
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={cnab[field]}
+                            disabled={!adminSicredi}
+                            onChange={(e) => setCnab({ ...cnab, [field]: Number(e.target.value) })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm">
+                    Próxima remessa: {cnab.proxima_remessa} · Próximo nosso número:{" "}
+                    {cnab.proximo_nosso_numero}. O salvamento preserva os sequenciais atuais do
+                    banco de dados.
+                  </p>
+                  <label className="flex gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      disabled={!adminSicredi}
+                      checked={cnab.homologado}
+                      onChange={(e) => setCnab({ ...cnab, homologado: e.target.checked })}
+                    />
+                    Homologação CNAB aprovada pela cooperativa
+                  </label>
+                  {!legado && (
+                    <Button type="button" variant="ghost" onClick={() => setCnab(null)}>
+                      Configurar somente API por enquanto
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
             <Button
-              disabled={!canManage || salvarSicredi.isPending}
+              disabled={
+                !adminSicredi ||
+                salvarSicredi.isPending ||
+                (divergente && !confirmar) ||
+                (cnab !== null && (contasSicredi.isError || categoriasSicredi.isError))
+              }
               onClick={() => salvarSicredi.mutate()}
             >
-              <Save className="size-4" /> Salvar configuração Sicredi
+              <Save className="size-4" /> Salvar convênio Sicredi
             </Button>
-          </div>
-        )}
-        {canManage && (
-          <div className="mt-5">
-            <SicrediCnabPanel mode="configuracao" />
           </div>
         )}
       </section>

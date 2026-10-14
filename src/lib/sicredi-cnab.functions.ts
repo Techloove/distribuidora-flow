@@ -10,7 +10,6 @@ import {
   gerarAlteracaoVencimento,
   nossoNumero,
   parseRetorno,
-  validateConfig,
   type CnabConfig,
   type CnabTitulo,
 } from "./sicredi-cnab";
@@ -85,23 +84,6 @@ function today() {
     time: part("hour") + part("minute") + part("second"),
   };
 }
-
-export const cnabSalvarConfig = createServerFn({ method: "POST" })
-  .validator((data: Input & { config: CnabConfig }) => data)
-  .handler(async ({ data }) => {
-    const { actor, token } = await authorize(data, "cnab_config", true);
-    const c = {
-      ...data.config,
-      centro_id: data.config.centro_id,
-      documento: documentoFiscal(data.config.documento),
-    };
-    validateConfig(c);
-    await rest("rpc/cnab_salvar_config", token, true, {
-      _actor: actor.id,
-      _config: { ...c, centro_id: c.centro_id || undefined },
-    });
-    return { ok: true };
-  });
 
 export const cnabGerarRemessa = createServerFn({ method: "POST" })
   .validator((data: Input & { conta_ids: string[] }) => data)

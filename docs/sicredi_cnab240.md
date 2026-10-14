@@ -4,9 +4,9 @@ Referências conferidas nos PDFs fornecidos: Manual Sicredi CNAB 240 **3.0, maio
 
 ## Ativação
 
-1. Para a instalação existente, com as fases204–206 já aplicadas, executar `db/fase207_sicredi_cnab30.sql` e, depois, `db/fase208_sicredi_configuracao_compartilhada.sql`. Ela permite CPF numérico ou CNPJ alfanumérico sem substituir RPCs, RLS, sequenciais ou histórico. Não reaplicar a fase204 por cima das posteriores. A aplicação no Supabase de produção é uma etapa separada da publicação do código.
-2. Abrir **Configurações do sistema → Cobrança Sicredi → Sicredi · CNAB 240**, configurar uma única vez como administrador, independentemente do filtro de centro: dados do beneficiário, conta corrente, conta financeira, categoria das tarifas, juros/multa e próximos sequenciais. Conferir os sequenciais em uso com a cooperativa; não reiniciá-los.
-3. Para boleto híbrido, selecionar **Boleto híbrido com PIX** e informar a chave PIX aleatória vinculada ao convênio. Confirmar a contratação e homologar arquivos normais/híbridos com a cooperativa. A opção de homologação libera a aplicação de retornos.
+1. Na instalação atual, com as fases anteriores até222 aplicadas, executar `db/fase223_sicredi_convenio_unificado.sql`. Instalações mais antigas devem seguir a ordem das migrações; não reaplicar a fase204 por cima das posteriores. A aplicação no Supabase é uma etapa separada da publicação do código.
+2. Abrir **Configurações do sistema → Cobrança Sicredi**, conferir os campos comuns e salvar o convênio como administrador. Em **Preparar configuração CNAB**, completar os dados bancários e conferir os sequenciais iniciais com a cooperativa. O cadastro é único, independentemente do filtro de centro.
+3. Para testes da API, escolher **Homologação (sandbox)** e usar os dados de teste liberados pelo Sicredi. Para CNAB, enviar os arquivos à cooperativa; marcar homologação aprovada somente depois da confirmação bancária. Novas configurações usam boleto normal. O suporte existente a convênios híbridos não é ativado pela unificação.
 
 Runtime do servidor: `EXT_SUPABASE_URL`, `EXT_SUPABASE_ANON_KEY`, `EXT_SUPABASE_SERVICE_ROLE_KEY`. O processamento de arquivos CNAB não exige API key Sicredi. A publicação do código no GitHub não executa migrações no Supabase nem homologa o convênio bancário.
 
@@ -92,3 +92,23 @@ As RPCs de emissão e alteração de vencimento travam a mesma linha global. Se 
 Um retorno pode reunir boletos dos dois centros: a prévia mostra o centro de cada venda, e o banco concilia cada evento no centro do título, em uma única transação. Uma divergência ou falta de acesso a qualquer centro impede o processamento inteiro. Recebimentos e tarifas mantêm os centros de origem na mesma conta financeira. Uma cópia de retorno misto no histórico só é visível para quem pode acessar todos os centros contidos no arquivo; isso evita expor dados de outro centro pelo conteúdo bruto.
 
 Validação em PostgreSQL isolado: reaplicação da fase208, recuperação dos maiores números do histórico, primeira configuração sem filtro de centro, duas emissões com a mesma versão, rejeição e nova tentativa sem duplicidade, alteração de vencimento do segundo centro, retorno misto com rollback integral, acesso restrito ao arquivo misto e liquidação sem duplicidade com movimentos separados por centro. Chromium com dados simulados verificou configuração sem centro selecionado, um único par de campos de sequência, alternância entre os dois centros e Todos, e gravação pelo servidor. A migração ainda precisa ser aplicada no Supabase de produção; os testes não substituem a homologação Sicredi.
+
+## Convênio único para API e CNAB — fase223
+
+Aplicar `db/fase223_sicredi_convenio_unificado.sql` após a fase222 no SQL Editor do Supabase. A migração não escolhe dados bancários, não altera credenciais e não reinicia sequenciais. A seção **Configurações > Cobrança Sicredi** passa a ter um único formulário e um único botão **Salvar convênio Sicredi**. Administradores salvam; gestores consultam. O painel de Boletos mantém somente as operações e os arquivos CNAB.
+
+Cooperativa, posto, código do beneficiário, tipo de cobrança, juros mensais e multa são informados uma vez. Credenciais, ambiente sandbox/produção, espécie, desconto, protesto e mensagens são campos específicos da API. Nome/CPF/CNPJ, conta corrente/DV, conta financeira compartilhada, categoria de tarifas e homologação são complementos CNAB. A API pode ser configurada primeiro, sem inventar dados CNAB. Para acrescentar CNAB, use **Preparar configuração CNAB**, complete os dados e informe os sequenciais iniciais conferidos com a cooperativa. Depois do primeiro cadastro, os contadores são exibidos para consulta; salvar preserva os números atuais no banco, mesmo se outra emissão tiver avançado enquanto a tela estava aberta. Os centros continuam identificando as vendas, títulos e movimentos.
+
+Se os cadastros anteriores divergem, a tela mostra os dados CNAB atuais e exige confirmação do administrador antes de usar os campos comuns do formulário nos dois canais. Convênios com títulos existentes não podem mudar de identificação bancária; o histórico CNAB também protege documento e conta. Juros por valor diário continuam exclusivos da API e não são convertidos silenciosamente em juros mensais CNAB. Novas configurações usam boleto normal; a unificação não habilita boleto híbrido.
+
+As duas tabelas existentes permanecem como armazenamento dos campos de cada protocolo. Uma RPC exclusiva do servidor grava ambas na mesma transação, revalida administrador ativo e aproveita as proteções de histórico da fase208. Falhas não deixam apenas um cadastro atualizado. O antigo salvamento isolado CNAB é bloqueado com orientação para o formulário único. As credenciais armazenadas nunca voltam ao navegador; campos secretos vazios mantêm os valores atuais. O ambiente sandbox da API não substitui a aprovação de arquivos CNAB pela cooperativa. Use credenciais e dados de teste liberados pelo Sicredi.
+
+Validação local da fase223: teste de banco com PGlite e a função real de configuração da fase208, cobrindo reaplicação, API sem CNAB, sincronização dos campos comuns, preservação de credenciais/sequenciais, rollback integral, confirmação de divergências, histórico bancário e restrição de papéis/RPCs. Testes de servidor verificam a resposta sem segredos, gravação por uma única RPC e rejeição de gestor e juros diários no convênio CNAB. Esses testes não executam migração no Supabase de produção nem emitem boleto no banco.
+
+```sh
+NODE_PATH=/caminho/das/dependencias node scripts/check-convenio-sicredi-database.cjs
+bun test
+bun run typecheck
+bun run lint
+bun run build
+```
