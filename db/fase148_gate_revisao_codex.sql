@@ -41,7 +41,7 @@ begin
   end if;
 end $$;
 
--- 3) Cadastro de usuario nao pode conceder papel implicitamente.
+-- 3) Cadastro não concede acesso implicitamente. A fase221 permite somente representante inativo e pendente.
 do $$
 declare
   r regprocedure := to_regprocedure('public.handle_new_user()');
@@ -54,7 +54,21 @@ begin
 
   select pg_get_functiondef(r::oid) into def;
   if position('user_roles' in def) > 0 then
-    raise exception 'Fase 148: handle_new_user ainda atribui papel automaticamente';
+    -- Exceção explícita da fase221: compara o corpo integral, sem comentários/espaços.
+    -- Não aceita um segundo grant, metadados de papel ou ativação no cadastro.
+    if to_regprocedure('public.admin_decidir_cadastro_221(uuid,boolean,uuid,uuid[],text)') is null or
+      (select regexp_replace(regexp_replace(prosrc,'--[^\n]*','','g'),'[[:space:]]','','g') from pg_proc where oid=r::oid)
+      <> regexp_replace($cadastro$
+begin
+ insert into public.profiles(id,nome,email,telefone,ativo,todos_centros,cadastro_status)
+ values(new.id,left(trim(coalesce(new.raw_user_meta_data->>'nome','')),120),new.email,
+ nullif(left(trim(coalesce(new.raw_user_meta_data->>'telefone','')),30),''),false,false,'pendente');
+ insert into public.user_roles(user_id,role) values(new.id,'representante');
+ return new;
+end
+$cadastro$,'[[:space:]]','','g') then
+      raise exception 'Fase 148: cadastro atribui papel fora do fluxo pendente autorizado da fase221';
+    end if;
   end if;
 
   select column_default

@@ -4,6 +4,7 @@ import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CadastrosRepresentantes } from "@/components/cadastros-representantes";
 import { CentrosPorUsuario } from "@/components/centros-por-usuario";
 import { ErpLayout } from "@/components/erp-layout";
 import { MenusPorPerfil } from "@/components/menus-por-perfil";
@@ -201,6 +202,9 @@ function UsuariosPage() {
     setForm((prev) => (prev ? { ...prev, [k]: v } : prev));
 
   const editando = !!form?.userId;
+  const cadastroEmAnalise = ["pendente", "recusado"].includes(
+    String(profiles.data?.find((p) => p["id"] === form?.userId)?.["cadastro_status"] ?? ""),
+  );
 
   return (
     <ErpLayout
@@ -215,6 +219,7 @@ function UsuariosPage() {
       }
     >
       <div className="space-y-4">
+        <CadastrosRepresentantes />
         <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />
@@ -257,7 +262,13 @@ function UsuariosPage() {
                         <TableCell>
                           {String(p["nome"] || "—")}
                           {p["ativo"] === false ? (
-                            <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {p["cadastro_status"] === "pendente"
+                                ? "(aguardando autorização)"
+                                : p["cadastro_status"] === "recusado"
+                                  ? "(cadastro recusado)"
+                                  : "(inativo)"}
+                            </span>
                           ) : null}
                         </TableCell>
                         <TableCell>{String(p["email"] ?? "—")}</TableCell>
@@ -276,9 +287,7 @@ function UsuariosPage() {
                           >
                             <option value="">Sem vínculo</option>
                             {(representantes.data ?? [])
-                              .filter(
-                                (r) => !r["profile_id"] || r["profile_id"] === p["id"],
-                              )
+                              .filter((r) => !r["profile_id"] || r["profile_id"] === p["id"])
                               .map((r) => (
                                 <option key={String(r["id"])} value={String(r["id"])}>
                                   {String(r["nome"])}
@@ -296,7 +305,11 @@ function UsuariosPage() {
                                   key={role}
                                   size="sm"
                                   variant={active ? "default" : "outline"}
-                                  disabled={!isAdmin || toggle.isPending}
+                                  disabled={
+                                    !isAdmin ||
+                                    toggle.isPending ||
+                                    ["pendente", "recusado"].includes(String(p["cadastro_status"]))
+                                  }
                                   onClick={() =>
                                     toggle.mutate({
                                       userId: String(p["id"]),
@@ -317,6 +330,7 @@ function UsuariosPage() {
                               size="sm"
                               variant="outline"
                               disabled={!isAdmin}
+                              aria-label={`Editar usuário ${String(p["nome"] || p["email"])}`}
                               onClick={() =>
                                 setForm({
                                   userId: String(p["id"]),
@@ -334,6 +348,7 @@ function UsuariosPage() {
                               size="sm"
                               variant="outline"
                               disabled={!isAdmin}
+                              aria-label={`Excluir usuário ${String(p["nome"] || p["email"])}`}
                               onClick={() => setExcluir(p)}
                             >
                               <Trash2 className="size-4 text-destructive" />
@@ -388,6 +403,12 @@ function UsuariosPage() {
                   onChange={(e) => set("senha", e.target.value)}
                 />
               </div>
+              {cadastroEmAnalise && (
+                <p className="text-sm text-muted-foreground sm:col-span-2">
+                  Para liberar este usuário, use “Analisar cadastro” nas solicitações de
+                  representantes.
+                </p>
+              )}
               {editando ? (
                 <div className="space-y-1.5">
                   <Label>Situação</Label>
@@ -395,6 +416,7 @@ function UsuariosPage() {
                     type="button"
                     variant={form.ativo ? "default" : "outline"}
                     className="w-full"
+                    disabled={cadastroEmAnalise}
                     onClick={() => set("ativo", !form.ativo)}
                   >
                     {form.ativo ? "Ativo" : "Inativo"}
@@ -410,9 +432,7 @@ function UsuariosPage() {
             </Button>
             <Button
               disabled={
-                salvar.isPending ||
-                !form?.email ||
-                (!editando && (form?.senha ?? "").length < 6)
+                salvar.isPending || !form?.email || (!editando && (form?.senha ?? "").length < 6)
               }
               onClick={() => form && salvar.mutate(form)}
             >

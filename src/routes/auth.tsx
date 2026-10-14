@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -40,22 +41,74 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cadastro, setCadastro] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [confirmacao, setConfirmacao] = useState("");
+  const disponivel = useQuery({
+    queryKey: ["cadastro-publico-disponivel"],
+    enabled: !!client && cadastro,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("cadastro_representante_disponivel_221");
+      if (error || data !== true)
+        throw new Error("Primeiro cadastro temporariamente indisponível. Procure o administrador.");
+      return true;
+    },
+  });
   useEffect(() => {
-    if (session) void navigate({ to: "/dashboard", replace: true });
-  }, [session, navigate]);
+    if (session && !cadastro && !busy && !enviado)
+      void navigate({ to: "/dashboard", replace: true });
+  }, [session, navigate, cadastro, busy, enviado]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!client || busy) return;
     setBusy(true);
     try {
-      const result = await client.auth.signInWithPassword({
-        email: email.trim(),
-        password: senha,
-      });
-      if (result.error)
-        throw new Error(
-          "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
-        );
+      if (cadastro) {
+        if (disponivel.data !== true)
+          throw new Error(
+            "Primeiro cadastro temporariamente indisponível. Procure o administrador.",
+          );
+        if (!nome.trim() || nome.trim().length > 120 || telefone.trim().length > 30)
+          throw new Error("Confira nome e telefone.");
+        if (senha.length < 8 || senha !== confirmacao)
+          throw new Error("Use uma senha com pelo menos 8 caracteres e confirme a mesma senha.");
+        const result = await client.auth.signUp({
+          email: email.trim(),
+          password: senha,
+          options: {
+            data: { nome: nome.trim(), telefone: telefone.trim() },
+            emailRedirectTo: window.location.origin + "/auth",
+          },
+        });
+        if (result.error) {
+          const code = result.error.code;
+          throw new Error(
+            code === "signup_disabled"
+              ? "O primeiro cadastro está desabilitado. Procure o administrador."
+              : code === "over_email_send_rate_limit" || code === "over_request_rate_limit"
+                ? "Aguarde alguns minutos antes de tentar novamente."
+                : code === "weak_password"
+                  ? "Escolha uma senha mais forte, conforme as regras de segurança."
+                  : "Não foi possível solicitar o cadastro. Confira os dados e tente novamente ou procure o administrador.",
+          );
+        }
+        setEnviado(true);
+        setSenha("");
+        setConfirmacao("");
+        if (result.data.session) await client.auth.signOut();
+      } else {
+        const result = await client.auth.signInWithPassword({
+          email: email.trim(),
+          password: senha,
+        });
+        if (result.error)
+          throw new Error(
+            "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
+          );
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao entrar.");
     } finally {
@@ -107,13 +160,17 @@ function AuthPage() {
             <span className="font-semibold">Caparaó System</span>
           </div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Bem-vindo de volta
+            {cadastro ? "Primeiro acesso" : "Bem-vindo de volta"}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Entre na sua conta</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+            {cadastro ? "Cadastro de representante" : "Entre na sua conta"}
+          </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Acesse o painel e acompanhe o dia a dia da sua distribuidora.
+            {cadastro
+              ? "Solicite seu acesso. Todos os novos cadastros entram como representantes e dependem da autorização de um administrador."
+              : "Acesse o painel e acompanhe o dia a dia da sua distribuidora."}
           </p>
-          {error && (
+          {error && !cadastro && (
             <p
               role="alert"
               className="mt-6 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
@@ -121,45 +178,127 @@ function AuthPage() {
               {error}
             </p>
           )}
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                className="h-12 rounded-xl"
-                id="email"
-                type="email"
-                autoComplete="username"
-                placeholder="voce@empresa.com.br"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+          {cadastro && disponivel.error && (
+            <p role="alert" className="mt-6 text-sm text-destructive">
+              {disponivel.error.message}
+            </p>
+          )}
+          {enviado ? (
+            <div role="status" className="mt-8 rounded-xl border bg-card p-5 space-y-3">
+              <p className="font-semibold">Solicitação de cadastro recebida</p>
+              <p className="text-sm text-muted-foreground">
+                Se receber um e-mail de confirmação, confirme seu endereço. Aguarde a autorização do
+                administrador para acessar o sistema.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Caso este e-mail já tenha uma conta, entre com seus dados ou procure o
+                administrador.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
-              <Input
-                className="h-12 rounded-xl"
-                id="senha"
-                type="password"
-                autoComplete="current-password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-              />
-            </div>
-            <Button
-              className="h-12 w-full rounded-xl"
-              disabled={!client || loading || busy}
-              type="submit"
-            >
-              {busy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <ArrowRight className="size-4" />
-              )}{" "}
-              {busy ? "Aguarde…" : "Acessar o sistema"}
-            </Button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              {cadastro && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="nome">Nome completo</Label>
+                    <Input
+                      id="nome"
+                      className="h-12 rounded-xl"
+                      autoComplete="name"
+                      maxLength={120}
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telefone">Telefone (opcional)</Label>
+                    <Input
+                      id="telefone"
+                      className="h-12 rounded-xl"
+                      type="tel"
+                      autoComplete="tel"
+                      maxLength={30}
+                      value={telefone}
+                      onChange={(e) => setTelefone(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  className="h-12 rounded-xl"
+                  id="email"
+                  type="email"
+                  autoComplete="username"
+                  placeholder="voce@empresa.com.br"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="senha">Senha</Label>
+                <Input
+                  className="h-12 rounded-xl"
+                  id="senha"
+                  type="password"
+                  autoComplete={cadastro ? "new-password" : "current-password"}
+                  minLength={cadastro ? 8 : undefined}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  required
+                />
+              </div>
+              {cadastro && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirmacao">Confirmar senha</Label>
+                  <Input
+                    id="confirmacao"
+                    className="h-12 rounded-xl"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={confirmacao}
+                    onChange={(e) => setConfirmacao(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Use pelo menos 8 caracteres.</p>
+                </div>
+              )}
+              <Button
+                className="h-12 w-full rounded-xl"
+                disabled={
+                  !client ||
+                  (!cadastro && loading) ||
+                  busy ||
+                  (cadastro && disponivel.data !== true)
+                }
+                type="submit"
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="size-4" />
+                )}{" "}
+                {busy ? "Aguarde…" : cadastro ? "Solicitar cadastro" : "Acessar o sistema"}
+              </Button>
+            </form>
+          )}
+          <Button
+            className="mt-4 w-full"
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setCadastro(!cadastro);
+              setEnviado(false);
+              setSenha("");
+              setConfirmacao("");
+            }}
+          >
+            {cadastro ? "Voltar para entrar" : "Não tenho cadastro · Primeiro acesso"}
+          </Button>
           <p className="mt-7 border-t pt-6 text-center text-xs leading-relaxed text-muted-foreground">
             Precisa de acesso ou ajuda com sua senha?
             <br />

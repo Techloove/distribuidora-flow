@@ -51,7 +51,9 @@ function walk(dir) {
 }
 
 const sourceFiles = walk(srcDir).filter((p) => [".ts", ".tsx"].includes(extname(p)));
-const sqlFiles = readdirSync(dbDir).filter((name) => name.endsWith(".sql")).sort();
+const sqlFiles = readdirSync(dbDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort();
 const sqlByFile = new Map(sqlFiles.map((name) => [name, readFileSync(join(dbDir, name), "utf8")]));
 
 const errors = [];
@@ -72,13 +74,8 @@ for (const file of sourceFiles) {
     display.includes("/server-") ||
     display.includes("\\server-");
 
-  if (
-    /EXT_SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY/.test(source) &&
-    !serverOnlyModule
-  ) {
-    errors.push(
-      `${display}: chave service_role referenciada fora de módulo server-only`,
-    );
+  if (/EXT_SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY/.test(source) && !serverOnlyModule) {
+    errors.push(`${display}: chave service_role referenciada fora de módulo server-only`);
   }
 
   if (/VITE_[A-Z0-9_]*SERVICE_ROLE/.test(source)) {
@@ -87,12 +84,24 @@ for (const file of sourceFiles) {
     );
   }
 
-  // Cadastro público foi removido do ERP: criação de usuários deve ocorrer por fluxo
-  // administrativo controlado, nunca diretamente no bundle do navegador.
-  if (!serverOnlyModule && /\.auth\.signUp\s*\(/.test(source)) {
-    errors.push(
-      `${display}: cadastro público via auth.signUp detectado no cliente; use fluxo administrativo controlado`,
-    );
+  // Fase221 autoriza somente o primeiro cadastro pendente na rota de login.
+  // Qualquer outro uso de signUp no cliente continua rejeitado.
+  const signupCalls = [...source.matchAll(/\.auth\.signUp\s*\(/g)];
+  if (!serverOnlyModule && signupCalls.length) {
+    const migration = sqlByFile.get("fase221_cadastro_representante_aprovacao.sql") ?? "";
+    const controlled =
+      display.replaceAll("\\", "/") === "src/routes/auth.tsx" &&
+      signupCalls.length === 1 &&
+      source.includes("cadastro_representante_disponivel_221") &&
+      source.includes("disponivel.data !== true") &&
+      migration.includes("false,false,'pendente'") &&
+      migration.includes("values(new.id,'representante')") &&
+      migration.includes("not public.has_role(auth.uid(),'admin')") &&
+      migration.includes("new.cadastro_status in ('pendente','recusado') and new.ativo");
+    if (!controlled)
+      errors.push(
+        `${display}: cadastro público fora do fluxo pendente com aprovação administrativa da fase221`,
+      );
   }
 
   for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)/g)) {
@@ -105,7 +114,9 @@ for (const file of sourceFiles) {
     }
   }
 
-  for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']\s*\)([\s\S]{0,500}?)\.(insert|update|delete|upsert)\s*\(/g)) {
+  for (const match of source.matchAll(
+    /\.from\(\s*["']([^"']+)["']\s*\)([\s\S]{0,500}?)\.(insert|update|delete|upsert)\s*\(/g,
+  )) {
     const [, table, , operation] = match;
     if (protectedTables.has(table)) {
       const line = source.slice(0, match.index).split(/\r?\n/).length;
@@ -142,16 +153,11 @@ for (const rpc of [...rpcNames].sort()) {
   }
 }
 
-
 // Permissões financeiras devem falhar fechado e o cache precisa ser isolado por usuário.
 {
   const file = "src/lib/permissoes-financeiras.ts";
   const source = readFileSync(file, "utf8");
-  for (const required of [
-    "user?.id",
-    "if (error) throw new Error",
-    "q.isError ? []",
-  ]) {
+  for (const required of ["user?.id", "if (error) throw new Error", "q.isError ? []"]) {
     if (!source.includes(required)) {
       errors.push(`${file}: proteção financeira esperada ausente: ${required}`);
     }

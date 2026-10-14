@@ -79,11 +79,17 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     retry: 1,
     queryFn: async () => {
       const [profile, roles] = await Promise.all([
-        client!.from("profiles").select("ativo").eq("id", session!.user.id).single(),
+        client!.from("profiles").select("*").eq("id", session!.user.id).single(),
         client!.from("user_roles").select("role").eq("user_id", session!.user.id),
       ]);
       if (profile.error || roles.error)
         throw new Error("Não foi possível verificar seu acesso. Tente novamente.");
+      if (profile.data?.cadastro_status === "pendente")
+        throw new Error(
+          "Seu cadastro de representante aguarda autorização do administrador. Se recebeu um e-mail de confirmação, confirme seu endereço.",
+        );
+      if (profile.data?.cadastro_status === "recusado")
+        throw new Error("Seu cadastro não foi autorizado. Entre em contato com o administrador.");
       if (profile.data?.ativo !== true)
         throw new Error("Seu acesso está desativado. Procure o administrador.");
       return (roles.data ?? []).map((r: { role: AppRole }) => r.role);
