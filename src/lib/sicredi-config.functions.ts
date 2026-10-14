@@ -13,6 +13,7 @@ export type SicrediConfigInput = {
   cnab?: CnabConfig | null;
   confirmar_unificacao?: boolean;
   api_key?: string;
+  sandbox_api_key?: string;
   username?: string;
   password?: string;
   cooperativa?: string;
@@ -67,7 +68,7 @@ async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = await res.text();
   if (!res.ok) {
-    let message = "Não foi possível salvar o convênio. Confira a migração fase223 no Supabase.";
+    let message = "Não foi possível salvar o convênio. Confira a migração fase224 no Supabase.";
     try {
       const error = JSON.parse(body);
       if (error.code === "P0001") message = String(error.message);
@@ -81,7 +82,7 @@ async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 async function currentConfig(): Promise<DbRow | null> {
   const rows = await serviceRequest<DbRow[]>(
-    "sicredi_config?select=*&order=created_at.asc&limit=1",
+    "sicredi_config?select=id,api_key,sandbox_api_key,username,password,cooperativa,posto,codigo_beneficiario,ambiente,tipo_cobranca,especie_documento,tipo_juro,juros,multa,dias_multa,tipo_desconto,valor_desconto1,dias_desconto1,tipo_protesto,dias_protesto,validade_apos_vencimento,informativo,mensagem&order=created_at.asc&limit=1",
   );
   return rows[0] ?? null;
 }
@@ -95,6 +96,8 @@ function numberValue(v: unknown, name: string, integer = false) {
   if (!Number.isFinite(n) || n < 0 || (integer && !Number.isInteger(n))) {
     throw new Error(`Valor inválido para ${name}.`);
   }
+  if (!integer && Math.round(n * 100) / 100 !== n)
+    throw new Error(`${name} deve ter até duas casas decimais, conforme o manual Sicredi.`);
   return n;
 }
 
@@ -106,6 +109,8 @@ function oneOf(value: string, allowed: readonly string[], name: string) {
 function publicConfig(row: DbRow | null) {
   return {
     id: row?.["id"] ? String(row["id"]) : null,
+    sandbox_api_key: "",
+    sandbox_api_key_configurada: Boolean(text(row?.["sandbox_api_key"]).trim()),
     api_key: "",
     api_key_configurada: Boolean(text(row?.["api_key"]).trim()),
     username: text(row?.["username"]),
@@ -208,6 +213,8 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
       mensagem: text(data.mensagem).trim() || null,
     };
 
+    const sandboxKey = text(data.sandbox_api_key).trim();
+    if (sandboxKey) payload["sandbox_api_key"] = sandboxKey;
     const apiKey = text(data.api_key).trim();
     const password = text(data.password);
     if (apiKey) payload["api_key"] = apiKey;

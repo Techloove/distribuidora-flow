@@ -60,6 +60,7 @@ function backend(role = "admin", error?: { code: string; message: string; detail
       out = [
         {
           api_key: "fixture-private-key",
+          sandbox_api_key: "fixture-private-sandbox-key",
           password: "fixture-private-password",
           username: "fixture-user",
           cooperativa: "0165",
@@ -95,6 +96,8 @@ test("configuração combinada não envia chave e senha existentes ao navegador"
   expect(result.api_key).toBe("");
   expect(result.password).toBe("");
   expect(result.api_key_configurada).toBe(true);
+  expect(result.sandbox_api_key_configurada).toBe(true);
+  expect(result.sandbox_api_key).toBe("");
   expect(result.password_configurada).toBe(true);
   expect(result.cnab?.proximo_nosso_numero).toBe(40);
   expect(JSON.stringify(result)).not.toContain("fixture-private");
@@ -133,5 +136,5 @@ test("erros de constraints não expõem linhas de configuração com segredos", 
     message: "failed row fixture-private-key",
     details: "fixture-private-password",
   });
-  await expect(sicrediConfigSave({ data: input })).rejects.toThrow("fase223");
+  await expect(sicrediConfigSave({ data: input })).rejects.toThrow("fase224");
 });

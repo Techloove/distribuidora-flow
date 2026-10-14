@@ -84,15 +84,22 @@ const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
     campos: [
       {
         name: "api_key",
-        label: "Chave de API (x-api-key)",
+        label: "Chave de API de produção (x-api-key)",
         type: "password",
         span: 2,
         hint: "Por segurança, a chave atual nunca é enviada ao navegador. Deixe em branco para manter a existente.",
       },
-      { name: "username", label: "Usuário" },
+      {
+        name: "sandbox_api_key",
+        label: "Chave de API do sandbox (x-api-key)",
+        type: "password",
+        span: 2,
+        hint: "Use a chave de homologação liberada pelo Sicredi. Em branco mantém a atual.",
+      },
+      { name: "username", label: "Usuário de produção (beneficiário + cooperativa)" },
       {
         name: "password",
-        label: "Senha",
+        label: "Código de acesso de produção",
         type: "password",
         hint: "A senha atual fica somente no servidor. Deixe em branco para manter a existente.",
       },
@@ -235,6 +242,7 @@ function ConfiguracoesPage() {
     // Segredos nunca voltam ao navegador; campos vazios significam "manter o valor atual".
     next["api_key"] = "";
     next["password"] = "";
+    next["sandbox_api_key"] = "";
     if (row?.cnab && !row.cooperativa) {
       next["cooperativa"] = row.cnab.cooperativa;
       next["posto"] = row.cnab.posto;
@@ -267,7 +275,7 @@ function ConfiguracoesPage() {
     },
     onSuccess: () => {
       toast.success("Configuração Sicredi salva com segurança");
-      setSic((s) => ({ ...s, api_key: "", password: "" }));
+      setSic((s) => ({ ...s, api_key: "", password: "", sandbox_api_key: "" }));
       queryClient.invalidateQueries({ queryKey: ["sicredi_config_segura"] });
       queryClient.invalidateQueries({ queryKey: ["sicredi", "status"] });
       queryClient.invalidateQueries({ queryKey: ["cnab"] });
@@ -528,7 +536,9 @@ function ConfiguracoesPage() {
         <p className="mt-1 text-xs text-muted-foreground">
           Chaves de acesso do portal de parceiros e regras de juros, multa, desconto e protesto
           aplicadas aos boletos. Um único convênio para API e CNAB, com sequências compartilhadas
-          entre os centros de custo. A API usa sandbox; os testes CNAB são enviados à cooperativa.
+          entre os centros de custo. No sandbox a API usa automaticamente cooperativa 6789, posto 03
+          e beneficiário 12345, com usuário e senha de teste do manual. Estes dados não substituem
+          os dados reais acima nem os sequenciais CNAB. Os testes CNAB são enviados à cooperativa.
         </p>
         {!canManage ? (
           <p className="py-6 text-sm text-muted-foreground">
@@ -542,7 +552,7 @@ function ConfiguracoesPage() {
           <div className="py-6 text-sm text-destructive">
             {(sicredi.error as Error).message}
             <p className="mt-2 text-xs text-muted-foreground">
-              Rode <code>db/fase223_sicredi_convenio_unificado.sql</code> no banco.
+              Rode <code>db/fase224_sicredi_api_manual391.sql</code> no banco.
             </p>
           </div>
         ) : (
@@ -581,7 +591,13 @@ function ConfiguracoesPage() {
                         <Input
                           id={`sicredi-${c.name}`}
                           type={c.type ?? "text"}
-                          step={c.type === "number" ? "0.0001" : undefined}
+                          step={
+                            c.type === "number"
+                              ? ["juros", "multa", "valor_desconto1"].includes(c.name)
+                                ? "0.01"
+                                : "1"
+                              : undefined
+                          }
                           value={sic[c.name] ?? ""}
                           disabled={!adminSicredi}
                           onChange={(e) => setSic((f) => ({ ...f, [c.name]: e.target.value }))}

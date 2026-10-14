@@ -112,3 +112,7 @@ bun run typecheck
 bun run lint
 bun run build
 ```
+
+## API de cobrança 3.9.1 — fase224
+
+Após a fase223, aplicar `db/fase224_sicredi_api_manual391.sql`. A configuração permanece central, com chaves distintas de sandbox/produção e identificadores de teste automáticos, sem substituir o convênio real CNAB ou seus contadores. O fluxo API corrige PDF, tokens, valores de liquidação e recuperação de emissão inconclusiva. Consulte [o guia de implantação da API](sicredi_api391.md) antes dos testes. O CNAB continua podendo ser usado sem credenciais da API.

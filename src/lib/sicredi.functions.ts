@@ -1,3 +1,5 @@
+import { SICREDI_SANDBOX, liquidacaoSicredi, linhaDigitavelSicredi } from "./sicredi-api";
+import { tokenSicredi } from "./sicredi-token";
 import { documentoFiscal } from "./sicredi-cnab";
 import { validarNovoVencimento, vencimentoDoBanco } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
@@ -25,28 +27,6 @@ async function userRest<T>(accessToken: string, path: string): Promise<T[]> {
   return (await res.json()) as T[];
 }
 
-async function userRpc<T>(
-  accessToken: string,
-  fn: string,
-  payload: Record<string, unknown>,
-): Promise<T> {
-  const url = process.env["EXT_SUPABASE_URL"];
-  const anonKey = process.env["EXT_SUPABASE_ANON_KEY"];
-  if (!url || !anonKey) throw new Error("Configuração do Supabase não disponível no servidor.");
-  const res = await fetchWithTimeout(`${url.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`Falha ao registrar liquidação no ERP: ${body.slice(0, 300)}`);
-  return (body ? JSON.parse(body) : null) as T;
-}
-
 async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Promise<T> {
   const url = process.env["EXT_SUPABASE_URL"];
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
@@ -61,7 +41,16 @@ async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Prom
     body: JSON.stringify(payload),
   });
   const body = await res.text();
-  if (!res.ok) throw new Error(`Falha ao persistir operação Sicredi no ERP: ${body.slice(0, 300)}`);
+  if (!res.ok) {
+    let message = "Falha ao persistir operação Sicredi. Confira a migração fase224 no Supabase.";
+    try {
+      const error = JSON.parse(body);
+      if (error.code === "P0001") message = String(error.message);
+    } catch {
+      /* Não expõe respostas com credenciais. */
+    }
+    throw new Error(message);
+  }
   return (body ? JSON.parse(body) : null) as T;
 }
 
@@ -94,7 +83,11 @@ async function carregarTituloBoleto(accessToken: string, contaId: string): Promi
   return row;
 }
 
-async function carregarBoleto(accessToken: string, boletoId: string): Promise<DbRow> {
+async function carregarBoleto(
+  accessToken: string,
+  boletoId: string,
+  exigeNossoNumero = true,
+): Promise<DbRow> {
   const id = String(boletoId ?? "").trim();
   if (!id) throw new Error("Boleto não informado.");
   const rows = await userRest<DbRow>(
@@ -105,7 +98,10 @@ async function carregarBoleto(accessToken: string, boletoId: string): Promise<Db
   if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
   if (row["canal"] === "cnab240")
     throw new Error("Boleto CNAB 240 deve ser acompanhado pelo retorno do banco.");
-  if (!String(row["nosso_numero"] ?? "").trim()) throw new Error("Boleto sem nosso número.");
+  if (exigeNossoNumero && !String(row["nosso_numero"] ?? "").trim())
+    throw new Error(
+      "Registro recuperado sem nosso número. A impressão está disponível; confirme o nosso número com o Sicredi para consultar ou alterar.",
+    );
   return row;
 }
 
@@ -150,17 +146,18 @@ type DbRow = Record<string, unknown>;
 async function dbConfig(): Promise<DbRow | null> {
   const url = process.env["EXT_SUPABASE_URL"];
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
-  if (!url || !key) return null;
-  try {
-    const res = await fetchWithTimeout(`${url}/rest/v1/sicredi_config?select=*&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-    });
-    if (!res.ok) return null;
-    const rows = (await res.json()) as DbRow[];
-    return rows[0] ?? null;
-  } catch {
-    return null;
-  }
+  if (!url || !key) throw new Error("Configuração segura Supabase indisponível no servidor.");
+  const res = await fetchWithTimeout(
+    `${url.replace(/\/$/, "")}/rest/v1/sicredi_config?select=*&limit=2`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+  );
+  if (!res.ok)
+    throw new Error(
+      "Não foi possível carregar o convênio Sicredi. Nenhuma credencial alternativa foi utilizada.",
+    );
+  const rows = (await res.json()) as DbRow[];
+  if (rows.length > 1) throw new Error("Convênio Sicredi deve possuir configuração única.");
+  return rows[0] ?? null;
 }
 
 const txt = (v: unknown, fb = "") => (v === null || v === undefined ? fb : String(v));
@@ -178,16 +175,33 @@ async function conf(): Promise<Conf> {
       ? "https://api-parceiro.sicredi.com.br"
       : "https://api-parceiro.sicredi.com.br/sb";
   const c: Conf = {
-    apiKey: txt(row?.["api_key"]) || process.env["SICREDI_API_KEY"] || "",
-    username: txt(row?.["username"]) || process.env["SICREDI_USERNAME"] || "",
-    password: txt(row?.["password"]) || process.env["SICREDI_PASSWORD"] || "",
-    cooperativa: txt(row?.["cooperativa"]) || process.env["SICREDI_COOPERATIVA"] || "",
-    posto: txt(row?.["posto"]) || process.env["SICREDI_POSTO"] || "",
+    apiKey:
+      ambiente === "homologacao"
+        ? txt(row?.["sandbox_api_key"]) || process.env["SICREDI_SANDBOX_API_KEY"] || ""
+        : txt(row?.["api_key"]) || process.env["SICREDI_API_KEY"] || "",
+    username:
+      ambiente === "homologacao"
+        ? SICREDI_SANDBOX.username
+        : txt(row?.["username"]) || process.env["SICREDI_USERNAME"] || "",
+    password:
+      ambiente === "homologacao"
+        ? SICREDI_SANDBOX.password
+        : txt(row?.["password"]) || process.env["SICREDI_PASSWORD"] || "",
+    cooperativa:
+      ambiente === "homologacao"
+        ? SICREDI_SANDBOX.cooperativa
+        : txt(row?.["cooperativa"]) || process.env["SICREDI_COOPERATIVA"] || "",
+    posto:
+      ambiente === "homologacao"
+        ? SICREDI_SANDBOX.posto
+        : txt(row?.["posto"]) || process.env["SICREDI_POSTO"] || "",
     beneficiario:
-      txt(row?.["codigo_beneficiario"]) || process.env["SICREDI_CODIGO_BENEFICIARIO"] || "",
+      ambiente === "homologacao"
+        ? SICREDI_SANDBOX.beneficiario
+        : txt(row?.["codigo_beneficiario"]) || process.env["SICREDI_CODIGO_BENEFICIARIO"] || "",
     ambiente,
     base,
-    tipoCobranca: txt(row?.["tipo_cobranca"], "HIBRIDO") || "HIBRIDO",
+    tipoCobranca: txt(row?.["tipo_cobranca"], "NORMAL") || "NORMAL",
     especieDocumento:
       txt(row?.["especie_documento"], "DUPLICATA_MERCANTIL_INDICACAO") ||
       "DUPLICATA_MERCANTIL_INDICACAO",
@@ -219,31 +233,47 @@ async function conf(): Promise<Conf> {
       `Credenciais do Sicredi ausentes: ${faltando.join(", ")}. Cadastre em Configurações → Sicredi.`,
     );
   }
+  if (!["homologacao", "producao"].includes(c.ambiente))
+    throw new Error("Ambiente Sicredi inválido.");
+  if (c.ambiente === "producao" && c.username !== `${c.beneficiario}${c.cooperativa}`)
+    throw new Error(
+      "Usuário de produção deve ser o código do beneficiário (5 dígitos) seguido da cooperativa (4 dígitos).",
+    );
+  for (const [name, value] of [
+    ["juros", c.juros],
+    ["multa", c.multa],
+    ["desconto", c.valorDesconto1],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 0 || Math.round(value * 100) / 100 !== value)
+      throw new Error(
+        `Confira ${name}: Sicredi exige valor não negativo com até duas casas decimais.`,
+      );
+  }
+  if (
+    !Number.isInteger(c.diasProtesto) ||
+    c.diasProtesto < 0 ||
+    c.diasProtesto > 99 ||
+    !Number.isInteger(c.validadeAposVencimento) ||
+    c.validadeAposVencimento < 0 ||
+    c.validadeAposVencimento > 9999
+  )
+    throw new Error("Prazos de cobrança fora dos limites do manual Sicredi.");
   return c;
 }
 
 async function token(c: Conf): Promise<string> {
-  const body = new URLSearchParams({
-    username: c.username,
-    password: c.password,
-    scope: "cobranca",
-    grant_type: "password",
-  });
-  const res = await fetchWithTimeout(`${c.base}/auth/openapi/token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "x-api-key": c.apiKey,
-      context: "COBRANCA",
-    },
-    body,
-  });
-  const txt = await res.text();
-  if (!res.ok)
-    throw new Error(`Falha na autenticacao Sicredi (${res.status}): ${txt.slice(0, 300)}`);
-  const json = JSON.parse(txt) as { access_token?: string };
-  if (!json.access_token) throw new Error("Sicredi nao retornou access_token");
-  return json.access_token;
+  return tokenSicredi(c, serviceRpc);
+}
+function conferirConvenio(b: DbRow, c: Conf) {
+  if (
+    b["cooperativa"] !== c.cooperativa ||
+    b["posto"] !== c.posto ||
+    b["codigo_beneficiario"] !== c.beneficiario ||
+    b["ambiente"] !== c.ambiente
+  )
+    throw new Error(
+      "O convênio ou ambiente atual não corresponde ao boleto. Selecione o ambiente em que ele foi emitido.",
+    );
 }
 
 function headers(c: Conf, tk: string) {
@@ -296,6 +326,15 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     );
     const row = await carregarTituloBoleto(accessToken, data.contaId);
     const documentoPagador = documentoFiscal(String(row["cnpj_cpf"] ?? ""));
+    if (!String(row["razao_social"] ?? "").trim())
+      throw new Error("Informe o nome do pagador antes de emitir.");
+    const cep = String(row["cep"] ?? "").replace(/\D/g, "");
+    if (String(row["uf"] ?? "").trim() && !/^[A-Za-z]{2}$/.test(String(row["uf"])))
+      throw new Error("UF do pagador inválida.");
+    if (String(row["cep"] ?? "").trim() && !/^\d{8}$/.test(cep))
+      throw new Error("Informe o CEP do pagador com 8 dígitos antes de emitir.");
+    if (!Number.isFinite(Number(row["saldo"])) || Number(row["saldo"]) <= 0)
+      throw new Error("Título sem saldo válido.");
     const c = await conf();
     const tk = await token(c);
     // Reserva a emissão antes da chamada externa: serializa concorrência e
@@ -306,6 +345,54 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     });
     const seuNumero = String(reserva["seu_numero"] ?? "").trim();
     if (!seuNumero) throw new Error("Não foi possível reservar o identificador do boleto.");
+    conferirConvenio(reserva, c);
+    if (
+      Number(row["saldo"]) !== Number(reserva["valor"]) ||
+      row["vencimento"] !== reserva["vencimento"]
+    )
+      throw new Error("Título mudou durante a reserva. Atualize antes de emitir.");
+    const recente = await conf();
+    if (JSON.stringify(recente) !== JSON.stringify(c))
+      throw new Error("Configuração mudou durante a emissão. Atualize antes de continuar.");
+    let recuperado: Record<string, unknown> | null = null;
+    if (
+      (reserva["emissao_retentativa"] === true || Number(reserva["tentativas"] ?? 1) > 1) &&
+      reserva["emissao_inconclusiva"] !== false
+    ) {
+      if (c.ambiente !== "producao")
+        throw new Error(
+          "Emissão de teste inconclusiva. A consulta de recuperação não está documentada no sandbox; confira o registro com o Sicredi antes de reenviar.",
+        );
+      const consulta = await fetchWithTimeout(
+        `${c.base}/cobranca/boleto/v1/boletos/cadastrados?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&seuNumero=${encodeURIComponent(seuNumero)}`,
+        { headers: headers(c, tk) },
+      );
+      if (consulta.status !== 404) {
+        if (!consulta.ok)
+          throw new Error(
+            "Não foi possível conferir o registro anterior no Sicredi. Nenhum boleto foi reenviado.",
+          );
+        const matches = await consulta.json();
+        if (!Array.isArray(matches) || matches.length !== 1)
+          throw new Error(
+            "Consulta anterior sem resultado inequívoco. Concilie antes de reenviar.",
+          );
+        const item = matches[0] as Record<string, unknown>;
+        const pagador = item["pagador"] as Record<string, unknown> | undefined;
+        if (
+          item["seuNumero"] !== seuNumero ||
+          Number(item["valorNominal"]) !== Number(reserva["valor"]) ||
+          String(pagador?.["documento"] ?? "") !== documentoPagador
+        )
+          throw new Error(
+            "Registro anterior diverge do título ou pagador. Nenhum boleto foi reenviado.",
+          );
+        linhaDigitavelSicredi(item["linhaDigitavel"]);
+        if (!/^\d{44}$/.test(String(item["codigoBarras"] ?? "")))
+          throw new Error("Sicredi retornou registro anterior sem código de barras válido.");
+        recuperado = item;
+      }
+    }
     const juros = c.juros;
     const multa = c.multa;
     const diasProtesto = c.diasProtesto;
@@ -365,39 +452,93 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       pagador: {
         tipoPessoa: documentoPagador.length === 11 ? "PESSOA_FISICA" : "PESSOA_JURIDICA",
         documento: documentoPagador,
-        nome: String(row["razao_social"] ?? "").slice(0, 40),
-        endereco: (endereco || "Nao informado").slice(0, 40),
-        cidade: String(row["cidade"] ?? "").slice(0, 25),
-        uf: String(row["uf"] ?? "")
-          .slice(0, 2)
-          .toUpperCase(),
-        cep: String(row["cep"] ?? "").replace(/\D/g, ""),
+        nome: String(row["razao_social"] ?? "").slice(0, 200),
+        ...(endereco ? { endereco: endereco.slice(0, 40) } : {}),
+        ...(row["cidade"] ? { cidade: String(row["cidade"]).slice(0, 40) } : {}),
+        ...(row["uf"] ? { uf: String(row["uf"]).toUpperCase() } : {}),
+        ...(cep ? { cep } : {}),
         ...(row["telefone"]
           ? { telefone: String(row["telefone"]).replace(/\D/g, "").slice(0, 11) }
           : {}),
         ...(row["email"] ? { email: String(row["email"]).slice(0, 40) } : {}),
       },
     };
-    const res = await fetchWithTimeout(`${c.base}/cobranca/boleto/v1/boletos`, {
-      method: "POST",
-      headers: headers(c, tk),
-      body: JSON.stringify(payload),
-    });
-    const txt = await res.text();
-    if (!res.ok) {
+    let txt: string;
+    let json: Record<string, unknown>;
+    if (recuperado) {
+      json = recuperado;
+      txt = JSON.stringify(recuperado);
+    } else {
+      // Grava ANTES do POST; se o armazenamento falhar, não há envio externo.
+      // Assim uma nova tentativa não ignora um possível aceite bancário.
+      await serviceRpc("sicredi_marcar_emissao_224", {
+        _actor: user.id,
+        _boleto: reserva["id"],
+        _estado: "inconclusivo",
+      });
+      let res: Response;
       try {
-        await serviceRpc("registrar_erro_boleto_sicredi_servidor", {
-          _actor_id: user.id,
-          _conta_id: data.contaId,
-          _seu_numero: seuNumero,
-          _erro: `Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`,
+        res = await fetchWithTimeout(`${c.base}/cobranca/boleto/v1/boletos`, {
+          method: "POST",
+          headers: headers(c, tk),
+          body: JSON.stringify(payload),
         });
       } catch {
-        // O erro bancário continua sendo a causa principal; a falha de persistência será auditada no servidor.
+        await serviceRpc("sicredi_marcar_emissao_224", {
+          _actor: user.id,
+          _boleto: reserva["id"],
+          _estado: "inconclusivo",
+        });
+        throw new Error(
+          "Resposta de emissão inconclusiva. O identificador foi preservado; a próxima tentativa consulta o banco antes de reenviar.",
+        );
       }
-      throw new Error(`Sicredi recusou o boleto (${res.status}): ${txt.slice(0, 400)}`);
+      try {
+        txt = await res.text();
+      } catch {
+        await serviceRpc("sicredi_marcar_emissao_224", {
+          _actor: user.id,
+          _boleto: reserva["id"],
+          _estado: "inconclusivo",
+        });
+        throw new Error("Resposta de emissão interrompida. Confira o registro antes de reenviar.");
+      }
+      if (!res.ok) {
+        const definitiva = [400, 401, 403, 422].includes(res.status);
+        if (definitiva)
+          await serviceRpc("registrar_erro_boleto_sicredi_servidor", {
+            _actor_id: user.id,
+            _conta_id: data.contaId,
+            _seu_numero: seuNumero,
+            _erro: `Registro Sicredi recusado (${res.status}). Confira os dados do título.`,
+          });
+        await serviceRpc("sicredi_marcar_emissao_224", {
+          _actor: user.id,
+          _boleto: reserva["id"],
+          _estado: definitiva ? "rejeitado" : "inconclusivo",
+        });
+        throw new Error(
+          definitiva
+            ? `Sicredi recusou o registro (${res.status}). Confira os dados do título.`
+            : "Resposta bancária inconclusiva. Consulte o registro antes de reenviar.",
+        );
+      }
+      try {
+        json = JSON.parse(txt) as Record<string, unknown>;
+        linhaDigitavelSicredi(json["linhaDigitavel"]);
+        if (!/^\d{9}$/.test(String(json["nossoNumero"] ?? "")))
+          throw new Error("Nosso número inválido");
+      } catch {
+        await serviceRpc("sicredi_marcar_emissao_224", {
+          _actor: user.id,
+          _boleto: reserva["id"],
+          _estado: "inconclusivo",
+        });
+        throw new Error(
+          "Sicredi respondeu sem os dados completos do registro. Confira antes de reenviar.",
+        );
+      }
     }
-    const json = JSON.parse(txt || "{}") as Record<string, unknown>;
     const retorno = jsonPayload(txt);
     await serviceRpc("registrar_boleto_sicredi_servidor", {
       _actor_id: user.id,
@@ -414,7 +555,13 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       _ambiente: c.ambiente,
       _retorno: retorno,
     });
+    await serviceRpc("sicredi_marcar_emissao_224", {
+      _actor: user.id,
+      _boleto: reserva["id"],
+      _estado: "confirmado",
+    });
     return {
+      recuperado: !!recuperado,
       nossoNumero: String(json["nossoNumero"] ?? ""),
       linhaDigitavel: String(json["linhaDigitavel"] ?? ""),
       codigoBarras: String(json["codigoBarras"] ?? ""),
@@ -441,17 +588,8 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
+    conferirConvenio(boleto, c);
     const tk = await token(c);
-    if (
-      boleto["vencimento_solicitacao_id"] &&
-      (boleto["cooperativa"] !== c.cooperativa ||
-        boleto["posto"] !== c.posto ||
-        boleto["codigo_beneficiario"] !== c.beneficiario ||
-        boleto["ambiente"] !== c.ambiente)
-    )
-      throw new Error(
-        "O convênio ou ambiente atual não corresponde ao boleto com alteração pendente.",
-      );
     const consultaVersao = c.ambiente === "producao" ? "v2" : "v1";
     const url = `${c.base}/cobranca/boleto/${consultaVersao}/boletos?codigoBeneficiario=${encodeURIComponent(
       c.beneficiario,
@@ -478,21 +616,22 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
     const situacao = String(
       (json["situacao"] as string) ?? (json["situacaoBoleto"] as string) ?? "",
     ).toLowerCase();
+    if (!situacao.trim())
+      throw new Error("Sicredi não informou uma situação válida. Nenhuma baixa foi registrada.");
     const liquidado = situacao.includes("liquidad");
     const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
     if (liquidado) {
-      const valorLiquidacao = Number(boleto["valor"] ?? 0);
-      if (!Number.isFinite(valorLiquidacao) || valorLiquidacao <= 0) {
-        throw new Error("Boleto sem valor válido para registrar a liquidação no ERP.");
-      }
-      const dataMovimento = String(json["dataMovimento"] ?? "").trim();
-      const dataLiquidacao = /^\d{4}-\d{2}-\d{2}$/.test(dataMovimento)
-        ? dataMovimento
-        : new Date().toISOString().slice(0, 10);
-      await userRpc(accessToken, "liquidar_boleto", {
-        _boleto_id: data.boletoId,
-        _valor: valorLiquidacao,
-        _data: dataLiquidacao,
+      if (c.ambiente === "homologacao")
+        return {
+          situacao: "liquidado no sandbox (simulação, sem movimentação financeira)",
+          liquidado: false,
+          baixado: false,
+          retorno: txt.slice(0, 4000),
+        };
+      await serviceRpc("sicredi_liquidar_api_224", {
+        _actor: user.id,
+        _boleto: data.boletoId,
+        _dados: liquidacaoSicredi(json),
       });
     } else {
       await serviceRpc("sincronizar_boleto_sicredi_servidor", {
@@ -522,6 +661,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
+    conferirConvenio(boleto, c);
     const tk = await token(c);
     const res = await fetchWithTimeout(
       `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(nossoNumero)}/baixa`,
@@ -543,14 +683,13 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
   .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
   .handler(async ({ data }) => {
     const { accessToken } = await requireSicrediAccess("sicredi_pdf_boleto", 20, data.accessToken);
-    const boleto = await carregarBoleto(accessToken, data.boletoId);
-    const nossoNumero = String(boleto["nosso_numero"]);
+    const boleto = await carregarBoleto(accessToken, data.boletoId, false);
+    const linha = linhaDigitavelSicredi(boleto["linha_digitavel"]);
     const c = await conf();
+    conferirConvenio(boleto, c);
     const tk = await token(c);
     const res = await fetchWithTimeout(
-      `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=&nossoNumero=${encodeURIComponent(
-        nossoNumero,
-      )}&codigoBeneficiario=${encodeURIComponent(c.beneficiario)}`,
+      `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=${encodeURIComponent(linha)}`,
       { headers: headers(c, tk) },
     );
     if (!res.ok) {
@@ -558,9 +697,52 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
       throw new Error(`PDF do boleto indisponivel (${res.status}): ${txt.slice(0, 300)}`);
     }
     const buf = new Uint8Array(await res.arrayBuffer());
+    if (new TextDecoder().decode(buf.subarray(0, 5)) !== "%PDF-")
+      throw new Error("Sicredi não retornou um arquivo PDF válido.");
     let bin = "";
     for (const b of buf) bin += String.fromCharCode(b);
     return { base64: btoa(bin) };
+  });
+
+/** Confirma o número de registro recuperado consultando a linha digitável no banco. */
+export const sicrediConfirmarNossoNumero = createServerFn({ method: "POST" })
+  .inputValidator((data: { boletoId: string; nossoNumero: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_confirmar_numero",
+      10,
+      data.accessToken,
+    );
+    if (!/^\d{9}$/.test(data.nossoNumero)) throw new Error("Informe o nosso número com 9 dígitos.");
+    const b = await carregarBoleto(accessToken, data.boletoId, false);
+    if (b["status"] !== "registrado" || b["nosso_numero"])
+      throw new Error("Confirmação disponível somente para registro recuperado sem nosso número.");
+    const line = linhaDigitavelSicredi(b["linha_digitavel"]),
+      c = await conf();
+    conferirConvenio(b, c);
+    if (c.ambiente !== "producao")
+      throw new Error("Confirme o registro recuperado no ambiente de produção.");
+    const tk = await token(c);
+    const response = await fetchWithTimeout(
+      `${c.base}/cobranca/boleto/v2/boletos?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&nossoNumero=${encodeURIComponent(data.nossoNumero)}`,
+      { headers: headers(c, tk) },
+    );
+    if (!response.ok) throw new Error("Não foi possível confirmar este nosso número no Sicredi.");
+    const json = (await response.json()) as Record<string, unknown>;
+    if (
+      linhaDigitavelSicredi(json["linhaDigitavel"]) !== line ||
+      (json["nossoNumero"] && json["nossoNumero"] !== data.nossoNumero)
+    )
+      throw new Error(
+        "O nosso número informado pertence a outro boleto. Nenhuma identificação foi alterada.",
+      );
+    await serviceRpc("sicredi_vincular_numero_224", {
+      _actor: user.id,
+      _boleto: data.boletoId,
+      _nosso: data.nossoNumero,
+      _linha: line,
+    });
+    return { ok: true };
   });
 
 /** PATCH data-vencimento; atualização local somente após conferência na consulta bancária. */

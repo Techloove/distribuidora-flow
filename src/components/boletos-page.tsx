@@ -1,3 +1,4 @@
+import { ConfirmarNossoNumero } from "@/components/confirmar-nosso-numero";
 import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
 import { BoletoPix } from "@/components/boleto-pix";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -323,7 +324,7 @@ export function BoletosPage() {
                         <TableCell className="text-right">{brl(b["valor"])}</TableCell>
                         <TableCell className={st === "erro" ? "text-destructive" : ""}>
                           {statusLabel[st] ?? st}
-                          {st === "erro" && b["erro"] ? (
+                          {["erro", "em_processamento"].includes(st) && b["erro"] ? (
                             <span className="block text-xs text-muted-foreground">
                               {String(b["erro"]).slice(0, 90)}
                             </span>
@@ -356,13 +357,20 @@ export function BoletosPage() {
                                 />
                               ) : null}
                             </div>
-                          ) : b["nosso_numero"] ? (
+                          ) : b["nosso_numero"] || b["linha_digitavel"] ? (
                             <>
+                              <ConfirmarNossoNumero boleto={b} />
+                              {!b["nosso_numero"] && (
+                                <span className="block text-xs text-muted-foreground">
+                                  Registro recuperado. Confirme o nosso número com o Sicredi para
+                                  consultar ou alterar.
+                                </span>
+                              )}
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 title="Consultar situação no Sicredi"
-                                disabled={consultar.isPending}
+                                disabled={consultar.isPending || !b["nosso_numero"]}
                                 onClick={() => consultar.mutate(b)}
                               >
                                 <RefreshCw className="size-4" />
@@ -370,7 +378,7 @@ export function BoletosPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={abrirPdf.isPending}
+                                disabled={abrirPdf.isPending || !b["linha_digitavel"]}
                                 onClick={() => abrirPdf.mutate(b)}
                               >
                                 PDF
@@ -380,6 +388,7 @@ export function BoletosPage() {
                                 variant="outline"
                                 disabled={
                                   !canFinance ||
+                                  !b["nosso_numero"] ||
                                   baixar.isPending ||
                                   !["registrado", "pendente"].includes(st)
                                 }

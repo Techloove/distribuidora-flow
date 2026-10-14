@@ -35,7 +35,7 @@ const boleto = {
   nosso_numero: "262000020",
   status: "registrado",
   canal: "api",
-  ambiente: "homologacao",
+  ambiente: "producao",
   cooperativa: "0165",
   posto: "02",
   codigo_beneficiario: "00623",
@@ -79,15 +79,18 @@ function backend(
       out = [
         {
           api_key: "fixture-key",
-          username: "fixture-user",
+          username: options.wrongContract ? "006239999" : "006230165",
           password: "fixture-password",
           cooperativa: options.wrongContract ? "9999" : "0165",
           posto: "02",
           codigo_beneficiario: "00623",
-          ambiente: "homologacao",
+          ambiente: "producao",
         },
       ];
-    else if (path.includes("/auth/openapi/token")) out = { access_token: "fixture-bank-token" };
+    else if (path.endsWith("/sicredi_token_reservar_224"))
+      out = { access_token: "fixture-bank-token" };
+    else if (path.includes("/auth/openapi/token"))
+      out = { access_token: "fixture-bank-token", expires_in: 300 };
     else if (path.endsWith("/sicredi_solicitar_vencimento")) out = "request-fixture";
     else if (path.endsWith("/data-vencimento")) {
       if (options.timeout) throw new Error("fixture timeout");
