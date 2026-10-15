@@ -58,6 +58,7 @@ export function FilterSelect({
   return (
     <FilterField label={label}>
       <select
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"

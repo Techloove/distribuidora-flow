@@ -16,7 +16,6 @@ import {
   FileText,
   PackageCheck,
   Route,
-  UserMinus,
   LayoutDashboard,
   LineChart,
   LogOut,
@@ -110,7 +109,6 @@ const nav = [
       { to: "/dre", label: "DRE gerencial", icon: BarChart3 },
       { to: "/relatorios-financeiros", label: "Relatórios financeiros", icon: FileText },
       { to: "/rota-despesas", label: "Custos de rota", icon: Route },
-      { to: "/cobranca", label: "Agenda de cobrança", icon: CalendarClock },
       { to: "/receber", label: "Contas a receber", icon: Wallet },
       { to: "/boletos", label: "Boletos", icon: Barcode },
       { to: "/conciliacao-creditos" as never, label: "Conciliação de créditos", icon: Undo2 },
@@ -122,7 +120,6 @@ const nav = [
     items: [
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/relatorio-vendas", label: "Relatório de vendas", icon: BarChart3 },
-      { to: "/clientes-inativos", label: "Clientes sem comprar", icon: UserMinus },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },

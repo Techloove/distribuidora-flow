@@ -1,13 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ErpLayout } from "@/components/erp-layout";
-import { AgendaClientes } from "@/components/agenda-clientes";
+import { AgendaComercialUnificada } from "@/components/agenda-comercial-unificada";
+import { abaAgenda } from "@/lib/agenda-comercial";
 export const Route = createFileRoute("/_app/agenda-comercial")({
-  component: () => (
+  validateSearch: (search: Record<string, unknown>) => ({ aba: abaAgenda(search["aba"]) }),
+  head: () => ({ meta: [{ title: "Agenda comercial — Caparaó System" }] }),
+  component: AgendaPage,
+});
+function AgendaPage() {
+  const { aba } = Route.useSearch();
+  return (
     <ErpLayout
       title="Agenda comercial"
-      description="Reativação, visitas e próximos contatos da carteira."
+      description="Relacionamento, reativação e cobrança em um só lugar."
     >
-      <AgendaClientes tipo="comercial" />
+      <AgendaComercialUnificada aba={aba} />
     </ErpLayout>
-  ),
-});
+  );
+}

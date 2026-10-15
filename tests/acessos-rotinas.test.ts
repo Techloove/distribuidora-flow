@@ -3,11 +3,13 @@ import { readFileSync } from "node:fs";
 import { MODULOS, moduloDaRota } from "../src/lib/permissoes";
 import { ACOES_ROTINAS } from "../src/lib/permissoes-rotinas";
 
-test("menus das novas agendas e pendências têm controles independentes", () => {
-  for (const path of ["/agenda-comercial", "/cobranca", "/pendencias"]) {
+test("agenda unificada mantém aliases e controles das demais rotinas", () => {
+  for (const path of ["/agenda-comercial", "/pendencias"]) {
     expect(moduloDaRota(path)).toBe(path);
     expect(moduloDaRota(`${path}/detalhe`)).toBe(path);
   }
+  expect(moduloDaRota("/cobranca")).toBe("/agenda-comercial");
+  expect(moduloDaRota("/clientes-inativos")).toBe("/agenda-comercial");
   expect(moduloDaRota("/lead-rota")).toBe("/lead-rota");
   expect(moduloDaRota("/receber")).toBe("/receber");
   expect(moduloDaRota("/desconhecido")).toBeNull();

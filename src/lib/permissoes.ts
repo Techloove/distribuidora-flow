@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
 export function normalizarModulo(path: string) {
-  return path === "/faturamento" ? "/boletos" : path;
+  return path === "/faturamento"
+    ? "/boletos"
+    : path === "/cobranca" || path === "/clientes-inativos"
+      ? "/agenda-comercial"
+      : path;
 }
 
 /** Todos os módulos do sistema, na ordem do menu. */
@@ -43,14 +47,12 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/relatorios-financeiros", label: "Relatórios financeiros", grupo: "Financeiro" },
   { path: "/rota-despesas", label: "Custos de rota", grupo: "Financeiro" },
   { path: "/receber", label: "Contas a receber", grupo: "Financeiro" },
-  { path: "/cobranca", label: "Agenda de cobrança", grupo: "Financeiro" },
   { path: "/boletos", label: "Boletos", grupo: "Financeiro" },
   { path: "/conciliacao-creditos", label: "Conciliação de créditos", grupo: "Financeiro" },
   { path: "/pagar", label: "Contas a pagar", grupo: "Financeiro" },
   { path: "/relatorios", label: "Relatórios", grupo: "Gestão" },
   { path: "/relatorio-vendas", label: "Relatório de vendas", grupo: "Gestão" },
 
-  { path: "/clientes-inativos", label: "Clientes sem comprar", grupo: "Gestão" },
   { path: "/notificacoes", label: "Notificações", grupo: "Gestão" },
   { path: "/usuarios", label: "Usuários e papéis", grupo: "Gestão" },
   { path: "/auditoria", label: "Auditoria", grupo: "Gestão" },
@@ -80,7 +82,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/conciliacao-creditos",
     "/fluxo-caixa",
     "/receber",
-    "/cobranca",
+    "/agenda-comercial",
     "/pagar",
     "/relatorios",
     "/relatorio-vendas",
@@ -105,7 +107,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/comissoes",
     "/relatorios",
     "/relatorio-vendas",
-    "/clientes-inativos",
     "/notificacoes",
   ],
   representante: [
@@ -187,6 +188,8 @@ export function useAcesso(): Acesso {
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
   "/faturamento": "/boletos",
+  "/cobranca": "/agenda-comercial",
+  "/clientes-inativos": "/agenda-comercial",
   "/clientes": "/pessoas",
   "/fornecedores": "/pessoas",
   "/transportadoras": "/pessoas",
