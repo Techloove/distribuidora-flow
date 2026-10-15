@@ -148,7 +148,8 @@ export function AgendaClientes({
       cv.centro,
       paginaTitulos,
     ],
-    enabled: !!client && podeAcompanhar && !!cliente && tipo === "cobranca",
+    enabled:
+      !!client && podeAcompanhar && !!cliente && tipo === "cobranca" && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!.rpc("agenda_titulos_228", {
         _cliente: cliente!["cliente_id"],
@@ -233,56 +234,146 @@ export function AgendaClientes({
               <p>Carregando clientes…</p>
             ) : (
               q.data?.rows.map((r) => (
-                <button
-                  key={`${r["cliente_id"]}-${r["centro_id"]}`}
-                  type="button"
-                  aria-pressed={cliente?.["cliente_id"] === r["cliente_id"]}
-                  onClick={() => {
-                    setCliente(r);
-                    setObs("");
-                    setPromessa("");
-                    setValor("");
-                    setData(hoje);
-                    setPaginaTitulos(0);
-                    setPaginaAtividades(0);
-                    setResultado(tipo === "comercial" ? "Contato realizado" : "Cobrança realizada");
-                  }}
-                  className={`w-full rounded border p-3 text-left text-sm ${cliente?.["cliente_id"] === r["cliente_id"] ? "border-primary bg-accent" : ""}`}
-                >
-                  <strong>
-                    {String(r["codigo"] ?? "")} · {String(r["razao_social"])}
-                  </strong>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {[r["representante"], r["rota"], r["cidade"]].filter(Boolean).join(" · ")}
-                  </p>
-                  {tipo === "comercial" ? (
-                    <>
-                      <p>
-                        {prioridadeComercial(r, hoje)} · última compra{" "}
-                        {r["ultima_compra"] ? dataAgenda(r["ultima_compra"]) : "Nunca"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {reativacao ? (
-                          <>
-                            {r["ultima_compra"]
-                              ? `${r["dias_sem_comprar"]} dias sem comprar`
-                              : "Sem compras registradas"}{" "}
-                            · Ticket médio: {brl(r["ticket_medio"])}
-                          </>
-                        ) : (
-                          <>
-                            Últimos 30 dias: {brl(r["vendas_30"])} · 30 dias anteriores:{" "}
-                            {brl(r["vendas_anteriores_30"])}
-                          </>
-                        )}
-                      </p>
-                    </>
-                  ) : (
-                    <p>
-                      Aberto {brl(r["aberto"])} · vencido {brl(r["vencido"])}
+                <article key={`${r["cliente_id"]}-${r["centro_id"]}`} className="rounded border">
+                  <button
+                    type="button"
+                    aria-pressed={cliente?.["cliente_id"] === r["cliente_id"]}
+                    onClick={() => {
+                      setCliente(r);
+                      setObs("");
+                      setPromessa("");
+                      setValor("");
+                      setData(hoje);
+                      setPaginaTitulos(0);
+                      setPaginaAtividades(0);
+                      setResultado(
+                        tipo === "comercial" ? "Contato realizado" : "Cobrança realizada",
+                      );
+                    }}
+                    className={`w-full rounded p-3 text-left text-sm ${cliente?.["cliente_id"] === r["cliente_id"] ? "border-primary bg-accent" : ""}`}
+                  >
+                    <strong>
+                      {String(r["codigo"] ?? "")} · {String(r["razao_social"])}
+                    </strong>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {[r["representante"], r["rota"], r["cidade"]].filter(Boolean).join(" · ")}
                     </p>
+                    {tipo === "comercial" ? (
+                      <>
+                        <p>
+                          {prioridadeComercial(r, hoje)} · última compra{" "}
+                          {r["ultima_compra"] ? dataAgenda(r["ultima_compra"]) : "Nunca"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {reativacao ? (
+                            <>
+                              {r["ultima_compra"]
+                                ? `${r["dias_sem_comprar"]} dias sem comprar`
+                                : "Sem compras registradas"}{" "}
+                              · Ticket médio: {brl(r["ticket_medio"])}
+                            </>
+                          ) : (
+                            <>
+                              Últimos 30 dias: {brl(r["vendas_30"])} · 30 dias anteriores:{" "}
+                              {brl(r["vendas_anteriores_30"])}
+                            </>
+                          )}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Aberto {brl(r["aberto"])} · vencido {brl(r["vencido"])}
+                        </p>
+                        <span className="mt-2 inline-block font-medium text-primary">
+                          {cliente?.["cliente_id"] === r["cliente_id"]
+                            ? "Parcelas exibidas abaixo"
+                            : "Ver parcelas em aberto e cobrar"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  {tipo === "cobranca" && cliente?.["cliente_id"] === r["cliente_id"] && (
+                    <section
+                      aria-label={`Parcelas em aberto de ${r["razao_social"]}`}
+                      className="space-y-3 border-t p-3"
+                    >
+                      <h3 className="text-sm font-semibold">Parcelas em aberto</h3>
+                      <AvisoRotina erro={parcelas.error} />
+                      {!!parcelas.data?.rows.length && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <caption className="sr-only">
+                              Parcelas em aberto do cliente selecionado
+                            </caption>
+                            <thead>
+                              <tr className="border-b">
+                                <th scope="col" className="p-2">
+                                  Documento / parcela
+                                </th>
+                                <th scope="col" className="p-2">
+                                  Vencimento
+                                </th>
+                                <th scope="col" className="p-2 text-right">
+                                  Saldo
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parcelas.data.rows.map((p) => (
+                                <tr key={String(p["id"])} className="border-b last:border-0">
+                                  <td className="p-2">
+                                    {String(p["documento"] || "Sem documento")} /{" "}
+                                    {String(p["parcela"])}
+                                  </td>
+                                  <td className="p-2 whitespace-nowrap">
+                                    {dataAgenda(p["vencimento"])}
+                                    <span
+                                      className={`block text-[11px] ${String(p["vencimento"]) < hoje ? "text-amber-700" : "text-muted-foreground"}`}
+                                    >
+                                      {String(p["vencimento"]) < hoje ? "Vencida" : "A vencer"}
+                                    </span>
+                                  </td>
+                                  <td className="p-2 text-right whitespace-nowrap font-medium">
+                                    {brl(p["saldo"])}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {parcelas.isPending && <p className="text-xs">Carregando parcelas…</p>}
+                      {!parcelas.isPending && !parcelas.error && !parcelas.data?.rows.length && (
+                        <p className="text-xs">Sem parcelas em aberto neste filtro.</p>
+                      )}
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={paginaTitulos === 0 || parcelas.isFetching}
+                          onClick={() => setPaginaTitulos((n) => n - 1)}
+                        >
+                          Anteriores
+                        </Button>
+                        <span className="text-xs">
+                          Página {paginaTitulos + 1} · {parcelas.data?.count ?? 0} parcelas
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            parcelas.isFetching ||
+                            (paginaTitulos + 1) * 50 >= (parcelas.data?.count ?? 0)
+                          }
+                          onClick={() => setPaginaTitulos((n) => n + 1)}
+                        >
+                          Próximas
+                        </Button>
+                      </div>
+                    </section>
                   )}
-                </button>
+                </article>
               ))
             )}
             {!q.isPending && !q.error && !q.data?.rows.length && (
@@ -414,46 +505,6 @@ export function AgendaClientes({
               >
                 Registrar acompanhamento
               </Button>
-              {tipo === "cobranca" && (
-                <details>
-                  <summary className="cursor-pointer text-sm">Parcelas em aberto</summary>
-                  <AvisoRotina erro={parcelas.error} />
-                  {parcelas.data?.rows.map((p) => (
-                    <p key={String(p["id"])} className="mt-2 text-xs">
-                      {String(p["documento"])} / {String(p["parcela"])} ·{" "}
-                      {dataAgenda(p["vencimento"])} · saldo {brl(p["saldo"])}
-                    </p>
-                  ))}
-                  {parcelas.isPending && <p className="text-xs">Carregando parcelas…</p>}
-                  {!parcelas.isPending && !parcelas.error && !parcelas.data?.rows.length && (
-                    <p className="text-xs">Sem parcelas em aberto neste filtro.</p>
-                  )}
-                  <div className="mt-3 flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={paginaTitulos === 0 || parcelas.isFetching}
-                      onClick={() => setPaginaTitulos((n) => n - 1)}
-                    >
-                      Anteriores
-                    </Button>
-                    <span className="text-xs">
-                      Página {paginaTitulos + 1} · {parcelas.data?.count ?? 0} parcelas
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        parcelas.isFetching ||
-                        (paginaTitulos + 1) * 50 >= (parcelas.data?.count ?? 0)
-                      }
-                      onClick={() => setPaginaTitulos((n) => n + 1)}
-                    >
-                      Próximas
-                    </Button>
-                  </div>
-                </details>
-              )}
             </section>
           )}
           <section className="rounded border bg-card p-4 space-y-3">
