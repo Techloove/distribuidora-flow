@@ -19,3 +19,9 @@ bun run check:migrations
 ```
 
 O teste reproduz a confirmação real anterior com0/30/60, aplica a correção sobre as guardas da fase209 e confere20/40/60, soma exata de2.779 em três parcelas, virada do ano, datas anteriores preservadas, rollback de confirmação inconsistente e confirmação repetida sem duplicação. A conferência do pedido real depende da consulta no Supabase; não há acesso direto ao banco de produção neste ambiente.
+
+## Correção autorizada do pedido nº1
+
+Após a fase227, execute integralmente `db/correcao_pedido1_vencimentos_20_40_60.sql` no SQL Editor como proprietário. Ele corrige somente os vencimentos do pedido1 para a data do pedido mais20,40 e60 dias, e retorna as datas finais. Exige condição cadastrada de boleto3× com primeira20 e intervalo20, exatamente três títulos abertos e sem pagamentos, registros de boletos ou movimentos financeiros. Qualquer divergência aborta tudo. Uma nova execução não duplica a auditoria. Não altera valores nem refaz estoque. Se houver registro bancário, use o fluxo de alteração de vencimento do boleto.
+
+Teste isolado: `NODE_PATH=/caminho/das/dependencias node scripts/check-correcao-pedido1-database.cjs`.
