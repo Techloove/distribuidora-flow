@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Printer } from "lucide-react";
+import { Loader2, Printer, RefreshCw } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,7 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
+import { lerPaginas } from "@/lib/paginacao";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/separacao")({
@@ -40,8 +41,9 @@ export const Route = createFileRoute("/_app/separacao")({
 type Row = Record<string, unknown>;
 
 function SeparacaoPage() {
-  const { client } = useSupabase();
-  const { centro } = useCentro();
+  const { client, user, roles } = useSupabase();
+  const cv = useCentroValido();
+  const { centro } = cv;
   const queryClient = useQueryClient();
   const [modo, setModo] = useState<"pedido" | "onda">("pedido");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
@@ -49,13 +51,15 @@ function SeparacaoPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_separacao", centro],
-    enabled: !!client && !!centro,
-    queryFn: async () => {
-      const { data, error } = await client!.from("vw_separacao").select("*").eq("centro_id", centro!).order("numero");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
-    },
+    queryKey: ["vw_separacao", user?.id, roles.slice().sort().join(","), centro],
+    enabled: !!client && !cv.isLoading && !cv.error,
+    refetchInterval: 30_000,
+    queryFn: async () =>
+      lerPaginas<Row>((inicio, fim) => {
+        let consulta = client!.from("vw_separacao").select("*");
+        if (centro) consulta = consulta.eq("centro_id", centro);
+        return consulta.order("numero").order("pedido_id").order("item_id").range(inicio, fim);
+      }),
   });
 
   const opcoes = useMemo(() => {
@@ -85,8 +89,12 @@ function SeparacaoPage() {
     if (termo) {
       list = list.filter(
         (r) =>
-          String(r["produto"] ?? "").toLowerCase().includes(termo) ||
-          String(r["produto_codigo"] ?? "").toLowerCase().includes(termo),
+          String(r["produto"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["produto_codigo"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     if (f["somenteFalta"] === "1") {
@@ -135,7 +143,6 @@ function SeparacaoPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   /** Agrupamento por onda: soma a quantidade do mesmo produto em vários pedidos. */
   const porProduto = useMemo(() => {
     const map = new Map<
@@ -182,10 +189,7 @@ function SeparacaoPage() {
               r["expedicao_status"] ? ` · ${String(r["expedicao_status"]).replace(/_/g, " ")}` : ""
             }`
           : "—",
-        seq: [
-          rotaSeq ? `Sequência da rota: ${rotaSeq}` : null,
-          cliSeq ? `Parada: ${cliSeq}` : null,
-        ]
+        seq: [rotaSeq ? `Sequência da rota: ${rotaSeq}` : null, cliSeq ? `Parada: ${cliSeq}` : null]
           .filter(Boolean)
           .join(" · "),
       });
@@ -205,7 +209,17 @@ function SeparacaoPage() {
   const statusTone = (s: string) => {
     const v = s.toLowerCase();
     if (v.startsWith("cancel")) return "bg-destructive/10 text-destructive";
-    if (["separado", "conferido", "em_rota", "entregue", "faturado", "nf_emitida", "em_carga"].includes(v))
+    if (
+      [
+        "separado",
+        "conferido",
+        "em_rota",
+        "entregue",
+        "faturado",
+        "nf_emitida",
+        "em_carga",
+      ].includes(v)
+    )
       return "bg-primary/15 text-primary";
     if (["aprovado", "confirmado"].includes(v)) return "bg-emerald-500/15 text-emerald-600";
     if (v === "separacao") return "bg-amber-500/15 text-amber-600";
@@ -227,7 +241,14 @@ function SeparacaoPage() {
       title="Separação"
       description="Pedidos aprovados aguardando picking. Filtre por rota, cliente ou status e imprima a lista de separação."
       actions={
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            disabled={lista.isFetching || cv.isLoading || !!cv.error}
+            onClick={() => void lista.refetch()}
+          >
+            <RefreshCw className="size-4" /> Atualizar
+          </Button>
           <Button
             variant={modo === "pedido" ? "default" : "outline"}
             onClick={() => setModo("pedido")}
@@ -337,8 +358,7 @@ function SeparacaoPage() {
               Lista de separação {modo === "onda" ? "(por onda)" : "(por pedido)"}
             </h2>
             <p className="text-xs">
-              {resumoFiltro || "Todos os pedidos"} · Emitida em{" "}
-              {new Date().toLocaleString("pt-BR")}
+              {resumoFiltro || "Todos os pedidos"} · Emitida em {new Date().toLocaleString("pt-BR")}
             </p>
           </div>
 
@@ -346,7 +366,11 @@ function SeparacaoPage() {
             {pedidos.length} pedido(s) · {rows.length} item(ns)
           </p>
 
-          {lista.isLoading ? (
+          {cv.error ? (
+            <p role="alert" className="rounded-lg border bg-card p-5 text-sm text-destructive">
+              {cv.error.message}
+            </p>
+          ) : lista.isLoading || cv.isLoading ? (
             <div className="space-y-2 rounded-lg border border-border bg-card p-3">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-10 animate-pulse rounded-md bg-muted" />
@@ -518,7 +542,8 @@ function SeparacaoPage() {
                                   const itemId = String(r["item_id"] ?? "");
                                   const pedida = Number(r["quantidade"] ?? 0);
                                   const sep = r["quantidade_separada"];
-                                  const separada = sep === null || sep === undefined ? null : Number(sep);
+                                  const separada =
+                                    sep === null || sep === undefined ? null : Number(sep);
                                   const falta = separada === null ? null : pedida - separada;
                                   const editavel = p.status === "separacao";
                                   return (
@@ -601,7 +626,10 @@ function SeparacaoPage() {
                                           </select>
                                         ) : (
                                           <span className="text-xs text-muted-foreground">
-                                            {String(r["divergencia_acao"] ?? "—").replace(/_/g, " ")}
+                                            {String(r["divergencia_acao"] ?? "—").replace(
+                                              /_/g,
+                                              " ",
+                                            )}
                                           </span>
                                         )}
                                       </TableCell>
@@ -612,7 +640,6 @@ function SeparacaoPage() {
                             </Table>
                           </td>
                         </tr>
-
                       </Fragment>
                     );
                   })}
@@ -625,4 +652,3 @@ function SeparacaoPage() {
     </ErpLayout>
   );
 }
-
