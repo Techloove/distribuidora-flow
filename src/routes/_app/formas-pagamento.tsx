@@ -52,7 +52,13 @@ const fields: CrudField[] = [
   },
   { name: "intervalo_dias", label: "Intervalo (dias)", type: "number", inTable: true },
   { name: "taxa_percentual", label: "Acréscimo (%)", type: "number", step: "0.01", inTable: true },
-  { name: "desconto_percentual", label: "Desconto (%)", type: "number", step: "0.01", inTable: true },
+  {
+    name: "desconto_percentual",
+    label: "Desconto (%)",
+    type: "number",
+    step: "0.01",
+    inTable: true,
+  },
   { name: "observacoes", label: "Observações", span: 2 },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
@@ -61,7 +67,7 @@ function FormasPagamentoPage() {
   return (
     <ErpLayout
       title="Formas de pagamento"
-      description="Condições usadas nos pedidos de venda: número de parcelas, prazo da primeira e intervalo entre elas."
+      description="Prazos contados da data do pedido. Exemplo: boleto 20/40/60 = 3 parcelas, primeira em 20 dias e intervalo de 20 dias. Preencha os campos; o nome é apenas uma identificação."
     >
       <CrudPage
         table="formas_pagamento"
