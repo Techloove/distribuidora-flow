@@ -1,3 +1,7 @@
+import { SelecionarPedidosLote, DespacharCarga } from "@/components/logistica-pratica";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
+import { lerPaginas } from "@/lib/paginacao";
+import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { CapacidadeCarga } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -16,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/cargas")({
@@ -26,7 +30,7 @@ export const Route = createFileRoute("/_app/cargas")({
       {
         name: "description",
         content:
-          "Geração de cargas por rota com pedidos faturados e nota fiscal autorizada, controle de motorista, veículo, volumes, peso e status da entrega.",
+          "Montagem de cargas por rota com pedidos separados e conferidos, despacho integrado e confirmação das entregas.",
       },
       { property: "og:title", content: "Cargas de entrega — ERP Distribuidora" },
       {
@@ -46,11 +50,11 @@ const moeda = (v: unknown) =>
   Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const PROXIMOS: Record<string, string[]> = {
-  aberta: ["em_preparacao", "fechada", "cancelada"],
-  em_preparacao: ["fechada", "cancelada"],
+  aberta: ["em_rota", "cancelada"],
+  em_preparacao: ["em_rota", "cancelada"],
   fechada: ["em_rota", "aberta", "cancelada"],
-  em_rota: ["entregando", "concluida"],
-  entregando: ["concluida"],
+  em_rota: [],
+  entregando: [],
 };
 
 const tom = (s: string) => {
@@ -62,16 +66,18 @@ const tom = (s: string) => {
 };
 
 function CargasPage() {
-  const { client, roles } = useSupabase();
-  const { centro } = useCentro();
+  const { client, roles, user } = useSupabase();
+  const cv = useCentroValido();
+  const { centro } = cv;
+  const permissoes = usePermissoesRotinas();
   const queryClient = useQueryClient();
-  const podeExpedir = roles.some((r) => ["admin", "gestor", "expedicao", "estoque"].includes(r));
+  const podeExpedir = permissoes.pode("cargas_operar");
 
   const [aberta, setAberta] = useState<string | null>(null);
   const [nova, setNova] = useState(false);
   const [form, setForm] = useState({
     rota_id: "",
-    data: new Date().toISOString().slice(0, 10),
+    data: hojeSaoPaulo(),
     responsavel: "",
     motorista: "",
     placa: "",
@@ -80,7 +86,7 @@ function CargasPage() {
 
   const rotas = useQuery({
     queryKey: ["rotas_ativas"],
-    enabled: !!client,
+    enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!.from("rotas").select("id, nome").order("nome");
       if (error) throw new Error(error.message);
@@ -89,8 +95,9 @@ function CargasPage() {
   });
 
   const cargas = useQuery({
-    queryKey: ["vw_cargas"],
-    enabled: !!client,
+    queryKey: ["vw_cargas", user?.id, roles.join(","), centro],
+    refetchInterval: 30_000,
+    enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_cargas")
@@ -102,8 +109,9 @@ function CargasPage() {
   });
 
   const itensCarga = useQuery({
-    queryKey: ["vw_carga_pedidos", aberta],
-    enabled: !!client && !!aberta,
+    queryKey: ["vw_carga_pedidos", user?.id, roles.join(","), aberta],
+    refetchInterval: 30_000,
+    enabled: !!client && !!aberta && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_carga_pedidos")
@@ -115,15 +123,18 @@ function CargasPage() {
   });
 
   const disponiveis = useQuery({
-    queryKey: ["vw_pedidos_para_carga"],
-    enabled: !!client,
+    queryKey: ["vw_pedidos_para_carga", user?.id, roles.join(","), centro],
+    refetchInterval: 30_000,
+    enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("vw_pedidos_para_carga")
-        .select("*")
-        .order("numero");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("vw_pedidos_para_carga")
+          .select("*")
+          .order("numero")
+          .order("pedido_id")
+          .range(inicio, fim),
+      );
     },
   });
 
@@ -153,7 +164,7 @@ function CargasPage() {
   return (
     <ErpLayout
       title="Cargas de entrega"
-      description="Monte a carga por rota. Pedidos faturados entram conforme a configuração de nota fiscal."
+      description="Selecione os pedidos com separação concluída, monte a carga por rota e despache todos de uma vez para Entregas."
       actions={
         <Button disabled={!podeExpedir} onClick={() => setNova(true)}>
           Gerar carga
@@ -161,6 +172,17 @@ function CargasPage() {
       }
     >
       <div className="space-y-6">
+        {cv.error && (
+          <p role="alert" className="text-sm text-destructive">
+            {cv.error.message}
+          </p>
+        )}
+        <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+          Monte a carga com os pedidos cuja separação foi concluída e clique em Despachar carga para
+          enviar todos à rota de entrega. Os pedidos já incluídos aparecem em Entregas como
+          aguardando saída. O faturamento comercial é integrado à inclusão, sem emitir nota fiscal.
+          A carga é concluída após a formalização de todas as entregas.
+        </p>
         {cargas.isLoading ? (
           <div className="h-24 animate-pulse rounded-lg bg-muted" />
         ) : lista.length === 0 ? (
@@ -222,23 +244,35 @@ function CargasPage() {
                         </span>
                       </td>
                       <td className="space-x-2 px-4 py-2.5 text-right">
-                        {(PROXIMOS[status] ?? []).map((s) => (
-                          <Button
-                            key={s}
-                            size="sm"
-                            variant={s === "cancelada" ? "ghost" : "secondary"}
-                            disabled={!podeExpedir || rpc.isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              rpc.mutate({
-                                fn: "avancar_carga",
-                                params: { _carga_id: id, _status: s },
-                              });
-                            }}
-                          >
-                            {s.replace(/_/g, " ")}
-                          </Button>
-                        ))}
+                        {(PROXIMOS[status] ?? []).map((s) =>
+                          s === "em_rota" ? (
+                            <DespacharCarga
+                              key={s}
+                              carga={c}
+                              disabled={!podeExpedir || rpc.isPending}
+                            />
+                          ) : (
+                            <Button
+                              key={s}
+                              size="sm"
+                              variant={s === "cancelada" ? "ghost" : "secondary"}
+                              disabled={!podeExpedir || rpc.isPending}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                rpc.mutate({
+                                  fn: "avancar_carga",
+                                  params: { _carga_id: id, _status: s },
+                                });
+                              }}
+                            >
+                              {s === "cancelada"
+                                ? "Cancelar carga"
+                                : s === "aberta"
+                                  ? "Reabrir carga"
+                                  : s.replace(/_/g, " ")}
+                            </Button>
+                          ),
+                        )}
                       </td>
                     </tr>
                   );
@@ -277,7 +311,12 @@ function CargasPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          disabled={!podeExpedir}
+                          disabled={
+                            !podeExpedir ||
+                            !["aberta", "em_preparacao", "fechada"].includes(
+                              String(cargaAtual["status"]),
+                            )
+                          }
                           onClick={() =>
                             rpc.mutate({
                               fn: "remover_pedido_carga",
@@ -295,10 +334,22 @@ function CargasPage() {
             </section>
 
             <section className="space-y-2 rounded-lg border border-border bg-card p-4">
-              <h2 className="text-sm font-semibold">Pedidos liberados para esta rota</h2>
+              <h2 className="text-sm font-semibold">
+                Pedidos com separação concluída para esta rota
+              </h2>
+              {["aberta", "em_preparacao"].includes(String(cargaAtual["status"])) && (
+                <SelecionarPedidosLote
+                  cargaId={String(cargaAtual["id"])}
+                  pedidos={candidatos.map((p) => ({
+                    id: String(p["pedido_id"]),
+                    numero: String(p["numero"]),
+                    cliente: String(p["cliente"] ?? "—"),
+                  }))}
+                />
+              )}
               {candidatos.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum pedido faturado e liberado aguardando carga nesta rota.
+                  Nenhum pedido com separação concluída aguardando carga nesta rota.
                 </p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
@@ -311,14 +362,17 @@ function CargasPage() {
                         <span className="font-semibold">#{String(p["numero"])}</span>{" "}
                         <span className="text-muted-foreground">
                           {String(p["cliente"] ?? "—")}
-                          {p["nf_numero"] ? ` · NF ${String(p["nf_numero"])}` : " · sem NF"}
+                          {p["nf_numero"] ? ` · NF ${String(p["nf_numero"])}` : ""}
                         </span>
                       </span>
                       <span className="flex items-center gap-3 whitespace-nowrap">
                         <span>{moeda(p["total_liquido"])}</span>
                         <Button
                           size="sm"
-                          disabled={!podeExpedir}
+                          disabled={
+                            !podeExpedir ||
+                            !["aberta", "em_preparacao"].includes(String(cargaAtual["status"]))
+                          }
                           onClick={() =>
                             rpc.mutate({
                               fn: "adicionar_pedido_carga",
@@ -404,7 +458,7 @@ function CargasPage() {
               Voltar
             </Button>
             <Button
-              disabled={!form.rota_id || rpc.isPending}
+              disabled={!podeExpedir || !form.rota_id || rpc.isPending}
               onClick={() =>
                 rpc.mutate({
                   fn: "criar_carga",

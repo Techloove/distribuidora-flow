@@ -35,6 +35,7 @@ type Entrega = {
   centro: string;
   motorista: string | null;
   romaneio: number;
+  carga_numero?: number | null;
   itens: number;
   parcial: boolean;
   data_pedido: string;
@@ -120,8 +121,9 @@ export function Entregas() {
   return (
     <div className="space-y-5">
       <section className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-        Registre aqui a entrega completa dos pedidos que já saíram em rota. A confirmação atualiza o
-        pedido e o romaneio, com data, recebedor e responsável pelo registro.
+        Os pedidos incluídos em cargas aparecem aqui como pendentes. Confirme a entrega completa
+        após a saída em rota. A confirmação atualiza o pedido e o romaneio, com data, recebedor e
+        responsável pelo registro.
       </section>
       <FilterBar
         onClear={() => {
@@ -149,7 +151,8 @@ export function Entregas() {
           }}
           allLabel="Todas"
           options={[
-            { value: "em_rota", label: "Em rota / pendentes" },
+            { value: "em_rota", label: "Pendentes de entrega" },
+            { value: "aguardando_saida", label: "Aguardando saída da carga" },
             { value: "entregue", label: "Entregues" },
           ]}
         />
@@ -184,7 +187,7 @@ export function Entregas() {
       ))}
       <div className="grid grid-cols-2 gap-3 sm:max-w-xl">
         <article className="rounded-xl border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Em rota / pendentes</p>
+          <p className="text-xs text-muted-foreground">Pendentes de entrega</p>
           <p className="mt-1 text-2xl font-semibold">{lista.data?.pendentes ?? "…"}</p>
         </article>
         <article className="rounded-xl border bg-card p-4">
@@ -213,7 +216,11 @@ export function Entregas() {
               <span
                 className={`rounded-full px-3 py-1 text-xs ${e.status === "entregue" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
               >
-                {e.status === "entregue" ? "Entregue" : "Em rota"}
+                {e.status === "entregue"
+                  ? "Entregue"
+                  : e.status === "aguardando_saida"
+                    ? "Aguardando saída"
+                    : "Em rota"}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -240,6 +247,14 @@ export function Entregas() {
                 {e.registrado_por ? ` · Registrado por ${e.registrado_por}` : ""}
               </p>
             )}
+            {e.carga_numero != null && (
+              <p className="text-xs text-muted-foreground">Carga #{e.carga_numero}</p>
+            )}
+            {e.status === "aguardando_saida" && (
+              <p className="text-sm text-muted-foreground">
+                Aguardando o despacho da carga. A confirmação de entrega será liberada após a saída.
+              </p>
+            )}
             {e.status !== "entregue" && (e.parcial || e.pedido_status === "parcial") && (
               <p className="text-sm text-amber-800">
                 Há entrega parcial ou recusa. Solicite a conclusão do tratamento na Expedição.
@@ -256,7 +271,11 @@ export function Entregas() {
               ) : (
                 <Truck className="size-4" />
               )}
-              {e.status === "entregue" ? "Consultar entrega" : "Confirmar entrega"}
+              {e.status === "entregue"
+                ? "Consultar entrega"
+                : e.status === "aguardando_saida"
+                  ? "Aguardando despacho"
+                  : "Confirmar entrega"}
             </Button>
           </article>
         ))}

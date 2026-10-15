@@ -1,3 +1,4 @@
+import { SelecionarPedidosLote } from "@/components/logistica-pratica";
 import { MargemPedido } from "@/components/rotinas-distribuidora";
 import { ResumoPedido } from "@/components/resumo-pedido";
 import { conferirPedido, hojeSaoPaulo, type PedidoConferencia } from "@/lib/painel-trabalho";
@@ -789,17 +790,6 @@ export function DocumentoPage({
       { status: "aprovado", label: "Aprovar" },
       { status: "recusado", label: "Recusar" },
     ],
-    aprovado: [{ status: "separacao", label: "Enviar para separação" }],
-    confirmado: [{ status: "separacao", label: "Enviar para separação" }],
-    separacao: [{ status: "separado", label: "Marcar como separado" }],
-    separado: [{ status: "em_rota", label: "Em rota de entrega" }],
-    faturado: [{ status: "em_rota", label: "Em rota de entrega" }],
-    em_rota: [
-      { status: "entregue", label: "Entregue" },
-      { status: "parcial", label: "Entrega parcial" },
-      { status: "nao_entregue", label: "Não entregue" },
-      { status: "devolvido", label: "Devolvido" },
-    ],
   };
 
   const avancar = useMutation({
@@ -1250,6 +1240,19 @@ export function DocumentoPage({
           </div>
         ) : null}
 
+        {config.table === "pedidos" && (
+          <div className="flex flex-wrap gap-2">
+            <SelecionarPedidosLote
+              pedidos={docsFiltrados
+                .filter((p) => p["status"] === "confirmado")
+                .map((p) => ({
+                  id: String(p["id"]),
+                  numero: String(p["numero"]),
+                  cliente: partnerName(p["cliente_id"]),
+                }))}
+            />
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           {abertos} em andamento · {docsFiltrados.length} no filtro
         </p>
@@ -1395,6 +1398,20 @@ export function DocumentoPage({
             <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
               ← Voltar à lista
             </Button>
+            {config.table === "pedidos" &&
+              ["separacao", "separado", "conferido", "faturado", "em_carga", "em_rota"].includes(
+                String(doc["status"]),
+              ) && (
+                <p className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  {["separacao", "separado"].includes(String(doc["status"]))
+                    ? "Próxima etapa: concluir a separação no menu Separação."
+                    : ["conferido", "faturado"].includes(String(doc["status"]))
+                      ? "Separação concluída. Próxima etapa: incluir o pedido em Cargas de entrega."
+                      : doc["status"] === "em_carga"
+                        ? "Pedido incluído na carga. Aguardando o despacho para saída em rota."
+                        : "Pedido em rota. O recebimento será formalizado no menu Entregas."}
+                </p>
+              )}
             {config.table === "pedidos" && doc["data_entrega"] != null && (
               <p className="rounded-lg border bg-emerald-50 p-3 text-sm text-emerald-900">
                 Data de entrega: {fmtDate(doc["data_entrega"])}
@@ -1542,6 +1559,17 @@ export function DocumentoPage({
                     Marcar como comprado
                   </Button>
                 ) : null}
+                {config.table === "pedidos" && doc["status"] === "confirmado" && (
+                  <SelecionarPedidosLote
+                    pedidos={[
+                      {
+                        id: String(doc["id"]),
+                        numero: String(doc["numero"]),
+                        cliente: partnerName(doc["cliente_id"]),
+                      },
+                    ]}
+                  />
+                )}
                 {config.table === "pedidos"
                   ? (proximosStatus[String(doc["status"])] ?? []).map((s) => (
                       <Button

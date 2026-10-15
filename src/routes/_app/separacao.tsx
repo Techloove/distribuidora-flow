@@ -1,3 +1,4 @@
+import { ConcluirSeparacaoPratica } from "@/components/logistica-pratica";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer, RefreshCw } from "lucide-react";
@@ -239,7 +240,7 @@ function SeparacaoPage() {
   return (
     <ErpLayout
       title="Separação"
-      description="Pedidos aprovados aguardando picking. Filtre por rota, cliente ou status e imprima a lista de separação."
+      description="Separe e confira os produtos. Concluir a separação libera o pedido para montagem da carga."
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -470,7 +471,7 @@ function SeparacaoPage() {
                           </td>
                           <td className="no-print space-x-2 px-4 py-2.5 text-right">
                             <ImprimirPedidos pedidoIds={[id]} compact />
-                            {p.status === "aprovado" || p.status === "confirmado" ? (
+                            {p.status === "confirmado" ? (
                               <Button
                                 size="sm"
                                 onClick={(e) => {
@@ -484,38 +485,12 @@ function SeparacaoPage() {
                                 Iniciar separação
                               </Button>
                             ) : null}
-                            {p.status === "separacao" ? (
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  rpc.mutate({
-                                    fn: "concluir_separacao",
-                                    params: { _pedido_id: id },
-                                  });
-                                }}
-                              >
-                                Concluir separação
-                              </Button>
-                            ) : null}
-                            {p.status === "separado" ? (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  rpc.mutate({
-                                    fn: "conferir_separacao",
-                                    params: { _pedido_id: id, _obs: null },
-                                  });
-                                }}
-                              >
-                                Conferir separação
-                              </Button>
+                            {["separacao", "separado"].includes(p.status) ? (
+                              <ConcluirSeparacaoPratica pedidoId={id} numero={p.numero} />
                             ) : null}
                             {p.status === "conferido" ? (
                               <span className="text-[11px] text-emerald-600">
-                                Liberado para faturamento
+                                Liberado para montar carga
                               </span>
                             ) : null}
                           </td>
