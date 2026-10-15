@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CalendarClock, HandCoins, Printer, UserRoundSearch } from "lucide-react";
+import { CalendarClock, Compass, HandCoins, Printer, UserRoundSearch } from "lucide-react";
+import { LeadRotaAgenda } from "@/components/lead-rota-agenda";
 import { AgendaClientes } from "@/components/agenda-clientes";
 import { Button } from "@/components/ui/button";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
@@ -23,6 +24,7 @@ export function AgendaComercialUnificada({ aba }: { aba: AgendaAba }) {
     navigate = useNavigate();
   const restrita = roles.includes("representante") && !roles.includes("admin");
   const [filtros, setFiltros] = useState(FILTROS_AGENDA);
+  const [clientePreferido, setClientePreferido] = useState<string | null>(null);
   const [buscaAplicada, setBuscaAplicada] = useState("");
   useEffect(() => {
     const timer = setTimeout(() => setBuscaAplicada(filtros.busca), 250);
@@ -35,6 +37,13 @@ export function AgendaComercialUnificada({ aba }: { aba: AgendaAba }) {
   };
 
   const abas = [
+    {
+      id: "rotas" as const,
+      titulo: "Lead Rota",
+      curto: "Rotas",
+      acao: "lead_rota_operar" as const,
+      icon: Compass,
+    },
     {
       id: "comercial" as const,
       titulo: "Relacionamento",
@@ -174,18 +183,32 @@ export function AgendaComercialUnificada({ aba }: { aba: AgendaAba }) {
         </p>
       )}
       <TabsContent value={selecionada}>
-        <AgendaClientes
-          key={[
-            user?.id,
-            roles.slice().sort().join(","),
-            selecionada,
-            cv.centro,
-            JSON.stringify(filtrosAplicados),
-          ].join(":")}
-          tipo={selecionada === "cobranca" ? "cobranca" : "comercial"}
-          reativacao={selecionada === "reativacao"}
-          filtros={filtrosAplicados}
-        />
+        {selecionada === "rotas" ? (
+          <LeadRotaAgenda
+            key={[user?.id, roles.join(","), cv.centro, JSON.stringify(filtrosAplicados)].join(":")}
+            filtros={filtrosAplicados}
+            onCobrar={(c) => {
+              setFiltros((f) => ({ ...f, busca: String(c["razao_social"]) }));
+              setBuscaAplicada(String(c["razao_social"]));
+              setClientePreferido(String(c["cliente_id"]));
+              void navigate({ to: "/agenda-comercial", search: { aba: "cobranca" } });
+            }}
+          />
+        ) : (
+          <AgendaClientes
+            key={[
+              user?.id,
+              roles.slice().sort().join(","),
+              selecionada,
+              cv.centro,
+              JSON.stringify(filtrosAplicados),
+            ].join(":")}
+            tipo={selecionada === "cobranca" ? "cobranca" : "comercial"}
+            reativacao={selecionada === "reativacao"}
+            filtros={filtrosAplicados}
+            clienteInicialId={clientePreferido}
+          />
+        )}
       </TabsContent>
     </Tabs>
   );

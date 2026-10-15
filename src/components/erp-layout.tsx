@@ -11,7 +11,6 @@ import {
   CalendarClock,
   ClipboardList,
   Coins,
-  Compass,
   CreditCard,
   FileText,
   PackageCheck,
@@ -79,7 +78,6 @@ const nav = [
     group: "Comercial",
     items: [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-      { to: "/lead-rota", label: "Lead Rota", icon: Compass },
       { to: "/agenda-comercial", label: "Agenda comercial", icon: CalendarClock },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },

@@ -10,7 +10,7 @@ test("agenda unificada mantém aliases e controles das demais rotinas", () => {
   }
   expect(moduloDaRota("/cobranca")).toBe("/agenda-comercial");
   expect(moduloDaRota("/clientes-inativos")).toBe("/agenda-comercial");
-  expect(moduloDaRota("/lead-rota")).toBe("/lead-rota");
+  expect(moduloDaRota("/lead-rota")).toBe("/agenda-comercial");
   expect(moduloDaRota("/receber")).toBe("/receber");
   expect(moduloDaRota("/desconhecido")).toBeNull();
 });

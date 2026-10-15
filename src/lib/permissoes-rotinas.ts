@@ -17,6 +17,7 @@ export const ACOES_ROTINAS = {
   margem_pedido_ver: "/pedidos",
   frete_pedido_editar: "/pedidos",
   reposicao_ver: "/planejamento-compras",
+  lead_rota_operar: "/agenda-comercial",
   comercial_acompanhar: "/agenda-comercial",
   cobranca_acompanhar: "/agenda-comercial",
   clientes_reativar: "/agenda-comercial",

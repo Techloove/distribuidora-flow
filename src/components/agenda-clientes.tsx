@@ -1,7 +1,13 @@
-import { FILTROS_AGENDA, dataAgenda, type AgendaFiltros } from "@/lib/agenda-comercial";
+import { AcoesLeadCliente } from "@/components/lead-rota-agenda";
+import {
+  FILTROS_AGENDA,
+  dataAgenda,
+  resultadoAgenda,
+  type AgendaFiltros,
+} from "@/lib/agenda-comercial";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
@@ -17,10 +23,12 @@ export function AgendaClientes({
   tipo,
   reativacao = false,
   filtros = FILTROS_AGENDA,
+  clienteInicialId,
 }: {
   tipo: "comercial" | "cobranca";
   reativacao?: boolean;
   filtros?: AgendaFiltros;
+  clienteInicialId?: string | null;
 }) {
   const permissoes = usePermissoesRotinas();
   const podeAcompanhar = permissoes.pode(
@@ -44,7 +52,13 @@ export function AgendaClientes({
   const [promessa, setPromessa] = useState("");
   const [valor, setValor] = useState("");
   const [status, setStatus] = useState("aberto");
-  const rpc = useRotinaRpc(["acompanhamentos", "agenda_clientes_228"]);
+  const rpc = useRotinaRpc([
+    "acompanhamentos",
+    "agenda_clientes_228",
+    "agenda_leads_229",
+    "lead_contatos",
+    "agenda_lead_cliente_229",
+  ]);
   const [paginaTitulos, setPaginaTitulos] = useState(0);
   const [paginaAtividades, setPaginaAtividades] = useState(0);
   const q = useQuery({
@@ -79,6 +93,16 @@ export function AgendaClientes({
       return data as { rows: Registro[]; count: number; resumo: Registro };
     },
   });
+  const selecaoInicialAplicada = useRef<string | null>(null);
+  useEffect(() => {
+    if (clienteInicialId && selecaoInicialAplicada.current !== clienteInicialId && !cliente) {
+      const selecionado = q.data?.rows.find((r) => r["cliente_id"] === clienteInicialId);
+      if (selecionado) {
+        selecaoInicialAplicada.current = clienteInicialId;
+        setCliente(selecionado);
+      }
+    }
+  }, [clienteInicialId, cliente, q.data]);
   const atividades = useQuery({
     queryKey: [
       "acompanhamentos",
@@ -307,6 +331,10 @@ export function AgendaClientes({
                   Todos na agenda
                 </Button>
               </div>
+              <AcoesLeadCliente
+                key={String(cliente["cliente_id"])}
+                clienteId={String(cliente["cliente_id"])}
+              />
               {cliente["telefone"] != null && (
                 <p className="text-sm text-muted-foreground">
                   Telefone: {String(cliente["telefone"])}
@@ -458,7 +486,8 @@ export function AgendaClientes({
                         : ""
                     }
                   >
-                    Próxima ação: {dataAgenda(a["proxima_acao"])} · {String(a["resultado"])}
+                    Próxima ação: {dataAgenda(a["proxima_acao"])} ·{" "}
+                    {resultadoAgenda(a["resultado"])}
                   </p>
                   <p>{String(a["observacao"] ?? "")}</p>
                   {a["promessa_data"] != null && (

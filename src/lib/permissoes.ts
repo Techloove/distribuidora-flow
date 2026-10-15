@@ -5,7 +5,7 @@ import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 export function normalizarModulo(path: string) {
   return path === "/faturamento"
     ? "/boletos"
-    : path === "/cobranca" || path === "/clientes-inativos"
+    : path === "/cobranca" || path === "/clientes-inativos" || path === "/lead-rota"
       ? "/agenda-comercial"
       : path;
 }
@@ -24,7 +24,6 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/descontos-peso", label: "Descontos por peso (kg)", grupo: "Cadastros" },
   { path: "/pedidos", label: "Pedidos", grupo: "Comercial" },
   { path: "/representantes", label: "Vendedores", grupo: "Comercial" },
-  { path: "/lead-rota", label: "Lead Rota", grupo: "Comercial" },
   { path: "/agenda-comercial", label: "Agenda comercial", grupo: "Comercial" },
   { path: "/metas", label: "Metas", grupo: "Comercial" },
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
@@ -101,7 +100,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/descontos-peso",
     "/pedidos",
     "/representantes",
-    "/lead-rota",
     "/agenda-comercial",
     "/metas",
     "/comissoes",
@@ -116,7 +114,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/produtos",
     "/tabelas-preco",
     "/pedidos",
-    "/lead-rota",
     "/agenda-comercial",
     "/metas",
     "/comissoes",
@@ -188,6 +185,7 @@ export function useAcesso(): Acesso {
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
   "/faturamento": "/boletos",
+  "/lead-rota": "/agenda-comercial",
   "/cobranca": "/agenda-comercial",
   "/clientes-inativos": "/agenda-comercial",
   "/clientes": "/pessoas",
