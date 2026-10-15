@@ -31,12 +31,12 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/comissoes", label: "Comissões", grupo: "Comercial" },
 
   { path: "/separacao", label: "Separação", grupo: "Operação" },
-  { path: "/compras", label: "Compras", grupo: "Operação" },
-  { path: "/estoque", label: "Estoque", grupo: "Operação" },
-  { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
   { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
   { path: "/expedicao", label: "Expedição", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
+  { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
+  { path: "/compras", label: "Compras", grupo: "Operação" },
+  { path: "/estoque", label: "Estoque", grupo: "Operação" },
 
   { path: "/financeiro", label: "Dashboard financeiro", grupo: "Financeiro" },
   { path: "/fluxo-caixa", label: "Fluxo de caixa", grupo: "Financeiro" },

@@ -87,12 +87,12 @@ const nav = [
     group: "Operação",
     items: [
       { to: "/separacao", label: "Separação", icon: PackageCheck },
-      { to: "/compras", label: "Compras", icon: ShoppingCart },
-      { to: "/estoque", label: "Estoque", icon: Boxes },
-      { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
       { to: "/cargas", label: "Cargas de entrega", icon: Truck },
       { to: "/expedicao", label: "Expedição", icon: Truck },
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
+      { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
+      { to: "/compras", label: "Compras", icon: ShoppingCart },
+      { to: "/estoque", label: "Estoque", icon: Boxes },
     ],
   },
   {
