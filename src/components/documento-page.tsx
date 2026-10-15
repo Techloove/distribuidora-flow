@@ -1001,6 +1001,8 @@ export function DocumentoPage({
 
   const partnerName = (id: unknown) =>
     String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
+  const produtoCodigo = (id: unknown) =>
+    String(produtos.data?.find((p) => p["id"] === id)?.["codigo"] ?? "").trim() || "—";
   const produtoName = (id: unknown) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
   const produtoPeso = (id: unknown) =>
@@ -1672,6 +1674,7 @@ export function DocumentoPage({
                 <Table className="mobile-cards">
                   <TableHeader>
                     <TableRow>
+                      {config.table === "pedidos" && <TableHead>Código</TableHead>}
                       <TableHead>Produto</TableHead>
                       <TableHead className="text-right">Qtd</TableHead>
                       <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
@@ -1683,6 +1686,11 @@ export function DocumentoPage({
                   <TableBody>
                     {itens.data!.map((it) => (
                       <TableRow key={String(it["id"])}>
+                        {config.table === "pedidos" && (
+                          <TableCell data-label="Código" className="font-mono">
+                            {produtoCodigo(it["produto_id"])}
+                          </TableCell>
+                        )}
                         <TableCell data-label="Produto">{produtoName(it["produto_id"])}</TableCell>
                         <TableCell data-label="Quantidade" className="text-right">
                           {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
@@ -1751,7 +1759,12 @@ export function DocumentoPage({
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="font-semibold">Peso total dos itens</TableCell>
+                      <TableCell
+                        colSpan={config.table === "pedidos" ? 2 : 1}
+                        className="font-semibold"
+                      >
+                        Peso total dos itens
+                      </TableCell>
                       <TableCell />
                       <TableCell />
                       <TableCell className="text-right font-semibold">{kg(pesoTotal)}</TableCell>

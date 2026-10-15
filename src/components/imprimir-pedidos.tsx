@@ -66,7 +66,7 @@ export function ImprimirPedidos({
         lookup(
           "produtos",
           linhas.map((i) => i["produto_id"]),
-          "id, descricao, unidade, peso_kg",
+          "id, codigo, descricao, unidade, peso_kg",
         ),
         lookup(
           "centros",
