@@ -33,6 +33,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/separacao", label: "Separação", grupo: "Operação" },
   { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
   { path: "/expedicao", label: "Expedição", grupo: "Operação" },
+  { path: "/entregas", label: "Entregas", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
   { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
   { path: "/compras", label: "Compras", grupo: "Operação" },
@@ -117,7 +118,15 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/comissoes",
   ],
   estoque: ["/dashboard", "/pendencias", "/produtos", "/estoque", "/separacao", "/compras"],
-  expedicao: ["/dashboard", "/pendencias", "/separacao", "/cargas", "/expedicao", "/rotas"],
+  expedicao: [
+    "/dashboard",
+    "/pendencias",
+    "/separacao",
+    "/cargas",
+    "/expedicao",
+    "/entregas",
+    "/rotas",
+  ],
 };
 
 export type Acesso = {

@@ -32,6 +32,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDescontosPesoRouteImport } from './routes/_app/descontos-peso'
 import { Route as AppDevolucoesRouteImport } from './routes/_app/devolucoes'
 import { Route as AppDreRouteImport } from './routes/_app/dre'
+import { Route as AppEntregasRouteImport } from './routes/_app/entregas'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppExpedicaoRouteImport } from './routes/_app/expedicao'
 import { Route as AppFaturamentoRouteImport } from './routes/_app/faturamento'
@@ -177,6 +178,11 @@ const AppDevolucoesRoute = AppDevolucoesRouteImport.update({
 const AppDreRoute = AppDreRouteImport.update({
   id: '/dre',
   path: '/dre',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppEntregasRoute = AppEntregasRouteImport.update({
+  id: '/entregas',
+  path: '/entregas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/descontos-peso': typeof AppDescontosPesoRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/dre': typeof AppDreRoute
+  '/entregas': typeof AppEntregasRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByTo {
   '/descontos-peso': typeof AppDescontosPesoRoute
   '/devolucoes': typeof AppDevolucoesRoute
   '/dre': typeof AppDreRoute
+  '/entregas': typeof AppEntregasRoute
   '/estoque': typeof AppEstoqueRoute
   '/expedicao': typeof AppExpedicaoRoute
   '/faturamento': typeof AppFaturamentoRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/_app/descontos-peso': typeof AppDescontosPesoRoute
   '/_app/devolucoes': typeof AppDevolucoesRoute
   '/_app/dre': typeof AppDreRoute
+  '/_app/entregas': typeof AppEntregasRoute
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/expedicao': typeof AppExpedicaoRoute
   '/_app/faturamento': typeof AppFaturamentoRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/descontos-peso'
     | '/devolucoes'
     | '/dre'
+    | '/entregas'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
@@ -583,6 +593,7 @@ export interface FileRouteTypes {
     | '/descontos-peso'
     | '/devolucoes'
     | '/dre'
+    | '/entregas'
     | '/estoque'
     | '/expedicao'
     | '/faturamento'
@@ -639,6 +650,7 @@ export interface FileRouteTypes {
     | '/_app/descontos-peso'
     | '/_app/devolucoes'
     | '/_app/dre'
+    | '/_app/entregas'
     | '/_app/estoque'
     | '/_app/expedicao'
     | '/_app/faturamento'
@@ -839,6 +851,13 @@ declare module '@tanstack/react-router' {
       path: '/dre'
       fullPath: '/dre'
       preLoaderRoute: typeof AppDreRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/entregas': {
+      id: '/_app/entregas'
+      path: '/entregas'
+      fullPath: '/entregas'
+      preLoaderRoute: typeof AppEntregasRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/estoque': {
@@ -1082,6 +1101,7 @@ interface AppRouteRouteChildren {
   AppDescontosPesoRoute: typeof AppDescontosPesoRoute
   AppDevolucoesRoute: typeof AppDevolucoesRoute
   AppDreRoute: typeof AppDreRoute
+  AppEntregasRoute: typeof AppEntregasRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppExpedicaoRoute: typeof AppExpedicaoRoute
   AppFaturamentoRoute: typeof AppFaturamentoRoute
@@ -1136,6 +1156,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDescontosPesoRoute: AppDescontosPesoRoute,
   AppDevolucoesRoute: AppDevolucoesRoute,
   AppDreRoute: AppDreRoute,
+  AppEntregasRoute: AppEntregasRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppExpedicaoRoute: AppExpedicaoRoute,
   AppFaturamentoRoute: AppFaturamentoRoute,

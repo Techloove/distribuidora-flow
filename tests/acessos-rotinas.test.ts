@@ -84,3 +84,9 @@ test("compras unificadas normalizam planejamento e mantêm ações separadas", (
   expect(ACOES_ROTINAS.compras_planejar).toBe("/compras");
   expect(ACOES_ROTINAS.reposicao_ver).toBe("/compras");
 });
+
+test("rotina Entregas tem menu e permissão próprios", () => {
+  expect(moduloDaRota("/entregas")).toBe("/entregas");
+  expect(MODULOS.filter((m) => m.path === "/entregas")).toHaveLength(1);
+  expect(ACOES_ROTINAS.entregas_operar).toBe("/entregas");
+});

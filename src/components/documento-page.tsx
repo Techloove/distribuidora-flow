@@ -1395,6 +1395,11 @@ export function DocumentoPage({
             <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
               ← Voltar à lista
             </Button>
+            {config.table === "pedidos" && doc["data_entrega"] != null && (
+              <p className="rounded-lg border bg-emerald-50 p-3 text-sm text-emerald-900">
+                Data de entrega: {fmtDate(doc["data_entrega"])}
+              </p>
+            )}
             {config.table === "pedidos" && (
               <ResumoPedido
                 doc={doc}
