@@ -116,8 +116,7 @@ const nav = [
   {
     group: "Gestão",
     items: [
-      { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-      { to: "/relatorio-vendas", label: "Relatório de vendas", icon: BarChart3 },
+      { to: "/relatorio-vendas", label: "Relatórios de Vendas", icon: BarChart3 },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },

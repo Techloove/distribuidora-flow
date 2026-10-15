@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
 export function normalizarModulo(path: string) {
+  if (path === "/relatorios") return "/relatorio-vendas";
   return path === "/faturamento"
     ? "/boletos"
     : path === "/cobranca" || path === "/clientes-inativos" || path === "/lead-rota"
@@ -49,8 +50,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/boletos", label: "Boletos", grupo: "Financeiro" },
   { path: "/conciliacao-creditos", label: "Conciliação de créditos", grupo: "Financeiro" },
   { path: "/pagar", label: "Contas a pagar", grupo: "Financeiro" },
-  { path: "/relatorios", label: "Relatórios", grupo: "Gestão" },
-  { path: "/relatorio-vendas", label: "Relatório de vendas", grupo: "Gestão" },
+  { path: "/relatorio-vendas", label: "Relatórios de Vendas", grupo: "Gestão" },
 
   { path: "/notificacoes", label: "Notificações", grupo: "Gestão" },
   { path: "/usuarios", label: "Usuários e papéis", grupo: "Gestão" },
@@ -83,7 +83,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/receber",
     "/agenda-comercial",
     "/pagar",
-    "/relatorios",
     "/relatorio-vendas",
     "/comissoes",
     "/notificacoes",
@@ -103,7 +102,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/agenda-comercial",
     "/metas",
     "/comissoes",
-    "/relatorios",
     "/relatorio-vendas",
     "/notificacoes",
   ],
@@ -184,6 +182,7 @@ export function useAcesso(): Acesso {
 
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
+  "/relatorios": "/relatorio-vendas",
   "/faturamento": "/boletos",
   "/lead-rota": "/agenda-comercial",
   "/cobranca": "/agenda-comercial",

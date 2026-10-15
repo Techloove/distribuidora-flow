@@ -11,6 +11,7 @@ test("agenda unificada mantém aliases e controles das demais rotinas", () => {
   expect(moduloDaRota("/cobranca")).toBe("/agenda-comercial");
   expect(moduloDaRota("/clientes-inativos")).toBe("/agenda-comercial");
   expect(moduloDaRota("/lead-rota")).toBe("/agenda-comercial");
+  expect(moduloDaRota("/relatorios")).toBe("/relatorio-vendas");
   expect(moduloDaRota("/receber")).toBe("/receber");
   expect(moduloDaRota("/desconhecido")).toBeNull();
 });
@@ -38,7 +39,6 @@ test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da i
     "comissao_proporcional_operar",
     "compra_xml_importar",
     "pix_gerar",
-    "indicadores_comparar",
     "deposito_operar",
     "inventario_contar",
     "inventario_conferir",
@@ -56,6 +56,7 @@ test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da i
     "fase218_compras_xml.sql",
     "fase219_pix_por_chave.sql",
     "fase220_indicadores_auditoria.sql",
+    "fase230_relatorios_vendas_unificados.sql",
   ];
   const sql = files
     .map((file) => readFileSync(new URL("../db/" + file, import.meta.url), "utf8"))
@@ -65,4 +66,12 @@ test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da i
       new RegExp("\\('" + code + "','[^']+','[^']+',\\d+,'" + ACOES_ROTINAS[code] + "'\\)"),
     );
   }
+});
+
+test("relatórios unificados mantêm menu legado e ações independentes", () => {
+  expect(MODULOS.filter((m) => m.path === "/relatorio-vendas")).toHaveLength(1);
+  expect(MODULOS.some((m) => m.path === "/relatorios")).toBe(false);
+  expect(ACOES_ROTINAS.vendas_relatorio_ver).toBe("/relatorio-vendas");
+  expect(ACOES_ROTINAS.vendas_rentabilidade_ver).toBe("/relatorio-vendas");
+  expect(ACOES_ROTINAS.indicadores_comparar).toBe("/relatorio-vendas");
 });
