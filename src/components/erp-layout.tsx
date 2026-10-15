@@ -92,7 +92,6 @@ const nav = [
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
       { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
       { to: "/compras", label: "Compras", icon: ShoppingCart },
-      { to: "/estoque", label: "Estoque", icon: Boxes },
     ],
   },
   {
