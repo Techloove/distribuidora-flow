@@ -75,3 +75,12 @@ test("relatórios unificados mantêm menu legado e ações independentes", () =>
   expect(ACOES_ROTINAS.vendas_rentabilidade_ver).toBe("/relatorio-vendas");
   expect(ACOES_ROTINAS.indicadores_comparar).toBe("/relatorio-vendas");
 });
+
+test("compras unificadas normalizam planejamento e mantêm ações separadas", () => {
+  expect(moduloDaRota("/planejamento-compras")).toBe("/compras");
+  expect(MODULOS.some((m) => m.path === "/planejamento-compras")).toBe(false);
+  expect(MODULOS.filter((m) => m.path === "/compras")).toHaveLength(1);
+  expect(ACOES_ROTINAS.compras_operar).toBe("/compras");
+  expect(ACOES_ROTINAS.compras_planejar).toBe("/compras");
+  expect(ACOES_ROTINAS.reposicao_ver).toBe("/compras");
+});

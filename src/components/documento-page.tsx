@@ -1089,7 +1089,7 @@ export function DocumentoPage({
             />
           ) : null}
           <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
-            <Plus className="size-4" /> Novo Pedido
+            <Plus className="size-4" /> {config.table === "compras" ? "Nova compra" : "Novo Pedido"}
           </Button>
         </div>
 
@@ -2036,7 +2036,9 @@ export function DocumentoPage({
       <Dialog open={openNew} onOpenChange={setOpenNew}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Novo documento</DialogTitle>
+            <DialogTitle>
+              {config.table === "compras" ? "Nova compra" : "Novo documento"}
+            </DialogTitle>
             <DialogDescription>
               1) {config.partnerLabel} e centro · 2) itens · 3) forma de pagamento.
             </DialogDescription>
