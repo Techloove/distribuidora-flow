@@ -36,13 +36,12 @@ export function DepositosInventario({
     "estoque_disponivel",
   ]);
   const dep = useQuery({
-    queryKey: ["depositos", user?.id, centro],
-    enabled: !!client && !!centro,
+    queryKey: ["depositos", user?.id, "compartilhado"],
+    enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
         .from("depositos")
-        .select("*")
-        .eq("centro_id", centro)
+        .select("*,centros(nome)")
         .eq("ativo", true)
         .order("nome")
         .limit(100);
@@ -99,16 +98,12 @@ export function DepositosInventario({
     },
   });
   const label = (id: unknown) => String(produtos.find((p) => p["id"] === id)?.["descricao"] ?? id);
-  if (!centro)
-    return (
-      <p className="text-sm text-muted-foreground">Selecione um centro para consultar depósitos.</p>
-    );
   return (
     <section className="space-y-4 rounded border p-4">
       <h2 className="font-semibold">Depósitos e inventário</h2>
       <p className="text-xs text-muted-foreground">
-        O saldo físico do centro é distribuído entre depósitos. O endereço identifica a posição do
-        produto dentro do depósito. Saídas operacionais usam primeiro o depósito principal.
+        Os depósitos compõem o estoque compartilhado das lojas. Entradas usam o depósito de estoque
+        compartilhado; saídas podem consumir os depósitos de qualquer centro.
       </p>
       {dep.error && (
         <p role="alert" className="text-destructive text-sm">
@@ -130,11 +125,17 @@ export function DepositosInventario({
           <option value="">Selecione</option>
           {dep.data?.map((d) => (
             <option key={String(d["id"])} value={String(d["id"])}>
-              {String(d["nome"])}
+              {String(d["nome"])} ·{" "}
+              {String((d["centros"] as Registro | null)?.["nome"] ?? "Compartilhado")}
             </option>
           ))}
         </select>
       </label>
+      {!centro && perm.pode("deposito_operar") && (
+        <p className="text-xs text-muted-foreground">
+          Selecione um centro para cadastrar um novo depósito.
+        </p>
+      )}
       {perm.pode("deposito_operar") && (
         <div className="flex flex-wrap gap-2">
           <Input
@@ -144,7 +145,7 @@ export function DepositosInventario({
             onChange={(e) => setNome(e.target.value)}
           />
           <Button
-            disabled={!nome.trim() || rpc.isPending}
+            disabled={!centro || !nome.trim() || rpc.isPending}
             onClick={() =>
               rpc.mutate(
                 { nome: "gerenciar_deposito_213", args: { _centro: centro, _nome: nome } },
@@ -191,7 +192,7 @@ export function DepositosInventario({
                   rpc.mutate({
                     nome: "gerenciar_deposito_213",
                     args: {
-                      _centro: centro,
+                      _centro: centro || dep.data?.find((d) => d["id"] === deposito)?.["centro_id"],
                       _nome: "",
                       _deposito: deposito,
                       _produto: produto,
@@ -216,7 +217,8 @@ export function DepositosInventario({
                   ?.filter((d) => d["id"] !== deposito)
                   .map((d) => (
                     <option key={String(d["id"])} value={String(d["id"])}>
-                      {String(d["nome"])}
+                      {String(d["nome"])} ·{" "}
+                      {String((d["centros"] as Registro | null)?.["nome"] ?? "Compartilhado")}
                     </option>
                   ))}
               </select>

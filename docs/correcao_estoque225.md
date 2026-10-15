@@ -1,5 +1,7 @@
 # Confirmação de pedido: reservas e estoque negativo — fase225
 
+> Para a operação com estoque compartilhado entre lojas, a fase226 substitui as regras por centro descritas abaixo. Consulte [Estoque compartilhado](estoque_compartilhado226.md).
+
 A mensagem “Saída compromete mercadoria reservada (saldo 0, reservado 0)” vinha da fase212: a regra comparava o saldo após a saída com zero mesmo sem reservas de outros pedidos. Por executar antes da validação do produto, ela bloqueava também produtos autorizados a vender com estoque negativo. A fase213 também impedia saldo negativo nos depósitos, mesmo com essa autorização.
 
 Aplicar `db/fase225_correcao_reserva_estoque_negativo.sql` no SQL Editor do Supabase. O script é transacional e reaplicável. Preserva saldos, pedidos, recebíveis, permissões e a opção cadastrada em cada produto. Execute a fase225 depois das anteriores; reaplicar a fase212 ou o lote212–220 depois dela restaura as regras antigas.

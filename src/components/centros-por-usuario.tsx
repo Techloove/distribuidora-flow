@@ -97,8 +97,8 @@ export function CentrosPorUsuario() {
         <h3 className="text-sm font-semibold">Acesso por centro de custo</h3>
         <p className="text-xs text-muted-foreground">
           Escolha se o usuário vê todos os centros ou apenas os centros selecionados. Usuários
-          restritos ficam travados no centro liberado em todas as telas (produtos, financeiro,
-          pedidos, estoque).
+          restritos consultam os pedidos e o financeiro dos centros liberados. Produtos e saldo de
+          estoque são compartilhados entre as lojas.
         </p>
       </div>
 
@@ -117,7 +117,10 @@ export function CentrosPorUsuario() {
         </Select>
 
         {userId ? (
-          <Select value={todos ? "todos" : "restrito"} onValueChange={(v) => setTodos(v === "todos")}>
+          <Select
+            value={todos ? "todos" : "restrito"}
+            onValueChange={(v) => setTodos(v === "todos")}
+          >
             <SelectTrigger className="w-full sm:w-[16rem]">
               <SelectValue />
             </SelectTrigger>

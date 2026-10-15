@@ -83,19 +83,20 @@ const fields: CrudField[] = [
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
-  { name: "estoque_atual", label: "Estoque atual", type: "number", step: "0.001", inTable: true },
+  {
+    name: "estoque_atual",
+    label: "Estoque compartilhado",
+    type: "number",
+    step: "0.001",
+    inTable: true,
+    auto: true,
+  },
   { name: "comprado_qtd", label: "Comprado (C)", inTable: true, auto: true, virtual: true },
   {
     name: "permite_estoque_negativo",
     label: "Permitir venda com estoque negativo",
     type: "checkbox",
     inTable: true,
-  },
-  {
-    name: "centro_id",
-    label: "Centro de custo",
-    type: "ref",
-    ref: { table: "centros", labelField: "nome" },
   },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
 ];
@@ -167,7 +168,8 @@ function ProdutosPage() {
       if (error) throw new Error(error.message);
       const mapa = new Map<string, number>();
       for (const r of (data ?? []) as Record<string, unknown>[]) {
-        mapa.set(String(r["produto_id"]), Number(r["quantidade_comprada"] ?? 0));
+        const id = String(r["produto_id"]);
+        mapa.set(id, (mapa.get(id) ?? 0) + Number(r["quantidade_comprada"] ?? 0));
       }
       return mapa;
     },

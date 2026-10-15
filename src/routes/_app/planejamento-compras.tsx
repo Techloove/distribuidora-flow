@@ -15,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/planejamento-compras")({
@@ -40,19 +39,17 @@ type Row = Record<string, unknown>;
 
 function PlanejamentoPage() {
   const { client } = useSupabase();
-  const { centro } = useCentro();
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_sugestao_compras_centro", centro],
+    queryKey: ["vw_sugestao_compras_centro", "compartilhado"],
     enabled: !!client,
     queryFn: async () => {
-      let q = client!
+      const q = client!
         .from("vw_sugestao_compras_centro")
         .select("*")
         .order("sugestao", { ascending: false });
-      if (centro) q = q.eq("centro_id", centro);
       const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -115,7 +112,7 @@ function PlanejamentoPage() {
   return (
     <ErpLayout
       title="Planejamento de compras"
-      description="Sugestão calculada a partir da média de vendas, estoque atual, estoque mínimo/máximo, pedidos pendentes e mercadoria em trânsito."
+      description="Reposição do estoque compartilhado, considerando vendas, pedidos pendentes e compras das lojas acessíveis."
       actions={
         <Button variant="secondary" onClick={() => window.print()}>
           <Printer className="size-4" /> Imprimir

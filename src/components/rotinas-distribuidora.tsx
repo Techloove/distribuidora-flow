@@ -224,7 +224,6 @@ export function ReposicaoInteligente() {
     enabled: !!client && permissoes.pode("reposicao_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!.from("vw_reposicao_209").select("*", { count: "exact" });
-      if (cv.centro) r = r.eq("centro_id", cv.centro);
       if (filtro) r = r.eq("situacao", filtro);
       const { data, error, count } = await r
         .order("compra_recomendada", { ascending: false })

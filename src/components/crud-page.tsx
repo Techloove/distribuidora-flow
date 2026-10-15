@@ -291,7 +291,7 @@ export function CrudPage({
   const rows = useMemo(() => {
     let list = query.data ?? [];
     if (decorate) list = decorate(list);
-    if (centro && list.some((r) => "centro_id" in r)) {
+    if (table !== "produtos" && centro && list.some((r) => "centro_id" in r)) {
       list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
     }
 
@@ -325,7 +325,7 @@ export function CrudPage({
           .includes(term),
       ),
     );
-  }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate]);
+  }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate, table]);
 
   function openCreate() {
     setEditing(null);

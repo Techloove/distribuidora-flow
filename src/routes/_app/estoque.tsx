@@ -20,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { saldosPorProduto } from "@/lib/integridade-consultas";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/estoque")({
@@ -77,35 +76,17 @@ function EstoquePage() {
     },
   });
 
-  const saldos = useQuery({
-    queryKey: ["estoque_saldos", centro],
-    enabled: !!client && !centrosCarregando && !centrosErro,
-    queryFn: async () => {
-      return await lerPaginas<Row>((inicio, fim) => {
-        let q = client!
-          .from("estoque_saldos")
-          .select("produto_id,centro_id,quantidade,custo_medio")
-          .order("produto_id")
-          .order("centro_id");
-        if (centro) q = q.eq("centro_id", centro);
-        return q.range(inicio, fim);
-      });
-    },
-  });
-
   const disponibilidade = useQuery({
-    queryKey: ["estoque_disponivel", centro],
-    enabled: !!client && !centrosCarregando && !centrosErro,
+    queryKey: ["estoque_disponivel", "compartilhado"],
+    enabled: !!client,
     queryFn: async () =>
-      await lerPaginas<Row>((inicio, fim) => {
-        let q = client!
-          .from("vw_estoque_disponivel_212")
+      await lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("vw_estoque_compartilhado_226")
           .select("*")
           .order("produto_id")
-          .order("centro_id");
-        if (centro) q = q.eq("centro_id", centro);
-        return q.range(inicio, fim);
-      }),
+          .range(inicio, fim),
+      ),
   });
   const reservadoProduto = (produto: unknown) =>
     disponibilidade.data
@@ -154,8 +135,11 @@ function EstoquePage() {
   });
 
   const mapaSaldos = useMemo(
-    () => saldosPorProduto(saldos.data ?? [], centro),
-    [saldos.data, centro],
+    () =>
+      new Map(
+        (disponibilidade.data ?? []).map((r) => [String(r["produto_id"]), Number(r["fisico"])]),
+      ),
+    [disponibilidade.data],
   );
   const saldoProduto = useCallback((id: unknown) => mapaSaldos.get(String(id)) ?? 0, [mapaSaldos]);
 
@@ -202,7 +186,7 @@ function EstoquePage() {
   return (
     <ErpLayout
       title="Estoque"
-      description="Saldos por produto e histórico de movimentos gerados por pedidos, compras e ajustes manuais."
+      description="Estoque compartilhado entre lojas. O centro identifica a origem comercial das movimentações."
       actions={
         <Button variant="secondary" onClick={() => window.print()}>
           <Printer className="size-4" /> Imprimir
@@ -212,7 +196,8 @@ function EstoquePage() {
       <div className="space-y-6">
         {disponibilidade.error && (
           <p role="alert" className="text-sm text-destructive">
-            Não foi possível consultar reservas. Aplique a fase212 e atualize a página.
+            Não foi possível consultar o estoque compartilhado. Confira a fase226 no Supabase e
+            atualize a página.
           </p>
         )}
         <DepositosInventario key={centro} centro={centro} produtos={produtos.data ?? []} />
@@ -311,7 +296,8 @@ function EstoquePage() {
         </div>
         {!centro ? (
           <p className="text-xs text-muted-foreground">
-            Selecione um centro no seletor global para lançar ou consultar o saldo por centro.
+            O saldo é único para todas as lojas. Selecione um centro apenas para identificar novos
+            lançamentos; o histórico acompanha o centro selecionado.
           </p>
         ) : null}
         {!canStock ? (
@@ -322,13 +308,15 @@ function EstoquePage() {
         ) : null}
 
         <div className="print-area">
-          <h2 className="mb-2 text-sm font-semibold text-foreground">Saldos por produto</h2>
+          <h2 className="mb-2 text-sm font-semibold text-foreground">
+            Estoque compartilhado por produto
+          </h2>
           <div className="rounded-lg border border-border bg-card">
-            {produtos.isLoading || saldos.isLoading || centrosCarregando ? (
+            {produtos.isLoading || disponibilidade.isLoading || centrosCarregando ? (
               <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
-            ) : produtos.isError || saldos.isError || centrosErro ? (
+            ) : produtos.isError || disponibilidade.isError || centrosErro ? (
               <p role="alert" className="p-6 text-sm text-destructive">
-                {(produtos.error ?? saldos.error ?? centrosErro)?.message}
+                {(produtos.error ?? disponibilidade.error ?? centrosErro)?.message}
               </p>
             ) : (
               <Table>
