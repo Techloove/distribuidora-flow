@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { MODULOS, moduloDaRota } from "../src/lib/permissoes";
+import { MODULOS, moduloDaRota, normalizarModulo } from "../src/lib/permissoes";
 import { ACOES_ROTINAS } from "../src/lib/permissoes-rotinas";
 
 test("agenda unificada mantém aliases e controles das demais rotinas", () => {
@@ -62,9 +62,9 @@ test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da i
     .map((file) => readFileSync(new URL("../db/" + file, import.meta.url), "utf8"))
     .join("\n");
   for (const code of novas) {
-    expect(sql).toMatch(
-      new RegExp("\\('" + code + "','[^']+','[^']+',\\d+,'" + ACOES_ROTINAS[code] + "'\\)"),
-    );
+    const registro = sql.match(new RegExp("\\('" + code + "','[^']+','[^']+',\\d+,'([^']+)'\\)"));
+    expect(registro).not.toBeNull();
+    expect(normalizarModulo(registro![1]!)).toBe(ACOES_ROTINAS[code]);
   }
 });
 
@@ -87,6 +87,8 @@ test("compras unificadas normalizam planejamento e mantêm ações separadas", (
 
 test("rotina Entregas tem menu e permissão próprios", () => {
   expect(moduloDaRota("/entregas")).toBe("/entregas");
+  expect(moduloDaRota("/expedicao")).toBe("/entregas");
+  expect(MODULOS.some((m) => m.path === "/expedicao")).toBe(false);
   expect(MODULOS.filter((m) => m.path === "/entregas")).toHaveLength(1);
   expect(ACOES_ROTINAS.entregas_operar).toBe("/entregas");
 });

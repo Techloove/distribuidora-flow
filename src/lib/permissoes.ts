@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSupabase, type AppRole } from "@/lib/supabase-provider";
 
 export function normalizarModulo(path: string) {
+  if (path === "/expedicao") return "/entregas";
   if (path === "/planejamento-compras") return "/compras";
   if (path === "/relatorios") return "/relatorio-vendas";
   return path === "/faturamento"
@@ -32,7 +33,6 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
 
   { path: "/separacao", label: "Separação", grupo: "Operação" },
   { path: "/cargas", label: "Cargas de entrega", grupo: "Operação" },
-  { path: "/expedicao", label: "Expedição", grupo: "Operação" },
   { path: "/entregas", label: "Entregas", grupo: "Operação" },
   { path: "/devolucoes", label: "Devoluções", grupo: "Operação" },
   { path: "/notas", label: "Faturamento / nota fiscal", grupo: "Operação" },
@@ -123,7 +123,6 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/pendencias",
     "/separacao",
     "/cargas",
-    "/expedicao",
     "/entregas",
     "/rotas",
   ],
@@ -183,6 +182,7 @@ export function useAcesso(): Acesso {
 
 /** Rotas que não aparecem no menu, mas herdam a permissão de outro módulo. */
 const ALIASES: Record<string, string> = {
+  "/expedicao": "/entregas",
   "/planejamento-compras": "/compras",
   "/relatorios": "/relatorio-vendas",
   "/faturamento": "/boletos",

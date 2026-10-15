@@ -87,7 +87,6 @@ const nav = [
     items: [
       { to: "/separacao", label: "Separação", icon: PackageCheck },
       { to: "/cargas", label: "Cargas de entrega", icon: Truck },
-      { to: "/expedicao", label: "Expedição", icon: Truck },
       { to: "/entregas", label: "Entregas", icon: PackageCheck },
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
       { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },

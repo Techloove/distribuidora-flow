@@ -130,6 +130,32 @@ const root = path.resolve(__dirname, ".."),
     const sql = fs.readFileSync(path.join(root, "db/fase233_fluxo_logistico_pratico.sql"), "utf8");
     await d.exec(sql);
     await d.exec(sql);
+    const unificadas = process.argv.includes("--unificadas");
+    let sql234;
+    if (unificadas) {
+      await d.exec(`
+        alter table expedicoes add column transportadora_id uuid,add column placa text,add column volumes numeric default 1,add column peso_kg numeric default 0,add column romaneio text,add column observacoes text;
+        grant select on expedicoes to authenticated;
+        create table transportadoras(id uuid,razao_social text);
+        alter table rotas add column ativo boolean default true;
+        alter table entrega_registros add column arquivo_path text;
+        alter table pedido_itens add column preco_unitario numeric default 10;
+        create schema storage;create table storage.objects(bucket_id text,name text);
+        alter table devolucoes add column pedido_id uuid,add column cliente_id uuid,add column centro_id uuid,add column motivo text,add column created_by uuid;
+        alter table devolucoes alter column id set default gen_random_uuid(),alter column status set default 'rascunho';
+        create table devolucao_itens(devolucao_id uuid,produto_id uuid,quantidade numeric,preco_unitario numeric,condicao text);
+        insert into permissoes values('entrega_parcial_operar','Entrega parcial','Entregas',123,'/expedicao');
+        insert into role_permissoes values('expedicao','entrega_parcial_operar');
+      `);
+      await fn("fase87_expedicao_escrita_controlada.sql", "atualizar_dados_expedicao");
+      await fn("fase214_entregas_parciais.sql", "registrar_parcial_214");
+      await d.exec(
+        "grant execute on function registrar_entrega(uuid,text,text,text,text),registrar_parcial_214(uuid,jsonb,text,text,text,uuid),atualizar_dados_expedicao(uuid,uuid,text,text,date,numeric,numeric,uuid,text,text) to authenticated",
+      );
+      sql234 = fs.readFileSync(path.join(root, "db/fase234_entregas_unificadas.sql"), "utf8");
+      await d.exec(sql234);
+      await d.exec(sql234);
+    }
     const q = async (s, a = []) => (await d.query(s, a)).rows;
     const actor = async (n) => {
       await d.exec("reset role");
@@ -165,6 +191,106 @@ const root = path.resolve(__dirname, ".."),
       .dia;
     const lista = async () =>
       (await q("select entregas_listar_232(null,'em_rota',null,'',0) data"))[0].data;
+    if (unificadas) {
+      await actor(6);
+      await q("select registrar_entrega($1,'ocorrencia',null,null,'Cliente avisado da entrega')", [
+        id(200),
+      ]);
+      await denied(
+        () => q("select registrar_entrega($1,'entrega','Nome','Canhoto',null)", [id(200)]),
+        /Formalize/,
+      );
+      await q("select atualizar_dados_expedicao($1,null,'Motorista atualizado')", [id(200)]);
+      assert.equal(
+        (await q("select motorista from expedicoes where id=$1", [id(200)]))[0].motorista,
+        "Motorista atualizado",
+      );
+      await actor(1);
+      await denied(
+        () => q("select registrar_entrega($1,'ocorrencia',null,null,'Outra carteira')", [id(203)]),
+        /sem acesso/,
+      );
+      await denied(() => q("select atualizar_dados_expedicao($1)", [id(205)]), /sem acesso/);
+      await denied(
+        () =>
+          q("select registrar_parcial_214($1,'[]','Nome','Motivo','arquivo',$2)", [
+            id(203),
+            id(999),
+          ]),
+        /sem acesso/,
+      );
+      await d.exec("reset role");
+      assert.equal((await q("select count(*) n from role_menus where path='/expedicao'"))[0].n, 0);
+      assert.equal(
+        (await q("select modulo from permissoes where codigo='entrega_registrar'"))[0].modulo,
+        "/entregas",
+      );
+      // Revocation remains effective after reapplication and blocks every moved write RPC.
+      await d.exec("delete from role_menus where role='expedicao' and path='/entregas'");
+      await d.exec(sql234);
+      await actor(6);
+      await denied(
+        () => q("select registrar_entrega($1,'ocorrencia',null,null,'Sem menu')", [id(200)]),
+        /sem acesso/,
+      );
+      await denied(() => q("select atualizar_dados_expedicao($1)", [id(200)]), /sem acesso/);
+      await denied(
+        () =>
+          q("select registrar_parcial_214($1,'[]','Nome','Motivo','arquivo',$2)", [
+            id(200),
+            id(999),
+          ]),
+        /sem acesso/,
+      );
+      await d.exec("reset role;insert into role_menus values('expedicao','/entregas')");
+      // Actual partial motor: register a visit, then deliver the outstanding quantity.
+      await d.exec(
+        `insert into storage.objects values('entrega-comprovantes','${id(100)}/visita.pdf');`,
+      );
+      await actor(6);
+      const item = (await q("select id from pedido_itens where pedido_id=$1", [id(100)]))[0].id;
+      await q("select registrar_parcial_214($1,$2,'Recebedor','Primeira visita',$3,$4)", [
+        id(100),
+        JSON.stringify([{ item_id: item, entregue: 4, recusado: 0 }]),
+        id(100) + "/visita.pdf",
+        id(2000),
+      ]);
+      assert.equal(await state(100), "parcial");
+      await q("select registrar_parcial_214($1,$2,'Recebedor','Saldo entregue',$3,$4)", [
+        id(100),
+        JSON.stringify([{ item_id: item, entregue: 6, recusado: 0 }]),
+        id(100) + "/visita.pdf",
+        id(2001),
+      ]);
+      assert.equal(await state(100), "entregue");
+      await d.exec("reset role");
+      await d.exec(
+        `insert into storage.objects values('${"entrega-comprovantes"}','${id(104)}/recusa.pdf');`,
+      );
+      await actor(6);
+      const recusado = (await q("select id from pedido_itens where pedido_id=$1", [id(104)]))[0].id;
+      await q(
+        "select registrar_parcial_214($1,$2,'Recebedor','Recusa de parte da mercadoria',$3,$4)",
+        [
+          id(104),
+          JSON.stringify([{ item_id: recusado, entregue: 7, recusado: 3 }]),
+          id(104) + "/recusa.pdf",
+          id(2002),
+        ],
+      );
+      assert.equal(await state(104), "parcial");
+      await d.exec("reset role");
+      assert.equal(
+        (await q("select status from devolucoes where pedido_id=$1", [id(104)]))[0].status,
+        "rascunho",
+      );
+      assert.equal(Number((await q("select quantidade from devolucao_itens"))[0].quantidade), 3);
+
+      await d.exec("reset role");
+      console.log(
+        "OK unificação234: menus/catálogo, migração repetível, ocorrências/transporte, bloqueio do atalho antigo, centros/carteira, revogação e entrega parcial real214 com saldo concluído.",
+      );
+    }
     const stockAntes = (await q("select count(*) n from estoque_movimentos"))[0].n,
       titulosAntes = (await q("select count(*) n from contas_receber"))[0].n;
     await actor(6);
@@ -286,7 +412,10 @@ const root = path.resolve(__dirname, ".."),
     assert.equal(await state(202), "faturado");
     const c4 = (await q("select * from criar_carga($1,current_date,$2)", [id(31), id(10)]))[0];
     await incluir(c4.id, [202]);
-    await denied(() => q("select remover_pedido_carga($1,$2)", [c3.id, id(202)]), /acesso|cancelada|estado/i);
+    await denied(
+      () => q("select remover_pedido_carga($1,$2)", [c3.id, id(202)]),
+      /acesso|cancelada|estado/i,
+    );
     assert.equal(await state(202), "em_carga");
     await q("select remover_pedido_carga($1,$2)", [c4.id, id(202)]);
     assert.equal(await state(202), "faturado");

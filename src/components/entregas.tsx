@@ -1,3 +1,5 @@
+import { RegistroEntrega } from "@/components/rotinas-distribuidora";
+import { ImprimirPedidos } from "@/components/imprimir-pedidos";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, RefreshCw, Truck } from "lucide-react";
@@ -198,8 +200,7 @@ export function Entregas() {
       {(lista.isLoading || cv.isLoading) && <p role="status">Carregando entregas…</p>}
       {!lista.isPending && !lista.error && !cv.error && !lista.data?.rows.length && (
         <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">
-          Nenhum pedido neste filtro. Para aparecer como pendente, o pedido precisa ter sido
-          despachado e estar em rota.
+          Nenhum pedido neste filtro. Os pedidos aparecem após serem incluídos em uma carga.
         </p>
       )}
       <div className="grid items-start gap-4 xl:grid-cols-2">
@@ -257,9 +258,21 @@ export function Entregas() {
             )}
             {e.status !== "entregue" && (e.parcial || e.pedido_status === "parcial") && (
               <p className="text-sm text-amber-800">
-                Há entrega parcial ou recusa. Solicite a conclusão do tratamento na Expedição.
+                Há entrega parcial ou recusa. Consulte o histórico e registre as quantidades
+                restantes em Ocorrências e entregas parciais.
               </p>
             )}
+            <div className="flex flex-wrap gap-2">
+              <ImprimirPedidos pedidoIds={[e.pedido_id]} compact />
+              <RegistroEntrega
+                expedicao={{
+                  id: e.expedicao_id,
+                  pedido_id: e.pedido_id,
+                  pedido_numero: e.numero,
+                  status: e.status,
+                }}
+              />
+            </div>
             <Button
               className="w-full sm:w-auto"
               variant={e.status === "entregue" ? "outline" : "default"}

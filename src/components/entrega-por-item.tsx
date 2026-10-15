@@ -12,7 +12,16 @@ import { Input } from "./ui/input";
 export function EntregaPorItem({ expedicao }: { expedicao: Registro }) {
   const { client, user } = useSupabase(),
     perm = usePermissoesRotinas(),
-    rpc = useRotinaRpc(["entrega_registros", "entrega_itens", "expedicoes", "devolucoes"]);
+    rpc = useRotinaRpc([
+      "entrega_registros",
+      "entrega_itens",
+      "expedicoes",
+      "devolucoes",
+      "entregas_listar_232",
+      "pedidos",
+      "cargas",
+      "vw_cargas",
+    ]);
   const [quantidades, setQuantidades] = useState<
       Record<string, { entregue: string; recusado: string }>
     >({}),
@@ -99,8 +108,7 @@ export function EntregaPorItem({ expedicao }: { expedicao: Registro }) {
       </summary>
       <p className="text-xs text-muted-foreground">
         Informe apenas as quantidades desta visita. Recusas geram devolução pendente para a gestão
-        conferir o retorno físico e o crédito. A expedição só conclui depois de resolver todo o
-        saldo.
+        conferir o retorno físico e o crédito. A entrega só conclui depois de resolver todo o saldo.
       </p>
       {q.error && <p role="alert">{q.error.message}</p>}
       {q.data?.map((i) => {
@@ -178,7 +186,7 @@ export function EntregaPorItem({ expedicao }: { expedicao: Registro }) {
         Registrar quantidades desta entrega
       </Button>
       <p className="text-xs text-muted-foreground">
-        O arquivo fica privado; acesso sujeito às permissões de expedição.
+        O arquivo fica privado; acesso sujeito às permissões de entregas.
       </p>
     </details>
   );

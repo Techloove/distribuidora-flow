@@ -293,11 +293,16 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
   const permissoes = usePermissoesRotinas();
   const { client, user } = useSupabase();
   const [aberto, setAberto] = useState(false);
-  const [tipo, setTipo] = useState("ocorrencia");
-  const [recebedor, setRecebedor] = useState("");
-  const [comprovante, setComprovante] = useState("");
   const [obs, setObs] = useState("");
-  const rpc = useRotinaRpc(["entrega_registros", "expedicoes", "vw_expedicoes"]);
+  const rpc = useRotinaRpc([
+    "entrega_registros",
+    "expedicoes",
+    "vw_expedicoes",
+    "entregas_listar_232",
+    "pedidos",
+    "cargas",
+    "vw_cargas",
+  ]);
   const q = useQuery({
     queryKey: ["entrega_registros", user?.id, expedicao["id"]],
     enabled: !!client && permissoes.pode("entrega_registrar") && aberto,
@@ -323,7 +328,7 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
           setAberto(true);
         }}
       >
-        Entrega / ocorrência
+        Ocorrências e entregas parciais
       </Button>
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -332,65 +337,32 @@ export function RegistroEntrega({ expedicao }: { expedicao: Registro }) {
               Entrega do pedido #{String(expedicao["pedido_numero"] ?? expedicao["numero"])}
             </DialogTitle>
             <DialogDescription>
-              Registre a ocorrência ou confirme a entrega com recebedor e referência do comprovante.
+              Consulte o histórico, registre ocorrências ou informe entregas parciais e recusas. A
+              entrega completa é formalizada na tela Entregas.
             </DialogDescription>
           </DialogHeader>
           <EntregaPorItem expedicao={expedicao} />
-          <label className="text-sm">
-            Tipo
-            <select
-              aria-label="Tipo"
-              className="mt-1 w-full rounded border bg-background p-2"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-            >
-              <option value="ocorrencia">Ocorrência</option>
-              {expedicao["status"] === "em_rota" && (
-                <option value="entrega">Confirmar entrega</option>
-              )}
-            </select>
-          </label>
-          {tipo === "entrega" && (
-            <>
-              <label className="text-sm">
-                Nome do recebedor
-                <Input value={recebedor} onChange={(e) => setRecebedor(e.target.value)} />
-              </label>
-              <label className="text-sm">
-                Referência ou endereço do comprovante
-                <Input
-                  value={comprovante}
-                  maxLength={1000}
-                  onChange={(e) => setComprovante(e.target.value)}
-                />
-              </label>
-            </>
-          )}
           <label className="text-sm">
             Observação
             <Textarea value={obs} maxLength={4000} onChange={(e) => setObs(e.target.value)} />
           </label>
           <Button
-            disabled={
-              rpc.isPending ||
-              (tipo === "entrega" ? !recebedor.trim() || !comprovante.trim() : !obs.trim())
-            }
+            disabled={rpc.isPending || !obs.trim()}
             onClick={() =>
               rpc.mutate(
                 {
                   nome: "registrar_entrega",
                   args: {
                     _expedicao_id: expedicao["id"],
-                    _tipo: tipo,
-                    _recebedor: recebedor,
-                    _comprovante: comprovante,
+                    _tipo: "ocorrencia",
+                    _recebedor: null,
+                    _comprovante: null,
                     _observacao: obs,
                   },
                 },
                 {
                   onSuccess: () => {
                     setObs("");
-                    setTipo("ocorrencia");
                   },
                 },
               )
