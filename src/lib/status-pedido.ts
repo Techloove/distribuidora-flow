@@ -30,12 +30,12 @@ const SITUACOES: Record<string, SituacaoPedido> = {
     descricao: "A proposta foi encerrada sem aceite do cliente. O motivo permanece registrado.",
   },
   rascunho: {
-    nome: "Em elaboração",
+    nome: "Digitação",
     etapa: 0,
     descricao: "Pedido em preenchimento, ainda sem confirmação.",
   },
   digitacao: {
-    nome: "Em elaboração",
+    nome: "Digitação",
     etapa: 0,
     descricao: "Pedido em preenchimento, ainda sem confirmação.",
   },
