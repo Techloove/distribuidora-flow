@@ -40,3 +40,7 @@ Desativar um centro bloqueia novas emissões; consulta, PDF e tratamento dos bol
 - `NODE_PATH=<dependências de validação> node scripts/check-cobranca-centros-database.cjs`: PostgreSQL/PGlite com schemas/motores reais18/204/208/131/129/71/223/224 e fase237; fixtures de identidade/centros/catálogo e pré-requisito236, sem acesso ao Supabase real.
 - Casos: reexecução; preservação de chaves e contadores legados; Sicredi somente no centro autorizado; Sicoob pendente; conta de outro centro recusada; administrador/ativo; identificação e ambiente; snapshot da conta por emissão e baixa idempotente; bloqueio CNAB; RLS e RPCs privadas.
 - Testes de funções HTTP usam respostas bancárias simuladas. Não substituem homologação com o Sicredi.
+
+## Limite do nome do pagador no registro
+
+Apesar de o manual4.0 indicar tamanho200 e abreviação a partir do caractere40, o endpoint utilizado retornou HTTP400: “O nome do pagador permite até40 caracteres”. O payload de cadastro normaliza espaços e envia no máximo40 caracteres, mantendo a razão social completa no ERP. A correção não exige migração e preserva o CPF/CNPJ e o ciclo de emissão da parcela recusada.

@@ -50,6 +50,7 @@ type Options = {
   timeout?: boolean;
   postStatus?: number;
   postBody?: unknown;
+  payerName?: string;
   missingNosso?: boolean;
   badCep?: boolean;
   liquidado?: boolean;
@@ -124,7 +125,7 @@ function backend(o: Options = {}) {
         {
           conta_receber_id: id,
           centro_id: id,
-          razao_social: "Cliente teste",
+          razao_social: o.payerName ?? "Cliente teste",
           cnpj_cpf: "12345678000195",
           logradouro: "Rua Teste",
           cidade: "Vitória",
@@ -453,4 +454,25 @@ test("diagnóstico da recusa aceita mensagens estruturadas e ignora corpo bruto 
   expect(
     motivoRecusaSicredi(JSON.stringify({ message: "password=segredo Bearer token-secreto" })),
   ).not.toContain("segredo");
+});
+
+test("registro limita nome do pagador a40 caracteres sem alterar a razão social do cadastro", async () => {
+  const nome = "BLUNCK MATERIAIS DE CONSTRUCAO E SERVICOS LTDA";
+  const calls = backend({ sandbox: true, payerName: `  ${nome}  ` });
+  await emitir();
+  const req = calls.find(
+    (c) => c.method === "POST" && c.path === "/sb/cobranca/boleto/v1/boletos",
+  )!;
+  expect(req.body.pagador).toMatchObject({
+    nome: nome.slice(0, 40).trimEnd(),
+    documento: "12345678000195",
+  });
+  expect(String((req.body.pagador as Record<string, unknown>).nome).length).toBeLessThanOrEqual(40);
+  expect(calls.some((c) => c.method !== "GET" && c.path.endsWith("/clientes"))).toBe(false);
+  const shortCalls = backend({ payerName: "  Cliente   teste  " });
+  await emitir();
+  expect(
+    shortCalls.find((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos")?.body
+      .pagador,
+  ).toMatchObject({ nome: "Cliente teste" });
 });

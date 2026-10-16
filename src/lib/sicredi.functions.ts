@@ -460,7 +460,13 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       pagador: {
         tipoPessoa: documentoPagador.length === 11 ? "PESSOA_FISICA" : "PESSOA_JURIDICA",
         documento: documentoPagador,
-        nome: String(row["razao_social"] ?? "").slice(0, 200),
+        // O endpoint de registro recusa nomes acima de40, inclusive no sandbox.
+        // A redução vale somente para o payload bancário; o cadastro permanece completo.
+        nome: String(row["razao_social"] ?? "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .slice(0, 40)
+          .trimEnd(),
         ...(endereco ? { endereco: endereco.slice(0, 40) } : {}),
         ...(row["cidade"] ? { cidade: String(row["cidade"]).slice(0, 40) } : {}),
         ...(row["uf"] ? { uf: String(row["uf"]).toUpperCase() } : {}),
