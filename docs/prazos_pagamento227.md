@@ -25,3 +25,13 @@ O teste reproduz a confirmação real anterior com0/30/60, aplica a correção s
 Após a fase227, execute integralmente `db/correcao_pedido1_vencimentos_20_40_60.sql` no SQL Editor como proprietário. Ele corrige somente os vencimentos do pedido1 para a data do pedido mais20,40 e60 dias, e retorna as datas finais. Exige condição cadastrada de boleto3× com primeira20 e intervalo20, exatamente três títulos abertos e sem pagamentos, registros de boletos ou movimentos financeiros. Qualquer divergência aborta tudo. Uma nova execução não duplica a auditoria. Não altera valores nem refaz estoque. Se houver registro bancário, use o fluxo de alteração de vencimento do boleto.
 
 Teste isolado: `NODE_PATH=/caminho/das/dependencias node scripts/check-correcao-pedido1-database.cjs`.
+
+## Correção pontual dos pedidos3,4 e5
+
+Execute integralmente `db/correcao_pedidos3_4_5_vencimentos.sql` no SQL Editor, como proprietário, após a fase227. O arquivo usa a data de cada pedido e os campos da sua própria forma de pagamento: primeira parcela + intervalos. Não pressupõe que os três pedidos usam20/40/60 e não conta os dias a partir da execução do SQL.
+
+A correção aceita somente datas que já estejam corretas ou correspondam ao erro legado0/30/60. Bloqueia parcelas pagas/parciais, canceladas, renegociadas, boletos vinculados, movimentos financeiros, títulos ausentes/duplicados e condições inconsistentes. Se qualquer pedido falhar, toda a operação é revertida. Não altera valores ou quantidade de títulos, nem reconfirma pedidos/estoque. Registra as datas anteriores e novas na auditoria; uma nova execução não duplica alterações/auditoria.
+
+A tabela final mostra os vencimentos resultantes, os esperados e se ainda estão vencidos pelos prazos cadastrados. Uma data corretamente calculada pode continuar vencida; o script não transforma uma dívida legitimamente vencida em dívida futura. Datas negociadas fora desses padrões precisam ser conferidas individualmente. Boletos já emitidos exigem o fluxo de alteração bancária, para manter o Sicredi sincronizado.
+
+Teste isolado: `NODE_PATH=/caminho/das/dependencias node scripts/check-correcao-vencimentos345.cjs`, com `@electric-sql/pglite` disponível. A validação cobre condições distintas, limites de escopo, valores/quantidade, idempotência e rollback dos três pedidos quando uma restrição falha. O resultado real depende da execução no Supabase; não houve acesso ao banco de produção neste ambiente.
