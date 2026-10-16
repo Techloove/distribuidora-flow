@@ -1,18 +1,7 @@
-import { validarNovoVencimento } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
-import {
-  cents,
-  documentoFiscal,
-  gerarRemessa,
-  gerarBrCode,
-  gerarAlteracaoVencimento,
-  nossoNumero,
-  parseRetorno,
-  type CnabConfig,
-  type CnabTitulo,
-} from "./sicredi-cnab";
+import { cents, documentoFiscal, gerarBrCode, parseRetorno, type CnabConfig } from "./sicredi-cnab";
 
 type Input = { accessToken?: string; centro_id: string };
 type ConfigRow = CnabConfig & { updated_at: string };
@@ -66,99 +55,12 @@ async function sha256(text: string) {
   const result = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(result), (b) => b.toString(16).padStart(2, "0")).join("");
 }
-function today() {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(now);
-  const part = (type: string) => parts.find((p) => p.type === type)!.value;
-  return {
-    date: `${part("year")}-${part("month")}-${part("day")}`,
-    time: part("hour") + part("minute") + part("second"),
-  };
-}
 
 export const cnabGerarRemessa = createServerFn({ method: "POST" })
   .validator((data: Input & { conta_ids: string[] }) => data)
   .handler(async ({ data }) => {
-    const { actor, token } = await authorize(data, "cnab_remessa");
-    const ids = data.conta_ids;
-    if (
-      !Array.isArray(ids) ||
-      ids.length < 1 ||
-      ids.length > 500 ||
-      new Set(ids).size !== ids.length ||
-      ids.some((id) => !UUID.test(id))
-    )
-      throw new Error("Selecione de 1 a 500 títulos distintos.");
-    const c = await config(token);
-    const rows = await rest<Row[]>(
-      `contas_receber?select=*&centro_id=eq.${data.centro_id}&id=in.(${ids.join(",")})&order=id&limit=500`,
-      token,
-    );
-    if (rows.length !== ids.length)
-      throw new Error("Título não encontrado ou sem acesso ao centro.");
-    const clientIds = [...new Set(rows.map((r) => String(r["cliente_id"])))];
-    if (clientIds.some((id) => !UUID.test(id))) throw new Error("Título sem cliente válido.");
-    const clients = await rest<Row[]>(
-      `clientes?select=*&id=in.(${clientIds.join(",")})&limit=500`,
-      token,
-    );
-    const stamp = today();
-    if (c.proximo_nosso_numero + rows.length > 100000)
-      throw new Error("Sequencial de nosso número esgotado. Consulte a cooperativa.");
-    const titulos: CnabTitulo[] = rows.map((r, index) => {
-      const cli = clients.find((v) => v["id"] === r["cliente_id"]);
-      if (!cli) throw new Error("Cliente não encontrado ou sem acesso.");
-      const amount =
-        ["valor", "juros", "multa", "acrescimo"].reduce(
-          (sum, k) => sum + cents(String(r[k] ?? 0)),
-          0n,
-        ) -
-        cents(String(r["desconto"] ?? 0)) -
-        cents(String(r["valor_pago"] ?? 0));
-      if (amount <= 0n) throw new Error("Título sem saldo.");
-      const s = (key: string) => String(cli[key] ?? "");
-      return {
-        conta_id: String(r["id"]),
-        documento: "C" + crypto.randomUUID().replace(/-/g, "").slice(0, 9).toUpperCase(),
-        nosso_numero: nossoNumero(
-          c,
-          Number(stamp.date.slice(0, 4)),
-          c.proximo_nosso_numero + index,
-        ),
-        valor: `${amount / 100n}.${(amount % 100n).toString().padStart(2, "0")}`,
-        vencimento: String(r["vencimento"]),
-        emissao: stamp.date,
-        nome: s("razao_social"),
-        cpf_cnpj: s("cnpj_cpf"),
-        endereco: [s("logradouro"), s("numero"), s("complemento")].filter(Boolean).join(" "),
-        bairro: s("bairro"),
-        cep: s("cep"),
-        cidade: s("cidade"),
-        uf: s("uf").toUpperCase(),
-      };
-    });
-    const file = gerarRemessa(c, titulos, stamp.date, stamp.time);
-    const id = await rest<string>("rpc/cnab_gravar_remessa", token, true, {
-      _actor: actor.id,
-      _centro: data.centro_id,
-      _versao: c.updated_at,
-      _sequencia: c.proxima_remessa,
-      _nosso_inicio: c.proximo_nosso_numero,
-      _nome: file.filename,
-      _conteudo: file.content,
-      _sha256: await sha256(file.content),
-      _titulos: titulos,
-    });
-    return { id, ...file, homologado: c.homologado };
+    await authorize(data, "cnab_remessa");
+    throw new Error("Sicredi utiliza somente API. Configure a cobrança em Centros de custo.");
   });
 
 async function analyze(data: Input & { content: string }, token: string) {
@@ -250,42 +152,8 @@ export const cnabImportarRetorno = createServerFn({ method: "POST" })
 export const cnabAlterarVencimento = createServerFn({ method: "POST" })
   .validator((data: Input & { boleto_id: string; vencimento: string }) => data)
   .handler(async ({ data }) => {
-    const { actor, token } = await authorize(data, "cnab_vencimento");
-    if (!UUID.test(data.boleto_id)) throw new Error("Boleto inválido.");
-    validarNovoVencimento(data.vencimento);
-    const c = await config(token);
-    const [b] = await rest<Row[]>(
-      `boletos?select=*&id=eq.${data.boleto_id}&centro_id=eq.${data.centro_id}&canal=eq.cnab240`,
-      token,
+    await authorize(data, "cnab_vencimento");
+    throw new Error(
+      "Sicredi utiliza somente API. Para boletos CNAB antigos, trate a alteração com o banco.",
     );
-    if (!b || b["status"] !== "registrado" || !UUID.test(String(b["cnab_remessa_id"])))
-      throw new Error("Boleto não apto para alteração CNAB.");
-    const [original] = await rest<Row[]>(
-      `sicredi_cnab_arquivos?select=conteudo&id=eq.${b["cnab_remessa_id"]}&centro_id=eq.${data.centro_id}`,
-      token,
-    );
-    if (!original) throw new Error("Remessa original não encontrada.");
-    const stamp = today();
-    const file = gerarAlteracaoVencimento(
-      c,
-      String(original["conteudo"]),
-      String(b["nosso_numero"]),
-      data.vencimento,
-      stamp.date,
-      stamp.time,
-    );
-    await rest("rpc/sicredi_solicitar_vencimento", token, true, {
-      _actor: actor.id,
-      _boleto: data.boleto_id,
-      _vencimento: data.vencimento,
-      _anterior: b["vencimento"],
-      _arquivo: {
-        versao: c.updated_at,
-        sequencia: c.proxima_remessa,
-        nome: file.filename,
-        conteudo: file.content,
-        sha256: await sha256(file.content),
-      },
-    });
-    return file;
   });

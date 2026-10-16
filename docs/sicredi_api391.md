@@ -1,3 +1,5 @@
+> Atualização: a fase237 move a configuração para Centros de custo, restringe novas emissões Sicredi à API e considera o manual4.0 (24/06/2026). Veja [cobrança por centro](cobranca_por_centro237.md). Este documento mantém a referência histórica da fase224.
+
 # Implantação da API de cobrança Sicredi 3.9.1 — fase224
 
 Esta atualização implementa as correções identificadas no manual fornecido (capa 3.9.1, rodapés 3.9 de 11/11/2025). Mantém o cadastro central de convênio e os sequenciais CNAB compartilhados pelos centros. A publicação no GitHub não executa SQL no Supabase nem libera o contrato bancário.

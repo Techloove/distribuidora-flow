@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage, type CrudField } from "@/components/crud-page";
+import { CobrancaCentros } from "@/components/cobranca-centros";
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/centros")({
   head: () => ({
     meta: [
-      { title: "Centros de distribuição — ERP Distribuidora" },
+      { title: "Centros de custo — ERP Distribuidora" },
       {
         name: "description",
         content: "Cadastro dos centros de distribuição usados nas movimentações multi-centro.",
       },
-      { property: "og:title", content: "Centros de distribuição — ERP Distribuidora" },
+      { property: "og:title", content: "Centros de custo — ERP Distribuidora" },
       { property: "og:description", content: "Operação multi-centro da distribuidora." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -31,8 +32,8 @@ const fields: CrudField[] = [
 function CentrosPage() {
   return (
     <ErpLayout
-      title="Centros de distribuição"
-      description="Locais de armazenagem vinculados aos pedidos, compras e movimentos de estoque."
+      title="Centros de custo"
+      description="Centros para vendas, relatórios e cobrança bancária. O estoque físico permanece compartilhado."
     >
       <CrudPage
         table="centros"
@@ -41,6 +42,7 @@ function CentrosPage() {
         emptyLabel="Nenhum centro cadastrado ainda."
         searchColumns={["codigo", "nome", "cidade", "uf"]}
       />
+      <CobrancaCentros />
     </ErpLayout>
   );
 }

@@ -1,4 +1,4 @@
-/** Contratos da API de cobrança Sicredi 3.9.1. */
+/** Contratos da API de cobrança Sicredi 3.9.1/4.0 (operações utilizadas). */
 export const SICREDI_SANDBOX = {
   cooperativa: "6789",
   posto: "03",

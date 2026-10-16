@@ -63,10 +63,14 @@ export function BoletosPage() {
   const pdfFn = useServerFn(sicrediPdfBoleto);
 
   const config = useQuery({
-    queryKey: ["sicredi", "status"],
+    queryKey: ["sicredi", "status", session?.user.id, centro],
+    enabled: !!session && canFinance && !!centro,
     queryFn: () =>
       sicrediStatus({
-        data: session?.access_token ? { accessToken: session.access_token } : {},
+        data: {
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+          ...(centro ? { centro_id: centro } : {}),
+        },
       }),
   });
 
@@ -199,7 +203,7 @@ export function BoletosPage() {
   return (
     <ErpLayout
       title="Boletos"
-      description="Cobrança Sicredi por API ou arquivos CNAB 240, com acompanhamento das parcelas."
+      description="Cobrança por centro de custo, com emissão Sicredi via API e acompanhamento das parcelas."
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => window.print()}>
@@ -218,7 +222,7 @@ export function BoletosPage() {
           <Link to="/receber" className="font-medium underline">
             Contas a receber
           </Link>
-          . As configurações do Sicredi ficam em Configurações do sistema.
+          . Configure banco e regras em Centros de custo.
         </p>
         <SicrediCnabPanel />
         {config.data && !config.data.configurado ? (

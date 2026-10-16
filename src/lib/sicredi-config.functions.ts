@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { documentoFiscal, validateConfig, type CnabConfig } from "./sicredi-cnab";
 import { fetchWithTimeout } from "./fetch-timeout";
 
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
@@ -10,8 +9,10 @@ type DbRow = Record<string, unknown>;
 
 export type SicrediConfigInput = {
   accessToken?: string;
-  cnab?: CnabConfig | null;
-  confirmar_unificacao?: boolean;
+  centro_id: string;
+  banco: "sicredi" | "sicoob" | "indefinido";
+  ativo: boolean;
+  conta_financeira_id?: string | null;
   api_key?: string;
   sandbox_api_key?: string;
   username?: string;
@@ -68,7 +69,7 @@ async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = await res.text();
   if (!res.ok) {
-    let message = "Não foi possível salvar o convênio. Confira a migração fase224 no Supabase.";
+    let message = "Não foi possível salvar o convênio. Confira a migração fase237 no Supabase.";
     try {
       const error = JSON.parse(body);
       if (error.code === "P0001") message = String(error.message);
@@ -137,13 +138,37 @@ function publicConfig(row: DbRow | null) {
   };
 }
 
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+async function centroConfig(actor: string, centro: string) {
+  if (!UUID.test(centro)) throw new Error("Selecione um centro de custo válido.");
+  await serviceRequest("rpc/validar_cobranca_centro_237", {
+    method: "POST",
+    body: JSON.stringify({ _actor: actor, _centro: centro }),
+  });
+  const rows = await serviceRequest<DbRow[]>(`cobranca_centros?select=*&centro_id=eq.${centro}`);
+  return rows[0] ?? null;
+}
 export const sicrediConfigGet = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken?: string } | undefined) => data ?? {})
+  .inputValidator((data: { accessToken?: string; centro_id: string }) => data)
   .handler(async ({ data }) => {
-    await requireConfigAccess("sicredi_config_get", data?.accessToken);
-    const cnab = await serviceRequest<CnabConfig[]>("sicredi_cnab_config?select=*&limit=2");
-    if (cnab.length > 1) throw new Error("Aplique a fase208 para compartilhar o convênio.");
-    return { ...publicConfig(await currentConfig()), cnab: cnab[0] ?? null };
+    const actor = await requireConfigAccess("sicredi_config_get", data.accessToken);
+    const cobranca = await centroConfig(actor.id, data.centro_id);
+    const bindings = await serviceRequest<DbRow[]>(
+      "cobranca_centros?select=centro_id&banco=eq.sicredi&limit=1",
+    );
+    const podeLer = !bindings[0] || bindings[0]["centro_id"] === data.centro_id;
+    return {
+      ...publicConfig(podeLer ? await currentConfig() : null),
+      cobranca: cobranca
+        ? {
+            banco: text(cobranca["banco"]),
+            ativo: cobranca["ativo"] === true,
+            conta_financeira_id: text(cobranca["conta_financeira_id"]),
+          }
+        : null,
+      convenio_disponivel: podeLer,
+      convenio_preservado: podeLer && !bindings[0],
+    };
   });
 
 export const sicrediConfigSave = createServerFn({ method: "POST" })
@@ -151,6 +176,23 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const actor = await requireConfigAccess("sicredi_config_save", data.accessToken);
 
+    await centroConfig(actor.id, data.centro_id);
+    if (!["sicredi", "sicoob", "indefinido"].includes(data.banco))
+      throw new Error("Banco inválido.");
+    if (data.banco !== "sicredi") {
+      await serviceRequest("rpc/salvar_cobranca_centro_237", {
+        method: "POST",
+        body: JSON.stringify({
+          _actor: actor.id,
+          _centro: data.centro_id,
+          _banco: data.banco,
+          _ativo: false,
+          _conta: data.conta_financeira_id || null,
+          _api: null,
+        }),
+      });
+      return { salvo: true };
+    }
     const atual = await currentConfig();
 
     const cooperativa = text(data.cooperativa).trim();
@@ -177,11 +219,7 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
         ["homologacao", "producao"],
         "ambiente",
       ),
-      tipo_cobranca: oneOf(
-        text(data.tipo_cobranca || "NORMAL"),
-        ["HIBRIDO", "NORMAL"],
-        "tipo de cobrança",
-      ),
+      tipo_cobranca: oneOf(text(data.tipo_cobranca || "NORMAL"), ["NORMAL"], "tipo de cobrança"),
       especie_documento: text(data.especie_documento).trim() || "DUPLICATA_MERCANTIL_INDICACAO",
       tipo_juro: oneOf(
         text(data.tipo_juro || "ISENTO"),
@@ -223,31 +261,16 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
     if (password) payload["password"] = password;
     else if (!atual) payload["password"] = null;
 
-    let cnab = data.cnab ?? null;
-    if (cnab) {
-      if (payload["tipo_juro"] === "VALOR")
-        throw new Error("Para compartilhar juros com CNAB, use percentual mensal ou isento.");
-      cnab = {
-        ...cnab,
-        documento: documentoFiscal(cnab.documento),
-        cooperativa,
-        posto,
-        beneficiario,
-        tipo_cobranca: payload["tipo_cobranca"] as "NORMAL" | "HIBRIDO",
-        juros_mensal: payload["tipo_juro"] === "ISENTO" ? 0 : Number(payload["juros"]),
-        multa_percentual: Number(payload["multa"]),
-      };
-      validateConfig(cnab);
-    }
-    await serviceRequest("rpc/sicredi_salvar_convenio_223", {
+    await serviceRequest("rpc/salvar_cobranca_centro_237", {
       method: "POST",
       body: JSON.stringify({
         _actor: actor.id,
+        _centro: data.centro_id,
+        _banco: data.banco,
+        _ativo: data.ativo === true,
+        _conta: data.conta_financeira_id || null,
         _api: payload,
-        _cnab: cnab,
-        _confirmar: data.confirmar_unificacao === true,
       }),
     });
-
-    return publicConfig(await currentConfig());
+    return { salvo: true };
   });

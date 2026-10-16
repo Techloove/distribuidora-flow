@@ -15,7 +15,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/lib/supabase-provider";
 import { sicrediEmitirBoleto } from "@/lib/sicredi.functions";
-import { cnabGerarRemessa } from "@/lib/sicredi-cnab.functions";
 
 type Parcela = { conta_receber_id: string; parcela: number; vencimento: string; saldo: number };
 const money = (value: number) =>
@@ -51,12 +50,30 @@ function EmissaoPedido({
   const { client, session } = useSupabase();
   const qc = useQueryClient();
   const api = useServerFn(sicrediEmitirBoleto);
-  const cnab = useServerFn(cnabGerarRemessa);
+
   const [open, setOpen] = useState(false);
-  const [canal, setCanal] = useState<"api" | "cnab240">("api");
+
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cobranca = useQuery({
+    queryKey: ["cobranca-emissao", session?.user.id, centroId],
+    enabled: open && !!client,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("cobranca_centros")
+        .select("banco,canal,ativo")
+        .eq("centro_id", centroId)
+        .maybeSingle();
+      if (error)
+        throw new Error("Não foi possível consultar a cobrança do centro. Aplique a fase237.");
+      return data;
+    },
+  });
+  const habilitado =
+    cobranca.data?.banco === "sicredi" &&
+    cobranca.data?.canal === "api" &&
+    cobranca.data?.ativo === true;
   const parcelas = useQuery({
     queryKey: ["emissao-boletos", pedidoId, contaId],
     enabled: open && !!client && !!session,
@@ -74,36 +91,17 @@ function EmissaoPedido({
     .filter((p) => selected.includes(p.conta_receber_id))
     .map((p) => p.conta_receber_id);
   async function emitir() {
-    if (busy || !session || !ids.length) return;
+    if (busy || !session || !ids.length || !habilitado) return;
     setBusy(true);
     setError(null);
     let emitted = 0;
     try {
-      if (canal === "cnab240") {
-        if (!centroId)
-          throw new Error(
-            "O pedido precisa estar vinculado a um centro de custo para emitir por CNAB.",
-          );
-        const file = await cnab({
-          data: { centro_id: centroId, accessToken: session.access_token, conta_ids: ids },
-        });
-        const url = URL.createObjectURL(
-          new Blob([file.content], { type: "text/plain;charset=us-ascii" }),
-        );
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = file.filename;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast.success("Remessa gerada. Envie o arquivo ao Sicredi Internet Empresas.");
-      } else {
-        if (ids.length > 10) throw new Error("Selecione até 10 parcelas por emissão via API.");
-        for (const contaId of ids) {
-          await api({ data: { contaId, accessToken: session.access_token } });
-          emitted++;
-        }
-        toast.success(`${emitted} boleto(s) registrado(s) no Sicredi.`);
+      if (ids.length > 10) throw new Error("Selecione até 10 parcelas por emissão via API.");
+      for (const contaId of ids) {
+        await api({ data: { contaId, accessToken: session.access_token } });
+        emitted++;
       }
+      toast.success(`${emitted} boleto(s) registrado(s) no Sicredi.`);
       setSelected([]);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Falha ao emitir os boletos.";
@@ -144,29 +142,24 @@ function EmissaoPedido({
               {contaId ? "Emitir boleto da parcela" : "Emitir boletos do pedido"}
             </DialogTitle>
             <DialogDescription>
-              Selecione as parcelas em aberto. As regras de cobrança são mantidas em Configurações
-              do sistema.
+              Selecione as parcelas em aberto. O banco e as regras de cobrança são definidos no
+              centro de custo do documento.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor={`pedido-canal-${contaId ?? pedidoId}`}>Forma de emissão</Label>
-            <select
-              id={`pedido-canal-${contaId ?? pedidoId}`}
-              className="h-10 w-full rounded-md border bg-background px-2"
-              disabled={busy}
-              value={canal}
-              onChange={(e) => {
-                setCanal(e.target.value as "api" | "cnab240");
-                setError(null);
-              }}
-            >
-              <option value="api">Registro direto no Sicredi (API)</option>
-              <option value="cnab240">Arquivo de remessa CNAB 240</option>
-            </select>
-            {canal === "cnab240" && (
-              <p className="text-sm text-muted-foreground">
-                O arquivo será baixado para envio ao Sicredi. O registro e o QR Code híbrido serão
-                confirmados pelo retorno em Boletos.
+          <div className="rounded-lg border p-3 text-sm">
+            <Label>Banco do centro de custo</Label>
+            {cobranca.isPending ? (
+              <p role="status">Consultando configuração…</p>
+            ) : cobranca.isError ? (
+              <p role="alert" className="text-destructive">
+                {cobranca.error.message}
+              </p>
+            ) : habilitado ? (
+              <p>Sicredi · registro direto pela API</p>
+            ) : (
+              <p role="alert">
+                Emissão indisponível neste centro. Configure a cobrança em Centros de custo. A
+                integração Sicoob aguarda definição.
               </p>
             )}
           </div>
@@ -217,7 +210,14 @@ function EmissaoPedido({
               Fechar
             </Button>
             <Button
-              disabled={busy || parcelas.isFetching || parcelas.isError || !ids.length}
+              disabled={
+                busy ||
+                !habilitado ||
+                cobranca.isFetching ||
+                parcelas.isFetching ||
+                parcelas.isError ||
+                !ids.length
+              }
               onClick={() => void emitir()}
             >
               {busy && <Loader2 className="size-4 animate-spin" />} Emitir selecionadas (

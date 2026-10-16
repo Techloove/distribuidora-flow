@@ -53,6 +53,7 @@ type Options = {
   definitive?: boolean;
   configChanged?: boolean;
   persistFailed?: boolean;
+  centroBloqueado?: boolean;
 };
 function backend(o: Options = {}) {
   const calls: {
@@ -87,6 +88,14 @@ function backend(o: Options = {}) {
     else if (p.endsWith("/profiles")) out = [{ ativo: true }];
     else if (p.endsWith("/user_roles")) out = [{ role: "financeiro" }];
     else if (p.endsWith("/consumir_rate_limit")) out = true;
+    else if (p.endsWith("/cobranca_centros"))
+      out = [
+        {
+          banco: o.centroBloqueado ? "sicoob" : "sicredi",
+          canal: o.centroBloqueado ? "pendente" : "api",
+          ativo: !o.centroBloqueado,
+        },
+      ];
     else if (p.endsWith("/sicredi_config")) {
       reads++;
       out = [
@@ -100,6 +109,7 @@ function backend(o: Options = {}) {
           codigo_beneficiario: "00623",
           ambiente: o.configChanged && reads > 1 ? "homologacao" : ambiente,
           tipo_cobranca: "NORMAL",
+          validade_apos_vencimento: 90,
         },
       ];
     } else if (p.endsWith("/sicredi_token_reservar_224"))
@@ -108,6 +118,7 @@ function backend(o: Options = {}) {
       out = [
         {
           conta_receber_id: id,
+          centro_id: id,
           razao_social: "Cliente teste",
           cnpj_cpf: "12345678000195",
           logradouro: "Rua Teste",
@@ -122,6 +133,7 @@ function backend(o: Options = {}) {
       out = [
         {
           id,
+          banco: "sicredi",
           nosso_numero: o.missingNosso ? null : "262000020",
           linha_digitavel: o.invalidLine ? "" : line,
           valor: 100,
@@ -254,6 +266,7 @@ test("sandbox emite com chave e identificadores próprios, preservando configura
   expect(req.headers.get("posto")).toBe("03");
   expect(req.body.codigoBeneficiario).toBe("12345");
   expect(req.body.tipoCobranca).toBe("NORMAL");
+  expect(req.body).not.toHaveProperty("validadeAposVencimento");
   expect(calls.some((c) => c.path.endsWith("/sicredi_salvar_convenio_223"))).toBe(false);
 });
 test("registro inconclusivo encontrado é recuperado sem novo POST mesmo sem nossoNumero na resposta", async () => {
@@ -382,4 +395,19 @@ test("nosso número de outro boleto não substitui identificação recuperada", 
     }),
   ).rejects.toThrow("outro boleto");
   expect(calls.some((c) => c.path.endsWith("/sicredi_vincular_numero_224"))).toBe(false);
+});
+
+test("centro Sicoob não usa o Sicredi nem autentica ou reserva emissão", async () => {
+  const calls = backend({ centroBloqueado: true });
+  await expect(
+    sicrediEmitirBoleto({ data: { contaId: id, accessToken: "fixture-jwt" } }),
+  ).rejects.toThrow("não habilitado");
+  expect(
+    calls.some(
+      (c) =>
+        c.path.endsWith("/preparar_boleto_sicredi_servidor") ||
+        c.path.endsWith("/sicredi_token_reservar_224") ||
+        c.path.includes("/cobranca/boleto/"),
+    ),
+  ).toBe(false);
 });

@@ -96,6 +96,7 @@ async function carregarBoleto(
   );
   const row = rows[0];
   if (!row) throw new Error("Boleto não encontrado ou sem acesso.");
+  if (row["banco"] !== "sicredi") throw new Error("Este boleto pertence a outro banco.");
   if (row["canal"] === "cnab240")
     throw new Error("Boleto CNAB 240 deve ser acompanhado pelo retorno do banco.");
   if (exigeNossoNumero && !String(row["nosso_numero"] ?? "").trim())
@@ -105,16 +106,7 @@ async function carregarBoleto(
   return row;
 }
 
-/**
- * Integracao com a API de Cobranca do Sicredi (portal de parceiros).
- * As credenciais e os parametros do boleto (juros, multa, desconto, protesto)
- * sao cadastrados na tela de Configuracoes (tabela public.sicredi_config).
- * Se a tabela estiver vazia, caem nas variaveis de ambiente:
- *   SICREDI_API_KEY, SICREDI_USERNAME, SICREDI_PASSWORD,
- *   SICREDI_COOPERATIVA, SICREDI_POSTO, SICREDI_CODIGO_BENEFICIARIO,
- *   SICREDI_AMBIENTE ("homologacao" | "producao")
- */
-
+/** Credenciais privadas Sicredi, vinculadas ao centro configurado em Centros de custo. */
 type Conf = {
   apiKey: string;
   username: string;
@@ -163,13 +155,30 @@ async function dbConfig(): Promise<DbRow | null> {
 const txt = (v: unknown, fb = "") => (v === null || v === undefined ? fb : String(v));
 const nmb = (v: unknown, fb = 0) => (v === null || v === undefined ? fb : Number(v) || fb);
 
-async function conf(): Promise<Conf> {
+async function conf(centroEmissao?: string): Promise<Conf> {
+  if (centroEmissao !== undefined) {
+    if (!/^[a-f0-9-]{36}$/i.test(centroEmissao)) throw new Error("Centro do título inválido.");
+    const url = process.env["EXT_SUPABASE_URL"]?.replace(/\/$/, "");
+    const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+    if (!url || !key) throw new Error("Configuração segura indisponível.");
+    const response = await fetchWithTimeout(
+      `${url}/rest/v1/cobranca_centros?select=banco,canal,ativo&centro_id=eq.${centroEmissao}`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+    );
+    if (!response.ok) throw new Error("Confira a migração fase237 para cobrança por centro.");
+    const rows = (await response.json()) as DbRow[];
+    if (
+      rows[0]?.["banco"] !== "sicredi" ||
+      rows[0]?.["canal"] !== "api" ||
+      rows[0]?.["ativo"] !== true
+    )
+      throw new Error(
+        "Sicredi API não habilitado para o centro deste título. Configure em Centros de custo.",
+      );
+  }
   const row = await dbConfig();
-  const ambiente = (
-    txt(row?.["ambiente"]) ||
-    process.env["SICREDI_AMBIENTE"] ||
-    "homologacao"
-  ).toLowerCase();
+  if (!row) throw new Error("Cadastre o convênio Sicredi em Centros de custo.");
+  const ambiente = (txt(row?.["ambiente"]) || "homologacao").toLowerCase();
   const base =
     ambiente === "producao"
       ? "https://api-parceiro.sicredi.com.br"
@@ -177,28 +186,17 @@ async function conf(): Promise<Conf> {
   const c: Conf = {
     apiKey:
       ambiente === "homologacao"
-        ? txt(row?.["sandbox_api_key"]) || process.env["SICREDI_SANDBOX_API_KEY"] || ""
-        : txt(row?.["api_key"]) || process.env["SICREDI_API_KEY"] || "",
-    username:
-      ambiente === "homologacao"
-        ? SICREDI_SANDBOX.username
-        : txt(row?.["username"]) || process.env["SICREDI_USERNAME"] || "",
-    password:
-      ambiente === "homologacao"
-        ? SICREDI_SANDBOX.password
-        : txt(row?.["password"]) || process.env["SICREDI_PASSWORD"] || "",
+        ? txt(row?.["sandbox_api_key"]) || ""
+        : txt(row?.["api_key"]) || "",
+    username: ambiente === "homologacao" ? SICREDI_SANDBOX.username : txt(row?.["username"]) || "",
+    password: ambiente === "homologacao" ? SICREDI_SANDBOX.password : txt(row?.["password"]) || "",
     cooperativa:
-      ambiente === "homologacao"
-        ? SICREDI_SANDBOX.cooperativa
-        : txt(row?.["cooperativa"]) || process.env["SICREDI_COOPERATIVA"] || "",
-    posto:
-      ambiente === "homologacao"
-        ? SICREDI_SANDBOX.posto
-        : txt(row?.["posto"]) || process.env["SICREDI_POSTO"] || "",
+      ambiente === "homologacao" ? SICREDI_SANDBOX.cooperativa : txt(row?.["cooperativa"]) || "",
+    posto: ambiente === "homologacao" ? SICREDI_SANDBOX.posto : txt(row?.["posto"]) || "",
     beneficiario:
       ambiente === "homologacao"
         ? SICREDI_SANDBOX.beneficiario
-        : txt(row?.["codigo_beneficiario"]) || process.env["SICREDI_CODIGO_BENEFICIARIO"] || "",
+        : txt(row?.["codigo_beneficiario"]) || "",
     ambiente,
     base,
     tipoCobranca: txt(row?.["tipo_cobranca"], "NORMAL") || "NORMAL",
@@ -230,7 +228,7 @@ async function conf(): Promise<Conf> {
     .map(([k]) => k);
   if (faltando.length > 0) {
     throw new Error(
-      `Credenciais do Sicredi ausentes: ${faltando.join(", ")}. Cadastre em Configurações → Sicredi.`,
+      `Credenciais do Sicredi ausentes: ${faltando.join(", ")}. Cadastre em Centros de custo → Cobrança.`,
     );
   }
   if (!["homologacao", "producao"].includes(c.ambiente))
@@ -288,11 +286,14 @@ function headers(c: Conf, tk: string) {
 
 /** Status da configuracao — usado pela tela para avisar o usuario. */
 export const sicrediStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken?: string }) => data)
+  .inputValidator((data: { accessToken?: string; centro_id?: string }) => data)
   .handler(async ({ data }) => {
-    await requireSicrediAccess("sicredi_status", 30, data.accessToken);
+    const { user } = await requireSicrediAccess("sicredi_status", 30, data.accessToken);
     try {
-      const c = await conf();
+      if (!data.centro_id)
+        throw new Error("Selecione um centro de custo para consultar a configuração de cobrança.");
+      await serviceRpc("validar_cobranca_centro_237", { _actor: user.id, _centro: data.centro_id });
+      const c = await conf(data.centro_id);
       return {
         configurado: true,
         ambiente: c.ambiente,
@@ -335,7 +336,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       throw new Error("Informe o CEP do pagador com 8 dígitos antes de emitir.");
     if (!Number.isFinite(Number(row["saldo"])) || Number(row["saldo"]) <= 0)
       throw new Error("Título sem saldo válido.");
-    const c = await conf();
+    const c = await conf(String(row["centro_id"] ?? ""));
     const tk = await token(c);
     // Reserva a emissão antes da chamada externa: serializa concorrência e
     // aloca um seuNumero novo quando houver reemissão após baixa/cancelamento.
@@ -351,7 +352,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       row["vencimento"] !== reserva["vencimento"]
     )
       throw new Error("Título mudou durante a reserva. Atualize antes de emitir.");
-    const recente = await conf();
+    const recente = await conf(String(row["centro_id"] ?? ""));
     if (JSON.stringify(recente) !== JSON.stringify(c))
       throw new Error("Configuração mudou durante a emissão. Atualize antes de continuar.");
     let recuperado: Record<string, unknown> | null = null;
@@ -445,7 +446,9 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       ...(c.tipoProtesto === "NEGATIVAR" && diasProtesto > 0
         ? { diasNegativacaoAuto: diasProtesto }
         : {}),
-      ...(c.validadeAposVencimento > 0 ? { validadeAposVencimento: c.validadeAposVencimento } : {}),
+      ...(c.tipoCobranca === "HIBRIDO" && c.validadeAposVencimento > 0
+        ? { validadeAposVencimento: c.validadeAposVencimento }
+        : {}),
       ...(informativo ? { informativos: [informativo.slice(0, 80)] } : {}),
       ...(c.mensagem ? { mensagens: [c.mensagem.slice(0, 80)] } : {}),
 

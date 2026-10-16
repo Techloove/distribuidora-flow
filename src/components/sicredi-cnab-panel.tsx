@@ -26,15 +26,29 @@ function download(content: string, filename: string) {
 }
 export function SicrediCnabPanel() {
   const { centro } = useCentro();
-  const { roles } = useSupabase();
-  if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
+  const { client, user, roles } = useSupabase();
+  const financeiro = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
+  const legado = useQuery({
+    queryKey: ["cnab", "existe-historico", user?.id],
+    enabled: !!client && financeiro,
+    queryFn: async () => {
+      const { data, error } = await client!.from("sicredi_cnab_arquivos").select("id").limit(1);
+      if (error) throw new Error("Não foi possível consultar o histórico CNAB.");
+      return !!data?.length;
+    },
+  });
+  if (!financeiro || (!legado.data && !legado.isError)) return null;
   return (
     <section className="no-print rounded-xl border bg-card p-4">
-      <h2 className="font-semibold">Sicredi · CNAB 240</h2>
+      <h2 className="font-semibold">Histórico Sicredi · CNAB 240</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Confira os retornos do Sicredi e consulte os arquivos de cobrança.
+        Somente acompanhamento dos arquivos antigos. Novos boletos Sicredi são emitidos via API.
       </p>
-      {!centro ? (
+      {legado.isError ? (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {legado.error.message}
+        </p>
+      ) : !centro ? (
         <p className="mt-3 text-sm">
           Selecione um centro de custo específico no filtro superior para trabalhar com CNAB.
         </p>
@@ -124,9 +138,9 @@ function CentroCnab({ centro }: { centro: string }) {
       )}
       {!cfg.isLoading && !cfg.isError && !cfg.data && (
         <p className="text-sm">
-          Convênio CNAB compartilhado não configurado. Solicite a configuração ao administrador em{" "}
-          <Link to="/configuracoes" className="underline">
-            Configurações do sistema
+          Nenhum convênio CNAB legado cadastrado. Configure novas emissões em{" "}
+          <Link to="/centros" className="underline">
+            Centros de custo
           </Link>
           .
         </p>
@@ -135,8 +149,8 @@ function CentroCnab({ centro }: { centro: string }) {
         <>
           {!cfg.data.homologado && (
             <p className="rounded-md border p-3 text-sm">
-              Convênio em homologação. Emita pelos pedidos e envie a remessa para validação com a
-              cooperativa. A aplicação de retornos ficará disponível após confirmar a homologação.
+              Histórico de homologação CNAB. Novas remessas estão desativadas; a emissão atual
+              utiliza a API.
             </p>
           )}
           <details>

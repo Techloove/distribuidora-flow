@@ -27,24 +27,6 @@ afterAll(() =>
   }),
 );
 const actor = "00000000-0000-4000-8000-000000000001";
-const cnab = {
-  centro_id: actor,
-  nome: "Distribuidora",
-  documento: "12345678000195",
-  cooperativa: "0165",
-  posto: "02",
-  beneficiario: "00623",
-  conta: "123456",
-  conta_dv: "1",
-  conta_financeira_id: actor,
-  categoria_tarifa_id: null,
-  proxima_remessa: 10,
-  proximo_nosso_numero: 40,
-  homologado: false,
-  juros_mensal: 2,
-  multa_percentual: 3,
-  tipo_cobranca: "NORMAL" as const,
-};
 function backend(role = "admin", error?: { code: string; message: string; details?: string }) {
   const calls: { path: string; method: string; body: Record<string, unknown> }[] = [];
   globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -69,8 +51,9 @@ function backend(role = "admin", error?: { code: string; message: string; detail
           tipo_cobranca: "NORMAL",
         },
       ];
-    else if (path.endsWith("/sicredi_cnab_config")) out = [cnab];
-    else if (path.endsWith("/sicredi_salvar_convenio_223")) {
+    else if (path.endsWith("/cobranca_centros")) out = [];
+    else if (path.endsWith("/validar_cobranca_centro_237")) out = null;
+    else if (path.endsWith("/salvar_cobranca_centro_237")) {
       if (error) return new Response(JSON.stringify(error), { status: 400 });
       out = null;
     } else throw new Error("Unexpected fixture request " + path);
@@ -87,54 +70,65 @@ const input = {
   tipo_juro: "PERCENTUAL",
   juros: 2,
   multa: 3,
-  cnab,
-  confirmar_unificacao: true,
+  centro_id: actor,
+  banco: "sicredi" as const,
+  ativo: true,
+  conta_financeira_id: actor,
 };
-test("configuração combinada não envia chave e senha existentes ao navegador", async () => {
+test("configuração por centro não envia segredos ao navegador", async () => {
   backend("gestor");
-  const result = await sicrediConfigGet({ data: { accessToken: "fixture-jwt" } });
+  const result = await sicrediConfigGet({ data: { accessToken: "fixture-jwt", centro_id: actor } });
   expect(result.api_key).toBe("");
   expect(result.password).toBe("");
   expect(result.api_key_configurada).toBe(true);
   expect(result.sandbox_api_key_configurada).toBe(true);
-  expect(result.sandbox_api_key).toBe("");
   expect(result.password_configurada).toBe(true);
-  expect(result.cnab?.proximo_nosso_numero).toBe(40);
+  expect(result.convenio_preservado).toBe(true);
   expect(JSON.stringify(result)).not.toContain("fixture-private");
 });
-test("salvamento usa uma única RPC e deriva os dados CNAB dos campos comuns", async () => {
+test("salvamento atômico vincula API e conta ao centro, sem parâmetros CNAB", async () => {
   const calls = backend();
-  const result = await sicrediConfigSave({
-    data: { ...input, cnab: { ...cnab, cooperativa: "9999", juros_mensal: 99 } },
-  });
-  const writes = calls.filter((c) => c.method !== "GET" && !c.path.endsWith("consumir_rate_limit"));
+  await sicrediConfigSave({ data: input });
+  const writes = calls.filter((c) => c.path.endsWith("/salvar_cobranca_centro_237"));
   expect(writes).toHaveLength(1);
-  expect(writes[0]?.path).toEndWith("/sicredi_salvar_convenio_223");
-  expect(writes[0]?.body._actor).toBe(actor);
-  expect(writes[0]?.body._cnab).toMatchObject({
-    cooperativa: "0165",
-    juros_mensal: 2,
-    multa_percentual: 3,
+  expect(writes[0]?.body).toMatchObject({
+    _actor: actor,
+    _centro: actor,
+    _banco: "sicredi",
+    _ativo: true,
+    _conta: actor,
   });
   expect(writes[0]?.body._api).not.toHaveProperty("api_key");
   expect(writes[0]?.body._api).not.toHaveProperty("password");
-  expect(JSON.stringify(result)).not.toContain("fixture-private");
+  expect(writes[0]?.body).not.toHaveProperty("_cnab");
+  expect(calls.some((c) => c.path.includes("cnab"))).toBe(false);
 });
-test("gestor consulta mas não salva; juros diários não são convertidos em percentual CNAB", async () => {
-  let calls = backend("gestor");
+test("gestor não salva e juros por valor são permitidos na API", async () => {
+  const calls = backend("gestor");
   await expect(sicrediConfigSave({ data: input })).rejects.toThrow("sem permissão");
-  expect(calls.some((c) => c.path.endsWith("sicredi_salvar_convenio_223"))).toBe(false);
-  calls = backend();
-  await expect(sicrediConfigSave({ data: { ...input, tipo_juro: "VALOR" } })).rejects.toThrow(
-    "percentual mensal",
-  );
-  expect(calls.some((c) => c.path.endsWith("sicredi_salvar_convenio_223"))).toBe(false);
+  expect(calls.some((c) => c.path.endsWith("salvar_cobranca_centro_237"))).toBe(false);
+  backend();
+  await expect(
+    sicrediConfigSave({ data: { ...input, tipo_juro: "VALOR" } }),
+  ).resolves.toMatchObject({ salvo: true });
 });
-test("erros de constraints não expõem linhas de configuração com segredos", async () => {
+test("Sicoob pendente não requer credenciais Sicredi nem habilita emissão", async () => {
+  const calls = backend();
+  await sicrediConfigSave({
+    data: { accessToken: "fixture-jwt", centro_id: actor, banco: "sicoob", ativo: true },
+  });
+  expect(calls.find((c) => c.path.endsWith("/salvar_cobranca_centro_237"))?.body).toMatchObject({
+    _banco: "sicoob",
+    _ativo: false,
+    _api: null,
+  });
+  expect(calls.some((c) => c.path.endsWith("/sicredi_config"))).toBe(false);
+});
+test("erros de constraints não expõem segredos", async () => {
   backend("admin", {
     code: "23514",
     message: "failed row fixture-private-key",
     details: "fixture-private-password",
   });
-  await expect(sicrediConfigSave({ data: input })).rejects.toThrow("fase224");
+  await expect(sicrediConfigSave({ data: input })).rejects.toThrow("fase237");
 });

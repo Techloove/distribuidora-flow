@@ -32,6 +32,7 @@ afterAll(() => {
 });
 const boleto = {
   id: "00000000-0000-4000-8000-000000000007",
+  banco: "sicredi",
   nosso_numero: "262000020",
   status: "registrado",
   canal: "api",

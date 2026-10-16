@@ -15,14 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { useSupabase } from "@/lib/supabase-provider";
 import { sicrediAlterarVencimento, sicrediConsultarBoleto } from "@/lib/sicredi.functions";
-import { cnabAlterarVencimento } from "@/lib/sicredi-cnab.functions";
 
 type Row = Record<string, unknown>;
 export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
   const { session, roles } = useSupabase();
   const qc = useQueryClient();
   const api = useServerFn(sicrediAlterarVencimento),
-    cnab = useServerFn(cnabAlterarVencimento),
     consultar = useServerFn(sicrediConsultarBoleto);
   const [open, setOpen] = useState(false),
     [date, setDate] = useState(""),
@@ -32,6 +30,7 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
   if (
     !roles.some((role) => ["admin", "gestor", "financeiro"].includes(role)) ||
     boleto["banco"] !== "sicredi" ||
+    boleto["canal"] !== "api" ||
     boleto["status"] !== "registrado"
   )
     return null;
@@ -46,26 +45,6 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
         });
         toast.success(
           "Situação consultada no Sicredi. Confira o vencimento e a solicitação pendente.",
-        );
-      } else if (boleto["canal"] === "cnab240") {
-        const file = await cnab({
-          data: {
-            centro_id: String(boleto["centro_id"]),
-            boleto_id: String(boleto["id"]),
-            vencimento: date,
-            accessToken: session.access_token,
-          },
-        });
-        const url = URL.createObjectURL(
-          new Blob([file.content], { type: "text/plain;charset=us-ascii" }),
-        );
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = file.filename;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast.success(
-          "Remessa de alteração gerada. Envie ao Sicredi e importe o retorno para confirmar.",
         );
       } else {
         const result = await api({
@@ -121,10 +100,8 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
           </p>
           {pending ? (
             <p className="text-sm">
-              Vencimento solicitado: {String(boleto["vencimento_solicitado"])}.{" "}
-              {boleto["canal"] === "cnab240"
-                ? "Envie a remessa salva no histórico de Boletos e importe o retorno do Sicredi."
-                : "Consulte o Sicredi para conferir a confirmação; não reenvie a solicitação."}
+              Vencimento solicitado: {String(boleto["vencimento_solicitado"])}. Consulte o Sicredi
+              para conferir a confirmação; não reenvie a solicitação.
             </p>
           ) : (
             <div className="space-y-2">
@@ -136,12 +113,6 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
-              {boleto["canal"] === "cnab240" && (
-                <p className="text-sm text-muted-foreground">
-                  Será gerada uma remessa de alteração de vencimento para envio ao Sicredi Internet
-                  Empresas.
-                </p>
-              )}
             </div>
           )}
           {error && (
@@ -154,11 +125,9 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
               Fechar
             </Button>
             {pending ? (
-              boleto["canal"] !== "cnab240" && (
-                <Button disabled={busy} onClick={() => void action(true)}>
-                  Conferir no Sicredi
-                </Button>
-              )
+              <Button disabled={busy} onClick={() => void action(true)}>
+                Conferir no Sicredi
+              </Button>
             ) : (
               <Button
                 disabled={busy || !date || date === boleto["vencimento"]}
