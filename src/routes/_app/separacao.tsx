@@ -1,3 +1,4 @@
+import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { ConcluirSeparacaoPratica } from "@/components/logistica-pratica";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -170,6 +171,7 @@ function SeparacaoPage() {
       string,
       {
         numero: string;
+        centroId: string;
         cliente: string;
         status: string;
         rota: string;
@@ -182,6 +184,7 @@ function SeparacaoPage() {
       const cliSeq = r["sequencia_entrega"];
       map.set(String(r["pedido_id"]), {
         numero: String(r["numero"]),
+        centroId: String(r["centro_id"] ?? ""),
         cliente: String(r["cliente"] ?? "—"),
         status: String(r["status"]),
         rota: String(r["rota"] ?? "—"),
@@ -471,6 +474,7 @@ function SeparacaoPage() {
                           </td>
                           <td className="no-print space-x-2 px-4 py-2.5 text-right">
                             <ImprimirPedidos pedidoIds={[id]} compact />
+                            <EmitirBoletosPedido pedidoId={id} centroId={p.centroId} compact />
                             {p.status === "confirmado" ? (
                               <Button
                                 size="sm"

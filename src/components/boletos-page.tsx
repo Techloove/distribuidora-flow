@@ -1,3 +1,4 @@
+import { EmitirBoletosPedido, EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
 import { ConfirmarNossoNumero } from "@/components/confirmar-nosso-numero";
 import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
 import { BoletoPix } from "@/components/boleto-pix";
@@ -25,7 +26,6 @@ import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import {
   sicrediBaixarBoleto,
   sicrediConsultarBoleto,
-  sicrediPdfBoleto,
   sicrediStatus,
 } from "@/lib/sicredi.functions";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -60,7 +60,6 @@ export function BoletosPage() {
 
   const consultarFn = useServerFn(sicrediConsultarBoleto);
   const baixarFn = useServerFn(sicrediBaixarBoleto);
-  const pdfFn = useServerFn(sicrediPdfBoleto);
 
   const config = useQuery({
     queryKey: ["sicredi", "status", session?.user.id, centro],
@@ -167,23 +166,6 @@ export function BoletosPage() {
     onSuccess: () => {
       toast.success("Boleto baixado no Sicredi");
       invalidate();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const abrirPdf = useMutation({
-    mutationFn: async (b: Row) => {
-      const res = await pdfFn({
-        data: {
-          boletoId: String(b["id"]),
-          ...(session?.access_token ? { accessToken: session.access_token } : {}),
-        },
-      });
-      const bin = atob(res.base64);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      window.open(url, "_blank");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -339,6 +321,18 @@ export function BoletosPage() {
                         </TableCell>
                         <TableCell className="no-print space-x-1 text-right">
                           <AlterarVencimentoBoleto boleto={b} />
+                          {b["pedido_id"] ? (
+                            <EmitirBoletosPedido
+                              pedidoId={String(b["pedido_id"])}
+                              centroId={String(b["centro_id"] ?? "")}
+                              compact
+                            />
+                          ) : b["conta_receber_id"] ? (
+                            <EmitirBoletoTitulo
+                              contaId={String(b["conta_receber_id"])}
+                              centroId={String(b["centro_id"] ?? "")}
+                            />
+                          ) : null}
                           {b["linha_digitavel"] ? (
                             <Button
                               size="sm"
@@ -379,14 +373,7 @@ export function BoletosPage() {
                               >
                                 <RefreshCw className="size-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={abrirPdf.isPending || !b["linha_digitavel"]}
-                                onClick={() => abrirPdf.mutate(b)}
-                              >
-                                PDF
-                              </Button>
+
                               <Button
                                 size="sm"
                                 variant="outline"

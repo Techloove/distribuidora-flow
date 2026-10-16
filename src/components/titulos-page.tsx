@@ -643,16 +643,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                   <TableCell data-label="Ações" className="no-print text-right">
                     {isReceber && <HistoricoTitulo titulo={r} />}
                     {isReceber && <AcoesFinanceirasTitulo titulo={r} />}
-                    {isReceber &&
-                    canFinance &&
-                    !boletos.isLoading &&
-                    !boletos.isError &&
-                    !["pago", "cancelado"].includes(String(r["status"])) &&
-                    Number(r["saldo"] ?? 0) > 0 &&
-                    (!boletoPorConta.get(String(r["id"])) ||
-                      ["erro", "baixado", "cancelado"].includes(
-                        String(boletoPorConta.get(String(r["id"]))?.["status"]),
-                      )) ? (
+                    {isReceber && canFinance ? (
                       <EmitirBoletoTitulo
                         contaId={String(r["id"])}
                         centroId={String(r["centro_id"] ?? "")}
