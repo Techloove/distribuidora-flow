@@ -4,6 +4,7 @@ import {
   nomeStatusPedido,
   ordemStatusPedido,
   situacaoPedido,
+  statusVisivelPedido,
 } from "../src/lib/status-pedido";
 
 test("fluxo comercial e logístico segue a ordem sem exibir códigos internos", () => {
@@ -50,4 +51,31 @@ test("encerramentos excepcionais e status desconhecido não completam o indicado
     expect(situacaoPedido(status).etapa).toBeNull();
     expect(situacaoPedido(status).atencao).toBe(true);
   }
+});
+
+test("orçamentos usam validade comercial sem virar venda ou falsa etapa logística", () => {
+  const base = {
+    status: "rascunho",
+    tipo_documento: "orcamento",
+    orcamento_situacao: "negociacao",
+    orcamento_validade: "2026-10-20",
+  };
+  expect(statusVisivelPedido(base, "2026-10-20")).toBe("orcamento");
+  expect(statusVisivelPedido(base, "2026-10-21")).toBe("orcamento_expirado");
+  expect(statusVisivelPedido({ ...base, orcamento_situacao: "recusado" }, "2026-11-01")).toBe(
+    "orcamento_recusado",
+  );
+  expect(
+    statusVisivelPedido(
+      {
+        ...base,
+        tipo_documento: "pedido",
+        status: "aguardando_aprovacao",
+        orcamento_situacao: "aceito",
+      },
+      "2026-11-01",
+    ),
+  ).toBe("aguardando_aprovacao");
+  for (const s of ["orcamento", "orcamento_expirado", "orcamento_recusado"])
+    expect(situacaoPedido(s).etapa).toBeNull();
 });

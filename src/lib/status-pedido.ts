@@ -1,3 +1,4 @@
+import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 export const ETAPAS_PEDIDO = [
   "Elaboração",
   "Aprovação",
@@ -10,6 +11,24 @@ export const ETAPAS_PEDIDO = [
 ] as const;
 type SituacaoPedido = { nome: string; etapa: number | null; descricao: string; atencao?: boolean };
 const SITUACOES: Record<string, SituacaoPedido> = {
+  orcamento: {
+    nome: "Orçamento em negociação",
+    etapa: null,
+    descricao:
+      "Proposta comercial aguardando decisão do cliente. Ainda não é uma venda confirmada.",
+  },
+  orcamento_expirado: {
+    nome: "Orçamento expirado",
+    etapa: null,
+    atencao: true,
+    descricao: "A validade da proposta terminou. Revise a validade antes de retomar a negociação.",
+  },
+  orcamento_recusado: {
+    nome: "Orçamento não aprovado pelo cliente",
+    etapa: null,
+    atencao: true,
+    descricao: "A proposta foi encerrada sem aceite do cliente. O motivo permanece registrado.",
+  },
   rascunho: {
     nome: "Em elaboração",
     etapa: 0,
@@ -125,4 +144,15 @@ export function nomeStatusPedido(status: unknown) {
 }
 export function ordemStatusPedido(status: unknown) {
   return situacaoPedido(status).etapa ?? ETAPAS_PEDIDO.length;
+}
+
+export function statusVisivelPedido(doc: { [key: string]: unknown }, hoje = hojeSaoPaulo()) {
+  if (doc["tipo_documento"] !== "orcamento") return String(doc["status"] ?? "");
+  if (doc["orcamento_situacao"] === "recusado") return "orcamento_recusado";
+  if (
+    doc["orcamento_situacao"] === "expirado" ||
+    (doc["orcamento_validade"] && String(doc["orcamento_validade"]).slice(0, 10) < hoje)
+  )
+    return "orcamento_expirado";
+  return "orcamento";
 }

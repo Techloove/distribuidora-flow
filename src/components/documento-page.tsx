@@ -1,6 +1,8 @@
+import { OrcamentoPedido } from "@/components/orcamento-pedido";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useAcompanhamentoPedido } from "@/lib/use-acompanhamento-pedido";
 import { AcompanhamentoPedido } from "@/components/acompanhamento-pedido";
-import { nomeStatusPedido, ordemStatusPedido } from "@/lib/status-pedido";
+import { nomeStatusPedido, ordemStatusPedido, statusVisivelPedido } from "@/lib/status-pedido";
 import { lerPaginas } from "@/lib/paginacao";
 import { SelecionarPedidosLote } from "@/components/logistica-pratica";
 import { MargemPedido } from "@/components/rotinas-distribuidora";
@@ -99,6 +101,7 @@ export function DocumentoPage({
   } | null>(null);
 
   const canWrite = roles.length > 0;
+  const permissoes = usePermissoesRotinas();
   /** Permissão por papel para alterar o preço unitário dos itens. */
   const podeAlterarPreco = usePodeAlterarPreco();
 
@@ -280,7 +283,13 @@ export function DocumentoPage({
     if (soMeusPedidos)
       list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
     if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
-    if (f["status"]) list = list.filter((d) => String(d["status"]) === f["status"]);
+    if (f["tipo"]) list = list.filter((d) => String(d["tipo_documento"] ?? "pedido") === f["tipo"]);
+    if (f["status"])
+      list = list.filter(
+        (d) =>
+          (config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"])) ===
+          f["status"],
+      );
     if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
     if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
     if (f["representante"])
@@ -310,17 +319,23 @@ export function DocumentoPage({
     return list;
   }, [
     docs.data,
+    hoje,
     filtros,
     centro,
     partners.data,
     config.partnerKey,
     config.dateField,
+    config.table,
     soMeusPedidos,
     meuRepresentante,
   ]);
 
   const statusOptions = useMemo(() => {
-    const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
+    const set = new Set(
+      (docs.data ?? []).map((d) =>
+        config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"]),
+      ),
+    );
     return [...set]
       .sort((a, b) =>
         config.table === "pedidos"
@@ -329,7 +344,7 @@ export function DocumentoPage({
           : a.localeCompare(b),
       )
       .map((s) => ({ value: s, label: config.table === "pedidos" ? nomeStatusPedido(s) : s }));
-  }, [docs.data, config.table]);
+  }, [docs.data, config.table, hoje]);
 
   const totalFiltrado = docsFiltrados.reduce((s, d) => s + Number(d["total_liquido"] ?? 0), 0);
 
@@ -362,8 +377,23 @@ export function DocumentoPage({
           ...documento,
           status: acompanhamento.data.status,
           data_entrega: acompanhamento.data.data_entrega,
+          tipo_documento: acompanhamento.data.tipo_documento ?? documento["tipo_documento"],
+          orcamento_situacao:
+            acompanhamento.data.orcamento_situacao ?? documento["orcamento_situacao"],
+          orcamento_validade:
+            acompanhamento.data.orcamento_validade ?? documento["orcamento_validade"],
+          orcamento_data: acompanhamento.data.orcamento_data ?? documento["orcamento_data"],
+          orcamento_aceito_em:
+            acompanhamento.data.orcamento_aceito_em ?? documento["orcamento_aceito_em"],
         }
       : documento;
+
+  const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
+  const propostaEditavel =
+    !ehOrcamento ||
+    (doc != null &&
+      statusVisivelPedido(doc) === "orcamento" &&
+      permissoes.pode("pedidos_orcamentos"));
 
   /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
   const clienteFoco =
@@ -452,6 +482,20 @@ export function DocumentoPage({
           throw new Error(
             "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
           );
+      }
+      if (config.table === "pedidos" && header["natureza"] === "orcamento") {
+        const { data, error } = await client!.rpc("criar_orcamento_236", {
+          _cliente_id: payload["cliente_id"],
+          _centro_id: payload["centro_id"],
+          _rota_id: payload["rota_id"],
+          _forma_pagamento_id: payload["forma_pagamento_id"],
+          _data_pedido: payload["data_pedido"],
+          _validade: header["validade"],
+          _observacoes: payload["observacoes"],
+          _representante_id: payload["representante_id"] || null,
+        });
+        if (error) throw new Error(error.message);
+        return data as Row;
       }
       if (config.table === "pedidos") {
         const { data, error } = await client!.rpc("criar_pedido_rascunho", {
@@ -626,7 +670,9 @@ export function DocumentoPage({
     const qtd = Math.max(1, Number(formaSelecionada["parcelas_padrao"] ?? 1));
     const dias1 = Number(formaSelecionada["dias_primeira_parcela"] ?? 0);
     const intervalo = Number(formaSelecionada["intervalo_dias"] ?? 0);
-    const base = String(doc[config.dateField] ?? hojeSaoPaulo()).slice(0, 10);
+    const base = ehOrcamento
+      ? hojeSaoPaulo()
+      : String(doc[config.dateField] ?? hojeSaoPaulo()).slice(0, 10);
     const valor = Math.round((total / qtd) * 100) / 100;
     let saldo = total;
     const list: { parcela: number; valor: number; vencimento: string }[] = [];
@@ -757,6 +803,10 @@ export function DocumentoPage({
   const efetivar = useMutation({
     mutationFn: async (): Promise<string | null> => {
       if (config.table === "pedidos" && doc) {
+        if (ehOrcamento)
+          throw new Error(
+            "Registre o aceite do orçamento antes da aprovação e confirmação da venda",
+          );
         if (edicaoPendente || pagamentoAlterado)
           throw new Error(
             "Aguarde o salvamento dos itens e salve as alterações de pagamento antes de confirmar.",
@@ -1101,7 +1151,14 @@ export function DocumentoPage({
   const ticket = docsFiltrados.length ? totalFiltrado / docsFiltrados.length : 0;
   const abertos = docsFiltrados.filter((d) =>
     config.table === "pedidos"
-      ? !["entregue", "cancelado", "recusado", "devolvido"].includes(String(d["status"]))
+      ? ![
+          "entregue",
+          "cancelado",
+          "recusado",
+          "devolvido",
+          "orcamento_recusado",
+          "orcamento_expirado",
+        ].includes(statusVisivelPedido(d, hoje))
       : ["rascunho", "digitacao", "aprovado", "confirmado", "separacao", "separado"].includes(
           String(d["status"]).toLowerCase(),
         ),
@@ -1109,7 +1166,7 @@ export function DocumentoPage({
   const statusResumo = (() => {
     const m = new Map<string, number>();
     for (const d of docsFiltrados) {
-      const k = String(d["status"]);
+      const k = config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"]);
       m.set(k, (m.get(k) ?? 0) + 1);
     }
     return [...m.entries()].sort((a, b) =>
@@ -1129,10 +1186,31 @@ export function DocumentoPage({
           {config.table === "pedidos" ? (
             <ImprimirPedidos
               pedidoIds={docsFiltrados.map((d) => String(d["id"]))}
-              label="Imprimir pedidos do filtro"
+              label="Imprimir documentos do filtro"
             />
           ) : null}
-          <Button onClick={() => setOpenNew(true)} disabled={!canWrite}>
+          {config.table === "pedidos" && permissoes.pode("pedidos_orcamentos") && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setHeader((h) => ({
+                  ...h,
+                  natureza: "orcamento",
+                  validade: deslocarDataISO(hoje, 15),
+                }));
+                setOpenNew(true);
+              }}
+            >
+              Novo orçamento
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setHeader((h) => ({ ...h, natureza: "pedido" }));
+              setOpenNew(true);
+            }}
+            disabled={!canWrite}
+          >
             <Plus className="size-4" /> {config.table === "compras" ? "Nova compra" : "Novo Pedido"}
           </Button>
         </div>
@@ -1172,6 +1250,17 @@ export function DocumentoPage({
             onChange={(v) => setF("busca", v)}
             placeholder={`Nº, ${config.partnerLabel.toLowerCase()} ou observação`}
           />
+          {config.table === "pedidos" && (
+            <FilterSelect
+              label="Tipo de documento"
+              value={filtros["tipo"] ?? ""}
+              onChange={(v) => setF("tipo", v)}
+              options={[
+                { value: "pedido", label: "Pedidos" },
+                { value: "orcamento", label: "Orçamentos" },
+              ]}
+            />
+          )}
           <FilterSelect
             label="Status"
             value={filtros["status"] ?? ""}
@@ -1359,7 +1448,7 @@ export function DocumentoPage({
                             )}`}
                           >
                             {config.table === "pedidos"
-                              ? nomeStatusPedido(d["status"])
+                              ? nomeStatusPedido(statusVisivelPedido(d, hoje))
                               : String(d["status"]).replace(/_/g, " ")}
                           </span>
                         </div>
@@ -1414,7 +1503,7 @@ export function DocumentoPage({
                             )}`}
                           >
                             {config.table === "pedidos"
-                              ? nomeStatusPedido(d["status"])
+                              ? nomeStatusPedido(statusVisivelPedido(d, hoje))
                               : String(d["status"]).replace(/_/g, " ")}
                           </span>
                         </td>
@@ -1472,6 +1561,13 @@ export function DocumentoPage({
               )}
             {config.table === "pedidos" && <AcompanhamentoPedido acompanhamento={acompanhamento} />}
             {config.table === "pedidos" && (
+              <OrcamentoPedido
+                key={`orcamento-${String(doc["id"])}`}
+                doc={doc}
+                pendente={edicaoPendente || pagamentoAlterado || itens.isFetching}
+              />
+            )}
+            {config.table === "pedidos" && (
               <ResumoPedido
                 doc={doc}
                 peso={pesoTotal}
@@ -1489,12 +1585,12 @@ export function DocumentoPage({
                   <h2 className="text-lg font-semibold">
                     #{String(doc["numero"])} ·{" "}
                     {config.table === "pedidos"
-                      ? nomeStatusPedido(doc["status"])
+                      ? nomeStatusPedido(statusVisivelPedido(doc))
                       : String(doc["status"])}
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {config.dateLabel}: {String(doc[config.dateField] ?? "—")} ·{" "}
-                    {String(doc["parcelas"])}x ·{" "}
+                    {ehOrcamento ? "Data da proposta" : config.dateLabel}:{" "}
+                    {String(doc[config.dateField] ?? "—")} · {String(doc["parcelas"])}x ·{" "}
                     {String(
                       formas.data?.find((f) => f["id"] === doc["forma_pagamento_id"])?.["nome"] ??
                         "sem forma de pagamento",
@@ -1526,7 +1622,8 @@ export function DocumentoPage({
                       ) : null}
                       <p className="text-xs text-muted-foreground">Peso total {kg(pesoTotal)}</p>
                       <p className="mt-1 inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                        Sua comissão {brl(doc["comissao_valor"])}
+                        {ehOrcamento ? "Comissão estimada" : "Sua comissão"}{" "}
+                        {brl(doc["comissao_valor"])}
                         {Number(doc["comissao_percentual"] ?? 0) > 0
                           ? ` (${Number(doc["comissao_percentual"]).toLocaleString("pt-BR")}%)`
                           : ""}
@@ -1575,9 +1672,13 @@ export function DocumentoPage({
                 : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 {config.table === "pedidos" ? (
-                  <ImprimirPedidos pedidoIds={[String(doc["id"])]} />
+                  <ImprimirPedidos
+                    pedidoIds={[String(doc["id"])]}
+                    label={ehOrcamento ? "Imprimir orçamento" : "Imprimir pedido"}
+                  />
                 ) : null}
                 {config.table === "pedidos" &&
+                !ehOrcamento &&
                 !["rascunho", "digitacao", "aprovado", "cancelado"].includes(
                   String(doc["status"]),
                 ) ? (
@@ -1587,25 +1688,27 @@ export function DocumentoPage({
                     centroId={String(doc["centro_id"] ?? "")}
                   />
                 ) : null}
-                <Button
-                  onClick={() => efetivar.mutate()}
-                  disabled={
-                    !["rascunho", "digitacao", "aprovado", "comprado"].includes(
-                      String(doc["status"]),
-                    ) ||
-                    efetivar.isPending ||
-                    (config.table === "pedidos" &&
-                      (edicaoPendente ||
-                        itens.isPending ||
-                        itens.isError ||
-                        itens.isFetching ||
-                        avisosPedido.length > 0)) ||
-                    !canWrite
-                  }
-                >
-                  {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                  {config.rpcLabel}
-                </Button>
+                {!ehOrcamento && (
+                  <Button
+                    onClick={() => efetivar.mutate()}
+                    disabled={
+                      !["rascunho", "digitacao", "aprovado", "comprado"].includes(
+                        String(doc["status"]),
+                      ) ||
+                      efetivar.isPending ||
+                      (config.table === "pedidos" &&
+                        (edicaoPendente ||
+                          itens.isPending ||
+                          itens.isError ||
+                          itens.isFetching ||
+                          avisosPedido.length > 0)) ||
+                      !canWrite
+                    }
+                  >
+                    {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {config.rpcLabel}
+                  </Button>
+                )}
                 {config.table === "compras" && String(doc["status"]) === "rascunho" ? (
                   <Button
                     variant="secondary"
@@ -1627,27 +1730,36 @@ export function DocumentoPage({
                     ]}
                   />
                 )}
-                {config.table === "pedidos"
-                  ? (proximosStatus[String(doc["status"])] ?? []).map((s) => (
-                      <Button
-                        key={s.status}
-                        variant="secondary"
-                        onClick={() => avancar.mutate(s.status)}
-                        disabled={avancar.isPending}
-                      >
-                        {s.label}
-                      </Button>
-                    ))
+                {config.table === "pedidos" && !ehOrcamento
+                  ? (proximosStatus[String(doc["status"])] ?? [])
+                      .filter(
+                        (s) =>
+                          !["aprovado", "recusado"].includes(s.status) ||
+                          roles.includes("admin") ||
+                          roles.includes("gestor"),
+                      )
+                      .map((s) => (
+                        <Button
+                          key={s.status}
+                          variant="secondary"
+                          onClick={() => avancar.mutate(s.status)}
+                          disabled={avancar.isPending}
+                        >
+                          {s.label}
+                        </Button>
+                      ))
                   : null}
-                <Button
-                  variant="outline"
-                  onClick={() => cancelar.mutate()}
-                  disabled={
-                    String(doc["status"]).startsWith("cancel") || cancelar.isPending || !canWrite
-                  }
-                >
-                  Cancelar documento
-                </Button>
+                {!ehOrcamento && (
+                  <Button
+                    variant="outline"
+                    onClick={() => cancelar.mutate()}
+                    disabled={
+                      String(doc["status"]).startsWith("cancel") || cancelar.isPending || !canWrite
+                    }
+                  >
+                    Cancelar documento
+                  </Button>
+                )}
               </div>
 
               {config.table === "pedidos" && (validacao.data ?? []).length > 0 ? (
@@ -1671,7 +1783,7 @@ export function DocumentoPage({
 
             {creditoPainel}
 
-            {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
+            {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
               <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
@@ -1783,7 +1895,8 @@ export function DocumentoPage({
                         )}
                         <TableCell data-label="Produto">{produtoName(it["produto_id"])}</TableCell>
                         <TableCell data-label="Quantidade" className="text-right">
-                          {["rascunho", "digitacao"].includes(String(doc["status"])) ? (
+                          {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                          propostaEditavel ? (
                             <Input
                               aria-label={`Quantidade de ${produtoName(it["produto_id"])}`}
                               type="number"
@@ -1807,6 +1920,7 @@ export function DocumentoPage({
                         </TableCell>
                         <TableCell data-label="Preço" className="text-right">
                           {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                          propostaEditavel &&
                           podeAlterarPreco ? (
                             <Input
                               aria-label={`Preço de ${produtoName(it["produto_id"])}`}
@@ -1840,7 +1954,7 @@ export function DocumentoPage({
                             aria-label={`Remover ${produtoName(it["produto_id"])}`}
                             variant="ghost"
                             size="icon"
-                            disabled={doc["status"] !== "rascunho"}
+                            disabled={doc["status"] !== "rascunho" || !propostaEditavel}
                             onClick={() => removeItem.mutate(String(it["id"]))}
                           >
                             <Trash2 className="size-4 text-destructive" />
@@ -1912,7 +2026,9 @@ export function DocumentoPage({
                   variant="secondary"
                   onClick={() => aplicarDescontoPeso.mutate()}
                   disabled={
-                    !["rascunho", "digitacao"].includes(String(doc["status"])) ||
+                    !(
+                      ["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel
+                    ) ||
                     aplicarDescontoPeso.isPending ||
                     !canWrite
                   }
@@ -1920,12 +2036,15 @@ export function DocumentoPage({
                   {aplicarDescontoPeso.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}
-                  Aplicar desconto no pedido
+                  {ehOrcamento ? "Aplicar desconto na proposta" : "Aplicar desconto no pedido"}
                 </Button>
               </div>
             ) : null}
 
-            {config.table === "pedidos" && doc["status"] === "rascunho" && clienteFoco ? (
+            {config.table === "pedidos" &&
+            !ehOrcamento &&
+            doc["status"] === "rascunho" &&
+            clienteFoco ? (
               <div className="rounded-lg border border-border bg-card p-4">
                 <h3 className="text-sm font-semibold">Crédito de devoluções</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -2013,7 +2132,7 @@ export function DocumentoPage({
                   <select
                     value={pagamento["forma"] ?? String(doc["forma_pagamento_id"] ?? "")}
                     onChange={(e) => pickForma(e.target.value)}
-                    disabled={doc["status"] !== "rascunho"}
+                    disabled={doc["status"] !== "rascunho" || !propostaEditavel}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">—</option>
@@ -2029,7 +2148,7 @@ export function DocumentoPage({
                   <Input
                     type="number"
                     step="0.01"
-                    disabled={doc["status"] !== "rascunho"}
+                    disabled={doc["status"] !== "rascunho" || !propostaEditavel}
                     value={pagamento["frete"] ?? String(doc["frete_valor"] ?? 0)}
                     onChange={(e) => setPagamento((s) => ({ ...s, frete: e.target.value }))}
                   />
@@ -2039,7 +2158,7 @@ export function DocumentoPage({
                   <Input
                     type="number"
                     step="0.01"
-                    disabled={doc["status"] !== "rascunho"}
+                    disabled={doc["status"] !== "rascunho" || !propostaEditavel}
                     value={pagamento["desconto"] ?? String(doc["desconto_valor"] ?? 0)}
                     onChange={(e) => setPagamento((s) => ({ ...s, desconto: e.target.value }))}
                   />
@@ -2050,7 +2169,7 @@ export function DocumentoPage({
                     <Input
                       type="number"
                       step="0.01"
-                      disabled={doc["status"] !== "rascunho"}
+                      disabled={doc["status"] !== "rascunho" || !propostaEditavel}
                       value={pagamento["comissao"] ?? String(doc["comissao_percentual"] ?? 0)}
                       onChange={(e) => setPagamento((s) => ({ ...s, comissao: e.target.value }))}
                     />
@@ -2083,12 +2202,23 @@ export function DocumentoPage({
               <Button
                 className="mt-3"
                 onClick={() => savePagamento.mutate()}
-                disabled={doc["status"] !== "rascunho" || savePagamento.isPending || !canWrite}
+                disabled={
+                  doc["status"] !== "rascunho" ||
+                  !propostaEditavel ||
+                  savePagamento.isPending ||
+                  !canWrite
+                }
               >
                 {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Salvar pagamento
+                {ehOrcamento ? "Salvar condições da proposta" : "Salvar pagamento"}
               </Button>
 
+              {ehOrcamento && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Simulação dos prazos para aceite hoje. Os vencimentos reais serão definidos após a
+                  conversão e confirmação do pedido.
+                </p>
+              )}
               {previaParcelas.length > 0 ? (
                 <div className="mt-4 overflow-hidden rounded-md border border-border">
                   <Table>
@@ -2127,13 +2257,28 @@ export function DocumentoPage({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {config.table === "compras" ? "Nova compra" : "Novo documento"}
+              {config.table === "compras"
+                ? "Nova compra"
+                : header["natureza"] === "orcamento"
+                  ? "Novo orçamento"
+                  : "Novo pedido"}
             </DialogTitle>
             <DialogDescription>
               1) {config.partnerLabel} e centro · 2) itens · 3) forma de pagamento.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
+            {config.table === "pedidos" && header["natureza"] === "orcamento" && (
+              <label className="text-sm sm:col-span-2">
+                Validade do orçamento
+                <Input
+                  type="date"
+                  min={header["data"] || hoje}
+                  value={header["validade"] || ""}
+                  onChange={(e) => setHeader((h) => ({ ...h, validade: e.target.value }))}
+                />
+              </label>
+            )}
             <div className="space-y-1.5 sm:col-span-2">
               <Label>{config.partnerLabel}</Label>
               <select
@@ -2167,7 +2312,11 @@ export function DocumentoPage({
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label>{config.dateLabel}</Label>
+              <Label>
+                {config.table === "pedidos" && header["natureza"] === "orcamento"
+                  ? "Data da proposta"
+                  : config.dateLabel}
+              </Label>
               <Input
                 type="date"
                 value={header["data"] ?? hojeSaoPaulo()}

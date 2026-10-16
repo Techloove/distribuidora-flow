@@ -27,6 +27,7 @@ export const ACOES_ROTINAS = {
   clientes_reativar: "/agenda-comercial",
   entrega_registrar: "/entregas",
   entregas_operar: "/entregas",
+  pedidos_orcamentos: "/pedidos",
   pedidos_acompanhar: "/pedidos",
   pedidos_enviar_separacao: "/pedidos",
   separacao_concluir: "/separacao",

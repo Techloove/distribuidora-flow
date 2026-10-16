@@ -25,6 +25,7 @@ export function ImprimirPedidos({
   const { client } = useSupabase();
   const [loading, setLoading] = useState(false);
   const [html, setHtml] = useState("");
+  const [titulo, setTitulo] = useState("Impressão de pedidos");
   const [ready, setReady] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
 
@@ -96,6 +97,13 @@ export function ImprimirPedidos({
           .filter((i) => i["pedido_id"] === pedido["id"])
           .map((item) => ({ item, produto: find(produtos, item["produto_id"]) })),
       }));
+      setTitulo(
+        pedidos.every((p) => p["tipo_documento"] === "orcamento")
+          ? "Impressão de orçamentos"
+          : pedidos.some((p) => p["tipo_documento"] === "orcamento")
+            ? "Impressão de pedidos e orçamentos"
+            : "Impressão de pedidos",
+      );
       setReady(false);
       setHtml(gerarHtmlPedidos(dados, printCss));
     } catch (error) {
@@ -132,8 +140,8 @@ export function ImprimirPedidos({
           onClick={(e) => e.stopPropagation()}
         >
           <DialogHeader>
-            <DialogTitle>Impressão de pedidos</DialogTitle>
-            <DialogDescription>{pedidoIds.length} pedido(s)</DialogDescription>
+            <DialogTitle>{titulo}</DialogTitle>
+            <DialogDescription>{pedidoIds.length} documento(s)</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
             <Button
@@ -152,7 +160,7 @@ export function ImprimirPedidos({
           </div>
           <iframe
             ref={frame}
-            title="Prévia de impressão dos pedidos"
+            title="Prévia de impressão dos documentos"
             className="min-h-0 w-full flex-1 border border-border bg-card"
             srcDoc={html}
             onLoad={() => setReady(true)}

@@ -1,7 +1,7 @@
 import type { useAcompanhamentoPedido } from "@/lib/use-acompanhamento-pedido";
 import { Check, RefreshCw } from "lucide-react";
 import { dataAgenda } from "@/lib/agenda-comercial";
-import { ETAPAS_PEDIDO, situacaoPedido } from "@/lib/status-pedido";
+import { ETAPAS_PEDIDO, situacaoPedido, statusVisivelPedido } from "@/lib/status-pedido";
 import { Button } from "@/components/ui/button";
 
 export function AcompanhamentoPedido({
@@ -12,7 +12,7 @@ export function AcompanhamentoPedido({
   const { pode } = q;
   if (!pode) return null;
   const dados = q.isError ? null : q.data,
-    situacao = dados ? situacaoPedido(dados.status) : null;
+    situacao = dados ? situacaoPedido(statusVisivelPedido(dados)) : null;
   return (
     <section
       aria-label="Acompanhamento do pedido"
@@ -20,7 +20,9 @@ export function AcompanhamentoPedido({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold">Acompanhamento do pedido</h2>
+          <h2 className="font-semibold">
+            Acompanhamento {dados?.tipo_documento === "orcamento" ? "do orçamento" : "do pedido"}
+          </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Consulta atualizada automaticamente a cada 30 segundos.
           </p>
@@ -86,7 +88,9 @@ export function AcompanhamentoPedido({
           )}
           <dl className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
             <div>
-              <dt className="text-xs text-muted-foreground">Data do pedido</dt>
+              <dt className="text-xs text-muted-foreground">
+                {dados.tipo_documento === "orcamento" ? "Data da proposta" : "Data do pedido"}
+              </dt>
               <dd>{dataAgenda(dados.data_pedido)}</dd>
             </div>
             {dados.carga_numero != null && (

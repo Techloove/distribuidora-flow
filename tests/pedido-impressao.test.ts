@@ -41,3 +41,34 @@ describe("Impressão de pedidos", () => {
     expect(gerarHtmlPedidos([pedido, pedido], "").match(/class="order-sheet"/g)?.length).toBe(2);
   });
 });
+
+test("orçamento usa o mesmo modelo com título, validade e aviso próprios", () => {
+  const proposta = {
+    ...pedido,
+    pedido: {
+      ...pedido.pedido,
+      tipo_documento: "orcamento",
+      status: "rascunho",
+      orcamento_situacao: "negociacao",
+      orcamento_data: "2026-10-16",
+      orcamento_validade: "2099-10-31",
+    },
+  };
+  const html = gerarHtmlPedidos([proposta], "");
+  expect(html).toContain("ORÇAMENTO Nº");
+  expect(html).toContain("31/10/2099");
+  expect(html).toContain("Não confirma venda nem reserva estoque");
+  expect(html).toContain("Orçamento em negociação");
+  expect(html).not.toContain("<strong>PEDIDO Nº");
+  const convertido = gerarHtmlPedidos(
+    [
+      {
+        ...proposta,
+        pedido: { ...proposta.pedido, tipo_documento: "pedido", orcamento_situacao: "aceito" },
+      },
+    ],
+    "",
+  );
+  expect(convertido).toContain("<strong>PEDIDO Nº");
+  expect(convertido).not.toContain("Não confirma venda nem reserva estoque");
+});
