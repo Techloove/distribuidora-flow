@@ -1,4 +1,9 @@
-import { SICREDI_SANDBOX, liquidacaoSicredi, linhaDigitavelSicredi } from "./sicredi-api";
+import {
+  SICREDI_SANDBOX,
+  liquidacaoSicredi,
+  linhaDigitavelSicredi,
+  motivoRecusaSicredi,
+} from "./sicredi-api";
 import { tokenSicredi } from "./sicredi-token";
 import { documentoFiscal } from "./sicredi-cnab";
 import { validarNovoVencimento, vencimentoDoBanco } from "./sicredi-vencimento";
@@ -508,12 +513,16 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       }
       if (!res.ok) {
         const definitiva = [400, 401, 403, 422].includes(res.status);
+        const motivo = definitiva
+          ? motivoRecusaSicredi(txt, [c.apiKey, c.password, tk, accessToken])
+          : null;
+        const recusa = `Sicredi recusou o registro (${res.status}). ${motivo ? `Motivo: ${motivo}` : "O banco não retornou um motivo de validação reconhecido. Confira os dados do título e as regras do convênio."}`;
         if (definitiva)
           await serviceRpc("registrar_erro_boleto_sicredi_servidor", {
             _actor_id: user.id,
             _conta_id: data.contaId,
             _seu_numero: seuNumero,
-            _erro: `Registro Sicredi recusado (${res.status}). Confira os dados do título.`,
+            _erro: recusa,
           });
         await serviceRpc("sicredi_marcar_emissao_224", {
           _actor: user.id,
@@ -522,7 +531,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         });
         throw new Error(
           definitiva
-            ? `Sicredi recusou o registro (${res.status}). Confira os dados do título.`
+            ? recusa
             : "Resposta bancária inconclusiva. Consulte o registro antes de reenviar.",
         );
       }

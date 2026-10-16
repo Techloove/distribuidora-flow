@@ -1,5 +1,9 @@
 import { afterAll, afterEach, beforeAll, expect, mock, test } from "bun:test";
-import { liquidacaoSicredi, linhaDigitavelSicredi } from "../src/lib/sicredi-api";
+import {
+  liquidacaoSicredi,
+  linhaDigitavelSicredi,
+  motivoRecusaSicredi,
+} from "../src/lib/sicredi-api";
 mock.module("@tanstack/react-start", () => ({
   createServerFn: () => {
     const b = {
@@ -45,6 +49,7 @@ type Options = {
   recovery?: "found" | "missing" | "multiple" | "unavailable" | "wrong";
   timeout?: boolean;
   postStatus?: number;
+  postBody?: unknown;
   missingNosso?: boolean;
   badCep?: boolean;
   liquidado?: boolean;
@@ -177,7 +182,8 @@ function backend(o: Options = {}) {
     else if (u.hostname === "api-parceiro.sicredi.com.br" && p.endsWith("/boletos")) {
       if (init?.method === "POST") {
         if (o.timeout) throw new Error("fixture-timeout");
-        if (o.postStatus) return new Response("{}", { status: o.postStatus });
+        if (o.postStatus)
+          return new Response(JSON.stringify(o.postBody ?? {}), { status: o.postStatus });
         out = { nossoNumero: "262000020", linhaDigitavel: line, codigoBarras: barcode };
       } else
         out = {
@@ -410,4 +416,41 @@ test("centro Sicoob não usa o Sicredi nem autentica ou reserva emissão", async
         c.path.includes("/cobranca/boleto/"),
     ),
   ).toBe(false);
+});
+
+test("recusa400 mostra e persiste o motivo de validação sem expor credenciais", async () => {
+  const calls = backend({
+    postStatus: 400,
+    postBody: {
+      message: "Data de vencimento inválida. Chave fixture-prod-key",
+      headers: { password: "fixture-prod-password" },
+    },
+  });
+  await expect(emitir()).rejects.toThrow("Data de vencimento inválida");
+  const saved = String(
+    calls.find((c) => c.path.endsWith("/registrar_erro_boleto_sicredi_servidor"))?.body._erro,
+  );
+  expect(saved).toContain("Data de vencimento inválida");
+  expect(saved).not.toContain("fixture-prod-key");
+  expect(saved).not.toContain("fixture-prod-password");
+  expect(
+    calls.find(
+      (c) => c.path.endsWith("/sicredi_marcar_emissao_224") && c.body._estado === "rejeitado",
+    ),
+  ).toBeDefined();
+});
+test("diagnóstico da recusa aceita mensagens estruturadas e ignora corpo bruto ou dados desconhecidos", () => {
+  expect(
+    motivoRecusaSicredi(
+      JSON.stringify({
+        errors: [{ message: "CEP inválido" }, { mensagem: "Nome obrigatório" }],
+        payload: { password: "segredo" },
+      }),
+    ),
+  ).toBe("CEP inválido · Nome obrigatório");
+  expect(motivoRecusaSicredi("<html>segredo</html>")).toBeNull();
+  expect(motivoRecusaSicredi(JSON.stringify({ payload: { password: "segredo" } }))).toBeNull();
+  expect(
+    motivoRecusaSicredi(JSON.stringify({ message: "password=segredo Bearer token-secreto" })),
+  ).not.toContain("segredo");
 });

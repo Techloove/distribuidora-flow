@@ -68,3 +68,54 @@ export function linhaDigitavelSicredi(value: unknown) {
     );
   return line;
 }
+
+/** Somente mensagens conhecidas de validação; nunca devolve corpo bruto, headers ou payload. */
+export function motivoRecusaSicredi(body: string, secrets: readonly string[] = []): string | null {
+  if (!body || body.length > 32_000) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  const messages: string[] = [];
+  const visit = (value: unknown, depth: number) => {
+    if (depth > 3 || messages.length >= 3 || !value) return;
+    if (Array.isArray(value)) {
+      for (const item of value.slice(0, 10)) visit(item, depth + 1);
+      return;
+    }
+    if (typeof value !== "object") return;
+    const row = value as Record<string, unknown>;
+    for (const key of ["mensagem", "message", "detail", "error_description"]) {
+      if (typeof row[key] === "string" && row[key].trim()) {
+        messages.push(row[key] as string);
+        break;
+      }
+    }
+    for (const key of ["erros", "errors", "violations", "violacoes"]) visit(row[key], depth + 1);
+    if (typeof row["error"] === "object") visit(row["error"], depth + 1);
+  };
+  visit(parsed, 0);
+  const clean = (value: string) => {
+    let text = value;
+    for (const secret of secrets.filter(Boolean)) {
+      for (const form of [secret, encodeURIComponent(secret)])
+        text = text.split(form).join("[oculto]");
+    }
+    return text
+      .replace(/Bearer\s+[^\s,;"']+/gi, "Bearer [oculto]")
+      .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[oculto]")
+      .replace(
+        /((?:x-api-key|api[_-]?key|password|senha|access[_-]?token|refresh[_-]?token|authorization)\s*[=:]\s*)[^\s,;"']+/gi,
+        "$1[oculto]",
+      )
+      .replace(/[<>]/g, " ")
+      .replace(/\p{Cc}/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 220);
+  };
+  const details = [...new Set(messages.map(clean).filter(Boolean))].slice(0, 3).join(" · ");
+  return details ? details.slice(0, 660) : null;
+}
