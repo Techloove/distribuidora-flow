@@ -1,3 +1,7 @@
+import { useAcompanhamentoPedido } from "@/lib/use-acompanhamento-pedido";
+import { AcompanhamentoPedido } from "@/components/acompanhamento-pedido";
+import { nomeStatusPedido, ordemStatusPedido } from "@/lib/status-pedido";
+import { lerPaginas } from "@/lib/paginacao";
 import { SelecionarPedidosLote } from "@/components/logistica-pratica";
 import { MargemPedido } from "@/components/rotinas-distribuidora";
 import { ResumoPedido } from "@/components/resumo-pedido";
@@ -79,6 +83,11 @@ export function DocumentoPage({
   const { client, roles, user } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
+  const atualizarDocumento = () => {
+    void queryClient.invalidateQueries({ queryKey: [config.table] });
+    if (config.table === "pedidos")
+      void queryClient.invalidateQueries({ queryKey: ["acompanhamento_pedido_235"] });
+  };
   const [selected, setSelected] = useState<string | null>(initialDocId);
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
@@ -94,20 +103,29 @@ export function DocumentoPage({
   const podeAlterarPreco = usePodeAlterarPreco();
 
   const docs = useQuery({
-    queryKey: [config.table],
+    queryKey: [config.table, user?.id, roles.slice().sort().join(",")],
+    refetchInterval: config.table === "pedidos" ? 30_000 : false,
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from(config.table)
-        .select("*")
-        .order("numero", { ascending: false });
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from(config.table)
+          .select("*")
+          .order("numero", { ascending: false })
+          .order("id")
+          .range(inicio, fim),
+      );
     },
   });
 
   const partners = useQuery({
-    queryKey: [config.partnerTable, "options", config.table],
+    queryKey: [
+      config.partnerTable,
+      "options",
+      config.table,
+      user?.id,
+      roles.slice().sort().join(","),
+    ],
     enabled: !!client,
     queryFn: async () => {
       const columns =
@@ -219,7 +237,7 @@ export function DocumentoPage({
   });
 
   const itens = useQuery({
-    queryKey: [config.itemsTable, selected],
+    queryKey: [config.itemsTable, user?.id, roles.slice().sort().join(","), selected],
     enabled: !!client && !!selected,
     queryFn: async () => {
       const { data, error } = await client!
@@ -303,14 +321,22 @@ export function DocumentoPage({
 
   const statusOptions = useMemo(() => {
     const set = new Set((docs.data ?? []).map((d) => String(d["status"])));
-    return [...set].sort().map((s) => ({ value: s, label: s }));
-  }, [docs.data]);
+    return [...set]
+      .sort((a, b) =>
+        config.table === "pedidos"
+          ? ordemStatusPedido(a) - ordemStatusPedido(b) ||
+            nomeStatusPedido(a).localeCompare(nomeStatusPedido(b), "pt-BR")
+          : a.localeCompare(b),
+      )
+      .map((s) => ({ value: s, label: config.table === "pedidos" ? nomeStatusPedido(s) : s }));
+  }, [docs.data, config.table]);
 
   const totalFiltrado = docsFiltrados.reduce((s, d) => s + Number(d["total_liquido"] ?? 0), 0);
 
   const selectedFromList = docs.data?.find((d) => d["id"] === selected);
   const selectedDoc = useQuery({
-    queryKey: [config.table, "selecionado", selected],
+    queryKey: [config.table, "selecionado", user?.id, roles.slice().sort().join(","), selected],
+    refetchInterval: config.table === "pedidos" ? 30_000 : false,
     enabled: !!client && !!selected && !selectedFromList && !docs.isPending,
     queryFn: async () => {
       const { data, error } = await client!
@@ -322,7 +348,22 @@ export function DocumentoPage({
       return data as Row | null;
     },
   });
-  const doc = selectedFromList ?? selectedDoc.data ?? null;
+  const documento = selectedFromList ?? selectedDoc.data ?? null;
+  const acompanhamento = useAcompanhamentoPedido(
+    config.table === "pedidos" && documento ? String(documento["id"]) : "",
+  );
+  const doc =
+    documento &&
+    acompanhamento.pode &&
+    acompanhamento.data &&
+    !acompanhamento.isError &&
+    config.table === "pedidos"
+      ? {
+          ...documento,
+          status: acompanhamento.data.status,
+          data_entrega: acompanhamento.data.data_entrega,
+        }
+      : documento;
 
   /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
   const clienteFoco =
@@ -445,7 +486,7 @@ export function DocumentoPage({
       setOpenNew(false);
       setHeader({});
       setSelected(String(data["id"]));
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -485,7 +526,7 @@ export function DocumentoPage({
       toast.success("Aplicação de crédito cancelada");
       queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
       queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -511,7 +552,7 @@ export function DocumentoPage({
       setCreditoAplicacao("");
       queryClient.invalidateQueries({ queryKey: ["creditos_clientes"] });
       queryClient.invalidateQueries({ queryKey: ["credito_aplicacoes", selected] });
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -560,7 +601,7 @@ export function DocumentoPage({
     onSuccess: () => {
       toast.success("Forma de pagamento salva");
       setPagamento({});
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -637,11 +678,13 @@ export function DocumentoPage({
     },
     onSuccess: () => {
       setItem({ ...emptyItem });
-      queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      queryClient.invalidateQueries({
+        queryKey: [config.itemsTable, user?.id, roles.slice().sort().join(","), selected],
+      });
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -670,11 +713,13 @@ export function DocumentoPage({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      queryClient.invalidateQueries({
+        queryKey: [config.itemsTable, user?.id, roles.slice().sort().join(","), selected],
+      });
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -694,11 +739,13 @@ export function DocumentoPage({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [config.itemsTable, selected] });
+      queryClient.invalidateQueries({
+        queryKey: [config.itemsTable, user?.id, roles.slice().sort().join(","), selected],
+      });
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido", selected] });
       }
-      queryClient.invalidateQueries({ queryKey: [config.table] });
+      atualizarDocumento();
       if (config.table === "pedidos") {
         queryClient.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
         queryClient.invalidateQueries({ queryKey: ["margem-produtos"] });
@@ -1053,9 +1100,11 @@ export function DocumentoPage({
   };
   const ticket = docsFiltrados.length ? totalFiltrado / docsFiltrados.length : 0;
   const abertos = docsFiltrados.filter((d) =>
-    ["rascunho", "digitacao", "aprovado", "confirmado", "separacao", "separado"].includes(
-      String(d["status"]).toLowerCase(),
-    ),
+    config.table === "pedidos"
+      ? !["entregue", "cancelado", "recusado", "devolvido"].includes(String(d["status"]))
+      : ["rascunho", "digitacao", "aprovado", "confirmado", "separacao", "separado"].includes(
+          String(d["status"]).toLowerCase(),
+        ),
   ).length;
   const statusResumo = (() => {
     const m = new Map<string, number>();
@@ -1063,7 +1112,12 @@ export function DocumentoPage({
       const k = String(d["status"]);
       m.set(k, (m.get(k) ?? 0) + 1);
     }
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    return [...m.entries()].sort((a, b) =>
+      config.table === "pedidos"
+        ? ordemStatusPedido(a[0]) - ordemStatusPedido(b[0]) ||
+          nomeStatusPedido(a[0]).localeCompare(nomeStatusPedido(b[0]), "pt-BR")
+        : b[1] - a[1],
+    );
   })();
 
   const listaVisivel = !selected && !openNew;
@@ -1234,7 +1288,7 @@ export function DocumentoPage({
                     : `${statusTone(s)} hover:opacity-80`
                 }`}
               >
-                {s.replace(/_/g, " ")} ({n})
+                {config.table === "pedidos" ? nomeStatusPedido(s) : s.replace(/_/g, " ")} ({n})
               </button>
             ))}
           </div>
@@ -1304,7 +1358,9 @@ export function DocumentoPage({
                               String(d["status"]),
                             )}`}
                           >
-                            {String(d["status"]).replace(/_/g, " ")}
+                            {config.table === "pedidos"
+                              ? nomeStatusPedido(d["status"])
+                              : String(d["status"]).replace(/_/g, " ")}
                           </span>
                         </div>
                       </div>
@@ -1357,7 +1413,9 @@ export function DocumentoPage({
                               String(d["status"]),
                             )}`}
                           >
-                            {String(d["status"]).replace(/_/g, " ")}
+                            {config.table === "pedidos"
+                              ? nomeStatusPedido(d["status"])
+                              : String(d["status"]).replace(/_/g, " ")}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-right font-semibold">
@@ -1412,11 +1470,7 @@ export function DocumentoPage({
                         : "Pedido em rota. O recebimento será formalizado no menu Entregas."}
                 </p>
               )}
-            {config.table === "pedidos" && doc["data_entrega"] != null && (
-              <p className="rounded-lg border bg-emerald-50 p-3 text-sm text-emerald-900">
-                Data de entrega: {fmtDate(doc["data_entrega"])}
-              </p>
-            )}
+            {config.table === "pedidos" && <AcompanhamentoPedido acompanhamento={acompanhamento} />}
             {config.table === "pedidos" && (
               <ResumoPedido
                 doc={doc}
@@ -1433,7 +1487,10 @@ export function DocumentoPage({
                     {config.partnerLabel}: {partnerName(doc[config.partnerKey])}
                   </p>
                   <h2 className="text-lg font-semibold">
-                    #{String(doc["numero"])} · {String(doc["status"])}
+                    #{String(doc["numero"])} ·{" "}
+                    {config.table === "pedidos"
+                      ? nomeStatusPedido(doc["status"])
+                      : String(doc["status"])}
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {config.dateLabel}: {String(doc[config.dateField] ?? "—")} ·{" "}
