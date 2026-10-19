@@ -12,6 +12,7 @@ type SupabaseContextValue = {
   session: Session | null;
   user: User | null;
   roles: AppRole[];
+  needsCadastro: boolean;
   loading: boolean;
   error: string | null;
   canManage: boolean;
@@ -92,10 +93,15 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         throw new Error("Seu cadastro não foi autorizado. Entre em contato com o administrador.");
       if (profile.data?.ativo !== true)
         throw new Error("Seu acesso está desativado. Procure o administrador.");
-      return (roles.data ?? []).map((r: { role: AppRole }) => r.role);
+      return {
+        roles: (roles.data ?? []).map((r: { role: AppRole }) => r.role),
+        needsCadastro: profile.data?.precisa_completar_cadastro === true,
+      };
     },
   });
-  const roles = session && !permissions.isError ? (permissions.data ?? []) : [];
+  const roles = session && !permissions.isError ? (permissions.data?.roles ?? []) : [];
+  const needsCadastro =
+    !!session && !permissions.isError && permissions.data?.needsCadastro === true;
   const loading = initializing || (!!session && permissions.isPending);
   const error =
     connectionError ?? (session && permissions.error ? permissions.error.message : null);
@@ -128,6 +134,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         session,
         user: session?.user ?? null,
         roles,
+        needsCadastro,
         loading,
         error,
         canManage: !loading && !error && (roles.includes("admin") || roles.includes("gestor")),

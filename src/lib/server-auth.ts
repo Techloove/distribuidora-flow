@@ -1,6 +1,7 @@
 import { getRequestHeader } from "@tanstack/react-start/server";
 
-export type ServerRole = "admin" | "gestor" | "financeiro" | "comercial" | "representante" | "estoque" | "expedicao";
+export type ServerRole =
+  "admin" | "gestor" | "financeiro" | "comercial" | "representante" | "estoque" | "expedicao";
 
 type AuthUser = { id: string; email?: string | null };
 
@@ -30,28 +31,32 @@ export async function requireServerAuth(
 
   const [profileRes, roleRes] = await Promise.all([
     fetch(
-      `${url}/rest/v1/profiles?select=ativo&id=eq.${encodeURIComponent(user.id)}&limit=1`,
+      `${url}/rest/v1/profiles?select=ativo,precisa_completar_cadastro&id=eq.${encodeURIComponent(user.id)}&limit=1`,
       {
         headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(15000),
       },
     ),
-    fetch(
-      `${url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}`,
-      {
-        headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(15000),
-      },
-    ),
+    fetch(`${url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(15000),
+    }),
   ]);
 
   if (!profileRes.ok || !roleRes.ok) {
     throw new Error("Não foi possível validar as permissões do usuário.");
   }
 
-  const profiles = (await profileRes.json()) as Array<{ ativo?: boolean }>;
+  const profiles = (await profileRes.json()) as Array<{
+    ativo?: boolean;
+    precisa_completar_cadastro?: boolean;
+  }>;
   if (profiles[0]?.ativo !== true) {
     throw new Error("Usuário desativado ou aguardando liberação.");
+  }
+
+  if (profiles[0]?.precisa_completar_cadastro === true) {
+    throw new Error("Complete seu cadastro no primeiro acesso antes de usar o sistema.");
   }
 
   const rows = (await roleRes.json()) as Array<{ role?: string }>;
@@ -71,7 +76,6 @@ export function requestAccessToken(): string | undefined {
   if (!value) return undefined;
   return value.replace(/^Bearer\s+/i, "").trim() || undefined;
 }
-
 
 export async function enforceRateLimit(
   accessToken: string | undefined,
@@ -98,5 +102,6 @@ export async function enforceRateLimit(
   });
   if (!res.ok) throw new Error("Não foi possível validar o limite de requisições.");
   const allowed = (await res.json()) as boolean;
-  if (!allowed) throw new Error("Limite de consultas atingido. Tente novamente em alguns instantes.");
+  if (!allowed)
+    throw new Error("Limite de consultas atingido. Tente novamente em alguns instantes.");
 }

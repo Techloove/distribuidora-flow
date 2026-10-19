@@ -2,13 +2,14 @@ import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/
 import { Loader2, ShieldCheck } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { CompletarCadastroRepresentante } from "@/components/completar-cadastro-representante";
 import { Button } from "@/components/ui/button";
 import { moduloDaRota, useAcesso } from "@/lib/permissoes";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app")({ ssr: false, component: AppLayout });
 function AppLayout() {
-  const { session, loading, error, signOut } = useSupabase();
+  const { session, loading, error, signOut, needsCadastro } = useSupabase();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const acesso = useAcesso();
@@ -19,10 +20,10 @@ function AppLayout() {
     if (!loading && !session) void navigate({ to: "/auth", replace: true });
   }, [loading, session, navigate]);
   useEffect(() => {
-    if (bloqueado && destino && !error && !acesso.erro && destino !== pathname)
+    if (!needsCadastro && bloqueado && destino && !error && !acesso.erro && destino !== pathname)
       void navigate({ to: destino, replace: true });
-  }, [bloqueado, destino, error, acesso.erro, pathname, navigate]);
-  if (loading || (!error && session && acesso.carregando))
+  }, [needsCadastro, bloqueado, destino, error, acesso.erro, pathname, navigate]);
+  if (loading || (!error && session && !needsCadastro && acesso.carregando))
     return (
       <div
         role="status"
@@ -32,6 +33,7 @@ function AppLayout() {
       </div>
     );
   if (!session) return null;
+  if (!error && needsCadastro) return <CompletarCadastroRepresentante />;
   if (error || acesso.erro || bloqueado)
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background p-6">

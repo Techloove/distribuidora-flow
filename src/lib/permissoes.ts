@@ -118,14 +118,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/comissoes",
   ],
   estoque: ["/dashboard", "/pendencias", "/produtos", "/estoque", "/separacao", "/compras"],
-  expedicao: [
-    "/dashboard",
-    "/pendencias",
-    "/separacao",
-    "/cargas",
-    "/entregas",
-    "/rotas",
-  ],
+  expedicao: ["/dashboard", "/pendencias", "/separacao", "/cargas", "/entregas", "/rotas"],
 };
 
 export type Acesso = {
@@ -139,12 +132,12 @@ export type Acesso = {
 
 /** Menus liberados para o usuário logado, conforme os papéis e a tabela role_menus. */
 export function useAcesso(): Acesso {
-  const { client, roles, loading, user } = useSupabase();
+  const { client, roles, loading, user, needsCadastro } = useSupabase();
   const total = roles.some((r) => PAPEIS_TOTAIS.includes(r));
 
   const q = useQuery({
     queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
-    enabled: !!client && roles.length > 0 && !total,
+    enabled: !!client && roles.length > 0 && !total && !needsCadastro,
     refetchInterval: 30_000,
     queryFn: async () => {
       const { data, error } = await client!

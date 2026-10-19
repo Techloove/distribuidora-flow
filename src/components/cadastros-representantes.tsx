@@ -103,7 +103,8 @@ export function CadastrosRepresentantes() {
       <h2 className="font-semibold">Primeiros cadastros de representantes</h2>
       <p className="text-sm text-muted-foreground">
         Novos cadastros ficam sem acesso até a autorização. Vincule a carteira do representante e
-        escolha os centros permitidos. Um novo representante começa sem clientes vinculados.
+        escolha os centros permitidos. Após a aprovação, o representante deve completar o próprio
+        Cadastro Unificado no primeiro acesso. Um novo representante começa sem clientes vinculados.
       </p>
       <div className="flex flex-wrap gap-2">
         <select
