@@ -98,6 +98,12 @@ const root = path.resolve(__dirname, ".."),
     const sql = fs.readFileSync(path.join(root, "db/fase236_orcamentos.sql"), "utf8");
     await d.exec(sql);
     await d.exec(sql);
+    // O teste anterior não instalava o gatilho de INSERT real21. Sem ele, a
+    // criação parecia funcionar, pois a comissão só era apurada ao editar itens.
+    await fn("fase21_comissao_representante_logado.sql", "trg_apurar_comissao_pedido");
+    await d.exec(
+      `create trigger trg_comissao_pedido after insert or update of status,representante_id,total_itens,desconto_valor,comissao_percentual on pedidos for each row execute function trg_apurar_comissao_pedido();`,
+    );
     const q = async (s, args = []) => (await d.query(s, args)).rows,
       actor = async (n) => {
         await d.exec("reset role");
@@ -122,6 +128,34 @@ const root = path.resolve(__dirname, ".."),
     };
     await actor(1);
     const before = await effectCounts();
+    await denied(create(), /comissão inesperada/);
+    assert.deepEqual(await effectCounts(), before, "Erro original reverte a proposta e a comissão");
+    await d.exec("reset role");
+    const normalBefore = (
+      await q(
+        "select pg_get_functiondef('criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid,date)'::regprocedure) s",
+      )
+    )[0].s;
+    const fix = fs.readFileSync(
+      path.join(root, "db/fase240_orcamento_sem_comissao_na_criacao.sql"),
+      "utf8",
+    );
+    await d.exec(fix);
+    await d.exec(fix);
+    assert.equal(
+      (
+        await q(
+          "select pg_get_functiondef('criar_pedido_rascunho(uuid,uuid,uuid,uuid,date,text,uuid,date)'::regprocedure) s",
+        )
+      )[0].s,
+      normalBefore,
+      "Motor normal preservado",
+    );
+    await actor(1);
+    await denied(
+      q("select criar_orcamento_base_240($1,$2,$3,$4)", [id(40), id(10), id(30), id(70)]),
+      /permission denied/,
+    );
     const p = await create();
     assert.equal(p.tipo_documento, "orcamento");
     assert.equal(p.representante_id, id(20));
@@ -181,7 +215,13 @@ const root = path.resolve(__dirname, ".."),
       new Date(converted.data_pedido).toISOString(),
     );
     await decide("aceitar");
-    assert.deepEqual(await effectCounts(), before);
+    const afterConversion = await effectCounts();
+    assert.equal(
+      afterConversion.comissoes,
+      before.comissoes + 1,
+      "Gatilho de comissão continua ativo após conversão em pedido",
+    );
+    assert.deepEqual({ ...afterConversion, comissoes: before.comissoes }, before);
     // Actual approval/reservation motor still blocks insufficient stock after quote acceptance.
     await actor(3);
     await denied(q("select avancar_pedido($1,'aprovado')", [p.id]), /Estoque|estoque|insuficiente/);
@@ -240,6 +280,7 @@ const root = path.resolve(__dirname, ".."),
       "delete from role_permissoes where role='representante' and permissao='pedidos_orcamentos'",
     );
     await d.exec(sql);
+    await d.exec(fix);
     await actor(1);
     await denied(create(), /não liberada/);
     const resumo = (await q("select acompanhar_pedido_236($1) r", [other.id]))[0].r;
@@ -250,13 +291,23 @@ const root = path.resolve(__dirname, ".."),
       q("select revisar_orcamento_236($1,current_date+1,null)", [other.id]),
       /sem acesso/,
     );
+    // Pedidos normais continuam gerando a previsão de comissão pelo gatilho instalado.
+    await actor(1);
+    const normal = (
+      await q("select * from criar_pedido_rascunho($1,$2,$3,$4)", [id(40), id(10), id(30), id(70)])
+    )[0];
+    assert.equal(normal.tipo_documento, "pedido");
+    assert.equal(
+      (await q("select count(*) n from comissoes where pedido_id=$1", [normal.id]))[0].n,
+      1,
+    );
     await d.exec("reset role;set role anon");
     await denied(
       q("select decidir_orcamento_236($1,'aceitar',null)", [other.id]),
       /permission denied/,
     );
     console.log(
-      "OK orçamentos236: criação/edição reais81, sem reserva/estoque/títulos/comissão/crédito/entrega antes do aceite, validade/revisão/recusa, conversão atômica e idempotente no mesmo documento, data comercial atualizada, aprovação/reserva reais42/212 e confirmação80/209/227 preservadas, carteira e revogação/anon. Recalculo e escrita de estoque são fixtures controladas.",
+      "OK orçamentos236/240: erro de INSERT reproduzido, fábrica privada sem alterar motor normal, gatilho real21 ativo na conversão, criação/edição reais81, sem reserva/estoque/títulos/comissão/crédito/entrega antes do aceite, validade/revisão/recusa, conversão atômica e idempotente no mesmo documento, data comercial atualizada, aprovação/reserva reais42/212 e confirmação80/209/227 preservadas, carteira e revogação/anon. Recalculo e escrita de estoque são fixtures controladas.",
     );
   } finally {
     await d.close();
