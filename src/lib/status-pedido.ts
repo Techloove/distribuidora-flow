@@ -1,8 +1,8 @@
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 export const ETAPAS_PEDIDO = [
-  "Elaboração",
-  "Aprovação",
-  "Confirmado",
+  "Digitação",
+  "Aguardando aprovação",
+  "Aprovado",
   "Separação",
   "Pronto para carga",
   "Carga montada",
@@ -10,6 +10,11 @@ export const ETAPAS_PEDIDO = [
   "Entregue",
 ] as const;
 type SituacaoPedido = { nome: string; etapa: number | null; descricao: string; atencao?: boolean };
+const APROVADO: SituacaoPedido = {
+  nome: "Aprovado",
+  etapa: 2,
+  descricao: "Pedido aprovado. Acompanhe a preparação para separação.",
+};
 const SITUACOES: Record<string, SituacaoPedido> = {
   orcamento: {
     nome: "Orçamento em negociação",
@@ -32,28 +37,21 @@ const SITUACOES: Record<string, SituacaoPedido> = {
   rascunho: {
     nome: "Digitação",
     etapa: 0,
-    descricao: "Pedido em preenchimento, ainda sem confirmação.",
+    descricao: "Pedido em preenchimento. Revise os dados antes de prosseguir.",
   },
   digitacao: {
     nome: "Digitação",
     etapa: 0,
-    descricao: "Pedido em preenchimento, ainda sem confirmação.",
+    descricao: "Pedido em preenchimento. Revise os dados antes de prosseguir.",
   },
   aguardando_aprovacao: {
     nome: "Aguardando aprovação",
     etapa: 1,
-    descricao: "Pedido enviado para análise e aprovação.",
+    descricao: "Pedido enviado para análise, aguardando decisão do responsável.",
   },
-  aprovado: {
-    nome: "Aprovado",
-    etapa: 1,
-    descricao: "Aprovado e aguardando a confirmação da venda.",
-  },
-  confirmado: {
-    nome: "Confirmado",
-    etapa: 2,
-    descricao: "Venda confirmada, aguardando início da separação.",
-  },
+  // As duas situações internas pertencem à mesma etapa comercial de acompanhamento.
+  aprovado: APROVADO,
+  confirmado: APROVADO,
   separacao: {
     nome: "Em separação",
     etapa: 3,
@@ -147,7 +145,13 @@ export function ordemStatusPedido(status: unknown) {
 }
 
 export function statusVisivelPedido(doc: { [key: string]: unknown }, hoje = hojeSaoPaulo()) {
-  if (doc["tipo_documento"] !== "orcamento") return String(doc["status"] ?? "");
+  if (doc["tipo_documento"] !== "orcamento") {
+    const status = String(doc["status"] ?? "");
+    // Agrupa também filtros e contagens, evitando duas opções com o mesmo nome.
+    if (status === "confirmado") return "aprovado";
+    if (status === "digitacao") return "rascunho";
+    return status;
+  }
   if (doc["orcamento_situacao"] === "recusado") return "orcamento_recusado";
   if (
     doc["orcamento_situacao"] === "expirado" ||

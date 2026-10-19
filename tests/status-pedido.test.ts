@@ -29,7 +29,11 @@ test("fluxo comercial e logístico segue a ordem sem exibir códigos internos", 
     expect(nomeStatusPedido(status)).not.toContain("_");
     anterior = etapa;
   }
-  expect(nomeStatusPedido("aprovado")).not.toBe(nomeStatusPedido("confirmado"));
+  expect(ETAPAS_PEDIDO.slice(0, 3)).toEqual(["Digitação", "Aguardando aprovação", "Aprovado"]);
+  expect(nomeStatusPedido("aprovado")).toBe("Aprovado");
+  expect(situacaoPedido("confirmado")).toEqual(situacaoPedido("aprovado"));
+  expect(ordemStatusPedido("aguardando_aprovacao")).toBeLessThan(ordemStatusPedido("aprovado"));
+  expect(ordemStatusPedido("aprovado")).toBeLessThan(ordemStatusPedido("separacao"));
   expect(nomeStatusPedido("separado")).not.toBe(nomeStatusPedido("conferido"));
 });
 test("parcial e tentativa sem entrega não indicam recebimento integral", () => {
@@ -78,4 +82,31 @@ test("orçamentos usam validade comercial sem virar venda ou falsa etapa logíst
   ).toBe("aguardando_aprovacao");
   for (const s of ["orcamento", "orcamento_expirado", "orcamento_recusado"])
     expect(situacaoPedido(s).etapa).toBeNull();
+});
+
+test("filtros e contagens agrupam aprovação e confirmação sem alterar os documentos", () => {
+  const documentos = [
+    "rascunho",
+    "digitacao",
+    "aguardando_aprovacao",
+    "aprovado",
+    "confirmado",
+  ].map((status) => ({ tipo_documento: "pedido", status }));
+  const agrupados = new Map<string, number>();
+  for (const doc of documentos) {
+    const status = statusVisivelPedido(doc);
+    agrupados.set(status, (agrupados.get(status) ?? 0) + 1);
+  }
+  expect([...agrupados.entries()]).toEqual([
+    ["rascunho", 2],
+    ["aguardando_aprovacao", 1],
+    ["aprovado", 2],
+  ]);
+  expect(documentos.map((doc) => doc.status)).toEqual([
+    "rascunho",
+    "digitacao",
+    "aguardando_aprovacao",
+    "aprovado",
+    "confirmado",
+  ]);
 });

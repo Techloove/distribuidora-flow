@@ -4,14 +4,16 @@ Execute integralmente `db/fase235_acompanhamento_pedidos.sql` no SQL Editor do S
 
 Em **Pedidos**, abra um pedido para consultar **Acompanhamento do pedido**. O indicador apresenta a posição atual no fluxo:
 
-1. Elaboração.
-2. Aprovação — distingue **Aguardando aprovação** de **Aprovado**, que ainda aguarda confirmação.
-3. Confirmado.
+1. Digitação.
+2. Aguardando aprovação.
+3. Aprovado — reúne as situações internas `aprovado` e `confirmado` na mesma etapa comercial.
 4. Separação — distingue **Em separação** de **Separado, aguardando conferência**.
 5. Pronto para carga — conferência concluída ou marco de faturamento já registrado.
 6. Carga montada — aguardando saída.
 7. Em rota de entrega.
 8. Entregue.
+
+A revisão visual das três primeiras etapas exige somente publicar a atualização da interface; quem já implantou o acompanhamento não precisa executar SQL. Filtros e contagens de Pedidos também agrupam `aprovado` e `confirmado` em uma única opção **Aprovado**, e `rascunho`/`digitacao` em **Digitação**. As ações de processamento continuam usando os status internos originais.
 
 O indicador mostra a posição atual, não um histórico datado de aprovações/separações. Não altera a sequência operacional nem obriga etapas adicionais. A lista, filtros e cabeçalho passam a usar os mesmos nomes legíveis; os códigos internos permanecem intactos. Cancelamento, não aprovação e devolução aparecem como encerramentos próprios, sem uma falsa conclusão de entrega. Entrega parcial ou tentativa não realizada permanecem na etapa de entrega, com a pendência indicada.
 
