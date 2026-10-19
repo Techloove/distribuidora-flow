@@ -12,6 +12,10 @@ import { RotasRepresentante } from "@/components/rotas-representante";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/pessoas")({
+  validateSearch: (search: Record<string, unknown>): { pessoa?: string } =>
+    typeof search["pessoa"] === "string" && /^[a-f0-9-]{36}$/i.test(search["pessoa"])
+      ? { pessoa: search["pessoa"] }
+      : {},
   head: () => ({
     meta: [
       { title: "Cadastro unificado — ERP Distribuidora" },
@@ -86,10 +90,27 @@ const fields: CrudField[] = [
   { name: "data_nascimento", label: "Data de nascimento", type: "date" },
 
   // Dados fiscais e da empresa: não se aplicam a quem é só representante.
-  { name: "inscricao_estadual", label: "Inscrição estadual", section: "Dados fiscais", showWhen: naoSoRepresentante },
-  { name: "uf_inscricao_estadual", label: "UF da inscrição estadual", showWhen: naoSoRepresentante },
-  { name: "situacao_inscricao_estadual", label: "Situação da inscrição estadual", showWhen: naoSoRepresentante },
-  { name: "indicador_contribuinte_icms", label: "Contribuinte de ICMS", showWhen: naoSoRepresentante },
+  {
+    name: "inscricao_estadual",
+    label: "Inscrição estadual",
+    section: "Dados fiscais",
+    showWhen: naoSoRepresentante,
+  },
+  {
+    name: "uf_inscricao_estadual",
+    label: "UF da inscrição estadual",
+    showWhen: naoSoRepresentante,
+  },
+  {
+    name: "situacao_inscricao_estadual",
+    label: "Situação da inscrição estadual",
+    showWhen: naoSoRepresentante,
+  },
+  {
+    name: "indicador_contribuinte_icms",
+    label: "Contribuinte de ICMS",
+    showWhen: naoSoRepresentante,
+  },
   { name: "situacao_cadastral", label: "Situação cadastral", showWhen: naoSoRepresentante },
   { name: "data_abertura", label: "Data de abertura", type: "date", showWhen: naoSoRepresentante },
   { name: "natureza_juridica", label: "Natureza jurídica", showWhen: naoSoRepresentante },
@@ -116,14 +137,18 @@ const fields: CrudField[] = [
     type: "number",
     step: "0.01",
   },
-  { name: "meta_mensal", label: "Meta mensal (R$)", type: "number", step: "0.01", showIf: "is_representante" },
+  {
+    name: "meta_mensal",
+    label: "Meta mensal (R$)",
+    type: "number",
+    step: "0.01",
+    showIf: "is_representante",
+  },
   {
     name: "regiao",
     label: "Região de atuação",
     showIf: "is_representante",
-    after: ({ editing }) => (
-      <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
-    ),
+    after: ({ editing }) => <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />,
   },
 
   // Endereço
@@ -156,7 +181,13 @@ const fields: CrudField[] = [
     type: "ref",
     ref: { table: "rotas", labelField: "nome" },
   },
-  { name: "limite_credito", label: "Limite de crédito", type: "number", step: "0.01", showIf: "is_cliente" },
+  {
+    name: "limite_credito",
+    label: "Limite de crédito",
+    type: "number",
+    step: "0.01",
+    showIf: "is_cliente",
+  },
   { name: "condicao_pagamento", label: "Condição de pagamento", showIf: "is_cliente" },
   {
     name: "representante_id",
@@ -178,6 +209,7 @@ function naoSoRepresentante(form: Record<string, string | boolean>) {
 }
 
 function PessoasPage() {
+  const { pessoa } = Route.useSearch();
   const { client } = useSupabase();
 
   const formas = useQuery({
@@ -233,8 +265,10 @@ function PessoasPage() {
       title="Cadastro unificado"
       description="Um único cadastro por pessoa ou empresa. Marque as funções (cliente, fornecedor, representante, usuário) e o sistema replica automaticamente nos módulos correspondentes."
     >
-      <CrudPage uppercase
+      <CrudPage
+        uppercase
         table="pessoas"
+        initialEditId={pessoa}
         fields={camposComFormas}
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."

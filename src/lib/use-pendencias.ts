@@ -1,3 +1,5 @@
+import { camposFaltantesCliente } from "./pendencias-cadastro";
+import { lerPaginas } from "./paginacao";
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "./supabase-provider";
 import { useCentroValido } from "./centros-acesso";
@@ -11,6 +13,7 @@ export type Pendencia = {
   prioridade: "alta" | "normal";
   to: string;
   pedido?: string;
+  pessoa?: string;
   centro?: string;
 };
 type Row = Record<string, unknown>;
@@ -30,7 +33,7 @@ export function usePendencias() {
     },
     {
       id: "rascunho",
-      label: "Pedidos em rascunho",
+      label: "Pedidos em digitação",
       table: "pedidos" as const,
       module: "/pedidos",
       statuses: ["rascunho", "digitacao"],
@@ -120,9 +123,45 @@ export function usePendencias() {
     ],
     enabled: !!client && !!user && !isLoading && !error && !acesso.carregando && !acesso.erro,
     staleTime: 30_000,
+    refetchInterval: 60_000,
     queryFn: async () => {
       const results = await Promise.all(
         kinds.map(async (k) => {
+          if (k.id === "cadastro") {
+            try {
+              const clientes = await lerPaginas<Row>((inicio, fim) => {
+                let consulta = client!
+                  .from("clientes")
+                  .select(
+                    "id,pessoa_id,codigo,razao_social,tipo_pessoa,cnpj_cpf,inscricao_estadual,indicador_contribuinte_icms,situacao_inscricao_estadual,rota_id,representante_id,logradouro,numero,bairro,cidade,uf,cep,centro_id,pessoa_fiscal:pessoas(indicador_contribuinte_icms,situacao_inscricao_estadual)",
+                  );
+                if (centro) consulta = consulta.or(`centro_id.eq.${centro},centro_id.is.null`);
+                return consulta.order("razao_social").order("id").range(inicio, fim);
+              });
+              const incompletos = clientes
+                .map((r) => ({ r, faltas: camposFaltantesCliente(r) }))
+                .filter((c) => c.faltas.length);
+              const itens: Pendencia[] = incompletos.slice(0, 40).map(({ r, faltas }) => ({
+                id: `cadastro:${String(r["id"])}`,
+                categoria: k.label,
+                prioridade: "normal",
+                to: "/pessoas",
+                titulo: `${r["codigo"] ? `${String(r["codigo"])} · ` : ""}${String(r["razao_social"] ?? "Cliente")}`,
+                detalhe: `Falta preencher: ${faltas.join("; ")}.`,
+                centro: String(r["centro_id"] ?? ""),
+                ...(r["pessoa_id"] ? { pessoa: String(r["pessoa_id"]) } : {}),
+              }));
+              return { id: k.id, label: k.label, total: incompletos.length, itens, erro: null };
+            } catch {
+              return {
+                id: k.id,
+                label: k.label,
+                total: null,
+                itens: [] as Pendencia[],
+                erro: "Não foi possível conferir os cadastros dos clientes.",
+              };
+            }
+          }
           let q = client!.from(k.table).select("*", { count: "exact" }).limit(40);
           if (centro && !["cadastro", "extrato", "agenda", "cobranca"].includes(k.id))
             q = q.eq("centro_id", centro);
@@ -136,15 +175,6 @@ export function usePendencias() {
           if (k.id === "extrato") q = q.is("movimento_id", null).order("data");
           if (k.statuses.length) q = q.in(k.id === "vencimento" ? "estado" : "status", k.statuses);
           if (k.id === "vencido") q = q.lt("vencimento", today).order("vencimento");
-          if (k.id === "cadastro") {
-            const incompleto =
-              'cnpj_cpf.is.null,cnpj_cpf.eq."",cidade.is.null,cidade.eq."",uf.is.null,uf.eq.""';
-            q = q.or(
-              centro
-                ? `and(or(centro_id.eq.${centro},centro_id.is.null),or(${incompleto}))`
-                : incompleto,
-            );
-          }
           if (k.id === "divergencia") q = q.eq("separacao_status", "divergente");
           const { data, error, count } = await q;
           if (error)
@@ -166,26 +196,22 @@ export function usePendencias() {
                 ? `Extrato · ${r["referencia"]}`
                 : k.id === "comissao"
                   ? "Ajuste de comissão paga"
-                  : k.id === "cadastro"
-                    ? String(r["razao_social"] ?? "Cliente")
-                    : k.module === "/pedidos" || k.id === "divergencia"
-                      ? `Pedido #${String(r["numero"] ?? "—")}`
-                      : String(r["documento"] ?? r["nosso_numero"] ?? "Parcela / boleto"),
+                  : k.module === "/pedidos" || k.id === "divergencia"
+                    ? `Pedido #${String(r["numero"] ?? "—")}`
+                    : String(r["documento"] ?? r["nosso_numero"] ?? "Parcela / boleto"),
             detalhe: ["agenda", "cobranca"].includes(k.id)
               ? `Próxima ação ${r["proxima_acao"]} · ${r["observacao"] ?? "Confira a agenda"}`
               : k.id === "extrato"
                 ? String(r["descricao"] ?? "Vincule ao movimento correspondente.")
                 : k.id === "comissao"
                   ? `Valor a conferir: R$ ${Number(r["valor"]).toFixed(2)}`
-                  : k.id === "cadastro"
-                    ? "Confira documento, cidade e UF."
-                    : k.id === "vencimento"
-                      ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
-                      : String(
-                          r["erro"] ??
-                            r["divergencia_obs"] ??
-                            (k.id === "vencido" ? `Vencimento ${r["vencimento"]}` : k.label),
-                        ),
+                  : k.id === "vencimento"
+                    ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
+                    : String(
+                        r["erro"] ??
+                          r["divergencia_obs"] ??
+                          (k.id === "vencido" ? `Vencimento ${r["vencimento"]}` : k.label),
+                      ),
             ...(k.module === "/pedidos" ? { pedido: String(r["id"]) } : {}),
             centro: String(r["centro_id"] ?? ""),
           }));

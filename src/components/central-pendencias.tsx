@@ -121,7 +121,7 @@ export function CentralPendencias({ compact = false }: { compact?: boolean }) {
                   onClick={() => {
                     if (r.centro) setCentro(r.centro);
                   }}
-                  search={r.pedido ? { pedido: r.pedido } : {}}
+                  search={r.pedido ? { pedido: r.pedido } : r.pessoa ? { pessoa: r.pessoa } : {}}
                   className="inline-flex min-h-11 items-center gap-1 rounded-lg border px-3 text-xs font-medium text-primary"
                 >
                   Revisar

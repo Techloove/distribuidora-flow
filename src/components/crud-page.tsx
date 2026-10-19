@@ -1,7 +1,7 @@
 import { StatusBadge } from "@/components/status-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -203,6 +203,7 @@ export function CrudPage({
   extraFormEnd,
   readOnly = false,
   uppercase = false,
+  initialEditId,
 }: {
   table: string;
   fields: CrudField[];
@@ -243,16 +244,18 @@ export function CrudPage({
   readOnly?: boolean;
   /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
   uppercase?: boolean;
+  initialEditId?: string | undefined;
 }) {
   const isUpperField = (f: CrudField) => !f.type || f.type === "text";
-  const { client, canManage } = useSupabase();
+  const { client, user, canManage } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const effectiveReadOnly = readOnly === true;
-  const directWriteBlocked = effectiveReadOnly || CRUD_PROTECTED_TABLES.has(table);
+  const directWriteBlocked = effectiveReadOnly || !canManage || CRUD_PROTECTED_TABLES.has(table);
 
   function assertDirectWriteAllowed() {
-    if (effectiveReadOnly) throw new Error("Esta tela está em modo somente leitura.");
+    if (effectiveReadOnly || !canManage)
+      throw new Error("Seu perfil permite somente consultar este cadastro.");
     if (CRUD_PROTECTED_TABLES.has(table)) {
       throw new Error(`A tabela ${table} exige operação controlada por RPC.`);
     }
@@ -341,19 +344,58 @@ export function CrudPage({
     setOpen(true);
   }
 
-  function openEdit(row: Row) {
-    setEditing(row);
-    const next: Record<string, string | boolean> = {};
-    for (const f of fields) {
-      if (f.type === "multicheck") {
-        for (const c of f.checks ?? []) next[c.name] = Boolean(row[c.name]);
-      } else {
-        next[f.name] = f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? "");
+  const openEdit = useCallback(
+    (row: Row) => {
+      setEditing(row);
+      const next: Record<string, string | boolean> = {};
+      for (const f of fields) {
+        if (f.type === "multicheck") {
+          for (const c of f.checks ?? []) next[c.name] = Boolean(row[c.name]);
+        } else {
+          next[f.name] = f.type === "checkbox" ? Boolean(row[f.name]) : String(row[f.name] ?? "");
+        }
       }
+      setForm(next);
+      setOpen(true);
+    },
+    [fields],
+  );
+
+  const abertoInicial = useRef("");
+  const registroInicial = useQuery({
+    queryKey: [table, "editar-registro", user?.id, initialEditId],
+    enabled: !!client && !!initialEditId && !effectiveReadOnly,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from(table)
+        .select("*")
+        .eq("id", initialEditId!)
+        .maybeSingle();
+      if (error) throw new Error("Não foi possível abrir o cadastro solicitado.");
+      if (!data) throw new Error("Cadastro não encontrado ou sem acesso.");
+      return data as Row;
+    },
+  });
+  useEffect(() => {
+    if (!initialEditId) {
+      abertoInicial.current = "";
+      return;
     }
-    setForm(next);
-    setOpen(true);
-  }
+    if (abertoInicial.current === initialEditId) return;
+    if (registroInicial.data) {
+      abertoInicial.current = initialEditId;
+      openEdit(registroInicial.data);
+    } else if (registroInicial.isError) {
+      abertoInicial.current = initialEditId;
+      toast.error(registroInicial.error.message);
+    }
+  }, [
+    initialEditId,
+    registroInicial.data,
+    registroInicial.isError,
+    registroInicial.error,
+    openEdit,
+  ]);
 
   function traduzErro(message: string) {
     if (/row-level security|violates row-level/i.test(message)) {
@@ -427,6 +469,10 @@ export function CrudPage({
       toast.success(editing ? "Registro atualizado" : "Registro criado");
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "pessoas") {
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      }
     },
     onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
@@ -440,6 +486,10 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Registro excluído");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "pessoas") {
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      }
     },
     onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
@@ -453,6 +503,10 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Atualizado");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "pessoas") {
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      }
     },
     onError: (error: Error) => toast.error(traduzErro(error.message)),
   });
@@ -729,7 +783,13 @@ export function CrudPage({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar registro" : "Novo registro"}</DialogTitle>
+            <DialogTitle>
+              {editing
+                ? directWriteBlocked
+                  ? "Visualizar registro"
+                  : "Editar registro"
+                : "Novo registro"}
+            </DialogTitle>
             <DialogDescription>Preencha os campos e salve para gravar no banco.</DialogDescription>
           </DialogHeader>
           {extraForm && extraFormTop ? (
