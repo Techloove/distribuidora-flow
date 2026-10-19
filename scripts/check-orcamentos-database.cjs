@@ -47,7 +47,9 @@ const root = path.resolve(__dirname, ".."),
  create table estoque_movimentos(pedido_id uuid,origem text,documento_id uuid,quantidade numeric);
  create table estoque_reservas(pedido_id uuid,produto_id uuid,centro_id uuid,quantidade numeric,primary key(pedido_id,produto_id));
  create table estoque_saldos(produto_id uuid,centro_id uuid,quantidade numeric);insert into estoque_saldos values('${id(80)}','${id(10)}',1);
- create table comissoes(id uuid default gen_random_uuid(),pedido_id uuid,representante_id uuid,base_calculo numeric,percentual numeric,valor numeric,centro_id uuid,status text default 'prevista');
+ create table comissoes(id uuid default gen_random_uuid(),pedido_id uuid,representante_id uuid,base_calculo numeric,percentual numeric,valor numeric,centro_id uuid,status text default 'prevista',base_original numeric,valor_original numeric);
+ create table devolucoes(id uuid,pedido_id uuid,valor_total numeric,status text);
+ create table parametros(chave text,valor text);insert into parametros values('comissao_fato_gerador','recebimento');
  create table creditos_clientes(id uuid,status text,cliente_id uuid,centro_id uuid,saldo numeric);
  create table creditos_clientes_aplicacoes(id uuid,pedido_id uuid,credito_id uuid,status text,valor numeric,aplicado_em timestamptz);
  create table expedicoes(id uuid,pedido_id uuid,centro_id uuid,status text,created_at timestamptz default now(),data_saida date,data_entrega date,previsao_entrega date);
@@ -56,9 +58,8 @@ const root = path.resolve(__dirname, ".."),
  create function can_stock(uuid) returns bool language sql as $$select can_manage($1)$$;
  create function can_ship(uuid) returns bool language sql as $$select can_manage($1)$$;
  create function notificar(text,text,text,text) returns void language sql as $$select null::void$$;
- -- Fixture recalc deliberately invokes commission apuração, proving the quote guard intercepts it.
- create function apurar_comissao_pedido(_pedido_id uuid) returns void language plpgsql as $$begin insert into comissoes(pedido_id,valor) values(_pedido_id,1);end$$;
- create function recalcular_pedido(_pedido_id uuid) returns void language plpgsql as $$begin update pedidos set total_itens=(select coalesce(sum(total),0) from pedido_itens where pedido_id=_pedido_id),total_liquido=(select coalesce(sum(total),0) from pedido_itens where pedido_id=_pedido_id) where id=_pedido_id;perform apurar_comissao_pedido(_pedido_id);end$$;
+ -- Recálculo comercial usa5% na fixture; o lançamento de comissão usa o apurador real209.
+ create function recalcular_pedido(_pedido_id uuid) returns void language plpgsql as $$begin update pedidos set total_itens=(select coalesce(sum(total),0) from pedido_itens where pedido_id=_pedido_id),total_liquido=(select coalesce(sum(total),0) from pedido_itens where pedido_id=_pedido_id),comissao_percentual=5,comissao_valor=(select round(coalesce(sum(total),0)*0.05,2) from pedido_itens where pedido_id=_pedido_id) where id=_pedido_id;perform apurar_comissao_pedido(_pedido_id);end$$;
  create function validar_pedido(uuid) returns jsonb language sql as $$select '[]'::jsonb$$;
  create function registrar_movimento_estoque_controlado(uuid,uuid,text,numeric,numeric,text,uuid,text) returns void language plpgsql as $$begin insert into estoque_movimentos(origem,documento_id,quantidade) values($6,$7,$4);end$$;
  create function despachar_carga_233(uuid,date) returns void language sql as $$select null::void$$;
@@ -74,6 +75,7 @@ const root = path.resolve(__dirname, ".."),
       "atualizar_pedido_comercial",
     ])
       await fn("fase81_hardening_crud_pedidos.sql", name);
+    await fn("fase209_rotinas_distribuidora.sql", "apurar_comissao_pedido");
     await fn("fase12_custo_markup_parcelas.sql", "aplicar_parcelas_forma");
     await d.exec(
       "create trigger parcelas_forma before insert or update of forma_pagamento_id on pedidos for each row execute function aplicar_parcelas_forma()",
@@ -222,6 +224,21 @@ const root = path.resolve(__dirname, ".."),
       "Gatilho de comissão continua ativo após conversão em pedido",
     );
     assert.deepEqual({ ...afterConversion, comissoes: before.comissoes }, before);
+    const comissaoConvertida = (await q("select * from comissoes where pedido_id=$1", [p.id]))[0];
+    assert.equal(Number(comissaoConvertida.valor), 60);
+    assert.equal(
+      comissaoConvertida.status,
+      "prevista",
+      "Conversão não libera comissão para pagamento",
+    );
+    assert.equal(
+      (await q("select count(*) n from pedido_itens where pedido_id=$1", [p.id]))[0].n,
+      1,
+    );
+    assert.equal(
+      Number((await q("select total_liquido from pedidos where id=$1", [p.id]))[0].total_liquido),
+      1200,
+    );
     // Actual approval/reservation motor still blocks insufficient stock after quote acceptance.
     await actor(3);
     await denied(q("select avancar_pedido($1,'aprovado')", [p.id]), /Estoque|estoque|insuficiente/);
@@ -247,6 +264,35 @@ const root = path.resolve(__dirname, ".."),
       [p.id],
     );
     assert.equal(titles.length, 2);
+    const prazos = await q(
+      "select vencimento=(select data_pedido from pedidos where id=$1)+(20*parcela) ok,valor from contas_receber where pedido_id=$1 order by parcela",
+      [p.id],
+    );
+    assert.ok(
+      prazos.every((t) => t.ok),
+      "Vencimentos usam a data da conversão e os prazos20/40",
+    );
+    assert.equal(
+      prazos.reduce((total, t) => total + Number(t.valor), 0),
+      1200,
+    );
+    await actor(3);
+    await q("select confirmar_pedido($1)", [p.id]);
+    await d.exec("reset role");
+    assert.equal(
+      (await q("select count(*) n from contas_receber where pedido_id=$1", [p.id]))[0].n,
+      2,
+      "Reconfirmação não duplica títulos",
+    );
+    assert.equal(
+      (await q("select count(*) n from comissoes where pedido_id=$1", [p.id]))[0].n,
+      1,
+      "Apuração real209 não duplica comissão",
+    );
+    assert.equal(
+      (await q("select status from comissoes where pedido_id=$1", [p.id]))[0].status,
+      "prevista",
+    );
     assert.equal((await q("select count(*) n from estoque_movimentos"))[0].n, 1);
     assert.equal((await q("select count(*) n from estoque_reservas"))[0].n, 0);
     await actor(1);
@@ -307,7 +353,7 @@ const root = path.resolve(__dirname, ".."),
       /permission denied/,
     );
     console.log(
-      "OK orçamentos236/240: erro de INSERT reproduzido, fábrica privada sem alterar motor normal, gatilho real21 ativo na conversão, criação/edição reais81, sem reserva/estoque/títulos/comissão/crédito/entrega antes do aceite, validade/revisão/recusa, conversão atômica e idempotente no mesmo documento, data comercial atualizada, aprovação/reserva reais42/212 e confirmação80/209/227 preservadas, carteira e revogação/anon. Recalculo e escrita de estoque são fixtures controladas.",
+      "OK orçamentos236/240: erro de INSERT reproduzido, fábrica privada sem alterar motor normal, gatilho real21 ativo na conversão, criação/edição reais81, sem reserva/estoque/títulos/comissão/crédito/entrega antes do aceite, validade/revisão/recusa, conversão atômica e idempotente no mesmo documento, data comercial atualizada, aprovação/reserva reais42/212 e confirmação80/209/227 preservadas, apuração real209 sem duplicidade, comissão apenas prevista no aceite e prazos20/40 desde a conversão, carteira e revogação/anon. Recalculo e escrita de estoque são fixtures controladas.",
     );
   } finally {
     await d.close();

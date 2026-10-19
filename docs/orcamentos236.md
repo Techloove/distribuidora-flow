@@ -2,6 +2,8 @@
 
 Execute integralmente `db/fase236_orcamentos.sql` no SQL Editor do Supabase, após a fase235. Atualize o sistema com Ctrl+F5. A migração não transforma os pedidos existentes em orçamentos nem altera seus valores/status. O acompanhamento anterior continua funcionando enquanto a nova RPC ainda não estiver disponível no cache do banco.
 
+**Correção posterior necessária:** a fase240 faz o documento nascer como orçamento antes dos gatilhos de comissão. Para instalações que já a aplicaram, não repita a fase236 isoladamente. Consulte `docs/correcao-orcamentos240.md`. A revisão visual do acompanhamento não muda a natureza nem os comandos de conversão.
+
 ## Uso diário
 
 1. Em **Pedidos**, clique **Novo orçamento**, escolha cliente, centro, rota e condição de pagamento, informe a validade e crie a proposta.
@@ -28,8 +30,10 @@ A ação **Criar, revisar e registrar decisão de orçamentos** (`pedidos_orcame
 
 ## Verificação local
 
-- `NODE_PATH=/caminho/das/dependencias node scripts/check-orcamentos-database.cjs`, com PGlite: motores reais de criação/edição81, parcelas12, aprovação42, reserva212 e confirmação80/209/227. Testa ausência de efeitos antes do aceite, inclusive tentativas de inserir lançamentos vinculados; recusa/revisão/expiração; conversão atômica/idempotente no mesmo documento; data comercial e prazos; bloqueio por estoque insuficiente na aprovação; carteira, papéis mistos e revogação/anon. O recálculo e a escrita de movimento de estoque são fixtures controladas; notificações são sem efeito.
+- `NODE_PATH=/caminho/das/dependencias node scripts/check-orcamentos-database.cjs`, com PGlite: motores reais de criação/edição81, parcelas12, aprovação42, reserva212, apuração real209 e confirmação80/209/227. Testa ausência de efeitos antes do aceite, inclusive tentativas de inserir lançamentos vinculados; recusa/revisão/expiração; conversão atômica/idempotente no mesmo documento; data comercial e prazos; bloqueio por estoque insuficiente na aprovação; preservação dos itens e valores no aceite; comissão apenas prevista após conversão e sem duplicação; vencimentos20/40 contados da data de conversão e reconfirmação sem duplicar títulos; carteira, papéis mistos e revogação/anon. O recálculo e a escrita de movimento de estoque são fixtures controladas; notificações são sem efeito.
 - Testes de situações comerciais, validade inclusiva e impressão com o modelo compartilhado.
 - Chromium com representante e dados de teste: criar proposta, incluir item, imprimir, recusar, revisar/reabrir e converter para aprovação, inclusive em tela de celular. Não chama confirmação de venda durante a conversão.
 
-Nenhuma migração ou operação foi executada no banco de produção durante estes testes.
+A revisão do fluxo após a fase240 passou também no navegador com backend simulado: criação da proposta, inclusão de item, recusa, revisão/reabertura, aceite, aprovação e confirmação; preservação do mesmo documento e da data original da proposta, e liberação do envio à separação. Os testes independentes de estoque compartilhado226 e prazos227 passaram.
+
+Nenhuma migração ou operação foi executada no banco de produção durante estes testes. Não é necessária nova migração para esta revisão.
