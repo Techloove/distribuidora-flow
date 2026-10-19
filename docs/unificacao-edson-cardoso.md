@@ -20,3 +20,9 @@ Validação: `NODE_PATH=<dependências de validação> node scripts/check-unific
 ## Execução sem tabela temporária
 
 O arquivo atualizado mantém os snapshots de conferência em uma variável JSONB local ao bloco DO, sem depender de tabela temporária ou comando preparatório em outra sessão. O teste também executa o bloco isoladamente. Use sempre o arquivo completo atualizado para obter a consulta final e os limites locais de execução.
+
+## Principal sem Pessoa vinculada
+
+Se a consulta do principal retornar `NULL` nos campos de Pessoas, executar **todo** `db/vincular_edson_cadastro_unificado.sql`. A correção é específica para o ID principal confirmado na consulta real. Reaproveita pessoa existente por login/nome completo quando identificada sem ambiguidade; cria uma Pessoa apenas quando nenhuma existe. Na criação, a função Representante só é ativada depois de vincular o representante existente, para não acionar a criação de outro representante pelo gatilho. Marca Representante e Usuário do sistema, preserva o perfil e os atributos do representante. Não cria usuário de autenticação, não altera papéis de acesso nem transfere novamente a carteira.
+
+Validação adicional: `scripts/check-vinculo-edson-pessoa.cjs` executa o SQL em PGlite com gatilho de sincronização de representante simulado; verifica um único representante/Pessoa, ambas as funções, login e 12 clientes/comissão preservados e reexecução. A execução no Supabase real continua sendo necessária.
