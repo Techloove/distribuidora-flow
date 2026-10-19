@@ -287,7 +287,11 @@ function UsuariosPage() {
                           >
                             <option value="">Sem vínculo</option>
                             {(representantes.data ?? [])
-                              .filter((r) => !r["profile_id"] || r["profile_id"] === p["id"])
+                              .filter(
+                                (r) =>
+                                  r["ativo"] !== false &&
+                                  (!r["profile_id"] || r["profile_id"] === p["id"]),
+                              )
                               .map((r) => (
                                 <option key={String(r["id"])} value={String(r["id"])}>
                                   {String(r["nome"])}
