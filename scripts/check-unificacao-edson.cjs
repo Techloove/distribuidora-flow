@@ -55,6 +55,23 @@ insert into metas_vendas values('${id(50)}','${id(1)}',2026,10,1000);
   } finally {
     await db.close();
   }
+  // O bloco pode ser executado sozinho no SQL Editor, sem tabela temporária prévia.
+  db = await fixture();
+  try {
+    const bloco = sql.slice(
+      sql.indexOf("do $unificar$"),
+      sql.indexOf("$unificar$;") + "$unificar$;".length,
+    );
+    await db.exec(bloco);
+    assert.equal(
+      (await db.query(`select count(*) n from clientes where representante_id='${id(2)}'`)).rows[0]
+        .n,
+      2,
+    );
+    assert.equal((await db.query("select count(*) n from auditoria")).rows[0].n, 1);
+  } finally {
+    await db.close();
+  }
   for (const kind of ["login", "metas", "gatilho", "nome"]) {
     db = await fixture();
     try {

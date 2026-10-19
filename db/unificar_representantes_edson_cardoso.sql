@@ -4,10 +4,9 @@
 begin;
 set local lock_timeout='5s';
 set local statement_timeout='90s';
-create temporary table if not exists unificacao_edson_refs(tabela text,coluna text,antes jsonb,esperado jsonb) on commit drop;
-truncate pg_temp.unificacao_edson_refs;
 do $unificar$
 declare origem public.representantes; destino public.representantes; r record; n integer;
+ refs jsonb:='[]'::jsonb;
  v_profile uuid; old_pessoas jsonb; snapshot jsonb; esperado jsonb; depois jsonb; actor uuid:=auth.uid();
 begin
  if current_user not in ('postgres','supabase_admin') and not public.has_role(actor,'admin') then
@@ -48,7 +47,7 @@ begin
     into snapshot using origem.id,destino.id;
   select coalesce(jsonb_agg((x-r.coluna-'updated_at')||jsonb_build_object(r.coluna,destino.id) order by ((x-r.coluna-'updated_at')||jsonb_build_object(r.coluna,destino.id))::text),'[]'::jsonb)
    into esperado from jsonb_array_elements(snapshot) x;
-  insert into pg_temp.unificacao_edson_refs values(r.tabela::text,r.coluna,snapshot,esperado);
+  refs:=refs||jsonb_build_array(jsonb_build_object('tabela',r.tabela::text,'coluna',r.coluna,'antes',snapshot,'esperado',esperado));
  end loop;
  -- Rotas comuns já cadastradas no principal são o mesmo vínculo; arquiva antes de deduplicar.
  if to_regclass('public.representante_rotas') is not null then
@@ -62,7 +61,7 @@ begin
    if n>0 then raise exception 'Existem regras ativas nos dois cadastros em %. Revise as regras antes de unificar',r.tabela; end if;
   end if;
  end loop;
- for r in select tabela,coluna from pg_temp.unificacao_edson_refs loop
+ for r in select tabela,coluna from jsonb_to_recordset(refs) as x(tabela text,coluna text,antes jsonb,esperado jsonb) loop
   execute format('update %s set %I=$1 where %I=$2',r.tabela,r.coluna,r.coluna) using destino.id,origem.id;
  end loop;
  -- A sincronização de Pessoas não deve recriar/reativar o representante duplicado.
@@ -75,7 +74,7 @@ begin
  end if;
  update public.representantes set ativo=true,profile_id=v_profile where id=destino.id;
  -- Prova de integridade: nenhuma referência restante e nenhum valor/status alterado pelos triggers.
- for r in select * from pg_temp.unificacao_edson_refs loop
+ for r in select * from jsonb_to_recordset(refs) as x(tabela text,coluna text,antes jsonb,esperado jsonb) loop
   execute format('select count(*) from %s where %I=$1',r.tabela,r.coluna) into n using origem.id;
   if n<>0 then raise exception 'Ainda existem vinculos no cadastro antigo em %',r.tabela; end if;
   if r.tabela not in ('pessoas','public.pessoas','representante_rotas','public.representante_rotas') then
@@ -87,7 +86,7 @@ begin
  insert into public.auditoria(tabela,registro_id,acao,user_id,detalhe)
  values('representantes',destino.id,'unificar_edson_cardoso',actor,jsonb_build_object(
   'origem',to_jsonb(origem),'destino_antes',to_jsonb(destino),'pessoas_antes',old_pessoas,
-  'vinculos_antes',(select jsonb_agg(to_jsonb(s)-'esperado') from pg_temp.unificacao_edson_refs s),
+  'vinculos_antes',(select jsonb_agg(s-'esperado') from jsonb_array_elements(refs) s),
   'observacao','Vinculos transferidos, cadastro de origem preservado inativo; valores financeiros preservados'));
  raise notice 'Unificacao concluida: % -> %. Login preservado: %',origem.id,destino.id,v_profile;
 end;

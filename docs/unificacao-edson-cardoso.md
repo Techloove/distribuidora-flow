@@ -16,3 +16,7 @@ Se houver dois logins diferentes, metas coincidentes por competência, regras at
 Ao concluir, a consulta final mostra os dois IDs, estado ativo, login e número de clientes: o principal deve reunir a carteira e o antigo ter zero clientes. Atualizar o Lovable e recarregar a tela após publicar o ajuste que remove inativos das opções de vínculo em Usuários e papéis. A reexecução não duplica os vínculos nem valores; a auditoria registra cada execução concluída.
 
 Validação: `NODE_PATH=<dependências de validação> node scripts/check-unificacao-edson.cjs` executa o SQL real em PostgreSQL/PGlite, com schema/identidade de teste e sem banco externo. Exercita transferência, rotas repetidas, preservação de comissões pagas, login e reexecução, além de rollback por login conflitante, metas sobrepostas, nomes duplicados e gatilho que altera valor. O teste não reproduz todos os gatilhos do ERP; o script verifica os resultados e conserva esses bloqueios no banco real.
+
+## Execução sem tabela temporária
+
+O arquivo atualizado mantém os snapshots de conferência em uma variável JSONB local ao bloco DO, sem depender de tabela temporária ou comando preparatório em outra sessão. O teste também executa o bloco isoladamente. Use sempre o arquivo completo atualizado para obter a consulta final e os limites locais de execução.
