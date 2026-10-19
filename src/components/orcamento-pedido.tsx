@@ -35,7 +35,7 @@ export function OrcamentoPedido({
     pode = perm.pode("pedidos_orcamentos");
   const salvar = useMutation({
     mutationFn: async () => {
-      const { error } =
+      const { data, error } =
         acao === "revisar"
           ? await client!.rpc("revisar_orcamento_236", {
               _pedido: doc["id"],
@@ -48,11 +48,14 @@ export function OrcamentoPedido({
               _motivo: motivo.trim() || null,
             });
       if (error) throw new Error(error.message);
+      return data as Record<string, unknown> | null;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success(
         acao === "aceitar"
-          ? "Orçamento aceito e convertido. Pedido enviado para aprovação interna."
+          ? data?.["status"] === "aprovado"
+            ? "Orçamento convertido em pedido e aprovado automaticamente."
+            : "Orçamento convertido. Pedido aguardando aprovação; confira as restrições informadas."
           : acao === "recusar"
             ? "Não aprovação pelo cliente registrada."
             : "Proposta revisada e reaberta para negociação.",
@@ -70,7 +73,21 @@ export function OrcamentoPedido({
         {new Date(String(doc["orcamento_aceito_em"])).toLocaleString("pt-BR", {
           timeZone: "America/Sao_Paulo",
         })}
-        . O aceite do cliente não substitui a aprovação interna.
+        .{" "}
+        {doc["aprovacao_automatica_em"]
+          ? "Aprovado automaticamente pelas regras comerciais."
+          : "Confira a situação e eventuais restrições para aprovação."}
+        {doc["status"] === "aguardando_aprovacao" &&
+          Array.isArray(doc["aprovacao_automatica_motivos"]) &&
+          doc["aprovacao_automatica_motivos"].length > 0 && (
+            <span className="mt-2 block space-y-1">
+              {doc["aprovacao_automatica_motivos"].map((v: { mensagem?: string }, i: number) => (
+                <span key={i} className="block text-amber-800">
+                  {v.mensagem ?? "Requer análise da gestão."}
+                </span>
+              ))}
+            </span>
+          )}
       </p>
     ) : null;
   return (
@@ -83,7 +100,8 @@ export function OrcamentoPedido({
       </div>
       <p className="text-sm text-muted-foreground">
         Enquanto for orçamento, não há reserva ou baixa de estoque, contas a receber ou comissão a
-        pagar. O aceite converte este documento em pedido e inicia a aprovação interna.
+        pagar. O aceite converte este documento em pedido e verifica automaticamente as regras de
+        aprovação.
       </p>
       {doc["observacoes"] ? (
         <p className="whitespace-pre-wrap break-words text-sm">{String(doc["observacoes"])}</p>
@@ -147,7 +165,7 @@ export function OrcamentoPedido({
             </DialogTitle>
             <DialogDescription>
               {acao === "aceitar"
-                ? "O mesmo documento e seus itens serão enviados para aprovação interna. A data do pedido passa a ser hoje para calcular os prazos da venda; a data original da proposta permanece registrada. Nenhum estoque ou financeiro será gerado agora."
+                ? "O mesmo documento e seus itens serão convertidos em pedido. Sem bloqueios de crédito ou comerciais e com estoque disponível, ele será aprovado automaticamente; se houver restrições, aguardará aprovação da gestão. A data da venda passa a ser hoje, preservando a data original da proposta. A aprovação reserva mercadoria; a baixa de estoque e as parcelas ocorrem somente na confirmação da venda."
                 : "As alterações ficam registradas no histórico do documento."}
             </DialogDescription>
           </DialogHeader>
@@ -197,7 +215,7 @@ export function OrcamentoPedido({
             {salvar.isPending
               ? "Salvando…"
               : acao === "aceitar"
-                ? "Confirmar aceite e enviar para aprovação"
+                ? "Confirmar aceite e converter em pedido"
                 : acao === "recusar"
                   ? "Registrar decisão"
                   : "Salvar revisão e reabrir"}

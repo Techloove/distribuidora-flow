@@ -11,8 +11,8 @@ Execute integralmente `db/fase236_orcamentos.sql` no SQL Editor do Supabase, ap�
 3. Use **Imprimir orçamento** para visualizar/imprimir/salvar PDF. O mesmo modelo de impressão dos pedidos identifica cada proposta como **ORÇAMENTO**, com data, validade, condições, observações e aviso de que não confirma a venda nem reserva mercadoria.
 4. Se o cliente não fechar, use **Cliente não aprovou**, informando o motivo. A proposta fica encerrada e seus itens não podem mais ser alterados. A data vencida também faz a interface mostrar **Orçamento expirado**, sem tarefa agendada e sem avançar o fluxo da venda.
 5. Para retomar uma proposta encerrada/vencida, clique **Revisar validade e proposta**. Informe validade atual/futura, revise as observações e reabra a negociação. A auditoria preserva a situação, validade e motivo anteriores.
-6. Com o aceite do cliente e os valores salvos, clique **Cliente aceitou — converter em pedido** e confirme. O mesmo documento, número e itens são reaproveitados, sem gerar um segundo pedido. Ele passa a **Aguardando aprovação**, para o fluxo interno normal. Repetir o aceite não duplica a conversão.
-7. A gestão aprova conforme as regras existentes; a confirmação da venda continua responsável pelos efeitos de estoque/financeiro. O aceite do cliente não aprova crédito, desconto ou disponibilidade de estoque.
+6. Com o aceite do cliente e os valores salvos, clique **Cliente aceitou — converter em pedido** e confirme. O mesmo documento, número e itens são reaproveitados, sem gerar um segundo pedido. Com a fase241 aplicada, passa a **Aprovado** se as regras comerciais permitirem e houver estoque para reserva; com restrições, fica **Aguardando aprovação**, exibindo os motivos. Repetir o aceite retorna a decisão anterior sem duplicar a conversão.
+7. Quando há restrição, a gestão decide a aprovação pelas regras existentes. A aprovação automática também respeita as validações de crédito, desconto, margem e disponibilidade. A confirmação da venda continua responsável pela baixa de estoque e pelas parcelas; a aprovação reserva os itens.
 
 A data comercial do pedido passa a ser o dia do aceite/conversão, no fuso de São Paulo. A data original da proposta permanece em `orcamento_data`; isso evita gerar parcelas usando a data de uma proposta antiga. A previsão de parcelas enquanto é orçamento é uma simulação para aceite hoje, não títulos emitidos. A validade é inclusiva: uma proposta válida até20/10 ainda pode ser aceita em20/10, e expira em21/10.
 
@@ -37,3 +37,5 @@ A ação **Criar, revisar e registrar decisão de orçamentos** (`pedidos_orcame
 A revisão do fluxo após a fase240 passou também no navegador com backend simulado: criação da proposta, inclusão de item, recusa, revisão/reabertura, aceite, aprovação e confirmação; preservação do mesmo documento e da data original da proposta, e liberação do envio à separação. Os testes independentes de estoque compartilhado226 e prazos227 passaram.
 
 Nenhuma migração ou operação foi executada no banco de produção durante estes testes. Não é necessária nova migração para esta revisão.
+
+A fase241 acrescenta a decisão automática no aceite. Consulte `docs/aprovacao-orcamentos241.md` para implantação, restrições e revisão administrativa. As verificações anteriores desta página descrevem a etapa histórica após a fase240.
