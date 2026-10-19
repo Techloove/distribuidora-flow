@@ -24,6 +24,14 @@ export function usePendencias() {
   const today = hojeSaoPaulo();
   const kinds = [
     {
+      id: "config-representante",
+      label: "Representantes com configuração pendente",
+      table: "representantes" as const,
+      module: "/usuarios",
+      statuses: [],
+      high: true,
+    },
+    {
       id: "aprovacao",
       label: "Pedidos aguardando aprovação",
       table: "pedidos" as const,
@@ -111,7 +119,9 @@ export function usePendencias() {
       statuses: [],
       high: false,
     },
-  ].filter((k) => acesso.pode(k.module));
+  ].filter(
+    (k) => acesso.pode(k.module) && (k.id !== "config-representante" || roles.includes("admin")),
+  );
   return useQuery({
     queryKey: [
       "pendencias",
@@ -127,6 +137,62 @@ export function usePendencias() {
     queryFn: async () => {
       const results = await Promise.all(
         kinds.map(async (k) => {
+          if (k.id === "config-representante") {
+            try {
+              const [rows, solicitacoes] = await Promise.all([
+                lerPaginas<Row>((inicio, fim) =>
+                  client!.rpc("admin_configuracoes_representantes_239").range(inicio, fim),
+                ),
+                lerPaginas<Row>((inicio, fim) =>
+                  client!
+                    .from("profiles")
+                    .select("id,nome")
+                    .eq("cadastro_status", "pendente")
+                    .order("created_at")
+                    .order("id")
+                    .range(inicio, fim),
+                ),
+              ]);
+              // Configuração administrativa é global ao usuário; não some ao filtrar outro centro.
+              const pendentes = rows.filter(
+                (r) => Array.isArray(r["pendencias"]) && r["pendencias"].length > 0,
+              );
+              const itens: Pendencia[] = pendentes.slice(0, 40).map((r) => ({
+                id: `config-representante:${String(r["representante_id"])}`,
+                categoria: k.label,
+                prioridade: "alta",
+                to: "/usuarios",
+                titulo: String(r["nome"] ?? "Representante"),
+                detalhe: (r["pendencias"] as string[]).join("; ") + ". Ação do administrador.",
+              }));
+              itens.push(
+                ...solicitacoes.slice(0, Math.max(0, 40 - itens.length)).map((r): Pendencia => ({
+                  id: `solicitacao-representante:${String(r["id"])}`,
+                  categoria: k.label,
+                  prioridade: "alta",
+                  to: "/usuarios",
+                  titulo: String(r["nome"] ?? "Novo representante"),
+                  detalhe:
+                    "Solicitação aguardando aprovação. O administrador deve definir centros de custo e comissão antes de autorizar.",
+                })),
+              );
+              return {
+                id: k.id,
+                label: k.label,
+                total: pendentes.length + solicitacoes.length,
+                itens,
+                erro: null,
+              };
+            } catch {
+              return {
+                id: k.id,
+                label: k.label,
+                total: null,
+                itens: [] as Pendencia[],
+                erro: "Não foi possível conferir a configuração dos representantes. Confira a fase239.",
+              };
+            }
+          }
           if (k.id === "cadastro") {
             try {
               const clientes = await lerPaginas<Row>((inicio, fim) => {

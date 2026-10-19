@@ -4,6 +4,7 @@ import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { ConfiguracoesRepresentantes } from "@/components/configuracoes-representantes";
 import { CadastrosRepresentantes } from "@/components/cadastros-representantes";
 import { CentrosPorUsuario } from "@/components/centros-por-usuario";
 import { ErpLayout } from "@/components/erp-layout";
@@ -220,6 +221,7 @@ function UsuariosPage() {
     >
       <div className="space-y-4">
         <CadastrosRepresentantes />
+        <ConfiguracoesRepresentantes />
         <PapeisAdmin />
         <MenusPorPerfil />
         <CentrosPorUsuario />

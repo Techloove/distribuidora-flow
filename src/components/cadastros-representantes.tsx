@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useSupabase } from "@/lib/supabase-provider";
 import { lerPaginas } from "@/lib/paginacao";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import type { Registro } from "@/lib/rotinas-distribuidora";
@@ -17,7 +18,8 @@ export function CadastrosRepresentantes() {
     [alvo, setAlvo] = useState<Registro | null>(null),
     [rep, setRep] = useState("novo"),
     [centros, setCentros] = useState<string[]>([]),
-    [motivo, setMotivo] = useState("");
+    [motivo, setMotivo] = useState(""),
+    [comissao, setComissao] = useState("");
   const q = useQuery({
     queryKey: ["cadastros-representantes", user?.id, situacao, pagina],
     enabled: !!client && isAdmin,
@@ -73,12 +75,15 @@ export function CadastrosRepresentantes() {
   const decidir = useMutation({
     mutationFn: async (autorizar: boolean) => {
       if (!alvo || !isAdmin) throw new Error("Solicitação indisponível.");
-      const { error } = await client!.rpc("admin_decidir_cadastro_221", {
+      if (autorizar && (!comissao.trim() || !Number.isFinite(Number(comissao.replace(",", ".")))))
+        throw new Error("Defina a comissão, incluindo 0 quando não houver comissão.");
+      const { error } = await client!.rpc("admin_decidir_cadastro_239", {
         _usuario: alvo["id"],
         _autorizar: autorizar,
         _representante: rep === "novo" ? null : rep,
         _centros: centros,
         _motivo: motivo,
+        _comissao: autorizar && comissao.trim() ? Number(comissao.replace(",", ".")) : null,
       });
       if (error) throw new Error(error.message);
     },
@@ -92,6 +97,8 @@ export function CadastrosRepresentantes() {
         "representantes",
         "usuario_centros",
         "cadastro-opcoes",
+        "configuracoes-representantes",
+        "pendencias",
       ])
         void qc.invalidateQueries({ queryKey: [key] });
     },
@@ -103,8 +110,9 @@ export function CadastrosRepresentantes() {
       <h2 className="font-semibold">Primeiros cadastros de representantes</h2>
       <p className="text-sm text-muted-foreground">
         Novos cadastros ficam sem acesso até a autorização. Vincule a carteira do representante e
-        escolha os centros permitidos. Após a aprovação, o representante deve completar o próprio
-        Cadastro Unificado no primeiro acesso. Um novo representante começa sem clientes vinculados.
+        defina os centros permitidos e confirme a comissão. Após a aprovação, o representante deve
+        completar o próprio Cadastro Unificado no primeiro acesso. Um novo representante começa sem
+        clientes vinculados.
       </p>
       <div className="flex flex-wrap gap-2">
         <select
@@ -151,6 +159,7 @@ export function CadastrosRepresentantes() {
               setRep("novo");
               setCentros([]);
               setMotivo("");
+              setComissao("");
             }}
           >
             Analisar cadastro
@@ -232,9 +241,33 @@ export function CadastrosRepresentantes() {
               </label>
             ))}
           </fieldset>
+          <div className="space-y-2 text-sm">
+            <label htmlFor="comissao-aprovacao">Comissão padrão do representante (%)</label>
+            <Input
+              id="comissao-aprovacao"
+              aria-describedby="comissao-aprovacao-ajuda"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              placeholder="Informe o percentual"
+              value={comissao}
+              disabled={decidir.isPending}
+              onChange={(e) => setComissao(e.target.value)}
+            />
+            <p id="comissao-aprovacao-ajuda" className="text-xs text-muted-foreground">
+              Obrigatória. Informe 0 explicitamente se o representante não receber comissão.
+            </p>
+          </div>
           <Button
             disabled={
-              decidir.isPending || opcoes.isPending || opcoes.isError || centros.length === 0
+              decidir.isPending ||
+              opcoes.isPending ||
+              opcoes.isError ||
+              centros.length === 0 ||
+              !comissao.trim() ||
+              Number(comissao) < 0 ||
+              Number(comissao) > 100
             }
             onClick={() => decidir.mutate(true)}
           >
