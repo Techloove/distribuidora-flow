@@ -12,7 +12,7 @@ import { ProgressoDescontoPeso } from "@/components/progresso-desconto-peso";
 import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -94,6 +94,14 @@ export function DocumentoPage({
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
   const [item, setItem] = useState({ ...emptyItem });
+  const consultaPreco = useRef(0);
+  const [consultandoPreco, setConsultandoPreco] = useState(false);
+  useEffect(() => {
+    consultaPreco.current++;
+    setItem({ ...emptyItem });
+    setPromo(null);
+    setConsultandoPreco(false);
+  }, [selected]);
   const [promo, setPromo] = useState<{
     preco: number;
     nome: string;
@@ -387,6 +395,27 @@ export function DocumentoPage({
             acompanhamento.data.orcamento_aceito_em ?? documento["orcamento_aceito_em"],
         }
       : documento;
+
+  const lojaDocumento = String(doc?.["centro_id"] ?? "");
+  useEffect(() => {
+    consultaPreco.current++;
+    setItem({ ...emptyItem });
+    setPromo(null);
+    setConsultandoPreco(false);
+  }, [lojaDocumento]);
+  const catalogoPedido = useQuery({
+    queryKey: ["loja-catalogo", "pedido", user?.id, lojaDocumento],
+    enabled: !!client && config.table === "pedidos" && !!lojaDocumento,
+    queryFn: () =>
+      lerPaginas<Row>(async (inicio, fim) => {
+        const { data, error } = await client!
+          .rpc("listar_catalogo_loja_244", { _loja: lojaDocumento, _somente_disponiveis: true })
+          .range(inicio, fim);
+        return { data: data as Row[] | null, error };
+      }),
+  });
+  const produtosDisponiveis =
+    config.table === "pedidos" ? (catalogoPedido.data ?? []) : (produtos.data ?? []);
 
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
   const propostaEditavel =
@@ -689,6 +718,7 @@ export function DocumentoPage({
     mutationFn: async () => {
       if (!selected) throw new Error("Selecione um documento");
       if (!item.produto_id) throw new Error("Selecione o produto");
+      if (consultandoPreco) throw new Error("Aguarde a consulta do preço da loja");
       const payload: Record<string, unknown> = {
         [config.parentKey]: selected,
         produto_id: item.produto_id,
@@ -953,21 +983,32 @@ export function DocumentoPage({
   /**
    * Preço do item: em pedidos vale o preço vigente da promoção (tabela de preço
    * dentro do período de vigência para o cliente/UF). Sem promoção vigente,
-   * cai no preço de venda do produto.
+   * usa o preço-base configurado na loja do documento.
    */
   async function pickProduto(id: string) {
-    const p = produtos.data?.find((x) => x["id"] === id);
+    const p = produtosDisponiveis.find((x) => x["id"] === id);
+    const sequencia = ++consultaPreco.current;
     const base = Number(
       (config.table === "pedidos" ? p?.["preco_venda"] : p?.["custo_medio"]) ?? 0,
     );
     setItem((s) => ({ ...s, produto_id: id, preco: String(base) }));
     setPromo(null);
-    if (config.table !== "pedidos" || !id || !client) return;
-    const { data, error } = await client.rpc("preco_produto_info", {
-      _produto_id: id,
-      _cliente_id: clienteFoco || null,
+    if (config.table !== "pedidos" || !id || !client) {
+      setConsultandoPreco(false);
+      return;
+    }
+    setConsultandoPreco(true);
+    const { data, error } = await client.rpc("preco_item_pedido_244", {
+      _produto: id,
+      _pedido: selected,
     });
-    if (error) return;
+    if (sequencia !== consultaPreco.current) return;
+    setConsultandoPreco(false);
+    if (error) {
+      setItem((s) => ({ ...s, produto_id: "", preco: "" }));
+      toast.error(error.message);
+      return;
+    }
     const info = (Array.isArray(data) ? data[0] : data) as
       | {
           preco: number;
@@ -977,7 +1018,11 @@ export function DocumentoPage({
         }
       | undefined;
     const vigente = Number(info?.preco ?? 0);
-    if (!vigente) return;
+    if (!info || !Number.isFinite(vigente) || vigente < 0) {
+      setItem((s) => ({ ...s, produto_id: "", preco: "" }));
+      toast.error("Não foi possível obter o preço desta loja.");
+      return;
+    }
     setItem((s) => (s.produto_id === id ? { ...s, preco: String(vigente) } : s));
     if (info?.promocao && vigente !== base) {
       setPromo({
@@ -1787,8 +1832,17 @@ export function DocumentoPage({
               <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
+                  {config.table === "pedidos" && catalogoPedido.isError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      Não foi possível consultar os produtos desta loja:{" "}
+                      {catalogoPedido.error.message}
+                    </p>
+                  )}
+                  {config.table === "pedidos" && catalogoPedido.isPending && (
+                    <p className="text-sm text-muted-foreground">Carregando produtos da loja…</p>
+                  )}
                   <ProdutoPicker
-                    produtos={produtos.data ?? []}
+                    produtos={produtosDisponiveis}
                     comprados={comprados.data ?? new Map()}
                     value={item.produto_id}
                     onPick={(id) => pickProduto(id)}
@@ -1810,7 +1864,7 @@ export function DocumentoPage({
                     type="number"
                     step="0.01"
                     value={item.preco}
-                    readOnly={!podeAlterarPreco}
+                    readOnly={!podeAlterarPreco || consultandoPreco}
                     title={podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"}
                     onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                   />
@@ -1858,7 +1912,15 @@ export function DocumentoPage({
                   </>
                 )}
                 <div className="flex items-end">
-                  <Button onClick={() => addItem.mutate()} disabled={addItem.isPending}>
+                  <Button
+                    onClick={() => addItem.mutate()}
+                    disabled={
+                      addItem.isPending ||
+                      consultandoPreco ||
+                      (config.table === "pedidos" &&
+                        (catalogoPedido.isPending || catalogoPedido.isError))
+                    }
+                  >
                     <Plus className="size-4" /> Item
                   </Button>
                 </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { CatalogoLoja } from "@/components/catalogo-loja";
 import { CobrancaCentros } from "@/components/cobranca-centros";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,13 @@ export function ConfiguracaoLoja() {
           key={valida}
           loja={valida}
           editar={canManage && permissoes.pode("configuracao_rotinas_editar")}
+        />
+      )}
+      {valida && (
+        <CatalogoLoja
+          key={valida}
+          loja={valida}
+          nome={acesso.lista.find((l) => l.id === valida)?.nome ?? ""}
         />
       )}
       {valida && <CobrancaCentros lojaId={valida} />}

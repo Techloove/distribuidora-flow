@@ -3,6 +3,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 
 export const ACOES_ROTINAS = {
+  lojas_catalogo_configurar: "/centros",
   centros_cobranca_configurar: "/centros",
   integridade_ver: "/configuracoes",
   receber_renegociar: "/receber",
