@@ -1,3 +1,4 @@
+import { erroPersistenciaSicredi } from "./sicredi-persistencia";
 import {
   SICREDI_SANDBOX,
   liquidacaoSicredi,
@@ -47,14 +48,7 @@ async function serviceRpc<T>(fn: string, payload: Record<string, unknown>): Prom
   });
   const body = await res.text();
   if (!res.ok) {
-    let message = "Falha ao persistir operação Sicredi. Confira a migração fase224 no Supabase.";
-    try {
-      const error = JSON.parse(body);
-      if (error.code === "P0001") message = String(error.message);
-    } catch {
-      /* Não expõe respostas com credenciais. */
-    }
-    throw new Error(message);
+    throw new Error(erroPersistenciaSicredi(fn, res.status, body));
   }
   return (body ? JSON.parse(body) : null) as T;
 }
