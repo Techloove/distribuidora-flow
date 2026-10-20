@@ -60,6 +60,9 @@ select set_config('request.jwt.claim.role','service_role',false);`);
     const migration = readSql("fase224_sicredi_api_manual391.sql");
     await db.exec(migration);
     await db.exec(migration);
+    await db.exec("alter table contas_financeiras add column conta text");
+    await db.exec(readSql("fase249_correcao_conta_recebimento.sql"));
+    await db.exec(readSql("fase249_correcao_conta_recebimento.sql"));
     const row = async (table, key, value) =>
       (
         await db.query(

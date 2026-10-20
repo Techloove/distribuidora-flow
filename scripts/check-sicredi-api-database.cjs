@@ -125,6 +125,16 @@ select set_config('request.jwt.claim.role','service_role',false);`);
         ],
       );
     await register(b);
+    // O esquema real possui conta (texto), ausente na fixture antiga.
+    await db.exec("alter table contas_financeiras add column conta text");
+    await assert.rejects(
+      liquidar(b, paid),
+      (error) => error.code === "42702" && error.message.includes('"conta"'),
+    );
+    assert.equal(Number((await row("contas_receber", "id", id(31))).valor_pago), 0);
+    assert.equal((await db.query("select count(*) n from movimentos_financeiros")).rows[0].n, 0);
+    await db.exec(readSql("fase249_correcao_conta_recebimento.sql"));
+    await db.exec(readSql("fase249_correcao_conta_recebimento.sql"));
     await liquidar(b, paid);
     let cr = await row("contas_receber", "id", id(31));
     assert.equal(Number(cr.valor_pago), 107);
