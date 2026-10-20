@@ -169,9 +169,11 @@ export function SelecionarPedidosLote({
 export function ConcluirSeparacaoPratica({
   pedidoId,
   numero,
+  onConcluido,
 }: {
   pedidoId: string;
   numero: string;
+  onConcluido?: () => void;
 }) {
   const { client } = useSupabase(),
     perm = usePermissoesRotinas(),
@@ -189,6 +191,7 @@ export function ConcluirSeparacaoPratica({
     onSuccess: async () => {
       setAberto(false);
       toast.success("Separação concluída. Pedido liberado para montagem da carga.");
+      onConcluido?.();
       await atualizar();
     },
   });

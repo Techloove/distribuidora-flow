@@ -1,3 +1,4 @@
+import { lerPaginas } from "@/lib/paginacao";
 import { identidadeLoja } from "@/lib/identidade-loja";
 import { useRef, useState } from "react";
 import { Loader2, Printer } from "lucide-react";
@@ -35,9 +36,26 @@ export function ImprimirPedidos({
     setLoading(true);
     try {
       const ids = [...new Set(pedidoIds)];
+      const lerDocumentos = async (tabela: string, coluna: string, ordem: string) => {
+        const resultado: PrintRow[] = [];
+        for (let de = 0; de < ids.length; de += 100) {
+          resultado.push(
+            ...(await lerPaginas<PrintRow>((inicio, fim) =>
+              client
+                .from(tabela)
+                .select("*")
+                .in(coluna, ids.slice(de, de + 100))
+                .order(ordem)
+                .order("id")
+                .range(inicio, fim),
+            )),
+          );
+        }
+        return resultado;
+      };
       const [orders, items, companies] = await Promise.all([
-        client.from("pedidos").select("*").in("id", ids).order("numero"),
-        client.from("pedido_itens").select("*").in("pedido_id", ids).order("created_at"),
+        lerDocumentos("pedidos", "id", "numero"),
+        lerDocumentos("pedido_itens", "pedido_id", "created_at"),
         client
           .from("empresas")
           .select(
@@ -45,10 +63,8 @@ export function ImprimirPedidos({
           )
           .limit(1),
       ]);
-      if (orders.error) throw new Error(orders.error.message);
-      if (items.error) throw new Error(items.error.message);
-      const pedidos = (orders.data ?? []) as PrintRow[];
-      const linhas = (items.data ?? []) as PrintRow[];
+      const pedidos = orders;
+      const linhas = items;
       if (pedidos.length !== ids.length)
         throw new Error("Não foi possível acessar todos os pedidos selecionados.");
       const lookup = async (table: string, values: unknown[], columns = "*") => {
@@ -56,9 +72,16 @@ export function ImprimirPedidos({
           ...new Set(values.filter((v): v is string => typeof v === "string" && v.length > 0)),
         ];
         if (!keys.length) return [] as PrintRow[];
-        const { data, error } = await client.from(table).select(columns).in("id", keys);
-        if (error) throw new Error(error.message);
-        return (data ?? []) as unknown as PrintRow[];
+        const resultado: PrintRow[] = [];
+        for (let de = 0; de < keys.length; de += 100) {
+          const { data, error } = await client
+            .from(table)
+            .select(columns)
+            .in("id", keys.slice(de, de + 100));
+          if (error) throw new Error(error.message);
+          resultado.push(...((data ?? []) as unknown as PrintRow[]));
+        }
+        return resultado;
       };
       const [clientes, produtos, centros, representantes, formas] = await Promise.all([
         lookup(

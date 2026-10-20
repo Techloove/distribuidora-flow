@@ -1,3 +1,8 @@
+import {
+  SeparacaoLote,
+  AcoesAposSeparacao,
+  type PedidoSeparacaoLote,
+} from "@/components/separacao-lote";
 import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { ConcluirSeparacaoPratica } from "@/components/logistica-pratica";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +34,7 @@ export const Route = createFileRoute("/_app/separacao")({
       {
         name: "description",
         content:
-          "Lista de separação dos pedidos aprovados, por pedido ou por onda, com filtros por rota, cliente e status e impressão do romaneio de picking.",
+          "Seleção de pedidos, filtros operacionais, relatórios consolidados por produto ou cliente e conclusão da separação em lote.",
       },
       { property: "og:title", content: "Separação de pedidos — ERP Distribuidora" },
       { property: "og:description", content: "Picking por pedido ou por onda de separação." },
@@ -49,6 +54,9 @@ function SeparacaoPage() {
   const queryClient = useQueryClient();
   const [modo, setModo] = useState<"pedido" | "onda">("pedido");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [selecao, setSelecao] = useState<{ chave: string; ids: string[] }>({ chave: "", ids: [] });
+  const [concluidos, setConcluidos] = useState<PedidoSeparacaoLote[]>([]);
+  const chaveSelecao = JSON.stringify([filtros, centro, user?.id]);
   const [selected, setSelected] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
@@ -75,6 +83,8 @@ function SeparacaoPage() {
       status: uniq("status"),
       clientes: uniq("cliente"),
       centros: uniq("centro"),
+      cidades: uniq("cidade"),
+      representantes: uniq("representante"),
     };
   }, [lista.data]);
 
@@ -82,6 +92,12 @@ function SeparacaoPage() {
     let list = lista.data ?? [];
     if (centro) list = list.filter((r) => r["centro_id"] === centro);
     const f = filtros;
+    if (f["cidade"]) list = list.filter((r) => String(r["cidade"] ?? "") === f["cidade"]);
+    if (f["representante"])
+      list = list.filter((r) => String(r["representante"] ?? "") === f["representante"]);
+    if (f["de"]) list = list.filter((r) => String(r["data_pedido"] ?? "").slice(0, 10) >= f["de"]!);
+    if (f["ate"])
+      list = list.filter((r) => String(r["data_pedido"] ?? "").slice(0, 10) <= f["ate"]!);
     if (f["rota"]) list = list.filter((r) => String(r["rota"] ?? "") === f["rota"]);
     if (f["status"]) list = list.filter((r) => String(r["status"]) === f["status"]);
     if (f["cliente"]) list = list.filter((r) => String(r["cliente"] ?? "") === f["cliente"]);
@@ -201,6 +217,16 @@ function SeparacaoPage() {
     return [...map.entries()];
   }, [rows]);
 
+  const idsVisiveis = new Set(pedidos.map(([id]) => id));
+  const marcados =
+    selecao.chave === chaveSelecao ? selecao.ids.filter((id) => idsVisiveis.has(id)) : [];
+  const marcar = (ids: string[]) => setSelecao({ chave: chaveSelecao, ids });
+  const metadados = pedidos.map(([id, p]) => ({ id, ...p }));
+  const aposConcluir = (lista: PedidoSeparacaoLote[]) => {
+    setConcluidos(lista);
+    marcar([]);
+  };
+
   const resumoFiltro = [
     filtros["rota"] ? `Rota: ${filtros["rota"]}` : null,
     filtros["status"] ? `Status: ${filtros["status"]}` : null,
@@ -263,9 +289,12 @@ function SeparacaoPage() {
             Por onda
           </Button>
           <Button variant="secondary" onClick={() => window.print()} disabled={rows.length === 0}>
-            <Printer className="size-4" /> Imprimir lista
+            <Printer className="size-4" /> Imprimir lista do filtro
           </Button>
-          <ImprimirPedidos pedidoIds={pedidos.map(([id]) => id)} label="Imprimir pedidos" />
+          <ImprimirPedidos
+            pedidoIds={pedidos.map(([id]) => id)}
+            label="Imprimir todos os pedidos do filtro"
+          />
         </div>
       }
     >
@@ -291,7 +320,7 @@ function SeparacaoPage() {
             options={opcoes.clientes}
           />
           <FilterSelect
-            label="Centro de custo"
+            label="Loja"
             value={filtros["centro"] ?? ""}
             onChange={(v) => setF("centro", v)}
             options={opcoes.centros}
@@ -313,7 +342,56 @@ function SeparacaoPage() {
             options={[{ value: "1", label: "Somente itens em falta" }]}
             allLabel="Todos os itens"
           />
+          <FilterSelect
+            label="Cidade"
+            value={filtros["cidade"] ?? ""}
+            onChange={(v) => setF("cidade", v)}
+            options={opcoes.cidades}
+          />
+          <FilterSelect
+            label="Representante"
+            value={filtros["representante"] ?? ""}
+            onChange={(v) => setF("representante", v)}
+            options={opcoes.representantes}
+          />
+          <FilterText
+            label="Data do pedido de"
+            type="date"
+            value={filtros["de"] ?? ""}
+            onChange={(v) => setF("de", v)}
+          />
+          <FilterText
+            label="Data do pedido até"
+            type="date"
+            value={filtros["ate"] ?? ""}
+            onChange={(v) => setF("ate", v)}
+          />
         </FilterBar>
+        <div className="no-print flex flex-wrap gap-2 items-center">
+          <Button
+            variant="outline"
+            disabled={!pedidos.length}
+            onClick={() => marcar(pedidos.map(([id]) => id))}
+          >
+            Selecionar todos do filtro ({pedidos.length})
+          </Button>
+          <Button variant="ghost" disabled={!marcados.length} onClick={() => marcar([])}>
+            Limpar seleção
+          </Button>
+          <span className="text-sm">{marcados.length} selecionado(s)</span>
+        </div>
+        <SeparacaoLote
+          pedidos={metadados.filter((p) => marcados.includes(p.id))}
+          linhas={lista.data ?? []}
+          onConcluido={aposConcluir}
+        />
+        {!!concluidos.length && (
+          <AcoesAposSeparacao
+            key={concluidos.map((p) => p.id).join(",")}
+            pedidos={concluidos}
+            onClose={() => setConcluidos([])}
+          />
+        )}
 
         <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
           {[
@@ -421,6 +499,14 @@ function SeparacaoPage() {
               <table className="w-full min-w-[860px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
+                    <th className="no-print px-3 py-2">
+                      <input
+                        type="checkbox"
+                        aria-label="Selecionar todos os pedidos do filtro"
+                        checked={!!pedidos.length && marcados.length === pedidos.length}
+                        onChange={(e) => marcar(e.target.checked ? pedidos.map(([id]) => id) : [])}
+                      />
+                    </th>
                     <th className="px-4 py-2 text-left font-medium">Nº</th>
                     <th className="px-4 py-2 text-left font-medium">Cliente</th>
                     <th className="px-4 py-2 text-left font-medium">Rota</th>
@@ -448,6 +534,20 @@ function SeparacaoPage() {
                               : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
                           }`}
                         >
+                          <td className="no-print px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              aria-label={`Selecionar pedido ${p.numero}`}
+                              checked={marcados.includes(id)}
+                              onChange={(e) =>
+                                marcar(
+                                  e.target.checked
+                                    ? [...marcados, id]
+                                    : marcados.filter((x) => x !== id),
+                                )
+                              }
+                            />
+                          </td>
                           <td className="px-4 py-2.5 font-semibold">#{p.numero}</td>
                           <td className="max-w-[320px] truncate px-4 py-2.5">{p.cliente}</td>
                           <td className="px-4 py-2.5">{p.rota}</td>
@@ -490,7 +590,11 @@ function SeparacaoPage() {
                               </Button>
                             ) : null}
                             {["separacao", "separado"].includes(p.status) ? (
-                              <ConcluirSeparacaoPratica pedidoId={id} numero={p.numero} />
+                              <ConcluirSeparacaoPratica
+                                pedidoId={id}
+                                numero={p.numero}
+                                onConcluido={() => aposConcluir([{ id, ...p }])}
+                              />
                             ) : null}
                             {p.status === "conferido" ? (
                               <span className="text-[11px] text-emerald-600">
@@ -500,7 +604,7 @@ function SeparacaoPage() {
                           </td>
                         </tr>
                         <tr className={aberto ? "" : "hidden print:table-row"}>
-                          <td colSpan={8} className="bg-muted/20 px-4 py-3">
+                          <td colSpan={9} className="bg-muted/20 px-4 py-3">
                             <Table>
                               <TableHeader>
                                 <TableRow>
