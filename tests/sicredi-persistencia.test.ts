@@ -25,3 +25,25 @@ test("diagnóstico diferencia rotina ausente, permissão e integridade sem expor
     erroPersistenciaSicredi("operacao", 400, '{"code":"P0001","message":"Saldo do titulo mudou"}'),
   ).toBe("Saldo do titulo mudou");
 });
+
+test("42702 identifica somente o nome da coluna ambígua sem expor detalhes", () => {
+  const result = erroPersistenciaSicredi(
+    "sicredi_liquidar_api_224",
+    400,
+    JSON.stringify({
+      code: "42702",
+      message: 'column reference "conta" is ambiguous',
+      details: "segredo-fixture",
+    }),
+  );
+  expect(result).toContain('campo "conta"');
+  expect(result).toContain("42702");
+  expect(result).not.toContain("segredo-fixture");
+  expect(
+    erroPersistenciaSicredi(
+      "operacao",
+      400,
+      JSON.stringify({ code: "42702", message: "segredo-fixture" }),
+    ),
+  ).not.toContain("segredo-fixture");
+});
