@@ -2046,6 +2046,7 @@ export function DocumentoPage({
 
             {config.table === "pedidos" && (
               <ProgressoDescontoPeso
+                loja={lojaDocumento}
                 carregando={itens.isPending || itens.isFetching}
                 erro={itens.isError || (itens.data ?? []).some((it) => !it["produto_peso"])}
                 itens={(itens.data ?? []).map((it) => {

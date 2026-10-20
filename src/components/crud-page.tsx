@@ -204,6 +204,7 @@ export function CrudPage({
   readOnly = false,
   uppercase = false,
   initialEditId,
+  defaultValues,
 }: {
   table: string;
   fields: CrudField[];
@@ -245,6 +246,7 @@ export function CrudPage({
   /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
   uppercase?: boolean;
   initialEditId?: string | undefined;
+  defaultValues?: Record<string, string | boolean>;
 }) {
   const isUpperField = (f: CrudField) => !f.type || f.type === "text";
   const { client, user, canManage } = useSupabase();
@@ -340,7 +342,7 @@ export function CrudPage({
         next[f.name] = f.type === "checkbox" ? true : "";
       }
     }
-    setForm(next);
+    setForm({ ...next, ...defaultValues });
     setOpen(true);
   }
 
@@ -469,6 +471,8 @@ export function CrudPage({
       toast.success(editing ? "Registro atualizado" : "Registro criado");
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "desconto_faixas_peso")
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {
         queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
@@ -486,6 +490,8 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Registro excluído");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "desconto_faixas_peso")
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {
         queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
@@ -503,6 +509,8 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Atualizado");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "desconto_faixas_peso")
+        queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {
         queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         queryClient.invalidateQueries({ queryKey: ["clientes"] });

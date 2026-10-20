@@ -222,7 +222,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
             O teto do produto complementa o limite geral da loja: vale o mais restritivo. Desconto
             acima do teto exige aprovação. A indisponibilidade impede novos itens e
             aprovação/confirmação de pedidos em aberto; vendas confirmadas conservam seu histórico.
-            As promoções continuam compartilhadas nesta fase e podem definir o preço vigente.
+            As promoções vigentes da loja podem definir o preço do item.
           </p>
           <Button disabled={!editar || salvar.isPending} onClick={() => salvar.mutate()}>
             {salvar.isPending ? "Salvando…" : "Salvar produto nesta loja"}

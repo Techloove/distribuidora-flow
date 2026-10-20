@@ -10,21 +10,24 @@ import { useSupabase } from "@/lib/supabase-provider";
 const numero = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 export function ProgressoDescontoPeso({
   itens,
+  loja,
   carregando,
   erro,
 }: {
   itens: ItemPeso[];
+  loja: string;
   carregando: boolean;
   erro: boolean;
 }) {
   const { client, user } = useSupabase();
   const faixas = useQuery({
-    queryKey: ["desconto_faixas_peso", "progresso", user?.id],
-    enabled: !!client && !!user,
+    queryKey: ["desconto_faixas_peso", "progresso", user?.id, loja],
+    enabled: !!client && !!user && !!loja,
     queryFn: async () => {
       const { data, error } = await client!
         .from("desconto_faixas_peso")
         .select("id, nome, categoria, peso_min, peso_max, percentual, ordem, ativo")
+        .eq("centro_id", loja)
         .eq("ativo", true)
         .order("ordem")
         .order("peso_min");

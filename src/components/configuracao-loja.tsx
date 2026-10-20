@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import { setCentro } from "@/lib/centro-store";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -79,6 +81,30 @@ export function ConfiguracaoLoja() {
           loja={valida}
           nome={acesso.lista.find((l) => l.id === valida)?.nome ?? ""}
         />
+      )}
+      {valida && (
+        <div className="rounded-xl border p-4 space-y-3">
+          <h3 className="font-semibold">Promoções e descontos por peso</h3>
+          <p className="text-sm text-muted-foreground">
+            Gerencie campanhas e faixas próprias da loja selecionada.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Link
+              to="/tabelas-preco"
+              onClick={() => setCentro(valida)}
+              className="font-medium underline"
+            >
+              Configurar promoções desta loja
+            </Link>
+            <Link
+              to="/descontos-peso"
+              onClick={() => setCentro(valida)}
+              className="font-medium underline"
+            >
+              Configurar faixas de desconto desta loja
+            </Link>
+          </div>
+        </div>
       )}
       {valida && <CobrancaCentros lojaId={valida} />}
     </section>
@@ -173,8 +199,8 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
       </div>
       <p className="text-xs text-muted-foreground">
         As regras valem nas próximas validações e apurações. Comissões pagas são preservadas. Os
-        prazos das parcelas seguem a forma de pagamento do pedido. Produtos, preços e faixas de
-        desconto por loja serão tratados na próxima parte.
+        prazos das parcelas seguem a forma de pagamento do pedido. Produtos, preços, campanhas e
+        faixas de desconto são configurados individualmente por loja.
       </p>
       {!editar && (
         <p className="text-sm text-muted-foreground">

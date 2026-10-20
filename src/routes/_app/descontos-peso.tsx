@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useCentroValido } from "@/lib/centros-acesso";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { ErpLayout } from "@/components/erp-layout";
 
@@ -25,6 +27,14 @@ export const Route = createFileRoute("/_app/descontos-peso")({
 });
 
 const fields: CrudField[] = [
+  {
+    name: "centro_id",
+    label: "Loja",
+    type: "ref",
+    ref: { table: "centros", labelField: "nome" },
+    required: true,
+    inTable: true,
+  },
   { name: "nome", label: "Nome da faixa", span: 2, inTable: true, required: true },
   {
     name: "categoria",
@@ -46,6 +56,8 @@ const fields: CrudField[] = [
 ];
 
 function DescontosPesoPage() {
+  const cv = useCentroValido();
+  const permissoes = usePermissoesRotinas();
   return (
     <ErpLayout
       title="Descontos por peso (kg)"
@@ -53,6 +65,8 @@ function DescontosPesoPage() {
     >
       <CrudPage
         table="desconto_faixas_peso"
+        readOnly={cv.isLoading || !!cv.error || !permissoes.pode("lojas_ofertas_configurar")}
+        defaultValues={{ centro_id: cv.centro }}
         fields={fields}
         orderBy="ordem"
         emptyLabel="Nenhuma faixa cadastrada ainda."

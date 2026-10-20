@@ -35,6 +35,7 @@ test("migração de acessos não depende de tabela temporária entre comandos", 
 
 test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da interface", () => {
   const novas = [
+    "lojas_ofertas_configurar",
     "lojas_catalogo_configurar",
     "receber_renegociar",
     "comissao_proporcional_operar",
@@ -48,6 +49,7 @@ test("cada ação nova possui registro no catálogo SQL com o mesmo módulo da i
     "integridade_ver",
   ] as const;
   const files = [
+    "fase245_promocoes_descontos_lojas.sql",
     "fase244_catalogo_precos_lojas.sql",
     "fase212_reservas_estoque.sql",
     "fase213_depositos_inventario.sql",

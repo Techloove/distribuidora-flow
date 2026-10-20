@@ -37,6 +37,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCentroValido } from "@/lib/centros-acesso";
+import { setCentro } from "@/lib/centro-store";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/tabelas-preco")({
@@ -153,9 +156,19 @@ async function listarPaginas<T>(
 }
 
 function TabelasPrecoPage() {
-  const { client, canManage, user, loading } = useSupabase();
+  const { client, canManage: gestao, user, loading } = useSupabase();
+  const cv = useCentroValido();
+  const acesso = usePermissoesRotinas();
+  const canManage = gestao && acesso.pode("lojas_ofertas_configurar");
   const queryClient = useQueryClient();
   const hoje = hojeLocal();
+  useEffect(() => {
+    setSelected(null);
+    setDialogCampanha(false);
+    setDialogProdutos(false);
+    setEditandoItem(null);
+    setRemover(null);
+  }, [cv.centro]);
   const [selected, setSelected] = useState<string | null>(null);
   const [buscaCampanha, setBuscaCampanha] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
@@ -174,16 +187,17 @@ function TabelasPrecoPage() {
   const [preco, setPreco] = useState("");
   const [descontoMaximo, setDescontoMaximo] = useState("0");
   const [remover, setRemover] = useState<Item | null>(null);
-  const enabled = !!client && !!user && !loading;
+  const enabled = !!client && !!user && !loading && !!cv.centro && !cv.isLoading && !cv.error;
 
   const tabelas = useQuery({
-    queryKey: ["tabelas_preco", user?.id],
+    queryKey: ["tabelas_preco", user?.id, cv.centro],
     enabled,
     queryFn: () =>
       listarPaginas<Campanha>((de, ate) =>
         client!
           .from("tabelas_preco")
           .select("*")
+          .eq("centro_id", cv.centro)
           .order("created_at", { ascending: false })
           .order("id")
           .range(de, ate),
@@ -203,13 +217,12 @@ function TabelasPrecoPage() {
       ),
   });
   const produtos = useQuery({
-    queryKey: ["produtos", "options", user?.id],
+    queryKey: ["produtos", "options", user?.id, cv.centro],
     enabled,
     queryFn: () =>
       listarPaginas<Produto>((de, ate) =>
         client!
-          .from("produtos")
-          .select("id, codigo, descricao, preco_venda")
+          .rpc("listar_catalogo_loja_244", { _loja: cv.centro, _somente_disponiveis: false })
           .order("descricao")
           .order("id")
           .range(de, ate),
@@ -230,13 +243,14 @@ function TabelasPrecoPage() {
       ),
   });
   const promocoes = useQuery({
-    queryKey: ["vw_promocoes", user?.id],
+    queryKey: ["vw_promocoes", user?.id, cv.centro],
     enabled,
     queryFn: () =>
       listarPaginas<Oferta>((de, ate) =>
         client!
           .from("vw_promocoes")
           .select("*")
+          .eq("centro_id", cv.centro)
           .order("produto_descricao")
           .order("item_id")
           .range(de, ate),
@@ -308,7 +322,9 @@ function TabelasPrecoPage() {
         throw new Error("A data final deve ser igual ou posterior ao início.");
       if (!Number.isInteger(Number(head.prioridade)))
         throw new Error("A prioridade deve ser um número inteiro.");
+      if (!cv.centro) throw new Error("Selecione uma loja.");
       const payload = {
+        centro_id: cv.centro,
         nome: head.nome.trim(),
         cliente_id: head.cliente_id || null,
         uf: head.uf || null,
@@ -495,13 +511,34 @@ function TabelasPrecoPage() {
             <Printer className="size-4" /> Imprimir
           </Button>
           {canManage && (
-            <Button onClick={() => abrirCampanha()}>
+            <Button disabled={!enabled} onClick={() => abrirCampanha()}>
               <Plus className="size-4" /> Nova promoção
             </Button>
           )}
         </div>
       }
     >
+      <div className="mb-5 space-y-2">
+        <Label htmlFor="promocoes-loja">Loja das promoções</Label>
+        <select
+          id="promocoes-loja"
+          className="h-10 w-full max-w-lg rounded-md border bg-background px-3"
+          value={cv.centro}
+          onChange={(e) => setCentro(e.target.value)}
+        >
+          <option value="">Selecione uma loja</option>
+          {cv.lista.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.nome}
+            </option>
+          ))}
+        </select>
+        <p className="text-sm text-muted-foreground">
+          Campanhas e preços desta loja. Selecione uma loja para consultar ou configurar suas
+          ofertas.
+        </p>
+        {cv.error && <p role="alert">{cv.error.message}</p>}
+      </div>
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {[
@@ -808,7 +845,7 @@ function TabelasPrecoPage() {
                     {canManage ? " Crie uma promoção para começar." : ""}
                   </p>
                   {canManage && (
-                    <Button onClick={() => abrirCampanha()}>
+                    <Button disabled={!enabled} onClick={() => abrirCampanha()}>
                       <Plus className="size-4" /> Nova promoção
                     </Button>
                   )}

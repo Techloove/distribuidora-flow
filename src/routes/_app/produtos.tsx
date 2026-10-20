@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { CrudPage, type CrudField, type Row } from "@/components/crud-page";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { ErpLayout } from "@/components/erp-layout";
 import { Button } from "@/components/ui/button";
 import { HistoricoProduto } from "@/components/historico-produto";
@@ -141,16 +142,18 @@ const fmtDate = (v: unknown) => {
 };
 
 function ProdutosPage() {
-  const { client } = useSupabase();
+  const { client, user } = useSupabase();
+  const cv = useCentroValido();
 
   /** Promoções vigentes (tabelas de preço) usadas para exibir o preço promocional do produto. */
   const promocoes = useQuery({
-    queryKey: ["vw_promocoes", "vigentes"],
-    enabled: !!client,
+    queryKey: ["vw_promocoes", "vigentes", user?.id, cv.centro],
+    enabled: !!client && !!cv.centro && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_promocoes")
         .select("produto_id, preco_promocional, vigencia_fim, tabela_nome, vigente, prioridade")
+        .eq("centro_id", cv.centro)
         .order("prioridade", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Record<string, unknown>[];
