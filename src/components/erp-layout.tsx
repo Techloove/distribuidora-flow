@@ -67,7 +67,7 @@ const nav = [
       { to: "/produtos", label: "Produtos", icon: Package },
       { to: "/cadastros-padrao", label: "Categorias, marcas e cidades", icon: Tags },
       { to: "/tabelas-preco", label: "Promoção", icon: Tags },
-      { to: "/centros", label: "Centros", icon: Building2 },
+      { to: "/centros", label: "Lojas", icon: Building2 },
       { to: "/rotas", label: "Rotas de entrega", icon: Route },
       { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
       { to: "/descontos-peso", label: "Descontos por peso (kg)", icon: Percent },
@@ -134,15 +134,15 @@ function CentroFiltro() {
         <SelectValue
           placeholder={
             error
-              ? "Falha ao carregar centros"
+              ? "Falha ao carregar lojas"
               : isLoading
-                ? "Carregando centros…"
+                ? "Carregando lojas…"
                 : "Nenhum centro disponível"
           }
         />
       </SelectTrigger>
       <SelectContent>
-        {todos ? <SelectItem value="todos">Todos os centros</SelectItem> : null}
+        {todos ? <SelectItem value="todos">Todas as lojas</SelectItem> : null}
         {lista.map((c) => (
           <SelectItem key={c.id} value={c.id}>
             {c.nome}
@@ -309,14 +309,14 @@ export function ErpLayout({
   const { user, roles, signOut } = useSupabase();
   const { centro, lista, isLoading: centroLoading, error: centroError } = useCentroValido();
   const centroNome = centroError
-    ? "Centro indisponível"
+    ? "Loja indisponível"
     : centroLoading
       ? "Carregando centro…"
       : !lista.length
         ? "Nenhum centro disponível"
         : centro
-          ? (lista.find((c) => c.id === centro)?.nome ?? "Centro selecionado")
-          : "Todos os centros permitidos";
+          ? (lista.find((c) => c.id === centro)?.nome ?? "Loja selecionada")
+          : "Todas as lojas permitidas";
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
@@ -432,7 +432,7 @@ export function ErpLayout({
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             <span
               className="inline-flex max-w-full items-center gap-1.5 rounded-full border bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
-              aria-label="Centro em uso"
+              aria-label="Loja em uso"
             >
               <Building2 className="size-3.5 shrink-0" />
               <span className="truncate">{centroNome}</span>

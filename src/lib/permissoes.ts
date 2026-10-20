@@ -20,7 +20,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/pessoas", label: "Cadastro unificado / Clientes", grupo: "Cadastros" },
   { path: "/produtos", label: "Produtos", grupo: "Cadastros" },
   { path: "/tabelas-preco", label: "Promoção", grupo: "Cadastros" },
-  { path: "/centros", label: "Centros", grupo: "Cadastros" },
+  { path: "/centros", label: "Lojas", grupo: "Cadastros" },
   { path: "/rotas", label: "Rotas de entrega", grupo: "Cadastros" },
   { path: "/formas-pagamento", label: "Formas de pagamento", grupo: "Cadastros" },
   { path: "/cadastros-padrao", label: "Categorias, marcas e cidades", grupo: "Cadastros" },

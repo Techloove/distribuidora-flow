@@ -31,20 +31,20 @@ export function CobrancaCentros() {
   if (!roles.some((r) => ["admin", "gestor"].includes(r))) return null;
   return (
     <section className="mt-6 rounded-xl border bg-card p-5" id="cobranca">
-      <h2 className="font-semibold">Cobrança por centro de custo</h2>
+      <h2 className="font-semibold">Cobrança por loja</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Selecione Ferragem para vincular o Sicredi via API. Configure o outro centro separadamente;
-        o Sicoob permanece pendente até definir a integração.
+        Selecione Ferragem para vincular o Sicredi via API. Configure o outra loja separadamente; o
+        Sicoob permanece pendente até definir a integração.
       </p>
       <div className="mt-4 max-w-lg">
-        <Label htmlFor="cobranca-centro">Centro de custo</Label>
+        <Label htmlFor="cobranca-centro">Loja</Label>
         <select
           id="cobranca-centro"
           className="h-10 w-full rounded-md border bg-background px-3"
           value={centro}
           onChange={(e) => setCentro(e.target.value)}
         >
-          <option value="">Selecione o centro</option>
+          <option value="">Selecione a loja</option>
           {centros.data?.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}

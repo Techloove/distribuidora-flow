@@ -1,3 +1,4 @@
+import { identidadeLoja } from "@/lib/identidade-loja";
 import { useRef, useState } from "react";
 import { Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -72,7 +73,7 @@ export function ImprimirPedidos({
         lookup(
           "centros",
           pedidos.map((p) => p["centro_id"]),
-          "id, nome",
+          "id,nome,nome_fantasia,razao_social,cnpj,inscricao_estadual,email,telefone,logradouro,numero,bairro,cidade,uf,cep,logo_url",
         ),
         lookup(
           "representantes",
@@ -89,7 +90,10 @@ export function ImprimirPedidos({
       const dados: PedidoImpressao[] = pedidos.map((pedido) => ({
         pedido,
         cliente: find(clientes, pedido["cliente_id"]),
-        empresa: companies.error ? {} : (companies.data?.[0] ?? {}),
+        empresa: identidadeLoja(
+          find(centros, pedido["centro_id"]),
+          companies.error ? {} : (companies.data?.[0] ?? {}),
+        ),
         centro: find(centros, pedido["centro_id"]),
         representante: find(representantes, pedido["representante_id"]),
         forma: find(formas, pedido["forma_pagamento_id"]),

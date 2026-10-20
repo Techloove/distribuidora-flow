@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { LogoLoja } from "@/components/logo-loja";
 import { CrudPage, type CrudField } from "@/components/crud-page";
 import { CobrancaCentros } from "@/components/cobranca-centros";
 import { ErpLayout } from "@/components/erp-layout";
@@ -7,13 +8,13 @@ import { ErpLayout } from "@/components/erp-layout";
 export const Route = createFileRoute("/_app/centros")({
   head: () => ({
     meta: [
-      { title: "Centros de custo — ERP Distribuidora" },
+      { title: "Lojas — ERP Distribuidora" },
       {
         name: "description",
-        content: "Cadastro dos centros de distribuição usados nas movimentações multi-centro.",
+        content: "Nome, identidade visual e dados das lojas da distribuidora.",
       },
-      { property: "og:title", content: "Centros de custo — ERP Distribuidora" },
-      { property: "og:description", content: "Operação multi-centro da distribuidora." },
+      { property: "og:title", content: "Lojas — ERP Distribuidora" },
+      { property: "og:description", content: "Identificação e cobrança das lojas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -23,7 +24,27 @@ export const Route = createFileRoute("/_app/centros")({
 
 const fields: CrudField[] = [
   { name: "codigo", label: "Código", auto: true, inTable: true },
-  { name: "nome", label: "Nome", span: 2, inTable: true, required: true },
+  {
+    name: "nome",
+    label: "Nome da loja",
+    span: 2,
+    inTable: true,
+    required: true,
+    after: ({ form, patch }) => (
+      <LogoLoja valor={form["logo_url"]} onChange={(valor) => patch({ logo_url: valor })} />
+    ),
+  },
+  { name: "nome_fantasia", label: "Nome fantasia", span: 2 },
+  { name: "razao_social", label: "Razão social", span: 2 },
+  { name: "logo_url", label: "Logo da loja", hiddenInForm: true },
+  { name: "cnpj", label: "CNPJ" },
+  { name: "inscricao_estadual", label: "Inscrição estadual" },
+  { name: "telefone", label: "Telefone" },
+  { name: "email", label: "E-mail", type: "email" },
+  { name: "logradouro", label: "Rua / avenida", span: 2 },
+  { name: "numero", label: "Número" },
+  { name: "bairro", label: "Bairro" },
+  { name: "cep", label: "CEP" },
   { name: "cidade", label: "Cidade", inTable: true, lookup: "cad_cidades" },
   { name: "uf", label: "UF", inTable: true },
   { name: "ativo", label: "Ativo", type: "checkbox", inTable: true },
@@ -32,14 +53,14 @@ const fields: CrudField[] = [
 function CentrosPage() {
   return (
     <ErpLayout
-      title="Centros de custo"
-      description="Centros para vendas, relatórios e cobrança bancária. O estoque físico permanece compartilhado."
+      title="Lojas"
+      description="Identificação, logo e cobrança por loja. O estoque físico permanece compartilhado."
     >
       <CrudPage
         table="centros"
         fields={fields}
         orderBy="nome"
-        emptyLabel="Nenhum centro cadastrado ainda."
+        emptyLabel="Nenhuma loja cadastrada ainda."
         searchColumns={["codigo", "nome", "cidade", "uf"]}
       />
       <CobrancaCentros />
