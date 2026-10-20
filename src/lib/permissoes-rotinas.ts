@@ -42,7 +42,7 @@ export const ACOES_ROTINAS = {
   extrato_importar: "/movimentacoes",
   extrato_conciliar: "/movimentacoes",
   extrato_desconciliar: "/movimentacoes",
-  configuracao_rotinas_editar: "/configuracoes",
+  configuracao_rotinas_editar: "/centros",
 } as const;
 export type AcaoRotina = keyof typeof ACOES_ROTINAS;
 

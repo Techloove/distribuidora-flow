@@ -115,7 +115,7 @@ const nav = [
       { to: "/notificacoes", label: "Notificações", icon: Bell },
       { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },
-      { to: "/configuracoes", label: "Configurações", icon: Settings },
+      { to: "/configuracoes", label: "Manutenção do sistema", icon: Settings },
     ],
   },
 ] as const;

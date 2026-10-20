@@ -56,7 +56,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/notificacoes", label: "Notificações", grupo: "Gestão" },
   { path: "/usuarios", label: "Usuários e papéis", grupo: "Gestão" },
   { path: "/auditoria", label: "Auditoria", grupo: "Gestão" },
-  { path: "/configuracoes", label: "Configurações", grupo: "Gestão" },
+  { path: "/configuracoes", label: "Manutenção do sistema", grupo: "Gestão" },
 ];
 
 /** Papéis com acesso total ao sistema. */

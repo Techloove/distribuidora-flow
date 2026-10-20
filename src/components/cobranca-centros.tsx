@@ -12,9 +12,10 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 
 type Banco = "indefinido" | "sicredi" | "sicoob";
-export function CobrancaCentros() {
+export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
   const { client, user, roles } = useSupabase();
-  const [centro, setCentro] = useState("");
+  const [selecionado, setCentro] = useState("");
+  const centro = lojaId ?? selecionado;
   const centros = useQuery({
     queryKey: ["cobranca-centros", user?.id],
     enabled: !!client,
@@ -33,25 +34,27 @@ export function CobrancaCentros() {
     <section className="mt-6 rounded-xl border bg-card p-5" id="cobranca">
       <h2 className="font-semibold">Cobrança por loja</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Selecione Ferragem para vincular o Sicredi via API. Configure o outra loja separadamente; o
+        Selecione Ferragem para vincular o Sicredi via API. Configure a outra loja separadamente; o
         Sicoob permanece pendente até definir a integração.
       </p>
-      <div className="mt-4 max-w-lg">
-        <Label htmlFor="cobranca-centro">Loja</Label>
-        <select
-          id="cobranca-centro"
-          className="h-10 w-full rounded-md border bg-background px-3"
-          value={centro}
-          onChange={(e) => setCentro(e.target.value)}
-        >
-          <option value="">Selecione a loja</option>
-          {centros.data?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
-        </select>
-      </div>
+      {lojaId === undefined && (
+        <div className="mt-4 max-w-lg">
+          <Label htmlFor="cobranca-centro">Loja</Label>
+          <select
+            id="cobranca-centro"
+            className="h-10 w-full rounded-md border bg-background px-3"
+            value={centro}
+            onChange={(e) => setCentro(e.target.value)}
+          >
+            <option value="">Selecione a loja</option>
+            {centros.data?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {centros.isError && (
         <p role="alert" className="mt-2 text-sm text-destructive">
           {centros.error.message}

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { LogoLoja } from "@/components/logo-loja";
 import { CrudPage, type CrudField } from "@/components/crud-page";
-import { CobrancaCentros } from "@/components/cobranca-centros";
+import { ConfiguracaoLoja } from "@/components/configuracao-loja";
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/centros")({
@@ -54,7 +54,7 @@ function CentrosPage() {
   return (
     <ErpLayout
       title="Lojas"
-      description="Identificação, logo e cobrança por loja. O estoque físico permanece compartilhado."
+      description="Identificação, regras comerciais e cobrança por loja. O estoque físico permanece compartilhado."
     >
       <CrudPage
         table="centros"
@@ -63,7 +63,7 @@ function CentrosPage() {
         emptyLabel="Nenhuma loja cadastrada ainda."
         searchColumns={["codigo", "nome", "cidade", "uf"]}
       />
-      <CobrancaCentros />
+      <ConfiguracaoLoja />
     </ErpLayout>
   );
 }

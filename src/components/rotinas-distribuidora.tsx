@@ -534,16 +534,19 @@ export function AjustesComissao() {
   const [resolucoes, setResolucoes] = useState<Record<string, string>>({});
   const rpc = useRotinaRpc(["comissao_ajustes"]);
   const regra = useQuery({
-    queryKey: ["parametros", "comissao", user?.id],
-    enabled: !!client && permissoes.pode("comissao_ajustes_ver"),
+    queryKey: ["loja-parametros", "comissao", user?.id, cv.centro],
+    enabled:
+      !!client &&
+      !!cv.centro &&
+      !cv.isLoading &&
+      !cv.error &&
+      permissoes.pode("comissao_ajustes_ver"),
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("parametros")
-        .select("valor")
-        .eq("chave", "comissao_fato_gerador")
-        .maybeSingle();
+      const { data, error } = await client!.rpc("listar_parametros_loja_243", { _loja: cv.centro });
       if (error) throw new Error(error.message);
-      return data?.valor;
+      return (data as { chave: string; valor: string }[] | null)?.find(
+        (p) => p.chave === "comissao_fato_gerador",
+      )?.valor;
     },
   });
   const q = useQuery({
@@ -566,9 +569,17 @@ export function AjustesComissao() {
       <h2 className="text-sm font-semibold">Conferência de comissões e devoluções</h2>
       <p className="text-xs text-muted-foreground">
         Regra de liberação:{" "}
-        {regra.data === "recebimento" ? "recebimento integral do pedido" : "venda"}. Configurável em
-        Configurações → comissao_fato_gerador. Devoluções corrigem comissões ainda não pagas;
-        valores já pagos geram ajuste para conferência financeira.
+        {!cv.centro
+          ? "selecione uma loja para consultar"
+          : regra.isPending
+            ? "carregando"
+            : regra.isError
+              ? "indisponível"
+              : regra.data === "recebimento"
+                ? "recebimento integral do pedido"
+                : "venda"}
+        . Configurável em Lojas. Devoluções corrigem comissões ainda não pagas; valores já pagos
+        geram ajuste para conferência financeira.
       </p>
       <AvisoRotina erro={q.error} />
       <AvisoRotina erro={regra.error} />
