@@ -1,3 +1,4 @@
+import { SicrediAutomatico } from "@/components/sicredi-automatico";
 import { EmitirBoletosPedido, EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
 import { ConfirmarNossoNumero } from "@/components/confirmar-nosso-numero";
 import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
@@ -195,6 +196,7 @@ export function BoletosPage() {
       }
     >
       <div className="space-y-6">
+        <SicrediAutomatico />
         <p className="text-sm text-muted-foreground">
           Emita boletos em{" "}
           <Link to="/pedidos" search={{ pedido: undefined }} className="font-medium underline">
