@@ -471,6 +471,10 @@ export function CrudPage({
       toast.success(editing ? "Registro atualizado" : "Registro criado");
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "produtos") {
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+          void queryClient.invalidateQueries({ queryKey: [key] });
+      }
       if (table === "desconto_faixas_peso")
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {
@@ -490,6 +494,10 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Registro excluído");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "produtos") {
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+          void queryClient.invalidateQueries({ queryKey: [key] });
+      }
       if (table === "desconto_faixas_peso")
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {
@@ -509,6 +517,10 @@ export function CrudPage({
     onSuccess: () => {
       toast.success("Atualizado");
       queryClient.invalidateQueries({ queryKey: [table] });
+      if (table === "produtos") {
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+          void queryClient.invalidateQueries({ queryKey: [key] });
+      }
       if (table === "desconto_faixas_peso")
         queryClient.invalidateQueries({ queryKey: ["desconto_peso_pedido"] });
       if (table === "pessoas") {

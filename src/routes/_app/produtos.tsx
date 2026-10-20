@@ -33,7 +33,7 @@ const fields: CrudField[] = [
   { name: "descricao", label: "Descrição", span: 2, inTable: true, required: true },
   {
     name: "categoria",
-    label: "Categoria Centro Custo",
+    label: "Categoria Centro Custo / Loja",
     inTable: true,
     lookup: "cad_categorias",
     filter: true,

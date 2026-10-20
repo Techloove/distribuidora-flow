@@ -1,3 +1,4 @@
+import { CategoriaLoja } from "@/components/categoria-loja";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -90,10 +91,11 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
     <section className="rounded-xl border p-4 space-y-4" aria-label={`Catálogo de ${nome}`}>
       <h3 className="font-semibold">Produtos e preços — {nome}</h3>
       <p className="text-sm text-muted-foreground">
-        Defina quais produtos esta loja vende, o preço-base e o teto de desconto por item. O estoque
-        é compartilhado. Alterar a referência no cadastro geral de Produtos não altera os preços já
-        configurados nas lojas.
+        O catálogo segue a categoria da loja. Ajuste aqui o preço-base, o teto de desconto ou uma
+        suspensão individual de venda. O estoque é compartilhado. Alterar a referência no cadastro
+        geral de Produtos não altera os preços já configurados nas lojas.
       </p>
+      <CategoriaLoja key={loja} loja={loja} editar={editar} />
       <Label htmlFor="busca-catalogo-loja">Buscar produto por código ou descrição</Label>
       <Input id="busca-catalogo-loja" value={busca} onChange={(e) => setBusca(e.target.value)} />
       {q.isPending ? (
