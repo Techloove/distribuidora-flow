@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
+  validarConfiguracaoFiscal,
   pendenciasProdutoFiscal,
   selecionarCfop,
   UFS_FISCAIS,
@@ -68,8 +69,10 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
       return lista;
     },
   });
+  const errosConfiguracao = validarConfiguracaoFiscal(form);
   const salvar = useMutation({
     mutationFn: async () => {
+      if (errosConfiguracao.length) throw new Error(errosConfiguracao.join(" "));
       const { error } = await client!.rpc("salvar_loja_fiscal_256", {
         _loja: loja,
         _serie: form.serie,
@@ -128,6 +131,10 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
           {config.error.message}. Confira a aplicação da fase256.
         </p>
       )}
+      <p className="text-sm text-muted-foreground">
+        Série, UF, regime e os dois CFOPs são obrigatórios para salvar. Preencha os códigos
+        definidos pelo contador; nenhum código será escolhido automaticamente.
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {(
           [
@@ -141,6 +148,10 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
             <Input
               id={`fiscal-${key}`}
               value={form[key]}
+              required
+              inputMode="numeric"
+              maxLength={key === "serie" ? 3 : 4}
+              aria-describedby="fiscal-validacao"
               disabled={!editar}
               onChange={(e) => {
                 setRascunho({ ...form, [key]: e.target.value, revisado_contador: false });
@@ -185,6 +196,15 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
             <option value="4">MEI</option>
           </select>
         </div>
+      </div>
+      <div id="fiscal-validacao" className="text-sm text-muted-foreground" aria-live="polite">
+        {errosConfiguracao.length > 0 && (
+          <ul className="list-disc pl-5">
+            {errosConfiguracao.map((erro) => (
+              <li key={erro}>{erro}</li>
+            ))}
+          </ul>
+        )}
       </div>
       <label className="flex gap-2 text-sm">
         <input

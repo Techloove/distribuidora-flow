@@ -83,3 +83,19 @@ export function situacaoFaznotas(
   if (s === "400" || s === "900") return "rejeitada";
   return "desconhecida";
 }
+
+export function validarConfiguracaoFiscal(
+  config: RegraFiscal & { serie: string; regime: string },
+): string[] {
+  const erros: string[] = [];
+  if (!/^[1-9][0-9]{0,2}$/.test(config.serie.trim()))
+    erros.push("Informe uma série NF-e de 1 a 999, sem zeros à esquerda.");
+  if (!UFS_FISCAIS.includes(config.uf_emitente)) erros.push("Selecione a UF do emitente.");
+  if (!["1", "2", "3", "4"].includes(config.regime))
+    erros.push("Selecione o regime tributário (CRT).");
+  if (!/^5[0-9]{3}$/.test(config.cfop_interno.trim()))
+    erros.push("Informe o CFOP de venda dentro da UF: 4 dígitos, começando com 5.");
+  if (!/^6[0-9]{3}$/.test(config.cfop_interestadual.trim()))
+    erros.push("Informe o CFOP de venda para outra UF: 4 dígitos, começando com 6.");
+  return erros;
+}

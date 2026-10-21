@@ -1,11 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import { pendenciasProdutoFiscal, selecionarCfop, situacaoFaznotas } from "../src/lib/faznotas";
+import {
+  validarConfiguracaoFiscal,
+  pendenciasProdutoFiscal,
+  selecionarCfop,
+  situacaoFaznotas,
+} from "../src/lib/faznotas";
 const regra = {
   uf_emitente: "MG",
   cfop_interno: "5102",
   cfop_interestadual: "6102",
   revisado_contador: true,
 };
+test("configuração incompleta da imagem é recusada antes do salvamento", () => {
+  const config = { ...regra, serie: "1", regime: "1", uf_emitente: "ES", cfop_interestadual: "" };
+  expect(validarConfiguracaoFiscal(config)).toEqual([
+    "Informe o CFOP de venda para outra UF: 4 dígitos, começando com 6.",
+  ]);
+  expect(validarConfiguracaoFiscal({ ...config, cfop_interestadual: "6102" })).toEqual([]);
+  expect(validarConfiguracaoFiscal({ ...config, cfop_interestadual: "5102" })).toHaveLength(1);
+});
 describe("Preparação FAZNOTAS", () => {
   test("CFOP por UF confirmada pelo CEP e exceção do produto", () => {
     expect(selecionarCfop(regra, "MG", "MG")).toBe("5102");
