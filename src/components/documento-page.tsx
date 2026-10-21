@@ -1,3 +1,4 @@
+import { EncargosPedido } from "@/components/encargos-pedido";
 import { OrcamentoPedido } from "@/components/orcamento-pedido";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useAcompanhamentoPedido } from "@/lib/use-acompanhamento-pedido";
@@ -90,6 +91,7 @@ export function DocumentoPage({
     if (config.table === "pedidos")
       void queryClient.invalidateQueries({ queryKey: ["acompanhamento_pedido_235"] });
   };
+  const [encargosPendentes, setEncargosPendentes] = useState(false);
   const [selected, setSelected] = useState<string | null>(initialDocId);
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
@@ -1145,7 +1147,11 @@ export function DocumentoPage({
     ) * Number(it["quantidade"] ?? 0);
   const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
   const edicaoPendente =
-    addItem.isPending || updateItem.isPending || removeItem.isPending || savePagamento.isPending;
+    encargosPendentes ||
+    addItem.isPending ||
+    updateItem.isPending ||
+    removeItem.isPending ||
+    savePagamento.isPending;
   const pagamentoAlterado =
     !!doc &&
     Object.entries(pagamento).some(([key, value]) => {
@@ -1167,6 +1173,7 @@ export function DocumentoPage({
       : [];
   if (config.table === "pedidos" && pagamentoAlterado)
     avisosPedido.push("Salve as alterações de pagamento antes de confirmar.");
+  if (encargosPendentes) avisosPedido.push("Atualize os encargos antes de confirmar.");
   const kg = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
   /** Nome da forma com o acréscimo/desconto configurado. */
   const formaLabel = (f: Row) => {
@@ -1618,6 +1625,18 @@ export function DocumentoPage({
                 peso={pesoTotal}
                 avisos={avisosPedido}
                 carregando={itens.isPending || itens.isFetching || edicaoPendente}
+              />
+            )}
+            {config.table === "pedidos" && (
+              <EncargosPedido
+                key={`encargos-${String(doc["id"])}`}
+                doc={doc}
+                editavel={
+                  canWrite &&
+                  propostaEditavel &&
+                  ["rascunho", "digitacao"].includes(String(doc["status"]))
+                }
+                onPendente={setEncargosPendentes}
               />
             )}
             {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
@@ -2207,7 +2226,7 @@ export function DocumentoPage({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Frete (R$)</Label>
+                  <Label>{config.table === "pedidos" ? "Frete manual (R$)" : "Frete (R$)"}</Label>
                   <Input
                     type="number"
                     step="0.01"

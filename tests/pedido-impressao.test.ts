@@ -72,3 +72,26 @@ test("orçamento usa o mesmo modelo com título, validade e aviso próprios", ()
   expect(convertido).toContain("<strong>PEDIDO Nº");
   expect(convertido).not.toContain("Não confirma venda nem reserva estoque");
 });
+
+test("pedido e orçamento exibem frete manual, por volume e outras despesas separadamente", () => {
+  for (const tipo_documento of ["pedido", "orcamento"]) {
+    const html = gerarHtmlPedidos([
+      {
+        ...pedido,
+        pedido: {
+          ...pedido.pedido,
+          tipo_documento,
+          frete_valor: 10,
+          frete_volume_valor: 250,
+          outras_despesas: 20,
+          total_liquido: 1380,
+        },
+      },
+    ]);
+    expect(html).toContain("Frete manual");
+    expect(html).toContain("Frete por volume");
+    expect(html).toContain("Outras despesas");
+    expect(html).toContain("250,00");
+    expect(html).toContain("1.380,00");
+  }
+});

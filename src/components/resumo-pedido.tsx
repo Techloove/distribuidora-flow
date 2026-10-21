@@ -18,7 +18,9 @@ export function ResumoPedido({
       "Descontos",
       brl(Number(doc["desconto_valor"] ?? 0) + Number(doc["forma_desconto_valor"] ?? 0)),
     ],
-    ["Frete", brl(doc["frete_valor"])],
+    ["Frete manual", brl(doc["frete_valor"])],
+    ["Frete por volume", brl(doc["frete_volume_valor"])],
+    ["Outras despesas", brl(doc["outras_despesas"])],
     ["Total", brl(doc["total_liquido"])],
   ];
   return (
@@ -26,7 +28,7 @@ export function ResumoPedido({
       aria-label="Resumo do pedido"
       className="no-print sticky top-0 z-20 rounded-xl border bg-card/95 p-3 shadow-sm backdrop-blur"
     >
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {valores.map(([label, value]) => (
           <div key={label}>
             <p className="text-[11px] text-muted-foreground">{label}</p>

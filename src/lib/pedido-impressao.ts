@@ -87,7 +87,9 @@ export function gerarHtmlPedidos(dados: PedidoImpressao[], css: string) {
         ["Desconto", p["desconto_valor"]],
         ["Desconto da forma", p["forma_desconto_valor"]],
         ["Acréscimo da forma", p["forma_acrescimo_valor"]],
-        ["Frete", p["frete_valor"]],
+        ["Frete manual", p["frete_valor"]],
+        ["Frete por volume", p["frete_volume_valor"]],
+        ["Outras despesas", p["outras_despesas"]],
       ]
         .filter(([, v]) => number(v) !== 0)
         .map(([label, v]) => `<div><span>${label}</span><span>${money(v)}</span></div>`)

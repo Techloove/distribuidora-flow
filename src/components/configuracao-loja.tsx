@@ -1,3 +1,4 @@
+import { FreteVolumeLoja } from "@/components/frete-volume-loja";
 import { Link } from "@tanstack/react-router";
 import { setCentro } from "@/lib/centro-store";
 import { useEffect, useState } from "react";
@@ -82,6 +83,7 @@ export function ConfiguracaoLoja() {
           nome={acesso.lista.find((l) => l.id === valida)?.nome ?? ""}
         />
       )}
+      {valida && <FreteVolumeLoja key={`frete-${valida}`} loja={valida} />}
       {valida && (
         <div className="rounded-xl border p-4 space-y-3">
           <h3 className="font-semibold">Promoções e descontos por peso</h3>

@@ -3,6 +3,8 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 
 export const ACOES_ROTINAS = {
+  lojas_frete_volume_configurar: "/centros",
+  pedidos_encargos_editar: "/pedidos",
   lojas_ofertas_configurar: "/centros",
   lojas_catalogo_configurar: "/centros",
   centros_cobranca_configurar: "/centros",
