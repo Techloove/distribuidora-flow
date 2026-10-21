@@ -140,6 +140,14 @@ const root = path.resolve(__dirname, ".."),
     );
     await d.exec(fase248);
     await d.exec(fase248);
+    await fn("fase86_integridade_cancelamento_logistica.sql", "validar_expedicao_pedido");
+    const fase254 = fs.readFileSync(
+      path.join(root, "db/fase254_transicoes_expedicao_separacao.sql"),
+      "utf8",
+    );
+    await d.exec(fase254);
+    await d.exec(fase254);
+
     await d.exec(`select set_config('test.actor','${id(1)}',false);set role authenticated;`);
     const lote = (ids) => d.query("select concluir_separacao_lote_248($1,true) n", [ids.map(id)]);
     await d.query("select enviar_pedidos_separacao_233($1)", [[id(200), id(201), id(202)]]);

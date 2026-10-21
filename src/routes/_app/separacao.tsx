@@ -299,6 +299,40 @@ function SeparacaoPage() {
       }
     >
       <div className="space-y-4">
+        <details className="no-print rounded-xl border bg-card p-4">
+          <summary className="cursor-pointer text-sm font-semibold">
+            Como separar e liberar os pedidos para entrega
+          </summary>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+            <li>
+              Em Pedidos, finalize a aprovação e confirmação da venda e envie os pedidos desejados
+              para separação.
+            </li>
+            <li>
+              Aqui, filtre e selecione os pedidos. Imprima os itens consolidados para separar os
+              produtos juntos, ou o relatório por cliente para organizar cada pedido.
+            </li>
+            <li>
+              Confira fisicamente produtos e quantidades. Se houver falta ou diferença, abra o
+              pedido e registre/revise a quantidade separada antes de concluir.
+            </li>
+            <li>
+              Use Concluir separação, individualmente ou nos selecionados, e confirme apenas se
+              todos os itens estiverem completos e conferidos. As quantidades ainda não preenchidas
+              serão registradas como completas; divergências já registradas bloqueiam essa
+              confirmação.
+            </li>
+            <li>
+              Após concluir, os pedidos ficam prontos para carga. Você pode imprimir cópias e
+              escolher os boletos. Em Cargas de entrega, monte a carga com os pedidos separados da
+              mesma rota, confira motorista/veículo e despache quando sair.
+            </li>
+            <li>
+              Em Entregas, registre a entrega com data, nome de quem recebeu e comprovante. Só essa
+              etapa formaliza o recebimento pelo cliente.
+            </li>
+          </ol>
+        </details>
         <FilterBar onClear={() => setFiltros({})}>
           <FilterSelect
             label="Rota"

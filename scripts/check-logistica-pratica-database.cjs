@@ -130,6 +130,10 @@ const root = path.resolve(__dirname, ".."),
     const sql = fs.readFileSync(path.join(root, "db/fase233_fluxo_logistico_pratico.sql"), "utf8");
     await d.exec(sql);
     await d.exec(sql);
+    await fn("fase86_integridade_cancelamento_logistica.sql", "validar_expedicao_pedido");
+    await d.exec(
+      `grant select on expedicoes to authenticated;create trigger trg_validar_expedicao_pedido before insert or update on expedicoes for each row execute function validar_expedicao_pedido();`,
+    );
     const unificadas = process.argv.includes("--unificadas");
     let sql234;
     if (unificadas) {
@@ -304,8 +308,42 @@ const root = path.resolve(__dirname, ".."),
     await enviar([200, 201]);
     assert.equal((await q("select count(*) n from pedido_separacoes"))[0].n, 2);
     await denied(() => concluir(200, false), /explicitamente/);
+    // Guarda real da fase86 reproduz o bloqueio observado na produção.
+    await denied(() => concluir(200), /Transicao de expedicao invalida: separacao -> separado/);
+    assert.equal(await state(200), "separacao");
+    assert.equal(
+      (await q("select status from expedicoes where pedido_id=$1", [id(200)]))[0].status,
+      "separacao",
+    );
+    assert.equal(
+      (await q("select quantidade_separada from pedido_itens where pedido_id=$1", [id(200)]))[0]
+        .quantidade_separada,
+      null,
+    );
+    await d.exec("reset role");
+    const sql254 = fs.readFileSync(
+      path.join(root, "db/fase254_transicoes_expedicao_separacao.sql"),
+      "utf8",
+    );
+    await d.exec(sql254);
+    await d.exec(sql254);
+    await actor(6);
     await concluir(200);
     await concluir(200);
+    assert.equal(
+      (await q("select status from expedicoes where pedido_id=$1", [id(200)]))[0].status,
+      "separado",
+    );
+    await d.exec("reset role");
+    await denied(
+      () => q("update expedicoes set status='separacao' where pedido_id=$1", [id(200)]),
+      /Transicao/,
+    );
+    await denied(
+      () => q("update expedicoes set centro_id=$1 where pedido_id=$2", [id(11), id(200)]),
+      /Centro/,
+    );
+    await actor(6);
     assert.equal(await state(200), "conferido");
     assert.equal(
       (await q("select status from pedido_separacoes where pedido_id=$1", [id(200)]))[0].status,
@@ -343,6 +381,10 @@ const root = path.resolve(__dirname, ".."),
     await actor(6);
     await incluir(c.id, [200, 201]);
     await incluir(c.id, [200, 201]);
+    assert.equal(
+      (await q("select status from expedicoes where pedido_id=$1", [id(200)]))[0].status,
+      "aguardando_entrega",
+    );
     assert.equal(await state(200), "em_carga");
     assert.equal(
       (await q("select count(*) n from carga_pedidos where carga_id=$1", [c.id]))[0].n,
@@ -394,6 +436,26 @@ const root = path.resolve(__dirname, ".."),
     ]);
     assert.equal((await q("select status from cargas where id=$1", [c.id]))[0].status, "concluida");
     assert.equal(await state(201), "entregue");
+    await d.exec("reset role");
+    await denied(
+      () => q("update expedicoes set status='separacao' where pedido_id=$1", [id(201)]),
+      /Transicao/,
+    );
+    await denied(
+      () => q("update expedicoes set pedido_id=$1 where pedido_id=$2", [id(202), id(201)]),
+      /nao pode ser alterado/,
+    );
+    await denied(
+      () =>
+        q("insert into expedicoes(id,pedido_id,centro_id,status) values($1,$2,$3,'separacao')", [
+          id(900),
+          id(202),
+          id(10),
+        ]),
+      /iniciar em pendente/,
+    );
+    await actor(6);
+
     await d.exec("reset role");
     assert.equal((await q("select count(*) n from estoque_movimentos"))[0].n, stockAntes);
     assert.equal((await q("select count(*) n from contas_receber"))[0].n, titulosAntes);
