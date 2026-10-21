@@ -3,6 +3,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 
 export const ACOES_ROTINAS = {
+  faturamento_emitir_nfe: "/notas",
   lojas_frete_volume_configurar: "/centros",
   pedidos_encargos_editar: "/pedidos",
   lojas_ofertas_configurar: "/centros",

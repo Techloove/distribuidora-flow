@@ -1,3 +1,4 @@
+import { LiberacaoFaznotas } from "@/components/liberacao-faznotas";
 import { TributacaoLoja } from "@/components/tributacao-loja";
 import { FaznotasConexao } from "@/components/faznotas-conexao";
 import { FiscalLoja } from "@/components/fiscal-loja";
@@ -105,6 +106,9 @@ export function ConfiguracaoLoja({
           loja={valida}
           editar={permissoes.pode("configuracao_rotinas_editar")}
         />
+      )}
+      {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
+        <LiberacaoFaznotas key={`liberar-nfe-${valida}`} loja={valida} />
       )}
       {valida && (
         <CatalogoLoja

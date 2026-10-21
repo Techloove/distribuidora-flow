@@ -1,3 +1,5 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
+import { FaznotasNfe } from "@/components/faznotas-nfe";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -55,8 +57,10 @@ function NotasPage() {
   const { client, roles } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
+  const permissoes = usePermissoesRotinas();
   const podeFaturar = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
 
+  const [notaApi, setNotaApi] = useState<string | null>(null);
   const [autorizar, setAutorizar] = useState<Row | null>(null);
   const [rejeitar, setRejeitar] = useState<Row | null>(null);
   const [form, setForm] = useState({ nf: "", serie: "", chave: "", protocolo: "", mensagem: "" });
@@ -83,7 +87,7 @@ function NotasPage() {
       const { data, error } = await client!
         .from("notas_saida")
         .select(
-          "id, numero, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, centro_id, pedidos(numero), clientes(razao_social)",
+          "id, numero, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, faznotas_estado, centro_id, pedidos(numero), clientes(razao_social)",
         )
         .order("created_at", { ascending: false })
         .limit(300);
@@ -121,6 +125,11 @@ function NotasPage() {
       <div className="space-y-6">
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Pedidos liberados para faturar</h2>
+          {pedidos.error && (
+            <p role="alert" className="text-destructive">
+              {pedidos.error.message}
+            </p>
+          )}
           {pedidos.isLoading ? (
             <div className="h-24 animate-pulse rounded-lg bg-muted" />
           ) : listaPedidos.length === 0 ? (
@@ -178,6 +187,11 @@ function NotasPage() {
 
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Notas fiscais de saída</h2>
+          {notas.error && (
+            <p role="alert" className="text-destructive">
+              {notas.error.message}. Confira a fase259 no Supabase.
+            </p>
+          )}
           {notas.isLoading ? (
             <div className="h-24 animate-pulse rounded-lg bg-muted" />
           ) : listaNotas.length === 0 ? (
@@ -231,7 +245,24 @@ function NotasPage() {
                         </td>
                         <td className="px-4 py-2.5 text-right">{moeda(n["valor_total"])}</td>
                         <td className="space-x-2 px-4 py-2.5 text-right">
-                          {status === "pendente" || status === "rejeitada" ? (
+                          {(status === "pendente" || !!n["faznotas_estado"]) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={
+                                !podeFaturar ||
+                                !permissoes.pode("faturamento_emitir_nfe") ||
+                                rpc.isPending
+                              }
+                              onClick={() => setNotaApi(String(n["id"]))}
+                            >
+                              {n["faznotas_estado"]
+                                ? "Acompanhar FAZNOTAS"
+                                : "Conferir e emitir FAZNOTAS"}
+                            </Button>
+                          )}
+                          {!n["faznotas_estado"] &&
+                          (status === "pendente" || status === "rejeitada") ? (
                             <>
                               <Button
                                 size="sm"
@@ -259,7 +290,7 @@ function NotasPage() {
                               </Button>
                             </>
                           ) : null}
-                          {status !== "cancelada" ? (
+                          {!n["faznotas_estado"] && status !== "cancelada" ? (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -282,6 +313,7 @@ function NotasPage() {
         </section>
       </div>
 
+      {notaApi && <FaznotasNfe nota={notaApi} onClose={() => setNotaApi(null)} />}
       <Dialog open={!!autorizar} onOpenChange={(o) => !o && setAutorizar(null)}>
         <DialogContent>
           <DialogHeader>
