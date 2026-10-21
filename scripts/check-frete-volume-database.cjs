@@ -48,6 +48,8 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
     await db.exec(
       `create trigger devolucao_calc before insert on devolucao_itens for each row execute function devolucao_itens_calc();`,
     );
+    await db.exec(`alter table produtos add column grupo text default 'Construção';alter table produtos add column categoria text default 'Cimento';
+      create function produto_categoria_loja_246(uuid,uuid) returns boolean language sql as $$select exists(select 1 from loja_produtos where centro_id=$1 and produto_id=$2)$$;`);
     const migration = sql("fase250_frete_volume_despesas.sql");
     await db.exec(migration);
     await db.exec(migration);
@@ -126,6 +128,88 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
     assert.equal(Number((await get(51)).frete_volume_valor), 360);
     await assert.rejects(encargos(51, true, -1), /não negativas/);
     await assert.rejects(encargos(51, true, "Infinity"), /não negativas/);
+    // Grade251 preserva o motor e grava cidades/produtos em uma transação.
+    const migration251 = sql("fase251_frete_volume_grade.sql");
+    await db.exec(migration251);
+    await db.exec(migration251);
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(1)}',false)`);
+    assert.equal(
+      (await db.query("select * from produtos_frete_volume_251($1)", [id(10)])).rows.length,
+      2,
+    );
+    const grade = (produtos, cidades, loja = 10) =>
+      db.query("select salvar_grade_frete_volume_251($1,$2,$3) n", [
+        id(loja),
+        produtos.map(id),
+        JSON.stringify(cidades),
+      ]);
+    await assert.rejects(
+      grade([30, 31], [{ cidade: "VENDA NOVA", uf: "ES", valor: 9, ativo: true }]),
+      /mesma unidade/,
+    );
+    await db.exec(
+      `insert into produtos(id,codigo,descricao,unidade,grupo,categoria) values('${id(32)}','C2','Cimento2','SC','Construção','Cimento');insert into loja_produtos values('${id(10)}','${id(32)}',true);`,
+    );
+    assert.equal(
+      (
+        await grade(
+          [30, 32],
+          [
+            { cidade: "VENDA NOVA", uf: "ES", valor: 9, ativo: true },
+            { cidade: "Outra cidade", uf: "ES", valor: 10, ativo: true },
+          ],
+        )
+      ).rows[0].n,
+      4,
+    );
+    const valorTarifa = async () =>
+      Number(
+        (
+          await db.query(
+            "select valor_unitario from loja_fretes_volume where centro_id=$1 and produto_id=$2 and cidade='VENDA NOVA' and uf='ES'",
+            [id(10), id(30)],
+          )
+        ).rows[0].valor_unitario,
+      );
+    assert.equal(await valorTarifa(), 9);
+    await assert.rejects(
+      grade(
+        [30, 32],
+        [
+          { cidade: "VENDA NOVA", uf: "ES", valor: 11, ativo: true },
+          { cidade: "INEXISTENTE", uf: "ES", valor: 12, ativo: true },
+        ],
+      ),
+      /cadastro de clientes/,
+    );
+    assert.equal(await valorTarifa(), 9); // Rollback de todas as alterações anteriores do lote.
+    await assert.rejects(
+      grade([999], [{ cidade: "VENDA NOVA", uf: "ES", valor: 1, ativo: true }]),
+      /catálogo/,
+    );
+    await assert.rejects(
+      grade(
+        [30],
+        [
+          { cidade: "VENDA NOVA", uf: "ES", valor: 1, ativo: true },
+          { cidade: " venda nova ", uf: "es", valor: 2, ativo: true },
+        ],
+      ),
+      /repetida/,
+    );
+    await assert.rejects(
+      grade([30], [{ cidade: "VENDA NOVA", uf: "ES", valor: -1, ativo: true }]),
+      /valor unitário/,
+    );
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(2)}',false)`);
+    await assert.rejects(
+      grade([30], [{ cidade: "VENDA NOVA", uf: "ES", valor: 1, ativo: true }]),
+      /permissão/,
+    );
+    await assert.rejects(
+      db.query("select * from produtos_frete_volume_251($1)", [id(10)]),
+      /Sem acesso/,
+    );
     // Uma nova execução não restaura permissões retiradas pelo administrador.
     await db.exec(`delete from role_permissoes where role='representante';`);
     await db.exec(migration);
@@ -139,10 +223,10 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
     await db.exec("reset role");
     assert.equal(
       Number((await db.query("select sum(estoque_atual) s from produtos")).rows[0].s),
-      20000,
+      30000,
     );
     console.log(
-      "Frete250 OK: soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
+      "Frete250/251 OK: grade atômica por cidade, catálogo e unidades protegidos, rollback integral, tarifas históricas preservadas; soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
     );
   } finally {
     await db.close();

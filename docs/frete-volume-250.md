@@ -1,5 +1,7 @@
 # Frete por volume e outras despesas — fase250
 
+A configuração em grade por produto/grupo/categoria foi aprimorada na [fase251](frete-volume-251.md). O motor de cálculo descrito aqui permanece o mesmo.
+
 Execute inteiro `db/fase250_frete_volume_despesas.sql` no Supabase e publique o código no Lovable. A migração preserva documentos existentes; não preenche tarifas nem modifica o estoque físico compartilhado.
 
 ## Configuração
