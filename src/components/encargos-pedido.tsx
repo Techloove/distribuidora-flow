@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -28,7 +28,7 @@ export function EncargosPedido({
   editavel: boolean;
   onPendente: (pendente: boolean) => void;
 }) {
-  const { client } = useSupabase();
+  const { client, user } = useSupabase();
   const permissoes = usePermissoesRotinas();
   const qc = useQueryClient();
   const [usar, setUsar] = useState<boolean | null>(null);
@@ -42,6 +42,24 @@ export function EncargosPedido({
     ? (doc["frete_volume_detalhes"] as Detalhe[])
     : [];
   const pode = editavel && permissoes.pode("pedidos_encargos_editar");
+  const conferirAutomatico =
+    pode && ["automatico", "legado"].includes(String(doc["frete_volume_opcao"]));
+  const automatico = useQuery({
+    queryKey: ["frete-automatico-253", user?.id, doc["id"]],
+    enabled: !!client && conferirAutomatico,
+    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+    retry: false,
+    queryFn: async () => {
+      const { error } = await client!.rpc("atualizar_frete_automatico_253", {
+        _pedido: String(doc["id"]),
+      });
+      if (error) throw new Error(error.message);
+      await qc.invalidateQueries({ queryKey: ["pedidos"] });
+      await qc.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+      return true;
+    },
+  });
   const salvar = useMutation({
     mutationFn: async () => {
       if (!valor.trim() || !Number.isFinite(Number(valor)) || Number(valor) < 0)
@@ -65,8 +83,19 @@ export function EncargosPedido({
     onError: (e: Error) => toast.error(e.message),
   });
   useEffect(() => {
-    onPendente(mudou || salvar.isPending);
-  }, [mudou, salvar.isPending, onPendente]);
+    onPendente(
+      mudou ||
+        salvar.isPending ||
+        (conferirAutomatico && (automatico.isFetching || automatico.isError)),
+    );
+  }, [
+    mudou,
+    salvar.isPending,
+    onPendente,
+    conferirAutomatico,
+    automatico.isFetching,
+    automatico.isError,
+  ]);
   useEffect(() => () => onPendente(false), [onPendente]);
   return (
     <section className="rounded-xl border bg-card p-4 space-y-3">
@@ -77,13 +106,38 @@ export function EncargosPedido({
           cliente, conforme as tarifas desta loja. O frete manual permanece separado.
         </p>
       </div>
+      {conferirAutomatico && automatico.isFetching && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Conferindo o frete automático dos itens…
+        </p>
+      )}
+      {conferirAutomatico && automatico.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          Não foi possível conferir o frete automático. {automatico.error.message}{" "}
+          <Button variant="outline" size="sm" onClick={() => void automatico.refetch()}>
+            Tentar novamente
+          </Button>
+        </p>
+      )}
+      {doc["frete_volume_opcao"] === "automatico" && (
+        <p className="text-xs text-muted-foreground">
+          O frete é marcado automaticamente para produtos com tarifa cadastrada nesta loja. Para
+          dispensar a cobrança, desmarque e atualize os encargos.
+        </p>
+      )}
+      {doc["frete_volume_opcao"] === "dispensar" && (
+        <p className="text-xs text-muted-foreground">
+          Frete dispensado manualmente neste documento. A dispensa será mantida nas próximas
+          alterações dos itens.
+        </p>
+      )}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <label className="flex gap-2 items-center text-sm">
             <input
               type="checkbox"
               checked={habilitado}
-              disabled={!pode || salvar.isPending}
+              disabled={!pode || salvar.isPending || automatico.isFetching}
               onChange={(e) => setUsar(e.target.checked)}
             />
             Aplicar frete por volume
@@ -98,7 +152,7 @@ export function EncargosPedido({
             min="0"
             step="0.01"
             value={valor}
-            disabled={!pode || salvar.isPending}
+            disabled={!pode || salvar.isPending || automatico.isFetching}
             onChange={(e) => setDespesas(e.target.value)}
           />
         </div>
@@ -147,7 +201,10 @@ export function EncargosPedido({
         </p>
       )}
       {pode && (
-        <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || !client}>
+        <Button
+          onClick={() => salvar.mutate()}
+          disabled={salvar.isPending || !client || automatico.isFetching}
+        >
           {salvar.isPending ? "Atualizando…" : "Atualizar encargos"}
         </Button>
       )}

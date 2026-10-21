@@ -255,6 +255,76 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
       db.query("select * from produtos_frete_volume_251($1)", [id(10)]),
       /Sem acesso/,
     );
+    // Frete253 detecta itens automaticamente, respeita dispensa e preserva vendas.
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(1)}',false);
+    alter table auditoria add column id uuid default gen_random_uuid();alter table auditoria add column created_at timestamptz default clock_timestamp();
+    alter table pedidos add column orcamento_situacao text;alter table pedidos add column orcamento_validade date;
+    insert into pedidos(id,cliente_id,centro_id,representante_id,status,frete_volume_ativo) values
+    ('${id(90)}','${id(20)}','${id(10)}','${id(2)}','rascunho',false),
+    ('${id(91)}','${id(20)}','${id(10)}','${id(2)}','rascunho',false),
+    ('${id(92)}','${id(20)}','${id(10)}','${id(2)}','confirmado',false);
+    insert into pedido_itens(id,pedido_id,produto_id,quantidade,preco_unitario) values
+    ('${id(190)}','${id(90)}','${id(30)}',100,10),('${id(191)}','${id(91)}','${id(30)}',100,10),('${id(192)}','${id(92)}','${id(30)}',100,10);
+    insert into auditoria(tabela,registro_id,acao,user_id,detalhe) values('pedidos','${id(91)}','encargos_250','${id(1)}','{"frete_volume_ativo":false}');`);
+    await db.exec(`alter table pedidos add column orcamento_data date;alter table pedidos add column orcamento_aceito_em timestamptz;
+    insert into pedidos(id,cliente_id,centro_id,representante_id,tipo_documento,orcamento_situacao,orcamento_data,orcamento_validade,frete_volume_ativo) values
+    ('${id(93)}','${id(20)}','${id(10)}','${id(2)}','orcamento','expirado','2020-01-01','2020-01-02',false);`);
+    const protecao = sql("fase236_orcamentos.sql");
+    const inicio = protecao.indexOf("create or replace function public.proteger_orcamento_236()");
+    await db.exec(protecao.slice(inicio, protecao.indexOf("end $$;", inicio) + "end $$;".length));
+    await db.exec(
+      `create trigger proteger_orcamento before update on pedidos for each row execute function proteger_orcamento_236();select set_config('request.jwt.claim.sub','',false);`,
+    );
+    const migration253 = sql("fase253_frete_automatico_pedido.sql");
+    await db.exec(migration253);
+    await db.exec(migration253);
+    assert.equal((await get(93)).orcamento_situacao, "expirado");
+    assert.equal(Number((await get(93)).total_liquido), 0);
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(1)}',false)`);
+    const conferir = (n) => db.query("select atualizar_frete_automatico_253($1)", [id(n)]);
+    assert.equal((await get(90)).frete_volume_opcao, "legado");
+    await conferir(90);
+    await conferir(91);
+    assert.equal((await get(90)).frete_volume_ativo, true);
+    assert.equal(Number((await get(90)).frete_volume_valor), 900);
+    assert.equal((await get(91)).frete_volume_opcao, "dispensar");
+    assert.equal(Number((await get(91)).frete_volume_valor), 0);
+    assert.equal(Number((await get(92)).total_liquido), 0);
+    assert.equal((await get(92)).frete_volume_ativo, false);
+    await encargos(90, false, 0);
+    await db.exec(`update pedido_itens set quantidade=200 where pedido_id='${id(90)}'`);
+    await recalc(90);
+    assert.equal((await get(90)).frete_volume_opcao, "dispensar");
+    assert.equal(Number((await get(90)).frete_volume_valor), 0);
+
+    await conferir(90);
+    assert.equal((await get(90)).frete_volume_ativo, false);
+    await encargos(90, true, 0);
+    assert.equal(Number((await get(90)).frete_volume_valor), 1800);
+    await db.exec(
+      `insert into pedidos(id,cliente_id,centro_id,representante_id) values('${id(94)}','${id(20)}','${id(10)}','${id(2)}');`,
+    );
+    await encargos(94, false, 12);
+    assert.equal((await get(94)).frete_volume_opcao, "automatico");
+    await db.exec(migration253);
+    assert.equal((await get(94)).frete_volume_opcao, "automatico"); // Não converte ausência de frete em dispensa ao reaplicar.
+    await db.exec(
+      `insert into pedido_itens(id,pedido_id,produto_id,quantidade,preco_unitario) values('${id(194)}','${id(94)}','${id(31)}',10,5)`,
+    );
+    await conferir(94);
+    assert.equal((await get(94)).frete_volume_ativo, false);
+    await salvar(10, "VENDA NOVA", "ES", 31, 0);
+    await conferir(94);
+    assert.equal((await get(94)).frete_volume_ativo, true);
+    assert.equal(Number((await get(94)).frete_volume_valor), 0);
+    await db.exec(`delete from pedido_itens where pedido_id='${id(94)}'`);
+    await recalc(94);
+    assert.equal((await get(94)).frete_volume_ativo, false);
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(2)}',false)`);
+    await assert.rejects(conferir(50), /sem acesso/);
+    await db.exec("set role anon");
+    await assert.rejects(conferir(94), /permission denied/);
+    await db.exec("reset role");
     // Uma nova execução não restaura permissões retiradas pelo administrador.
     await db.exec(`delete from role_permissoes where role='representante';`);
     await db.exec(migration);
@@ -271,7 +341,7 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
       30000,
     );
     console.log(
-      "Frete250/251/252 OK: pendências por loja/cidade, parciais/inativas, tarifa zero válida, novas cidades deduplicadas, produtos fora de uso ignorados e acesso restrito; grade atômica por cidade, catálogo e unidades protegidos, rollback integral, tarifas históricas preservadas; soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
+      "Frete250/251/252/253 OK: detecção automática, dispensa persistente, reabertura, tarifa zero, ausência de itens, migração idempotente e venda congelada; pendências por loja/cidade, parciais/inativas, tarifa zero válida, novas cidades deduplicadas, produtos fora de uso ignorados e acesso restrito; grade atômica por cidade, catálogo e unidades protegidos, rollback integral, tarifas históricas preservadas; soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
     );
   } finally {
     await db.close();

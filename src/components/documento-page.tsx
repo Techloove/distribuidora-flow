@@ -1231,6 +1231,152 @@ export function DocumentoPage({
 
   const listaVisivel = !selected && !openNew;
 
+  const fechamentoDocumento = doc ? (
+    <div
+      className="rounded-lg border border-border bg-card p-5"
+      aria-label="Finalização do documento"
+    >
+      {config.table === "pedidos" && (roles.includes("admin") || roles.includes("gestor"))
+        ? (() => {
+            const custo = (itens.data ?? []).reduce((s, it) => {
+              const p = (produtos.data ?? []).find((x) => x["id"] === it["produto_id"]);
+              return s + Number(it["quantidade"] ?? 0) * Number(p?.["custo_medio"] ?? 0);
+            }, 0);
+            const venda = Number(doc["total_liquido"] ?? 0);
+            const comissao = Number(doc["comissao_valor"] ?? 0);
+            const lucro = venda - custo;
+            const liquido = lucro - comissao;
+            const markup = custo > 0 ? (venda / custo - 1) * 100 : 0;
+            const margem = venda > 0 ? (lucro / venda) * 100 : 0;
+            const pct = (n: number) =>
+              `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+            const cards: [string, string, boolean?][] = [
+              ["Comissão", brl(comissao)],
+              ["Custo", brl(custo)],
+              ["Lucro bruto", brl(lucro), lucro < 0],
+              ["Lucro após comissão", brl(liquido), liquido < 0],
+              ["Markup", pct(markup), markup < 0],
+              ["Margem", pct(margem), margem < 0],
+            ];
+            return (
+              <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3 lg:grid-cols-6">
+                {cards.map(([l, v, neg]) => (
+                  <div key={l}>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</p>
+                    <p className={`text-sm font-semibold ${neg ? "text-destructive" : ""}`}>{v}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          })()
+        : null}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {config.table === "pedidos" ? (
+          <ImprimirPedidos
+            pedidoIds={[String(doc["id"])]}
+            label={ehOrcamento ? "Imprimir orçamento" : "Imprimir pedido"}
+          />
+        ) : null}
+        {config.table === "pedidos" &&
+        !ehOrcamento &&
+        !["rascunho", "digitacao", "aprovado", "cancelado"].includes(String(doc["status"])) ? (
+          <EmitirBoletosPedido
+            key={String(doc["id"])}
+            pedidoId={String(doc["id"])}
+            centroId={String(doc["centro_id"] ?? "")}
+          />
+        ) : null}
+        {!ehOrcamento && (
+          <Button
+            onClick={() => efetivar.mutate()}
+            disabled={
+              !["rascunho", "digitacao", "aprovado", "comprado"].includes(String(doc["status"])) ||
+              efetivar.isPending ||
+              (config.table === "pedidos" &&
+                (edicaoPendente ||
+                  itens.isPending ||
+                  itens.isError ||
+                  itens.isFetching ||
+                  avisosPedido.length > 0)) ||
+              !canWrite
+            }
+          >
+            {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            {config.rpcLabel}
+          </Button>
+        )}
+        {config.table === "compras" && String(doc["status"]) === "rascunho" ? (
+          <Button
+            variant="secondary"
+            onClick={() => marcarComprado.mutate()}
+            disabled={marcarComprado.isPending || !canWrite}
+          >
+            {marcarComprado.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Marcar como comprado
+          </Button>
+        ) : null}
+        {config.table === "pedidos" && doc["status"] === "confirmado" && (
+          <SelecionarPedidosLote
+            pedidos={[
+              {
+                id: String(doc["id"]),
+                numero: String(doc["numero"]),
+                cliente: partnerName(doc["cliente_id"]),
+              },
+            ]}
+          />
+        )}
+        {config.table === "pedidos" && !ehOrcamento
+          ? (proximosStatus[String(doc["status"])] ?? [])
+              .filter(
+                (s) =>
+                  !["aprovado", "recusado"].includes(s.status) ||
+                  roles.includes("admin") ||
+                  roles.includes("gestor"),
+              )
+              .map((s) => (
+                <Button
+                  key={s.status}
+                  variant="secondary"
+                  onClick={() => avancar.mutate(s.status)}
+                  disabled={
+                    avancar.isPending || edicaoPendente || pagamentoAlterado || itens.isFetching
+                  }
+                >
+                  {s.label}
+                </Button>
+              ))
+          : null}
+        {!ehOrcamento && (
+          <Button
+            variant="outline"
+            onClick={() => cancelar.mutate()}
+            disabled={String(doc["status"]).startsWith("cancel") || cancelar.isPending || !canWrite}
+          >
+            Cancelar documento
+          </Button>
+        )}
+      </div>
+
+      {config.table === "pedidos" && (validacao.data ?? []).length > 0 ? (
+        <div className="mt-4 space-y-1.5 rounded-md border border-border bg-background p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Aprovação comercial
+          </p>
+          {(validacao.data ?? []).map((v, i) => (
+            <p
+              key={i}
+              className={`text-sm ${
+                v.nivel === "bloqueio" ? "text-destructive" : "text-muted-foreground"
+              }`}
+            >
+              {v.nivel === "bloqueio" ? "🔴 BLOQUEIO" : "🟡 Atenção"} — {v.mensagem}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
   return (
     <div className="space-y-6">
       <section className={`space-y-3 ${listaVisivel ? "" : "hidden"}`}>
@@ -1613,13 +1759,6 @@ export function DocumentoPage({
               )}
             {config.table === "pedidos" && <AcompanhamentoPedido acompanhamento={acompanhamento} />}
             {config.table === "pedidos" && (
-              <OrcamentoPedido
-                key={`orcamento-${String(doc["id"])}`}
-                doc={doc}
-                pendente={edicaoPendente || pagamentoAlterado || itens.isFetching}
-              />
-            )}
-            {config.table === "pedidos" && (
               <ResumoPedido
                 doc={doc}
                 peso={pesoTotal}
@@ -1627,19 +1766,6 @@ export function DocumentoPage({
                 carregando={itens.isPending || itens.isFetching || edicaoPendente}
               />
             )}
-            {config.table === "pedidos" && (
-              <EncargosPedido
-                key={`encargos-${String(doc["id"])}`}
-                doc={doc}
-                editavel={
-                  canWrite &&
-                  propostaEditavel &&
-                  ["rascunho", "digitacao"].includes(String(doc["status"]))
-                }
-                onPendente={setEncargosPendentes}
-              />
-            )}
-            {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
             <div className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -1696,156 +1822,89 @@ export function DocumentoPage({
                   ) : null}
                 </div>
               </div>
-              {config.table === "pedidos" && (roles.includes("admin") || roles.includes("gestor"))
-                ? (() => {
-                    const custo = (itens.data ?? []).reduce((s, it) => {
-                      const p = (produtos.data ?? []).find((x) => x["id"] === it["produto_id"]);
-                      return s + Number(it["quantidade"] ?? 0) * Number(p?.["custo_medio"] ?? 0);
-                    }, 0);
-                    const venda = Number(doc["total_liquido"] ?? 0);
-                    const comissao = Number(doc["comissao_valor"] ?? 0);
-                    const lucro = venda - custo;
-                    const liquido = lucro - comissao;
-                    const markup = custo > 0 ? (venda / custo - 1) * 100 : 0;
-                    const margem = venda > 0 ? (lucro / venda) * 100 : 0;
-                    const pct = (n: number) =>
-                      `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
-                    const cards: [string, string, boolean?][] = [
-                      ["Comissão", brl(comissao)],
-                      ["Custo", brl(custo)],
-                      ["Lucro bruto", brl(lucro), lucro < 0],
-                      ["Lucro após comissão", brl(liquido), liquido < 0],
-                      ["Markup", pct(markup), markup < 0],
-                      ["Margem", pct(margem), margem < 0],
-                    ];
-                    return (
-                      <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3 lg:grid-cols-6">
-                        {cards.map(([l, v, neg]) => (
-                          <div key={l}>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              {l}
-                            </p>
-                            <p className={`text-sm font-semibold ${neg ? "text-destructive" : ""}`}>
-                              {v}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()
-                : null}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {config.table === "pedidos" ? (
-                  <ImprimirPedidos
-                    pedidoIds={[String(doc["id"])]}
-                    label={ehOrcamento ? "Imprimir orçamento" : "Imprimir pedido"}
-                  />
-                ) : null}
-                {config.table === "pedidos" &&
-                !ehOrcamento &&
-                !["rascunho", "digitacao", "aprovado", "cancelado"].includes(
-                  String(doc["status"]),
-                ) ? (
-                  <EmitirBoletosPedido
-                    key={String(doc["id"])}
-                    pedidoId={String(doc["id"])}
-                    centroId={String(doc["centro_id"] ?? "")}
-                  />
-                ) : null}
-                {!ehOrcamento && (
-                  <Button
-                    onClick={() => efetivar.mutate()}
-                    disabled={
-                      !["rascunho", "digitacao", "aprovado", "comprado"].includes(
-                        String(doc["status"]),
-                      ) ||
-                      efetivar.isPending ||
-                      (config.table === "pedidos" &&
-                        (edicaoPendente ||
-                          itens.isPending ||
-                          itens.isError ||
-                          itens.isFetching ||
-                          avisosPedido.length > 0)) ||
-                      !canWrite
-                    }
-                  >
-                    {efetivar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    {config.rpcLabel}
-                  </Button>
-                )}
-                {config.table === "compras" && String(doc["status"]) === "rascunho" ? (
-                  <Button
-                    variant="secondary"
-                    onClick={() => marcarComprado.mutate()}
-                    disabled={marcarComprado.isPending || !canWrite}
-                  >
-                    {marcarComprado.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Marcar como comprado
-                  </Button>
-                ) : null}
-                {config.table === "pedidos" && doc["status"] === "confirmado" && (
-                  <SelecionarPedidosLote
-                    pedidos={[
-                      {
-                        id: String(doc["id"]),
-                        numero: String(doc["numero"]),
-                        cliente: partnerName(doc["cliente_id"]),
-                      },
-                    ]}
-                  />
-                )}
-                {config.table === "pedidos" && !ehOrcamento
-                  ? (proximosStatus[String(doc["status"])] ?? [])
-                      .filter(
-                        (s) =>
-                          !["aprovado", "recusado"].includes(s.status) ||
-                          roles.includes("admin") ||
-                          roles.includes("gestor"),
-                      )
-                      .map((s) => (
-                        <Button
-                          key={s.status}
-                          variant="secondary"
-                          onClick={() => avancar.mutate(s.status)}
-                          disabled={avancar.isPending}
-                        >
-                          {s.label}
-                        </Button>
-                      ))
-                  : null}
-                {!ehOrcamento && (
-                  <Button
-                    variant="outline"
-                    onClick={() => cancelar.mutate()}
-                    disabled={
-                      String(doc["status"]).startsWith("cancel") || cancelar.isPending || !canWrite
-                    }
-                  >
-                    Cancelar documento
-                  </Button>
-                )}
-              </div>
-
-              {config.table === "pedidos" && (validacao.data ?? []).length > 0 ? (
-                <div className="mt-4 space-y-1.5 rounded-md border border-border bg-background p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Aprovação comercial
-                  </p>
-                  {(validacao.data ?? []).map((v, i) => (
-                    <p
-                      key={i}
-                      className={`text-sm ${
-                        v.nivel === "bloqueio" ? "text-destructive" : "text-muted-foreground"
-                      }`}
-                    >
-                      {v.nivel === "bloqueio" ? "🔴 BLOQUEIO" : "🟡 Atenção"} — {v.mensagem}
-                    </p>
-                  ))}
-                </div>
-              ) : null}
             </div>
 
+            {config.table === "compras" && fechamentoDocumento}
             {creditoPainel}
+            {config.table === "pedidos" &&
+            !ehOrcamento &&
+            doc["status"] === "rascunho" &&
+            clienteFoco ? (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold">Crédito de devoluções</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Crédito disponível deste cliente no centro do pedido. Ele reduz o valor que será
+                  gerado no contas a receber.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <Resumo label="Disponível" value={brl(creditoDisponivelDevolucao)} />
+                  <Resumo
+                    label="Aplicado neste pedido"
+                    value={brl(
+                      (creditoAplicadoPedido.data ?? [])
+                        .filter((a) => ["reservado", "aplicado"].includes(String(a["status"])))
+                        .reduce((sum, a) => sum + Number(a["valor"] ?? 0), 0),
+                    )}
+                  />
+                  <Resumo label="Total do pedido" value={brl(doc["total_liquido"])} />
+                </div>
+                {(creditoAplicadoPedido.data ?? []).some(
+                  (a) => String(a["status"]) === "reservado",
+                ) ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium">Reservas deste pedido</p>
+                    {(creditoAplicadoPedido.data ?? [])
+                      .filter((a) => String(a["status"]) === "reservado")
+                      .map((a) => (
+                        <div
+                          key={String(a["id"])}
+                          className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                        >
+                          <span>{brl(a["valor"])}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={cancelarCreditoPedido.isPending}
+                            onClick={() => cancelarCreditoPedido.mutate(String(a["id"]))}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+                {creditoDisponivelDevolucao > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-end gap-2">
+                    <div className="min-w-48 flex-1 space-y-1.5">
+                      <Label>Valor do crédito</Label>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        max={String(creditoDisponivelDevolucao)}
+                        value={creditoAplicacao}
+                        onChange={(e) => setCreditoAplicacao(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      disabled={aplicarCreditoPedido.isPending}
+                      onClick={() => aplicarCreditoPedido.mutate()}
+                    >
+                      {aplicarCreditoPedido.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : null}
+                      Aplicar crédito
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Nenhum crédito de devolução disponível para este cliente neste centro.
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
               <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
@@ -2123,85 +2182,18 @@ export function DocumentoPage({
               </div>
             ) : null}
 
-            {config.table === "pedidos" &&
-            !ehOrcamento &&
-            doc["status"] === "rascunho" &&
-            clienteFoco ? (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="text-sm font-semibold">Crédito de devoluções</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Crédito disponível deste cliente no centro do pedido. Ele reduz o valor que será
-                  gerado no contas a receber.
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <Resumo label="Disponível" value={brl(creditoDisponivelDevolucao)} />
-                  <Resumo
-                    label="Aplicado neste pedido"
-                    value={brl(
-                      (creditoAplicadoPedido.data ?? [])
-                        .filter((a) => ["reservado", "aplicado"].includes(String(a["status"])))
-                        .reduce((sum, a) => sum + Number(a["valor"] ?? 0), 0),
-                    )}
-                  />
-                  <Resumo label="Total do pedido" value={brl(doc["total_liquido"])} />
-                </div>
-                {(creditoAplicadoPedido.data ?? []).some(
-                  (a) => String(a["status"]) === "reservado",
-                ) ? (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs font-medium">Reservas deste pedido</p>
-                    {(creditoAplicadoPedido.data ?? [])
-                      .filter((a) => String(a["status"]) === "reservado")
-                      .map((a) => (
-                        <div
-                          key={String(a["id"])}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                        >
-                          <span>{brl(a["valor"])}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={cancelarCreditoPedido.isPending}
-                            onClick={() => cancelarCreditoPedido.mutate(String(a["id"]))}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
-                {creditoDisponivelDevolucao > 0 ? (
-                  <div className="mt-3 flex flex-wrap items-end gap-2">
-                    <div className="min-w-48 flex-1 space-y-1.5">
-                      <Label>Valor do crédito</Label>
-                      <Input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        max={String(creditoDisponivelDevolucao)}
-                        value={creditoAplicacao}
-                        onChange={(e) => setCreditoAplicacao(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      variant="secondary"
-                      disabled={aplicarCreditoPedido.isPending}
-                      onClick={() => aplicarCreditoPedido.mutate()}
-                    >
-                      {aplicarCreditoPedido.isPending ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : null}
-                      Aplicar crédito
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Nenhum crédito de devolução disponível para este cliente neste centro.
-                  </p>
-                )}
-              </div>
-            ) : null}
+            {config.table === "pedidos" && (
+              <EncargosPedido
+                key={`encargos-${String(doc["id"])}`}
+                doc={doc}
+                editavel={
+                  canWrite &&
+                  propostaEditavel &&
+                  ["rascunho", "digitacao"].includes(String(doc["status"]))
+                }
+                onPendente={setEncargosPendentes}
+              />
+            )}
 
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
@@ -2281,19 +2273,21 @@ export function DocumentoPage({
                   </div>
                 ) : null}
               </div>
-              <Button
-                className="mt-3"
-                onClick={() => savePagamento.mutate()}
-                disabled={
-                  doc["status"] !== "rascunho" ||
-                  !propostaEditavel ||
-                  savePagamento.isPending ||
-                  !canWrite
-                }
-              >
-                {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                {ehOrcamento ? "Salvar condições da proposta" : "Salvar pagamento"}
-              </Button>
+              {(config.table !== "pedidos" || pagamentoAlterado || savePagamento.isPending) && (
+                <Button
+                  className="mt-3"
+                  onClick={() => savePagamento.mutate()}
+                  disabled={
+                    doc["status"] !== "rascunho" ||
+                    !propostaEditavel ||
+                    savePagamento.isPending ||
+                    !canWrite
+                  }
+                >
+                  {savePagamento.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {ehOrcamento ? "Salvar condições da proposta" : "Salvar pagamento"}
+                </Button>
+              )}
 
               {ehOrcamento && (
                 <p className="mt-3 text-xs text-muted-foreground">
@@ -2331,6 +2325,15 @@ export function DocumentoPage({
                 </p>
               )}
             </div>
+            {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
+            {config.table === "pedidos" && fechamentoDocumento}
+            {config.table === "pedidos" && (
+              <OrcamentoPedido
+                key={`orcamento-${String(doc["id"])}`}
+                doc={doc}
+                pendente={edicaoPendente || pagamentoAlterado || itens.isFetching}
+              />
+            )}
           </>
         )}
       </section>
