@@ -116,7 +116,7 @@ function NotasPage() {
   return (
     <ErpLayout
       title="Faturamento e nota fiscal"
-      description="Só aparecem aqui os pedidos com separação concluída e conferida. O boleto é liberado depois da nota autorizada."
+      description="Só aparecem aqui os pedidos com separação concluída e conferida. A exigência de nota autorizada para boletos depende das regras da loja."
     >
       <div className="space-y-6">
         <section className="space-y-2">
@@ -213,7 +213,9 @@ function NotasPage() {
                           {String((n["clientes"] as Row | null)?.["razao_social"] ?? "—")}
                         </td>
                         <td className="px-4 py-2.5">
-                          {n["nf_numero"] ? `${String(n["nf_numero"])} / ${String(n["serie"])}` : "—"}
+                          {n["nf_numero"]
+                            ? `${String(n["nf_numero"])} / ${String(n["serie"])}`
+                            : "—"}
                         </td>
                         <td className="px-4 py-2.5">
                           <span
