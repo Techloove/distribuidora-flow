@@ -1,3 +1,4 @@
+import { TributacaoLoja } from "@/components/tributacao-loja";
 import { FaznotasConexao } from "@/components/faznotas-conexao";
 import { FiscalLoja } from "@/components/fiscal-loja";
 import { FreteVolumeLoja } from "@/components/frete-volume-loja";
@@ -94,6 +95,13 @@ export function ConfiguracaoLoja({
       {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
         <FiscalLoja
           key={`fiscal-${valida}`}
+          loja={valida}
+          editar={permissoes.pode("configuracao_rotinas_editar")}
+        />
+      )}
+      {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
+        <TributacaoLoja
+          key={`tributacao-${valida}`}
           loja={valida}
           editar={permissoes.pode("configuracao_rotinas_editar")}
         />
