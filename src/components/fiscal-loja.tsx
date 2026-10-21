@@ -123,8 +123,8 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
       <h3 className="font-semibold">NF-e · Preparação FAZNOTAS</h3>
       <p className="text-sm text-muted-foreground">
         Configure os dados com o contador. Esta etapa prepara o cadastro e confere CFOP; ainda não
-        transmite notas à SEFAZ. O token da empresa será utilizado somente no servidor, na etapa de
-        integração.
+        transmite notas à SEFAZ. O token da empresa é configurado no bloco de conexão desta loja e
+        fica restrito ao servidor.
       </p>
       {config.error && (
         <p role="alert" className="text-destructive">

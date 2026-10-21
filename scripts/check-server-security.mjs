@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 const files = [
+  "src/lib/faznotas-conexao.functions.ts",
   "src/lib/consulta-cadastral.functions.ts",
   "src/lib/inscricao-estadual.functions.ts",
   "src/lib/sicredi.functions.ts",
