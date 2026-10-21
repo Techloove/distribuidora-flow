@@ -119,6 +119,17 @@ const root = path.resolve(__dirname, ".."),
       "remover_pedido_carga",
     ])
       await fn("fase42_fluxo_operacional.sql", nome);
+    await fn("fase42_fluxo_operacional.sql", "bloqueio_boleto");
+    await fn("fase42_fluxo_operacional.sql", "trg_boleto_liberado");
+    await d.exec(`alter table contas_receber add column pedido_id uuid;
+      create table boletos(id uuid default gen_random_uuid(),pedido_id uuid,conta_receber_id uuid);
+      create trigger trg_boletos_liberado before insert on boletos for each row execute function trg_boleto_liberado();
+      insert into parametros values('exigir_nf_boleto','true');
+      create table loja_parametros(centro_id uuid,chave text,valor text);
+      insert into loja_parametros values('${id(10)}','exigir_nf_boleto','false'),('${id(11)}','exigir_nf_boleto','true');`);
+    await fn("fase243_parametros_por_loja.sql", "parametros_da_loja_243");
+    await d.exec(`do $$declare definicao text;begin select pg_get_functiondef('public.bloqueio_boleto(uuid)'::regprocedure) into definicao;
+      execute replace(definicao,'from public.parametros where','from public.parametros_da_loja_243((select centro_id from public.pedidos where id=_pedido_id)) where');end $$;`);
     await fn("fase209_rotinas_distribuidora.sql", "validar_capacidade_carga_209");
     await fn("fase215_comissoes_e_rentabilidade.sql", "marcar_faturamento_215");
     await d.exec(
@@ -345,6 +356,50 @@ const root = path.resolve(__dirname, ".."),
     );
     await actor(6);
     assert.equal(await state(200), "conferido");
+    // O fluxo antigo bloqueava o boleto mesmo após concluir/conferir a separação.
+    await d.exec("reset role");
+    assert.match((await q("select bloqueio_boleto($1) msg", [id(200)]))[0].msg, /faturamento/);
+    await denied(() => q("insert into boletos(pedido_id) values($1)", [id(200)]), /faturamento/);
+    const sql255 = fs.readFileSync(path.join(root, "db/fase255_boleto_apos_separacao.sql"), "utf8");
+    await d.exec(sql255);
+    await d.exec(sql255);
+    assert.equal((await q("select bloqueio_boleto($1) msg", [id(200)]))[0].msg, null);
+    await q("insert into boletos(pedido_id) values($1)", [id(200)]); // Guarda real de reserva/registro aceita Pronto para carga.
+    await q("insert into boletos(pedido_id) values(null)"); // Título manual preservado.
+    await denied(() => q("insert into boletos(pedido_id) values($1)", [id(201)]), /separação/);
+    await q("update pedido_itens set conferido=false where pedido_id=$1", [id(200)]);
+    await denied(() => q("insert into boletos(pedido_id) values($1)", [id(200)]), /separação/);
+    await q("update pedido_itens set conferido=true,quantidade_separada=9 where pedido_id=$1", [
+      id(200),
+    ]);
+    await denied(() => q("insert into boletos(pedido_id) values($1)", [id(200)]), /separação/);
+    await q("update pedido_itens set quantidade_separada=quantidade where pedido_id=$1", [id(200)]);
+    await q(
+      "update loja_parametros set valor='true' where centro_id=$1 and chave='exigir_nf_boleto'",
+      [id(10)],
+    );
+    await denied(() => q("insert into boletos(pedido_id) values($1)", [id(200)]), /nota fiscal/);
+    await q(
+      "update loja_parametros set valor='false' where centro_id=$1 and chave='exigir_nf_boleto'",
+      [id(10)],
+    );
+    await actor(3);
+    assert.equal((await q("select liberacao_boleto_pedido_255($1) msg", [id(200)]))[0].msg, null);
+    await actor(6);
+    await denied(() => q("select liberacao_boleto_pedido_255($1)", [id(200)]), /Sem permissão/);
+    await d.exec("reset role");
+    await d.query("insert into user_roles values($1,'financeiro')", [id(1)]);
+    await actor(1);
+    await denied(() => q("select liberacao_boleto_pedido_255($1)", [id(203)]), /sem acesso/);
+    await d.exec("reset role");
+    await d.query("delete from user_roles where user_id=$1 and role='financeiro'", [id(1)]);
+    await d.exec("set role anon");
+    await denied(() => q("select liberacao_boleto_pedido_255($1)", [id(200)]), /permission denied/);
+    await d.exec("reset role");
+    await actor(4);
+    await denied(() => q("select liberacao_boleto_pedido_255($1)", [id(205)]), /sem acesso/);
+    await actor(6);
+
     assert.equal(
       (await q("select status from pedido_separacoes where pedido_id=$1", [id(200)]))[0].status,
       "conferida",

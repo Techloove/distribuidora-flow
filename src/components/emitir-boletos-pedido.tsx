@@ -100,7 +100,9 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
         lerPaginas<TituloBoleto>((inicio, fim) =>
           client!
             .from("contas_receber")
-            .select("id,parcela,vencimento,valor,status,juros,multa,acrescimo,desconto,valor_pago")
+            .select(
+              "id,pedido_id,parcela,vencimento,valor,status,juros,multa,acrescimo,desconto,valor_pago",
+            )
             .eq(contaId ? "id" : "pedido_id", contaId ?? pedidoId!)
             .order("parcela")
             .order("id")
@@ -129,10 +131,32 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
       return { titulos, boletos, pendentes: pendentes.map((p) => p.conta_receber_id) };
     },
   });
+  const pedidoLiberacao = pedidoId || consulta.data?.titulos[0]?.pedido_id || "";
+  const liberacao = useQuery({
+    queryKey: ["liberacao-boleto-255", user?.id, pedidoLiberacao],
+    enabled: open && !!client && !!pedidoLiberacao && modo === "emitir",
+    refetchOnMount: "always",
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("liberacao_boleto_pedido_255", {
+        _pedido: pedidoLiberacao,
+      });
+      if (error)
+        throw new Error(
+          error.code === "P0001"
+            ? error.message
+            : error.code === "PGRST202"
+              ? "Aplique a fase255 no Supabase para verificar a liberação dos boletos."
+              : "Não foi possível verificar a liberação do pedido. Atualize a lista e tente novamente.",
+        );
+      return data as string | null;
+    },
+  });
+  const pedidoLiberado =
+    !pedidoLiberacao || (liberacao.isSuccess && liberacao.data === null && !liberacao.isFetching);
   const linhas = (consulta.data?.titulos ?? []).map((t) => ({
     titulo: t,
     boleto: boletoAtual(consulta.data?.boletos ?? [], t.id),
-    emitir: habilitado && (consulta.data?.pendentes.includes(t.id) ?? false),
+    emitir: habilitado && pedidoLiberado && (consulta.data?.pendentes.includes(t.id) ?? false),
   }));
   const elegiveis = linhas.filter((l) =>
     modo === "emitir" ? l.emitir : boletoImprimivel(l.boleto),
@@ -142,6 +166,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
   const atualizar = async () => {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["emissao-boletos"] }),
+      qc.invalidateQueries({ queryKey: ["liberacao-boleto-255"] }),
       ...["boletos", "vw_boletos_pendentes", "contas_receber", "vw_titulos_receber"].map((k) =>
         qc.invalidateQueries({ queryKey: [k] }),
       ),
@@ -316,6 +341,16 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
                   Reimprimir emitidos
                 </Button>
               </div>
+              {modo === "emitir" && pedidoLiberacao && liberacao.isFetching && (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Conferindo a liberação do pedido…
+                </p>
+              )}
+              {modo === "emitir" && pedidoLiberacao && (liberacao.error || liberacao.data) && (
+                <p role="alert" className="text-sm text-destructive">
+                  {liberacao.error?.message || liberacao.data}
+                </p>
+              )}
               {modo === "emitir" && (
                 <p className="text-sm text-muted-foreground">
                   {cobranca.isPending

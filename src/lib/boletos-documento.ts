@@ -1,4 +1,5 @@
 export type TituloBoleto = {
+  pedido_id?: string | null;
   id: string;
   parcela: number;
   vencimento: string;
