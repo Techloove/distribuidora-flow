@@ -6,6 +6,13 @@ import { ConfiguracaoLoja } from "@/components/configuracao-loja";
 import { ErpLayout } from "@/components/erp-layout";
 
 export const Route = createFileRoute("/_app/centros")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { loja?: string; cidade?: string; uf?: string } => ({
+    ...(typeof search["loja"] === "string" ? { loja: search["loja"] } : {}),
+    ...(typeof search["cidade"] === "string" ? { cidade: search["cidade"] } : {}),
+    ...(typeof search["uf"] === "string" ? { uf: search["uf"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Lojas — ERP Distribuidora" },
@@ -60,6 +67,7 @@ const fields: CrudField[] = [
 ];
 
 function CentrosPage() {
+  const { loja, cidade, uf } = Route.useSearch();
   return (
     <ErpLayout
       title="Lojas"
@@ -72,7 +80,11 @@ function CentrosPage() {
         emptyLabel="Nenhuma loja cadastrada ainda."
         searchColumns={["codigo", "nome", "cidade", "uf"]}
       />
-      <ConfiguracaoLoja />
+      <ConfiguracaoLoja
+        key={`${loja ?? ""}-${cidade ?? ""}-${uf ?? ""}`}
+        lojaInicial={loja ?? ""}
+        cidadeInicial={[cidade, uf].filter(Boolean).join(" ")}
+      />
     </ErpLayout>
   );
 }

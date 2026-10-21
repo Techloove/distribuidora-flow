@@ -201,6 +201,51 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
       grade([30], [{ cidade: "VENDA NOVA", uf: "ES", valor: -1, ativo: true }]),
       /valor unitário/,
     );
+    // Pendências252: somente produtos que já usam frete, com isolamento por loja.
+    await db.exec(
+      `alter table centros add column nome text default 'Loja';alter table centros add column ativo boolean default true;insert into centros(id) values('${id(12)}');`,
+    );
+    const migration252 = sql("fase252_pendencias_frete_volume.sql");
+    await db.exec(migration252);
+    await db.exec(migration252);
+    const pendencias = async (loja = null) =>
+      (
+        await db.query("select * from pendencias_frete_volume_252($1)", [
+          loja === null ? null : id(loja),
+        ])
+      ).rows;
+    let pend = await pendencias(10);
+    assert.equal(pend.length, 1);
+    assert.equal(pend[0].uf, "MG");
+    assert.equal(Number(pend[0].produtos_sem_tarifa), 1);
+    assert.equal(Number(pend[0].produtos_previstos), 2);
+    assert.equal((await pendencias(12)).length, 0); // Loja sem uso de frete não gera alertas.
+    await grade([30, 32], [{ cidade: "VENDA NOVA", uf: "MG", valor: 0, ativo: true }]);
+    assert.equal((await pendencias(10)).length, 0);
+    await grade([32], [{ cidade: "VENDA NOVA", uf: "ES", valor: 9, ativo: false }]);
+    assert.equal((await pendencias(10)).length, 1);
+    await grade([32], [{ cidade: "VENDA NOVA", uf: "ES", valor: 0, ativo: true }]);
+    assert.equal((await pendencias(10)).length, 0);
+    await db.exec(
+      `insert into clientes values('${id(23)}','Cidade nova','ES'),('${id(24)}',' cidade nova ','es'),('${id(25)}',' ','ES')`,
+    );
+    pend = await pendencias(10);
+    assert.equal(pend.length, 1);
+    assert.equal(Number(pend[0].produtos_sem_tarifa), 2);
+    await db.exec(
+      `update loja_produtos set disponivel=false where centro_id='${id(10)}' and produto_id='${id(32)}'`,
+    );
+    assert.equal(Number((await pendencias(10))[0].produtos_previstos), 1);
+    await db.exec(`create or replace function can_manage(uuid) returns boolean language sql as $$select $1 in ('${id(1)}'::uuid,'${id(3)}'::uuid)$$;
+    create or replace function usuario_pode_acessar_centro(uuid) returns boolean language sql as $$select auth.uid()='${id(1)}'::uuid or $1='${id(10)}'::uuid$$;
+    select set_config('request.jwt.claim.sub','${id(3)}',false);`);
+    assert.ok((await pendencias()).every((r) => r.centro_id === id(10)));
+    await assert.rejects(pendencias(11), /Sem acesso/);
+    await db.exec(`select set_config('request.jwt.claim.sub','${id(2)}',false)`);
+    await assert.rejects(pendencias(), /Sem acesso/);
+    await db.exec("set role anon");
+    await assert.rejects(pendencias(), /permission denied/);
+    await db.exec("reset role");
     await db.exec(`select set_config('request.jwt.claim.sub','${id(2)}',false)`);
     await assert.rejects(
       grade([30], [{ cidade: "VENDA NOVA", uf: "ES", valor: 1, ativo: true }]),
@@ -226,7 +271,7 @@ const sql = (f) => readFileSync(path.join(__dirname, "..", "db", f), "utf8");
       30000,
     );
     console.log(
-      "Frete250/251 OK: grade atômica por cidade, catálogo e unidades protegidos, rollback integral, tarifas históricas preservadas; soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
+      "Frete250/251/252 OK: pendências por loja/cidade, parciais/inativas, tarifa zero válida, novas cidades deduplicadas, produtos fora de uso ignorados e acesso restrito; grade atômica por cidade, catálogo e unidades protegidos, rollback integral, tarifas históricas preservadas; soma por quantidade/produto/cidade/UF/loja, despesas no total, frete manual e comissão independentes, orçamentos, histórico congelado, devoluções sem frete, valores inválidos e carteira/permissões protegidos; migração reaplicável sem restaurar acessos.",
     );
   } finally {
     await db.close();

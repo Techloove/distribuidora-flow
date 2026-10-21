@@ -25,7 +25,13 @@ type Produto = {
 };
 type Edicao = { valor: string; ativo: boolean };
 type Modo = "produto" | "grupo" | "categoria";
-export function FreteVolumeLoja({ loja }: { loja: string }) {
+export function FreteVolumeLoja({
+  loja,
+  cidadeInicial = "",
+}: {
+  loja: string;
+  cidadeInicial?: string;
+}) {
   const { client, user, canManage } = useSupabase();
   const permissoes = usePermissoesRotinas();
   const pode = canManage && permissoes.pode("lojas_frete_volume_configurar");
@@ -35,7 +41,7 @@ export function FreteVolumeLoja({ loja }: { loja: string }) {
   const [busca, setBusca] = useState("");
   const [unidade, setUnidade] = useState("");
   const [excluidos, setExcluidos] = useState<string[]>([]);
-  const [filtroCidade, setFiltroCidade] = useState("");
+  const [filtroCidade, setFiltroCidade] = useState(cidadeInicial);
   const [edicoes, setEdicoes] = useState<Record<string, Edicao>>({});
   const cidades = useQuery({
     queryKey: ["cidades-frete-volume", loja, user?.id],
@@ -144,6 +150,7 @@ export function FreteVolumeLoja({ loja }: { loja: string }) {
       });
       if (error) throw new Error(error.message);
       await qc.invalidateQueries({ queryKey: ["tarifas-frete-volume"] });
+      void qc.invalidateQueries({ queryKey: ["pendencias"] });
       return Number(data);
     },
     onSuccess: (n) => {

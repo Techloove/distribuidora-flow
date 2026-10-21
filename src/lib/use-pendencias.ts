@@ -1,3 +1,4 @@
+import { usePermissoesRotinas } from "./permissoes-rotinas";
 import { camposFaltantesCliente } from "./pendencias-cadastro";
 import { lerPaginas } from "./paginacao";
 import { useQuery } from "@tanstack/react-query";
@@ -15,14 +16,26 @@ export type Pendencia = {
   pedido?: string;
   pessoa?: string;
   centro?: string;
+  loja?: string;
+  cidade?: string;
+  uf?: string;
 };
 type Row = Record<string, unknown>;
 export function usePendencias() {
   const { client, user, roles } = useSupabase();
   const { centro, isLoading, error } = useCentroValido();
   const acesso = useAcesso();
+  const permissoes = usePermissoesRotinas();
   const today = hojeSaoPaulo();
   const kinds = [
+    {
+      id: "frete-volume",
+      label: "Cidades com frete por volume pendente",
+      table: "loja_fretes_volume" as const,
+      module: "/centros",
+      statuses: [],
+      high: false,
+    },
     {
       id: "config-representante",
       label: "Representantes com configuração pendente",
@@ -120,7 +133,12 @@ export function usePendencias() {
       high: false,
     },
   ].filter(
-    (k) => acesso.pode(k.module) && (k.id !== "config-representante" || roles.includes("admin")),
+    (k) =>
+      acesso.pode(k.module) &&
+      (k.id !== "config-representante" || roles.includes("admin")) &&
+      (k.id !== "frete-volume" ||
+        ((roles.includes("admin") || roles.includes("gestor")) &&
+          permissoes.pode("lojas_frete_volume_configurar"))),
   );
   return useQuery({
     queryKey: [
@@ -137,6 +155,36 @@ export function usePendencias() {
     queryFn: async () => {
       const results = await Promise.all(
         kinds.map(async (k) => {
+          if (k.id === "frete-volume") {
+            try {
+              const rows = await lerPaginas<Row>((inicio, fim) =>
+                client!
+                  .rpc("pendencias_frete_volume_252", { _loja: centro || null })
+                  .range(inicio, fim),
+              );
+              const itens: Pendencia[] = rows.slice(0, 40).map((r) => ({
+                id: `frete-volume:${String(r["centro_id"])}:${String(r["cidade"])}:${String(r["uf"])}`,
+                categoria: k.label,
+                prioridade: "normal",
+                to: "/centros",
+                titulo: `${String(r["cidade"])} / ${String(r["uf"] || "UF não informada")} · ${String(r["loja"])}`,
+                detalhe: `Falta tarifa ativa para ${String(r["produtos_sem_tarifa"])} de ${String(r["produtos_previstos"])} produto(s) que usam frete por volume nesta loja. Configure o valor por unidade.`,
+                centro: String(r["centro_id"]),
+                loja: String(r["centro_id"]),
+                cidade: String(r["cidade"]),
+                uf: String(r["uf"] ?? ""),
+              }));
+              return { id: k.id, label: k.label, total: rows.length, itens, erro: null };
+            } catch {
+              return {
+                id: k.id,
+                label: k.label,
+                total: null,
+                itens: [] as Pendencia[],
+                erro: "Não foi possível conferir as cidades sem frete por volume. Confira a fase252 no Supabase.",
+              };
+            }
+          }
           if (k.id === "config-representante") {
             try {
               const [rows, solicitacoes] = await Promise.all([

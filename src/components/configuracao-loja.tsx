@@ -36,11 +36,17 @@ const campos: Record<string, { label: string; tipo: "boolean" | "number" | "comi
   exigir_nf_boleto: { label: "Exigir nota fiscal para boleto", tipo: "boolean" },
 };
 
-export function ConfiguracaoLoja() {
+export function ConfiguracaoLoja({
+  lojaInicial = "",
+  cidadeInicial = "",
+}: {
+  lojaInicial?: string;
+  cidadeInicial?: string;
+}) {
   const { client, user, canManage } = useSupabase();
   const acesso = useCentrosPermitidos();
   const permissoes = usePermissoesRotinas();
-  const [loja, setLoja] = useState("");
+  const [loja, setLoja] = useState(lojaInicial);
   const valida = acesso.lista.some((l) => l.id === loja) ? loja : "";
   return (
     <section className="mt-6 rounded-xl border bg-card p-5 space-y-4">
@@ -83,7 +89,13 @@ export function ConfiguracaoLoja() {
           nome={acesso.lista.find((l) => l.id === valida)?.nome ?? ""}
         />
       )}
-      {valida && <FreteVolumeLoja key={`frete-${valida}`} loja={valida} />}
+      {valida && (
+        <FreteVolumeLoja
+          key={`frete-${valida}`}
+          loja={valida}
+          cidadeInicial={valida === lojaInicial ? cidadeInicial : ""}
+        />
+      )}
       {valida && (
         <div className="rounded-xl border p-4 space-y-3">
           <h3 className="font-semibold">Promoções e descontos por peso</h3>
