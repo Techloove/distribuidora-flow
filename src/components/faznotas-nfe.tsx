@@ -190,8 +190,9 @@ export function FaznotasNfe({ nota, onClose }: { nota: string; onClose: () => vo
             )}
             {automatico && !pausado && (
               <p className="text-sm text-muted-foreground">
-                Acompanhamento a cada 8 segundos enquanto esta janela estiver aberta. A emissão
-                reservada pode ser retomada ao voltar.
+                Acompanhamento a cada 8 segundos nesta janela. Com a fase260 instalada e publicada,
+                recibos em processamento também são consultados em segundo plano. Preparações ainda
+                sem recibo podem ser retomadas ao voltar.
               </p>
             )}
             {r.estado === "autorizada" && (

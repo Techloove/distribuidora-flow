@@ -77,5 +77,24 @@ assert.equal((await db.query('select protocolo from notas_saida')).rows[0].proto
 assert.equal((await db.query("select count(*)::int n from auditoria where acao='faznotas_autorizada'")).rows[0].n,1);
 await db.exec(`set teste.jwt_role='authenticated';set teste.negado='true'`);await assert.rejects(db.exec(`select status_nfe_259('${id(7)}')`),/Sem permissão/);
 await db.exec(`set role authenticated`);await assert.rejects(db.exec('select * from faznotas_emissoes_259'),/permission denied/);
+// Fase260: agendamento real é validado por stubs locais, sem rede/extensões externas.
+await db.exec(`reset role;set teste.negado='false';set teste.jwt_role='service_role';
+create schema cron;create table cron.job(jobname text);create function cron.schedule(text,text,text) returns bigint language plpgsql as $$begin insert into cron.job values($1);return 1;end$$;
+create schema net;create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds int) returns bigint language sql as $$select 1::bigint$$;
+update faznotas_emissoes_259 set estado='processando',lease=null,lease_ate=null,proxima_consulta=now()-interval '1 minute';`);
+const auto=readFileSync('db/fase260_faznotas_consulta_automatica.sql','utf8').replace(/create extension if not exists pg_cron;/,'').replace(/create extension if not exists pg_net with schema extensions;/,'');
+await db.exec(auto);await db.exec(auto);
+assert.equal((await db.query(`select count(*)::int n from cron.job`)).rows[0].n,1);
+await assert.rejects(db.exec(`select faznotas_auto_reservar_260('errado')`),/Credencial/);
+const secret=(await db.query(`select segredo from faznotas_auto_config_260`)).rows[0].segredo;
+const claim=async()=>(await db.query('select faznotas_auto_reservar_260($1) j',[secret])).rows[0].j;
+const automatic=await claim();assert.equal(automatic.nota,id(7));assert.equal(automatic.actor,id(1));assert.equal(automatic.recibo,'RECIBO-TESTE');assert.equal(automatic.snapshot,undefined);
+assert.equal(await claim(),null);assert.equal(await assumir(),null);
+await db.exec(`update faznotas_auto_config_260 set bloqueado_ate=null;update faznotas_emissoes_259 set lease=null,lease_ate=null,recibo=null;`);
+assert.equal(await claim(),null); // Não emite/reenvia sem recibo.
+await db.exec(`update faznotas_auto_config_260 set bloqueado_ate=null;update faznotas_emissoes_259 set recibo='RECIBO-TESTE';set teste.negado='true';`);
+assert.equal(await claim(),null); // Acesso revogado impede o processamento.
+await db.exec(`set role authenticated`);await assert.rejects(db.exec('select * from faznotas_auto_config_260'),/permission denied/);
+await assert.rejects(db.exec(`select faznotas_auto_reservar_260('qualquer')`),/permission denied/);
 await db.close();console.log('FAZNOTAS259: migração reaplicável, sigilo, reserva, lease, polling, transições, prova fiscal, bloqueios manuais e logística verificados sem API real');
 })().catch(e=>{console.error(e);process.exit(1)});
