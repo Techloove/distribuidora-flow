@@ -123,6 +123,10 @@ function NotasPage() {
       description="Só aparecem aqui os pedidos com separação concluída e conferida. A exigência de nota autorizada para boletos depende das regras da loja."
     >
       <div className="space-y-6">
+        <p className="rounded-lg border bg-muted p-4 text-sm" role="status">
+          Forecast Fiscal em preparação. Novas emissões pela FAZNOTAS foram desativadas. Notas e
+          documentos anteriores permanecem disponíveis no histórico.
+        </p>
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Pedidos liberados para faturar</h2>
           {pedidos.error && (
@@ -245,7 +249,7 @@ function NotasPage() {
                         </td>
                         <td className="px-4 py-2.5 text-right">{moeda(n["valor_total"])}</td>
                         <td className="space-x-2 px-4 py-2.5 text-right">
-                          {(status === "pendente" || !!n["faznotas_estado"]) && (
+                          {!!n["faznotas_estado"] && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -256,9 +260,7 @@ function NotasPage() {
                               }
                               onClick={() => setNotaApi(String(n["id"]))}
                             >
-                              {n["faznotas_estado"]
-                                ? "Acompanhar FAZNOTAS"
-                                : "Conferir e emitir FAZNOTAS"}
+                              Histórico FAZNOTAS
                             </Button>
                           )}
                           {!n["faznotas_estado"] &&

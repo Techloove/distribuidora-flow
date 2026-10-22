@@ -1,5 +1,7 @@
 # FAZNOTAS — emissão e acompanhamento de NF-e55, fase259
 
+> Histórico: a fase261 prepara a troca para Forecast Fiscal e desativa novas emissões/agendamento FAZNOTAS. Consulte [a preparação da migração](forecast-fiscal-preparacao-261.md) antes de seguir as instruções antigas abaixo.
+
 ## Instalar
 
 1. Executar integralmente `db/fase259_emissao_faznotas.sql` no Supabase após as fases256,257 e258. A migração é reaplicável e não altera notas históricas nem transmite documentos.

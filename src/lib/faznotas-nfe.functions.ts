@@ -1,3 +1,4 @@
+import { bloquearNovasEmissoesFaznotas } from "./provedor-fiscal";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
@@ -114,6 +115,7 @@ export const faznotasPreviaNfe = createServerFn({ method: "POST" })
   .validator((data: unknown) => previa.parse(data))
   .handler(async ({ data }) => {
     const a = await acesso(data);
+    bloquearNovasEmissoesFaznotas();
     service();
     const p = await preparar(data, a.token, a.anon);
     return { snapshot: p.snapshot, hash: p.hash };
@@ -126,6 +128,7 @@ async function executarEtapa(
   a: Awaited<ReturnType<typeof acesso>>,
   recuperar = false,
 ) {
+  if (!a.status.recibo) bloquearNovasEmissoesFaznotas();
   const key = service();
   const rpc = <T>(nome: string, params: Record<string, unknown>) =>
     rest<T>(`rpc/${nome}`, key, key, params);
@@ -203,6 +206,7 @@ export const faznotasEnviarNfe = createServerFn({ method: "POST" })
   .validator((data: unknown) => envio.parse(data))
   .handler(async ({ data }) => {
     const a = await acesso(data);
+    bloquearNovasEmissoesFaznotas();
     const key = service();
     const p = await preparar(data, a.token, a.anon);
     if (p.hash !== data.hash)

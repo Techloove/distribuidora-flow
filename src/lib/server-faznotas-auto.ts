@@ -1,5 +1,4 @@
-import { fetchWithTimeout } from "./fetch-timeout";
-import { chamarFaznotas, FalhaFaznotas, type RetornoNfe } from "./server-faznotas-nfe";
+import { FalhaFaznotas, type RetornoNfe } from "./server-faznotas-nfe";
 
 type Job = {
   nota: string;
@@ -56,44 +55,8 @@ export async function atenderFaznotasAutomatico(request: Request): Promise<Respo
     return new Response(null, { status: 405, headers: { ...headers, Allow: "POST" } });
   const segredo = request.headers.get("Authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
   if (!segredo) return new Response(null, { status: 401, headers });
-  const url = process.env["EXT_SUPABASE_URL"]?.replace(/\/$/, "");
-  const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
-  if (!url || !key) return new Response(null, { status: 503, headers });
-  const dbHeaders = {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    "Content-Type": "application/json",
-  };
-  const rpc: Rpc = async <T>(name: string, args: Record<string, unknown>) => {
-    const r = await fetchWithTimeout(
-      `${url}/rest/v1/rpc/${name}`,
-      { method: "POST", headers: dbHeaders, body: JSON.stringify(args) },
-      8000,
-    );
-    if (!r.ok) throw new Error("Operação fiscal indisponível");
-    return (await r.json()) as T;
-  };
-  try {
-    const result = await consultarNfeAutomatica(segredo, {
-      rpc,
-      credencial: async (centro) => {
-        const r = await fetchWithTimeout(
-          `${url}/rest/v1/faznotas_credenciais_257?select=cnpj,token&centro_id=eq.${encodeURIComponent(centro)}&limit=1`,
-          { headers: dbHeaders },
-          8000,
-        );
-        if (!r.ok) throw new Error("Credencial indisponível");
-        const rows = (await r.json()) as { cnpj: string; token: string }[];
-        if (!rows[0]) throw new Error("Credencial ausente");
-        return rows[0];
-      },
-      consultar: (token, path) => chamarFaznotas(token, path, "GET"),
-    });
-    return Response.json(result, { headers });
-  } catch {
-    return Response.json(
-      { erro: "Consulta automática não concluída; confira o acompanhamento da nota." },
-      { status: 503, headers },
-    );
-  }
+  return Response.json(
+    { desativado: true, motivo: "Troca de provedor fiscal" },
+    { status: 410, headers },
+  );
 }

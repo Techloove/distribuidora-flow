@@ -96,5 +96,35 @@ await db.exec(`update faznotas_auto_config_260 set bloqueado_ate=null;update faz
 assert.equal(await claim(),null); // Acesso revogado impede o processamento.
 await db.exec(`set role authenticated`);await assert.rejects(db.exec('select * from faznotas_auto_config_260'),/permission denied/);
 await assert.rejects(db.exec(`select faznotas_auto_reservar_260('qualquer')`),/permission denied/);
+
+// Fase261: troca local sem chamadas remotas e sem reutilização de credenciais.
+await db.exec(`reset role;set teste.negado='false';set teste.jwt_role='authenticated';`);
+const preparacao=readFileSync('db/fase261_preparacao_forecast_fiscal.sql','utf8');await db.exec(preparacao);await db.exec(preparacao);
+let provider=(await db.query(`select estado_provedor_fiscal_261('${id(2)}') s`)).rows[0].s;
+assert.equal(provider.provedor,'forecastfiscal');assert.equal(provider.emissao_disponivel,false);
+assert.equal(provider.cnpj_vinculado,null);
+await db.exec(`select salvar_provedor_fiscal_261('${id(2)}','forecastfiscal')`);
+provider=(await db.query(`select estado_provedor_fiscal_261('${id(2)}') s`)).rows[0].s;
+assert.equal(provider.cnpj_vinculado,'12345678000195');assert.equal(provider.vinculo_atual,true);
+assert.equal(JSON.stringify(provider).includes('FICTICIO'),false);
+await assert.rejects(db.exec(`select salvar_provedor_fiscal_261('${id(2)}','faznotas')`),/Provedor inválido/);
+await assert.rejects(db.exec(`select estado_provedor_fiscal_261('${id(8)}')`),/Sem acesso/);
+await db.exec(`update centros set cnpj='00.000.000/0001-00'`);
+assert.equal((await db.query(`select estado_provedor_fiscal_261('${id(2)}') s`)).rows[0].s.vinculo_atual,false);
+await db.exec(`update centros set cnpj='12.345.678/0001-95';set teste.jwt_role='service_role'`);
+assert.equal((await db.query(`select ativo from faznotas_auto_config_260`)).rows[0].ativo,false);
+assert.equal((await db.query(`select liberado from faznotas_liberacao_259`)).rows[0].liberado,false);
+await assert.rejects(db.exec(`insert into faznotas_emissoes_259 select * from faznotas_emissoes_259 limit 1`),/Novas emissões FAZNOTAS desativadas/);
+await db.exec(`update faznotas_emissoes_259 set recibo=null`);
+await assert.rejects(db.exec(`update faznotas_emissoes_259 set estado='enviando'`),/Novas emissões FAZNOTAS desativadas/);
+await assert.rejects(db.exec(`update faznotas_liberacao_259 set liberado=true`),/Novas emissões FAZNOTAS desativadas/);
+// Recibos anteriores continuam consultáveis sem emissão nova.
+await db.exec(`update faznotas_emissoes_259 set recibo='RECIBO-TESTE',estado='processando',proxima_consulta=now()-interval '1 minute',lease=null,lease_ate=null`);
+assert.ok((await assumir()).lease);
+await db.exec(`set teste.jwt_role='authenticated';set role authenticated`);
+await assert.rejects(db.exec('select * from loja_provedor_fiscal_261'),/permission denied/);
+await db.exec(`reset role;create or replace function has_role(uuid,text) returns boolean language sql as $$select false$$;`);
+await assert.rejects(db.exec(`select salvar_provedor_fiscal_261('${id(2)}','suspenso')`),/Somente administrador/);
+console.log('Forecast261: preparação por loja, isolamento, sigilo, bloqueio de nova emissão FAZNOTAS e preservação de recibos verificados');
 await db.close();console.log('FAZNOTAS259: migração reaplicável, sigilo, reserva, lease, polling, transições, prova fiscal, bloqueios manuais e logística verificados sem API real');
 })().catch(e=>{console.error(e);process.exit(1)});

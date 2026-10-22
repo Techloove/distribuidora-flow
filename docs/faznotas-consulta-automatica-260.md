@@ -1,5 +1,7 @@
 # Fase260 — Consulta automática de recibos FAZNOTAS
 
+> Histórico: a fase261 prepara a troca para Forecast Fiscal e desativa novas emissões/agendamento FAZNOTAS. Consulte [a preparação da migração](forecast-fiscal-preparacao-261.md) antes de seguir as instruções antigas abaixo.
+
 Após publicar esta versão e executar `db/fase260_faznotas_consulta_automatica.sql` no mesmo Supabase das fases256–259, o pg_cron chama o servidor a cada minuto. Não é necessário manter o navegador aberto. A publicação precisa usar o domínio `https://caparaosystem.lovable.app` e ter `EXT_SUPABASE_URL` e `EXT_SUPABASE_SERVICE_ROLE_KEY` no servidor, como na fase259. A migração cria pg_cron e pg_net se necessário; falha na instalação das extensões exige corrigir isso no Supabase antes de considerar o agendamento ativo.
 
 A rotina processa um recibo pendente por execução, ordenado pela próxima consulta. Filas maiores levam mais tempo. Consulta somente notas em `processando` com recibo. Não cria notas, não envia produtos nem repete POST de emissão. Preparações sem recibo e situações incertas continuam exigindo acompanhamento pela tela. Estados autorizada, rejeitada e cancelada saem da consulta automática. Cancelamentos posteriores à autorização não são monitorados nesta fase.

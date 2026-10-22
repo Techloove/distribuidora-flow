@@ -120,11 +120,11 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
     .filter((p) => p.erros.length);
   return (
     <section className="rounded-xl border p-4 space-y-4">
-      <h3 className="font-semibold">NF-e · Preparação FAZNOTAS</h3>
+      <h3 className="font-semibold">NF-e · Dados fiscais da loja</h3>
       <p className="text-sm text-muted-foreground">
         Configure os dados com o contador. Esta etapa prepara o cadastro e confere CFOP; ainda não
-        transmite notas à SEFAZ. O token da empresa é configurado no bloco de conexão desta loja e
-        fica restrito ao servidor.
+        transmite notas à SEFAZ. A conexão com a Forecast Fiscal será configurada separadamente,
+        após a validação da documentação da nova API.
       </p>
       {config.error && (
         <p role="alert" className="text-destructive">

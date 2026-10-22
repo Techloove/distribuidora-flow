@@ -65,4 +65,14 @@ describe("consulta fiscal em segundo plano", () => {
     expect(r.status).toBe(401);
     expect(r.headers.get("Cache-Control")).toBe("no-store");
   });
+  test("agendamento antigo fica desativado após troca de provedor", async () => {
+    const r = await atenderFaznotasAutomatico(
+      new Request("https://local.test", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + "a".repeat(64) },
+      }),
+    );
+    expect(r.status).toBe(410);
+    expect(await r.json()).toMatchObject({ desativado: true });
+  });
 });

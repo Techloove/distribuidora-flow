@@ -1,3 +1,4 @@
+import { bloquearNovasEmissoesFaznotas } from "./provedor-fiscal";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
@@ -57,6 +58,7 @@ export const faznotasConexaoSave = createServerFn({ method: "POST" })
   .validator((data: unknown) => salvarEntrada.parse(data))
   .handler(async ({ data }) => {
     const { token } = await autorizar(data, true);
+    bloquearNovasEmissoesFaznotas();
     await rpc(token, "salvar_conexao_faznotas_257", {
       _loja: data.loja,
       _cnpj: data.cnpj,
@@ -68,6 +70,7 @@ export const faznotasConexaoTest = createServerFn({ method: "POST" })
   .validator((data: unknown) => entrada.parse(data))
   .handler(async ({ data }) => {
     const { estado } = await autorizar(data, true);
+    bloquearNovasEmissoesFaznotas();
     if (!estado.token_configurado || !estado.cnpj_confere)
       throw new Error("Salve o token para o CNPJ atual da loja antes de testar.");
     const { url } = supabaseEnv();

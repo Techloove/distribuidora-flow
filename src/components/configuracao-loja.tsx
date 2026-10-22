@@ -1,6 +1,5 @@
-import { LiberacaoFaznotas } from "@/components/liberacao-faznotas";
+import { ProvedorFiscalLoja } from "@/components/provedor-fiscal-loja";
 import { TributacaoLoja } from "@/components/tributacao-loja";
-import { FaznotasConexao } from "@/components/faznotas-conexao";
 import { FiscalLoja } from "@/components/fiscal-loja";
 import { FreteVolumeLoja } from "@/components/frete-volume-loja";
 import { Link } from "@tanstack/react-router";
@@ -87,11 +86,7 @@ export function ConfiguracaoLoja({
         />
       )}
       {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
-        <FaznotasConexao
-          key={`conexao-fiscal-${valida}`}
-          loja={valida}
-          editar={permissoes.pode("configuracao_rotinas_editar")}
-        />
+        <ProvedorFiscalLoja key={`provedor-fiscal-${valida}`} loja={valida} />
       )}
       {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
         <FiscalLoja
@@ -101,14 +96,16 @@ export function ConfiguracaoLoja({
         />
       )}
       {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
-        <TributacaoLoja
-          key={`tributacao-${valida}`}
-          loja={valida}
-          editar={permissoes.pode("configuracao_rotinas_editar")}
-        />
-      )}
-      {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
-        <LiberacaoFaznotas key={`liberar-nfe-${valida}`} loja={valida} />
+        <details className="rounded-xl border p-4">
+          <summary className="cursor-pointer font-medium">
+            Regras tributárias anteriores · FAZNOTAS
+          </summary>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Histórico preservado. Estas regras seguem o formato da FAZNOTAS e não foram homologadas
+            para a Forecast Fiscal.
+          </p>
+          <TributacaoLoja key={`tributacao-${valida}`} loja={valida} editar={false} />
+        </details>
       )}
       {valida && (
         <CatalogoLoja
