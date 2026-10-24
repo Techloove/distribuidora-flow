@@ -48,6 +48,7 @@ const encrypt = async (source, file) => {
 const request = async (path, options = {}) => {
   const r = await fetch(new URL(path, api), {
     ...options,
+    redirect: "error",
     headers: {
       apikey: process.env.EXT_SUPABASE_SERVICE_ROLE_KEY,
       Authorization: "Bearer " + process.env.EXT_SUPABASE_SERVICE_ROLE_KEY,
@@ -58,6 +59,7 @@ const request = async (path, options = {}) => {
   if (!r.ok) throw new Error("Falha no backup de Storage (HTTP " + r.status + ").");
   return r;
 };
+let dumpProcess;
 try {
   const dump = spawn(
     "pg_dump",
@@ -71,6 +73,7 @@ try {
     ],
     { env: { ...process.env, PGSSLMODE: "verify-full" }, stdio: ["ignore", "pipe", "pipe"] },
   );
+  dumpProcess = dump;
   const done = new Promise((ok, no) => {
     dump.on("error", () => no(new Error("Instale pg_dump compatível com a versão do banco.")));
     dump.on("close", (code) =>
@@ -147,4 +150,6 @@ try {
 } catch (error) {
   await rm(temp, { recursive: true, force: true });
   throw error;
+} finally {
+  if (dumpProcess && dumpProcess.exitCode === null) dumpProcess.kill("SIGTERM");
 }

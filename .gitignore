@@ -34,3 +34,10 @@ dist-ssr
 .env.*
 !.env.example
 .local-preview/
+
+# Backups e extrações contêm dados privados
+backups/
+*.dump
+*.dump.enc
+*.object.enc
+manifesto.enc

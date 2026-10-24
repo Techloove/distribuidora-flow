@@ -1,5 +1,3 @@
-import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
-import { FaznotasNfe } from "@/components/faznotas-nfe";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -19,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCentro } from "@/lib/centro-store";
 import { useSupabase } from "@/lib/supabase-provider";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
+import { ForecastPrevia } from "@/components/forecast-previa";
 
 export const Route = createFileRoute("/_app/notas")({
   head: () => ({
@@ -57,10 +57,10 @@ function NotasPage() {
   const { client, roles } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
-  const permissoes = usePermissoesRotinas();
   const podeFaturar = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
+  const permissoes = usePermissoesRotinas();
+  const [previa, setPrevia] = useState<string | null>(null);
 
-  const [notaApi, setNotaApi] = useState<string | null>(null);
   const [autorizar, setAutorizar] = useState<Row | null>(null);
   const [rejeitar, setRejeitar] = useState<Row | null>(null);
   const [form, setForm] = useState({ nf: "", serie: "", chave: "", protocolo: "", mensagem: "" });
@@ -87,7 +87,7 @@ function NotasPage() {
       const { data, error } = await client!
         .from("notas_saida")
         .select(
-          "id, numero, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, faznotas_estado, centro_id, pedidos(numero), clientes(razao_social)",
+          "id, numero, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, centro_id, pedidos(numero), clientes(razao_social)",
         )
         .order("created_at", { ascending: false })
         .limit(300);
@@ -124,8 +124,9 @@ function NotasPage() {
     >
       <div className="space-y-6">
         <p className="rounded-lg border bg-muted p-4 text-sm" role="status">
-          Forecast Fiscal em preparação. Novas emissões pela FAZNOTAS foram desativadas. Notas e
-          documentos anteriores permanecem disponíveis no histórico.
+          Forecast Fiscal é a API fiscal do sistema. A conexão está disponível nas configurações da
+          loja. Use a prévia de homologação para conferir os dados antes da transmissão. O registro
+          de notas autorizadas externamente continua disponível.
         </p>
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Pedidos liberados para faturar</h2>
@@ -249,7 +250,7 @@ function NotasPage() {
                         </td>
                         <td className="px-4 py-2.5 text-right">{moeda(n["valor_total"])}</td>
                         <td className="space-x-2 px-4 py-2.5 text-right">
-                          {!!n["faznotas_estado"] && (
+                          {
                             <Button
                               size="sm"
                               variant="outline"
@@ -258,13 +259,12 @@ function NotasPage() {
                                 !permissoes.pode("faturamento_emitir_nfe") ||
                                 rpc.isPending
                               }
-                              onClick={() => setNotaApi(String(n["id"]))}
+                              onClick={() => setPrevia(String(n["id"]))}
                             >
-                              Histórico FAZNOTAS
+                              Forecast · Homologação
                             </Button>
-                          )}
-                          {!n["faznotas_estado"] &&
-                          (status === "pendente" || status === "rejeitada") ? (
+                          }
+                          {status === "pendente" || status === "rejeitada" ? (
                             <>
                               <Button
                                 size="sm"
@@ -292,7 +292,7 @@ function NotasPage() {
                               </Button>
                             </>
                           ) : null}
-                          {!n["faznotas_estado"] && status !== "cancelada" ? (
+                          {status !== "cancelada" ? (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -315,7 +315,12 @@ function NotasPage() {
         </section>
       </div>
 
-      {notaApi && <FaznotasNfe nota={notaApi} onClose={() => setNotaApi(null)} />}
+      {previa &&
+        podeFaturar &&
+        permissoes.pode("faturamento_emitir_nfe") &&
+        listaNotas.some((n) => String(n["id"]) === previa) && (
+          <ForecastPrevia key={previa} nota={previa} onClose={() => setPrevia(null)} />
+        )}
       <Dialog open={!!autorizar} onOpenChange={(o) => !o && setAutorizar(null)}>
         <DialogContent>
           <DialogHeader>

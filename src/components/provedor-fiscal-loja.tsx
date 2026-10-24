@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/lib/supabase-provider";
+import { ForecastConexao } from "./forecast-conexao";
 
 type Estado = {
   provedor: "forecastfiscal" | "suspenso";
@@ -35,8 +36,12 @@ export function ProvedorFiscalLoja({ loja }: { loja: string }) {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["provedor-fiscal", loja] });
+      await qc.invalidateQueries({ queryKey: ["forecast-conexao", loja] });
+      await qc.invalidateQueries({ queryKey: ["forecast-hml-liberacao", loja] });
       setProvedor(null);
-      toast.success("Preferência fiscal da loja salva. Emissão ainda não liberada.");
+      toast.success(
+        "Preferência fiscal salva. Produção permanece bloqueada; confira a homologação.",
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -45,8 +50,8 @@ export function ProvedorFiscalLoja({ loja }: { loja: string }) {
     <section className="rounded-xl border p-4 space-y-3">
       <h3 className="font-semibold">Provedor fiscal da loja</h3>
       <p className="text-sm text-muted-foreground">
-        Cada loja mantém seu CNPJ e suas regras fiscais. O vínculo das empresas no painel Forecast
-        Fiscal será configurado na etapa de integração.
+        Cada loja mantém seu CNPJ e suas regras fiscais. A conexão Forecast consulta a empresa
+        correspondente sem alterar documentos anteriores ou o estoque compartilhado.
       </p>
       {estado.error && (
         <p role="alert" className="text-destructive">
@@ -69,13 +74,12 @@ export function ProvedorFiscalLoja({ loja }: { loja: string }) {
         disabled={!admin || !estado.data || salvar.isPending}
         onChange={(e) => setProvedor(e.target.value as Estado["provedor"])}
       >
-        <option value="forecastfiscal">Forecast Fiscal · Em preparação</option>
+        <option value="forecastfiscal">Forecast Fiscal · API principal</option>
         <option value="suspenso">Emissão por API suspensa</option>
       </select>
       <p className="rounded-lg bg-muted p-3 text-sm">
-        Emissão ainda indisponível. A conexão, as credenciais e a homologação serão implementadas
-        após a validação da documentação Forecast Fiscal. Não informe tokens da nova API nos campos
-        antigos da FAZNOTAS.
+        Produção bloqueada. Configure a conexão e habilite os testes de envio exclusivamente em
+        homologação após conferir o ambiente e as regras fiscais desta loja.
       </p>
       <Button
         disabled={!admin || !estado.data || !!estado.error || salvar.isPending}
@@ -83,6 +87,7 @@ export function ProvedorFiscalLoja({ loja }: { loja: string }) {
       >
         Salvar provedor da loja
       </Button>
+      {estado.data?.provedor === "forecastfiscal" && <ForecastConexao key={loja} loja={loja} />}
     </section>
   );
 }

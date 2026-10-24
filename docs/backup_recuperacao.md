@@ -1,5 +1,7 @@
 # Backup externo e recuperação
 
+Para o botão administrativo, fila, histórico e agendamento diário, veja [Implantação da fase268](backup-implantacao-268.md).
+
 Os scripts fazem leitura do PostgreSQL e do Supabase Storage. Não há backup de produção ativo por esta entrega: faltam conexão, credenciais seguras, cliente PostgreSQL e destino externo configurados. O teste automatizado utiliza conteúdo sintético.
 
 ## Configuração da infraestrutura

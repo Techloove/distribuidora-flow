@@ -1,0 +1,82 @@
+import type { ContextoForecast } from "../../src/lib/forecast-previa";
+const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+export function fixture(): ContextoForecast {
+  return {
+    nota: {
+      id: id(1),
+      pedido_id: id(2),
+      centro_id: id(3),
+      cliente_id: id(4),
+      status: "pendente",
+      serie: "1",
+      nf_numero: null,
+      chave_acesso: null,
+      protocolo: null,
+      valor_total: 100,
+    },
+    pedido: {
+      id: id(2),
+      centro_id: id(3),
+      cliente_id: id(4),
+      status: "faturado",
+      total_itens: 100,
+      total_liquido: 100,
+      desconto_valor: 0,
+      frete_valor: 0,
+    },
+    loja: { id: id(3), cnpj: "12.345.678/0001-95", uf: "ES" },
+    fiscal: {
+      serie: "1",
+      regime: "1",
+      uf_emitente: "ES",
+      cfop_interno: "5102",
+      cfop_interestadual: "6102",
+      revisado_contador: true,
+    },
+    cliente: {
+      tipo_pessoa: "PJ",
+      cnpj_cpf: "12345678000195",
+      razao_social: "Cliente",
+      indicador_contribuinte_icms: "1",
+      inscricao_estadual: "123",
+      logradouro: "Rua",
+      numero: "1",
+      bairro: "Centro",
+      cidade: "Vitória",
+      uf: "ES",
+      cep: "29010-001",
+    },
+    conexao: {
+      token_configurado: true,
+      vinculo_atual: true,
+      cnpj_configurado: "12345678000195",
+      ambiente_declarado: "homologacao",
+    },
+    bloqueio_faturamento: null,
+    itens: [
+      {
+        item: {
+          id: id(5),
+          produto_id: id(6),
+          quantidade: 1,
+          preco_unitario: 100,
+          desconto_percentual: 0,
+          total: 100,
+        },
+        produto: {
+          id: id(6),
+          codigo: "1",
+          descricao: "Cimento",
+          ncm: "25232910",
+          cest: null,
+          ean: "SEM GTIN",
+          unidade: "SC",
+          origem_fiscal: "0",
+          cfop: null,
+          cfop_interestadual: null,
+        },
+        disponivel_loja: true,
+      },
+    ],
+  };
+}

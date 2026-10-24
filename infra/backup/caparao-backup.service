@@ -1,0 +1,21 @@
+[Unit]
+Description=Backup criptografado Caparaó System
+Wants=network-online.target
+After=network-online.target
+# Ajustar ao ponto de montagem externo real antes de instalar.
+RequiresMountsFor=/mnt/caparao-backup
+
+[Service]
+Type=oneshot
+User=caparao-backup
+Group=caparao-backup
+WorkingDirectory=/opt/caparao-system
+EnvironmentFile=/etc/caparao-backup.env
+ExecStart=/usr/bin/node /opt/caparao-system/scripts/executor-backup.mjs --agendar
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/caparao-backups /mnt/caparao-backup
+TimeoutStartSec=6h

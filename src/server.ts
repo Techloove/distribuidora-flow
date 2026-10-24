@@ -51,10 +51,6 @@ export default {
         const { atenderSicrediAutomatico } = await import("./lib/server-sicredi-auto");
         return await atenderSicrediAutomatico(request);
       }
-      if (new URL(request.url).pathname === "/api/faznotas/sincronizar") {
-        const { atenderFaznotasAutomatico } = await import("./lib/server-faznotas-auto");
-        return await atenderFaznotasAutomatico(request);
-      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

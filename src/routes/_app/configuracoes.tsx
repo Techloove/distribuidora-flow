@@ -1,3 +1,4 @@
+import { BackupDados } from "@/components/backup-dados";
 import { DiagnosticoIntegridade } from "@/components/diagnostico-integridade";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
@@ -49,6 +50,7 @@ function ConfiguracoesPage() {
           Abrir configurações das lojas
         </Link>
       </section>
+      {roles.includes("admin") && <BackupDados />}
       {roles.includes("admin") && <LimparDados />}
       <DiagnosticoIntegridade />
     </ErpLayout>

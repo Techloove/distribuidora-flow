@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
 
 const files = [
-  "src/lib/faznotas-nfe.functions.ts",
-  "src/lib/faznotas-conexao.functions.ts",
+  "src/lib/backup.functions.ts",
+  "src/lib/forecast-documentos.functions.ts",
+  "src/lib/forecast-homologacao.functions.ts",
+  "src/lib/forecast-previa.functions.ts",
+  "src/lib/forecast-conexao.functions.ts",
   "src/lib/consulta-cadastral.functions.ts",
   "src/lib/inscricao-estadual.functions.ts",
   "src/lib/sicredi.functions.ts",
@@ -15,10 +18,20 @@ const errors = [];
 // O PR Codex #2 introduziu auth.server.ts/auth-middleware.ts em uma arquitetura anterior.
 // A branch auditada consolidou autenticação server-side em server-auth.ts; reintroduzir os
 // dois mecanismos paralelos pode criar divergência de regras e bypass acidental.
-for (const stale of ["src/lib/auth.server.ts", "src/lib/auth-middleware.ts"]) {
+for (const stale of [
+  "src/lib/auth.server.ts",
+  "src/lib/auth-middleware.ts",
+  "src/lib/faznotas-conexao.functions.ts",
+  "src/lib/faznotas-nfe.functions.ts",
+  "src/lib/server-faznotas.ts",
+  "src/lib/server-faznotas-nfe.ts",
+  "src/lib/server-faznotas-auto.ts",
+]) {
   try {
     readFileSync(stale, "utf8");
-    errors.push(`${stale}: mecanismo legado/paralelo de autenticação não deve ser reintroduzido; use src/lib/server-auth.ts`);
+    errors.push(
+      `${stale}: módulo legado removido não deve ser reintroduzido; preserve a autenticação atual e a Forecast como única integração fiscal`,
+    );
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }

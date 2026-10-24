@@ -1,0 +1,10 @@
+[Unit]
+Description=Atender solicitações manuais de backup Caparaó System
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=1min
+Unit=caparao-backup-fila.service
+
+[Install]
+WantedBy=timers.target

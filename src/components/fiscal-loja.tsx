@@ -11,7 +11,7 @@ import {
   selecionarCfop,
   UFS_FISCAIS,
   type ProdutoFiscal,
-} from "@/lib/faznotas";
+} from "@/lib/fiscal";
 
 type Config = {
   serie: string;
@@ -86,6 +86,7 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["fiscal-loja", loja] });
+      await qc.invalidateQueries({ queryKey: ["forecast-hml-liberacao", loja] });
       setRascunho(null);
       setResultado("");
       toast.success("Preparação fiscal salva");
@@ -123,8 +124,8 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
       <h3 className="font-semibold">NF-e · Dados fiscais da loja</h3>
       <p className="text-sm text-muted-foreground">
         Configure os dados com o contador. Esta etapa prepara o cadastro e confere CFOP; ainda não
-        transmite notas à SEFAZ. A conexão com a Forecast Fiscal será configurada separadamente,
-        após a validação da documentação da nova API.
+        transmite notas à SEFAZ. Configure a conexão com a Forecast Fiscal na seção de provedor
+        fiscal desta loja.
       </p>
       {config.error && (
         <p role="alert" className="text-destructive">
