@@ -1,13 +1,13 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "node scripts/check-version.mjs && vite build",
-    "build:dev": "vite build --mode development",
+    "dev": "node scripts/gerar-versao-publica.mjs && vite dev",
+    "build": "node scripts/check-version.mjs && node scripts/gerar-versao-publica.mjs && vite build && node scripts/gerar-versao-publica.mjs --finalizar",
+    "build:dev": "node scripts/check-version.mjs && node scripts/gerar-versao-publica.mjs && vite build --mode development && node scripts/gerar-versao-publica.mjs --finalizar",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",

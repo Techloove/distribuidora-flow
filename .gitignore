@@ -41,3 +41,6 @@ backups/
 *.dump.enc
 *.object.enc
 manifesto.enc
+
+# Manifesto de atualização gerado a partir da versão da publicação
+/public/versao.json

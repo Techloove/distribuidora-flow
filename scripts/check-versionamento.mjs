@@ -16,6 +16,7 @@ try {
     "scripts/versionar.mjs",
     "scripts/check-version.mjs",
     "scripts/gerar-manual.mjs",
+    "scripts/gerar-versao-publica.mjs",
   ])
     await cp(new URL(file, root), join(temp, file));
   const run = (script, args = []) =>
@@ -45,6 +46,27 @@ try {
       JSON.parse(await readFile(new URL("src/content/versoes.json", root), "utf8")).at(-1).versao,
     );
   }
+  assert.equal(run("gerar-versao-publica.mjs").status, 0);
+  const publico = JSON.parse(await readFile(join(temp, "public/versao.json"), "utf8"));
+  assert.equal(publico.versao, (await manifest()).version);
+  assert.deepEqual(Object.keys(publico).sort(), ["data", "titulo", "versao"]);
+  await mkdir(join(temp, ".output/public"), { recursive: true });
+  await cp(join(temp, "public/versao.json"), join(temp, ".output/public/versao.json"));
+  await writeFile(
+    join(temp, ".output/public/_headers"),
+    "/assets/*\n  cache-control: public, max-age=31536000, immutable\n",
+  );
+  assert.equal(run("gerar-versao-publica.mjs", ["--finalizar"]).status, 0);
+  assert.equal(run("gerar-versao-publica.mjs", ["--finalizar"]).status, 0);
+  const headers = await readFile(join(temp, ".output/public/_headers"), "utf8");
+  assert.match(headers, /max-age=31536000/);
+  assert.match(headers, /Cache-Control: no-store, no-cache, must-revalidate/);
+  assert.equal(headers.split("/versao.json").length, 2);
+  await writeFile(
+    join(temp, ".output/public/versao.json"),
+    JSON.stringify({ ...publico, versao: "0.0.0" }),
+  );
+  assert.notEqual(run("gerar-versao-publica.mjs", ["--finalizar"]).status, 0);
   const antes = await readFile(join(temp, "package.json"), "utf8");
   assert.notEqual(run("versionar.mjs", ["patch"]).status, 0);
   assert.equal(await readFile(join(temp, "package.json"), "utf8"), antes);

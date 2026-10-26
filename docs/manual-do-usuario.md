@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.0.0 · 2026-10-26
+Versão 1.1.0 · 2026-10-26
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -12,12 +12,15 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 2. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
 3. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
 4. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
+5. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+6. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 
 Cuidados:
 
 - Cada perfil vê somente os módulos liberados. A ausência de um menu deve ser tratada com o administrador; o manual não concede acesso.
 - Representantes continuam restritos à própria carteira. Selecionar outra loja não libera clientes ou operações fora da sua permissão.
 - Todas as lojas é uma visão de consulta quando disponível. Para movimentar estoque, escolha uma loja específica.
+- O aviso pode ser recolhido em Depois; ele continua disponível no canto da tela. A consulta é feita enquanto a página está aberta e com conexão.
 
 ## Clientes, fornecedores e outros cadastros
 

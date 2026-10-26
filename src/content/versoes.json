@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.1.0",
+    "data": "2026-10-26",
+    "titulo": "Atualização automática ao entrar e aviso de nova versão durante o uso",
+    "novidades": [
+      "Ao entrar no sistema, a versão é verificada e atualizada antes de abrir formulários.",
+      "Balão avisa quando uma versão mais nova é publicada, sem recarregar automaticamente.",
+      "Botão Atualizar agora confirma o recarregamento e preserva a tela e os filtros da URL.",
+      "O aviso pode ser recolhido e reaparece expandido quando outra versão é detectada.",
+      "A atualização aguarda as operações em andamento; salve campos ainda não enviados antes de confirmar."
+    ]
+  },
+  {
     "versao": "1.0.0",
     "data": "2026-10-26",
     "titulo": "Versão inicial com manual do usuário",

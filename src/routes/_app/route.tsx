@@ -1,3 +1,4 @@
+import { AvisoAtualizacao } from "@/components/aviso-atualizacao";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { useEffect } from "react";
@@ -59,5 +60,9 @@ function AppLayout() {
         </section>
       </div>
     );
-  return <Outlet />;
+  return (
+    <AvisoAtualizacao>
+      <Outlet />
+    </AvisoAtualizacao>
+  );
 }
