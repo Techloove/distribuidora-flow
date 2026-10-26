@@ -55,7 +55,17 @@ export function AcompanhamentoPedido({
             <p className="font-semibold" role="status">
               {situacao.nome}
             </p>
-            <p className="mt-1 text-sm">{situacao.descricao}</p>
+            <p className="mt-1 text-sm">
+              {dados.status_regularizado_em
+                ? "Etapa informada por regularização administrativa de pedido antigo; não substitui os registros operacionais ou comprovantes."
+                : situacao.descricao}
+            </p>
+            {dados.status_regularizado_em && (
+              <p className="mt-1 text-xs">
+                Regularizado em {dataAgenda(dados.status_regularizado_em)} · Data da ocorrência:{" "}
+                {dataAgenda(dados.status_regularizado_data)}
+              </p>
+            )}
           </div>
           {situacao.etapa != null && (
             <ol

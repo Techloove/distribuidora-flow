@@ -1,3 +1,4 @@
+import { RegularizarStatusPedido } from "@/components/regularizar-status-pedido";
 import { EncargosPedido } from "@/components/encargos-pedido";
 import { OrcamentoPedido } from "@/components/orcamento-pedido";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -1758,6 +1759,23 @@ export function DocumentoPage({
                 </p>
               )}
             {config.table === "pedidos" && <AcompanhamentoPedido acompanhamento={acompanhamento} />}
+            {config.table === "pedidos" && !!doc["status_regularizado_em"] && (
+              <p className="rounded-lg border bg-muted/30 p-3 text-sm">
+                Status regularizado administrativamente. Ocorrência:{" "}
+                {String(doc["status_regularizado_data"] ?? "—")}.
+                {roles.includes("admin") && (
+                  <> Motivo: {String(doc["status_regularizado_motivo"] ?? "—")}</>
+                )}
+              </p>
+            )}
+            {config.table === "pedidos" && !ehOrcamento && (
+              <RegularizarStatusPedido
+                key={String(doc["id"]) + String(doc["status"])}
+                pedido={String(doc["id"])}
+                status={String(doc["status"])}
+                dataPedido={String(doc["data_pedido"] ?? "")}
+              />
+            )}
             {config.table === "pedidos" && (
               <ResumoPedido
                 doc={doc}
