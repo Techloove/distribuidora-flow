@@ -1,3 +1,7 @@
+import { SeletorProdutoEstoque } from "@/components/seletor-produto-estoque";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { setCentro } from "@/lib/centro-store";
 import { lerPaginas } from "@/lib/paginacao";
 import { DepositosInventario } from "@/components/depositos-inventario";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +48,14 @@ type Row = Record<string, unknown>;
 
 function EstoquePage() {
   const { client, roles } = useSupabase();
-  const { centro, isLoading: centrosCarregando, error: centrosErro } = useCentroValido();
+  const {
+    centro,
+    lista: lojas,
+    isLoading: centrosCarregando,
+    error: centrosErro,
+  } = useCentroValido();
+  const [aba, setAba] = useState("movimentar");
+  const [sentidoAjuste, setSentidoAjuste] = useState("acrescentar");
   const queryClient = useQueryClient();
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
@@ -112,14 +123,21 @@ function EstoquePage() {
     mutationFn: async () => {
       if (!form.produto_id) throw new Error("Selecione o produto");
       const qtd = Number(form.quantidade || 0);
-      if (!qtd) throw new Error("Informe a quantidade");
+      if (!Number.isFinite(qtd) || qtd <= 0)
+        throw new Error("Informe uma quantidade maior que zero");
+      if (
+        form.tipo === "entrada" &&
+        form.custo !== "" &&
+        (!Number.isFinite(Number(form.custo)) || Number(form.custo) < 0)
+      )
+        throw new Error("Informe um custo válido");
       if (!centro) throw new Error("Selecione um centro para movimentar o estoque");
       const { error } = await client!.rpc("lancar_movimento_estoque", {
         _produto_id: form.produto_id,
         _centro_id: centro,
         _tipo: form.tipo,
-        _quantidade: qtd,
-        _custo_unitario: form.custo === "" ? null : Number(form.custo),
+        _quantidade: form.tipo === "ajuste" && sentidoAjuste === "retirar" ? -qtd : qtd,
+        _custo_unitario: form.tipo !== "entrada" || form.custo === "" ? null : Number(form.custo),
         _origem: "manual",
         _documento_id: null,
         _observacao: form.observacao || null,
@@ -128,7 +146,7 @@ function EstoquePage() {
     },
     onSuccess: () => {
       toast.success("Movimento lançado");
-      setForm({ produto_id: "", tipo: "entrada", quantidade: "1", custo: "", observacao: "" });
+      setForm((f) => ({ ...f, quantidade: "", custo: "", observacao: "" }));
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -178,19 +196,28 @@ function EstoquePage() {
       list = list.filter((m) => String(m["created_at"] ?? "").slice(0, 10) <= f["ate"]!);
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
-      list = list.filter((m) => produtoName(m["produto_id"]).toLowerCase().includes(termo));
+      list = list.filter(
+        (m) =>
+          produtoName(m["produto_id"]).toLowerCase().includes(termo) ||
+          String(produtos.data?.find((p) => p["id"] === m["produto_id"])?.["codigo"] ?? "")
+            .toLowerCase()
+            .includes(termo),
+      );
     }
     return list;
-  }, [movimentos.data, filtros, produtoName]);
+  }, [movimentos.data, filtros, produtoName, produtos.data]);
 
   return (
     <ErpLayout
       title="Estoque"
-      description="Estoque compartilhado entre lojas. O centro identifica a origem comercial das movimentações."
+      description="Registre entradas e saídas ou consulte o saldo compartilhado das lojas."
       actions={
-        <Button variant="secondary" onClick={() => window.print()}>
-          <Printer className="size-4" /> Imprimir
-        </Button>
+        aba === "saldos" || aba === "historico" ? (
+          <Button variant="secondary" onClick={() => window.print()}>
+            <Printer className="size-4" />
+            {aba === "saldos" ? "Imprimir saldos" : "Imprimir histórico"}
+          </Button>
+        ) : undefined
       }
     >
       <div className="space-y-6">
@@ -200,216 +227,407 @@ function EstoquePage() {
             atualize a página.
           </p>
         )}
-        <DepositosInventario key={centro} centro={centro} produtos={produtos.data ?? []} />
-        <FilterBar onClear={() => setFiltros({})}>
-          <FilterText
-            label="Busca (código ou descrição)"
-            value={filtros["busca"] ?? ""}
-            onChange={(v) => setF("busca", v)}
-          />
-          <FilterSelect
-            label="Tipo de movimento"
-            value={filtros["tipo"] ?? ""}
-            onChange={(v) => setF("tipo", v)}
-            options={[
-              { value: "entrada", label: "Entrada" },
-              { value: "saida", label: "Saída" },
-              { value: "ajuste", label: "Ajuste" },
-            ]}
-          />
-          <FilterText
-            label="Data de"
-            type="date"
-            value={filtros["de"] ?? ""}
-            onChange={(v) => setF("de", v)}
-          />
-          <FilterText
-            label="Data até"
-            type="date"
-            value={filtros["ate"] ?? ""}
-            onChange={(v) => setF("ate", v)}
-          />
-          <FilterSelect
-            label="Estoque"
-            value={filtros["somenteAbaixo"] ?? ""}
-            onChange={(v) => setF("somenteAbaixo", v)}
-            options={[{ value: "1", label: "Somente abaixo do mínimo" }]}
-            allLabel="Todos os produtos"
-          />
-        </FilterBar>
-
-        <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-          <div className="space-y-1.5">
-            <Label>Produto</Label>
-            <select
-              value={form.produto_id}
-              onChange={(e) => setForm((f) => ({ ...f, produto_id: e.target.value }))}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+        <Tabs value={aba} onValueChange={setAba} className="space-y-5">
+          <TabsList
+            className="h-auto w-full flex-wrap justify-start gap-1"
+            aria-label="Opções de estoque"
+          >
+            <TabsTrigger value="movimentar">Movimentar</TabsTrigger>
+            <TabsTrigger value="saldos">Consultar saldos</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="depositos">Depósitos e inventário</TabsTrigger>
+          </TabsList>
+          <TabsContent value="movimentar" className="space-y-4">
+            <form
+              className="mx-auto max-w-3xl space-y-5 rounded-xl border bg-card p-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!lancar.isPending) lancar.mutate();
+              }}
             >
-              <option value="">—</option>
-              {produtos.data?.map((p) => (
-                <option key={String(p["id"])} value={String(p["id"])}>
-                  {String(p["descricao"])}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Tipo</Label>
-            <select
-              value={form.tipo}
-              onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="entrada">Entrada</option>
-              <option value="saida">Saída</option>
-              <option value="ajuste">Ajuste (+/-)</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Quantidade</Label>
-            <Input
-              type="number"
-              step="0.001"
-              value={form.quantidade}
-              onChange={(e) => setForm((f) => ({ ...f, quantidade: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Custo unitário</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={form.custo}
-              onChange={(e) => setForm((f) => ({ ...f, custo: e.target.value }))}
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              onClick={() => lancar.mutate()}
-              disabled={!canStock || !centro || lancar.isPending}
-            >
-              {lancar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Lançar
-            </Button>
-          </div>
-        </div>
-        {!centro ? (
-          <p className="text-xs text-muted-foreground">
-            O saldo é único para todas as lojas. Selecione um centro apenas para identificar novos
-            lançamentos; o histórico acompanha o centro selecionado.
-          </p>
-        ) : null}
-        {!canStock ? (
-          <p className="text-xs text-muted-foreground">
-            Somente perfis <strong>estoque</strong>, <strong>expedição</strong>,{" "}
-            <strong>gestor</strong> ou <strong>admin</strong> podem lançar movimentos.
-          </p>
-        ) : null}
-
-        <div className="print-area">
-          <h2 className="mb-2 text-sm font-semibold text-foreground">
-            Estoque compartilhado por produto
-          </h2>
-          <div className="rounded-lg border border-border bg-card">
-            {produtos.isLoading || disponibilidade.isLoading || centrosCarregando ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
-            ) : produtos.isError || disponibilidade.isError || centrosErro ? (
-              <p role="alert" className="p-6 text-sm text-destructive">
-                {(produtos.error ?? disponibilidade.error ?? centrosErro)?.message}
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Un.</TableHead>
-                    <TableHead className="text-right">Físico</TableHead>
-                    <TableHead className="text-right">Reservado</TableHead>
-                    <TableHead className="text-right">Disponível</TableHead>
-                    <TableHead className="text-right">Mínimo</TableHead>
-                    <TableHead>Situação</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {produtosFiltrados.map((p) => {
-                    const saldo = saldoProduto(p["id"]);
-                    const baixo = saldo <= Number(p["estoque_minimo"] ?? 0);
-                    return (
-                      <TableRow key={String(p["id"])}>
-                        <TableCell>{String(p["descricao"])}</TableCell>
-                        <TableCell>{String(p["unidade"] ?? "UN")}</TableCell>
-                        <TableCell className="text-right">{saldoProduto(p["id"])}</TableCell>
-                        <TableCell className="text-right">
-                          {disponibilidade.isError
-                            ? "Indisponível"
-                            : (reservadoProduto(p["id"]) ?? "…")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {disponibilidade.isError
-                            ? "Indisponível"
-                            : disponibilidade.data
-                              ? saldo - (reservadoProduto(p["id"]) ?? 0)
-                              : "…"}
-                        </TableCell>
-                        <TableCell className="text-right">{String(p["estoque_minimo"])}</TableCell>
-                        <TableCell className={baixo ? "text-destructive" : "text-muted-foreground"}>
-                          {baixo ? "repor" : "ok"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-        </div>
-
-        <div className="print-area">
-          <h2 className="mb-2 text-sm font-semibold text-foreground">Últimos movimentos</h2>
-          <div className="rounded-lg border border-border bg-card">
-            {movimentos.isLoading ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
-            ) : movimentos.isError ? (
-              <div className="p-6 text-sm text-destructive">
-                {(movimentos.error as Error).message}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Tente atualizar a página. Se o problema continuar, solicite a conferência do
-                  acesso e da versão do banco ao administrador.
+              <div>
+                <h2 className="text-lg font-semibold">Movimentar estoque</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Escolha a operação, o produto e a quantidade.
                 </p>
               </div>
-            ) : movimentosFiltrados.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Nenhum movimento registrado.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Qtd</TableHead>
-                    <TableHead>Origem</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movimentosFiltrados.map((m) => (
-                    <TableRow key={String(m["id"])}>
-                      <TableCell>
-                        {new Date(String(m["created_at"])).toLocaleString("pt-BR")}
-                      </TableCell>
-                      <TableCell>{produtoName(m["produto_id"])}</TableCell>
-                      <TableCell>{String(m["tipo"])}</TableCell>
-                      <TableCell className="text-right">{String(m["quantidade"])}</TableCell>
-                      <TableCell>{String(m["origem"])}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-        </div>
+              <fieldset disabled={!canStock || lancar.isPending} className="space-y-5">
+                <div className="space-y-2">
+                  <Label>O que deseja fazer?</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { tipo: "entrada", nome: "Entrada" },
+                      { tipo: "saida", nome: "Saída" },
+                      { tipo: "ajuste", nome: "Ajuste" },
+                    ].map((t) => (
+                      <Button
+                        key={t.tipo}
+                        type="button"
+                        variant={form.tipo === t.tipo ? "default" : "outline"}
+                        aria-pressed={form.tipo === t.tipo}
+                        onClick={() => setForm((f) => ({ ...f, tipo: t.tipo }))}
+                      >
+                        {t.nome}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {form.tipo === "entrada"
+                      ? "Acrescenta produtos ao saldo físico."
+                      : form.tipo === "saida"
+                        ? "Retira produtos do saldo físico. Pedidos confirmados já baixam estoque; não lance a mesma saída novamente."
+                        : "Corrige uma diferença no saldo. Para conferir uma contagem completa, use Depósitos e inventário."}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="estoque-produto">Produto</Label>
+                  <SeletorProdutoEstoque
+                    id="estoque-produto"
+                    produtos={produtos.data ?? []}
+                    value={form.produto_id}
+                    onChange={(produto_id) => setForm((f) => ({ ...f, produto_id }))}
+                    disabled={produtos.isPending || produtos.isError || lancar.isPending}
+                  />
+                </div>
+                {form.produto_id && (
+                  <div className="grid grid-cols-3 gap-3 rounded-lg bg-muted/40 p-3 text-sm">
+                    {[
+                      { nome: "Saldo físico", valor: saldoProduto(form.produto_id) },
+                      { nome: "Reservado", valor: reservadoProduto(form.produto_id) ?? 0 },
+                      {
+                        nome: "Disponível",
+                        valor:
+                          saldoProduto(form.produto_id) - (reservadoProduto(form.produto_id) ?? 0),
+                      },
+                    ].map((s) => (
+                      <div key={s.nome}>
+                        <p className="text-xs text-muted-foreground">{s.nome}</p>
+                        <p className="font-semibold">
+                          {disponibilidade.isPending || disponibilidade.isError ? "—" : s.valor}{" "}
+                          {String(
+                            produtos.data?.find((p) => p["id"] === form.produto_id)?.["unidade"] ??
+                              "",
+                          )}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="estoque-quantidade">
+                      Quantidade{" "}
+                      {form.tipo === "entrada"
+                        ? "a adicionar"
+                        : form.tipo === "saida"
+                          ? "a retirar"
+                          : "da diferença"}
+                    </Label>
+                    <Input
+                      id="estoque-quantidade"
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      required
+                      value={form.quantidade}
+                      onChange={(e) => setForm((f) => ({ ...f, quantidade: e.target.value }))}
+                    />
+                  </div>
+                  {form.tipo === "ajuste" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="estoque-sentido">Como corrigir?</Label>
+                      <select
+                        id="estoque-sentido"
+                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        value={sentidoAjuste}
+                        onChange={(e) => setSentidoAjuste(e.target.value)}
+                      >
+                        <option value="acrescentar">Acrescentar ao saldo</option>
+                        <option value="retirar">Retirar do saldo</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="estoque-loja">Loja do lançamento</Label>
+                  <select
+                    id="estoque-loja"
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    value={centro}
+                    onChange={(e) => setCentro(e.target.value)}
+                    required
+                    disabled={centrosCarregando}
+                  >
+                    <option value="">Selecione a loja</option>
+                    {lojas.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    O estoque é compartilhado. A loja identifica este lançamento.
+                  </p>
+                </div>
+                <details className="rounded-lg border p-3">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    {form.tipo === "entrada"
+                      ? "Custo e observação (opcional)"
+                      : "Adicionar observação (opcional)"}
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    {form.tipo === "entrada" && (
+                      <div className="space-y-1">
+                        <Label htmlFor="estoque-custo">Custo por unidade (R$)</Label>
+                        <Input
+                          id="estoque-custo"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.custo}
+                          onChange={(e) => setForm((f) => ({ ...f, custo: e.target.value }))}
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label htmlFor="estoque-observacao">Observação</Label>
+                      <Textarea
+                        id="estoque-observacao"
+                        value={form.observacao}
+                        onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+                        placeholder="Ex.: reposição recebida, avaria ou correção de saldo"
+                      />
+                    </div>
+                  </div>
+                </details>
+                <Button
+                  className="w-full sm:w-auto"
+                  type="submit"
+                  disabled={
+                    !canStock ||
+                    !centro ||
+                    !form.produto_id ||
+                    !Number.isFinite(Number(form.quantidade)) ||
+                    Number(form.quantidade) <= 0 ||
+                    lancar.isPending ||
+                    centrosCarregando
+                  }
+                >
+                  {lancar.isPending && <Loader2 className="size-4 animate-spin" />}
+                  {lancar.isPending
+                    ? "Registrando..."
+                    : form.tipo === "entrada"
+                      ? "Registrar entrada"
+                      : form.tipo === "saida"
+                        ? "Registrar saída"
+                        : "Registrar ajuste"}
+                </Button>
+                {(!Number.isFinite(Number(form.quantidade)) || Number(form.quantidade) <= 0) && (
+                  <p role="status" className="text-xs text-destructive">
+                    Informe uma quantidade maior que zero para registrar.
+                  </p>
+                )}
+                {!form.produto_id && (
+                  <p className="text-xs text-muted-foreground">
+                    Selecione um produto para continuar.
+                  </p>
+                )}
+              </fieldset>
+              {!canStock && (
+                <p className="text-sm text-muted-foreground">
+                  Seu perfil permite consultar o estoque. Lançamentos exigem permissão de estoque,
+                  expedição, gestor ou administrador.
+                </p>
+              )}
+              {(produtos.error || centrosErro) && (
+                <p role="alert" className="text-sm text-destructive">
+                  {(produtos.error ?? centrosErro)?.message}
+                </p>
+              )}
+            </form>
+          </TabsContent>
+          <TabsContent value="saldos" className="space-y-4">
+            <FilterBar onClear={() => setFiltros({})}>
+              <FilterText
+                label="Buscar produto"
+                value={filtros["busca"] ?? ""}
+                onChange={(v) => setF("busca", v)}
+              />
+              <FilterSelect
+                label="Estoque"
+                value={filtros["somenteAbaixo"] ?? ""}
+                onChange={(v) => setF("somenteAbaixo", v)}
+                options={[{ value: "1", label: "Abaixo do mínimo" }]}
+                allLabel="Todos os produtos"
+              />
+            </FilterBar>{" "}
+            <div className="print-area">
+              <h2 className="mb-2 text-sm font-semibold text-foreground">
+                Estoque compartilhado por produto
+              </h2>
+              <div className="rounded-lg border border-border bg-card">
+                {produtos.isLoading || disponibilidade.isLoading || centrosCarregando ? (
+                  <div className="py-10 text-center text-sm text-muted-foreground">
+                    Carregando...
+                  </div>
+                ) : produtos.isError || disponibilidade.isError || centrosErro ? (
+                  <p role="alert" className="p-6 text-sm text-destructive">
+                    {(produtos.error ?? disponibilidade.error ?? centrosErro)?.message}
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produto</TableHead>
+                        <TableHead>Un.</TableHead>
+                        <TableHead className="text-right">Físico</TableHead>
+                        <TableHead className="text-right">Reservado</TableHead>
+                        <TableHead className="text-right">Disponível</TableHead>
+                        <TableHead className="text-right">Mínimo</TableHead>
+                        <TableHead>Situação</TableHead>
+                        {canStock && (
+                          <TableHead>
+                            <span className="sr-only">Ações</span>
+                          </TableHead>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {produtosFiltrados.map((p) => {
+                        const saldo = saldoProduto(p["id"]);
+                        const baixo = saldo <= Number(p["estoque_minimo"] ?? 0);
+                        return (
+                          <TableRow key={String(p["id"])}>
+                            <TableCell>{String(p["descricao"])}</TableCell>
+                            <TableCell>{String(p["unidade"] ?? "UN")}</TableCell>
+                            <TableCell className="text-right">{saldoProduto(p["id"])}</TableCell>
+                            <TableCell className="text-right">
+                              {disponibilidade.isError
+                                ? "Indisponível"
+                                : (reservadoProduto(p["id"]) ?? "…")}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {disponibilidade.isError
+                                ? "Indisponível"
+                                : disponibilidade.data
+                                  ? saldo - (reservadoProduto(p["id"]) ?? 0)
+                                  : "…"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {String(p["estoque_minimo"])}
+                            </TableCell>
+                            <TableCell
+                              className={baixo ? "text-destructive" : "text-muted-foreground"}
+                            >
+                              {baixo ? "repor" : "ok"}
+                            </TableCell>
+                            {canStock && (
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setForm((f) => ({ ...f, produto_id: String(p["id"]) }));
+                                    setAba("movimentar");
+                                  }}
+                                >
+                                  Movimentar
+                                </Button>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="historico" className="space-y-4">
+            <FilterBar onClear={() => setFiltros({})}>
+              <FilterText
+                label="Busca (código ou descrição)"
+                value={filtros["busca"] ?? ""}
+                onChange={(v) => setF("busca", v)}
+              />
+              <FilterSelect
+                label="Tipo de movimento"
+                value={filtros["tipo"] ?? ""}
+                onChange={(v) => setF("tipo", v)}
+                options={[
+                  { value: "entrada", label: "Entrada" },
+                  { value: "saida", label: "Saída" },
+                  { value: "ajuste", label: "Ajuste" },
+                ]}
+              />
+              <FilterText
+                label="Data de"
+                type="date"
+                value={filtros["de"] ?? ""}
+                onChange={(v) => setF("de", v)}
+              />
+              <FilterText
+                label="Data até"
+                type="date"
+                value={filtros["ate"] ?? ""}
+                onChange={(v) => setF("ate", v)}
+              />
+            </FilterBar>
+            <div className="print-area">
+              <h2 className="mb-2 text-sm font-semibold text-foreground">Últimos movimentos</h2>
+              <div className="rounded-lg border border-border bg-card">
+                {movimentos.isLoading ? (
+                  <div className="py-10 text-center text-sm text-muted-foreground">
+                    Carregando...
+                  </div>
+                ) : movimentos.isError ? (
+                  <div className="p-6 text-sm text-destructive">
+                    {(movimentos.error as Error).message}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Tente atualizar a página. Se o problema continuar, solicite a conferência do
+                      acesso e da versão do banco ao administrador.
+                    </p>
+                  </div>
+                ) : movimentosFiltrados.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">
+                    Nenhum movimento registrado.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Produto</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead className="text-right">Qtd</TableHead>
+                        <TableHead>Origem</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {movimentosFiltrados.map((m) => (
+                        <TableRow key={String(m["id"])}>
+                          <TableCell>
+                            {new Date(String(m["created_at"])).toLocaleString("pt-BR", {
+                              timeZone: "America/Sao_Paulo",
+                            })}
+                          </TableCell>
+                          <TableCell>{produtoName(m["produto_id"])}</TableCell>
+                          <TableCell>{String(m["tipo"])}</TableCell>
+                          <TableCell className="text-right">{String(m["quantidade"])}</TableCell>
+                          <TableCell>{String(m["origem"])}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="depositos">
+            <DepositosInventario key={centro} centro={centro} produtos={produtos.data ?? []} />
+          </TabsContent>
+        </Tabs>
       </div>
     </ErpLayout>
   );
