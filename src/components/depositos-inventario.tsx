@@ -1,6 +1,6 @@
 import { SeletorProdutoEstoque } from "@/components/seletor-produto-estoque";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useRotinaRpc } from "@/lib/use-rotina-rpc";
@@ -17,18 +17,14 @@ export function DepositosInventario({
 }) {
   const { client, user } = useSupabase(),
     perm = usePermissoesRotinas();
-  const [tarefa, setTarefa] = useState("transferir");
+  const [tarefa, setTarefa] = useState("inventario");
   const [deposito, setDeposito] = useState(""),
-    [destino, setDestino] = useState(""),
     [produto, setProduto] = useState(""),
-    [nome, setNome] = useState(""),
     [endereco, setEndereco] = useState(""),
-    [qtd, setQtd] = useState(""),
     [inventario, setInventario] = useState(""),
     [contagens, setContagens] = useState<Record<string, string>>({});
   const [paginaInventario, setPaginaInventario] = useState(0);
   const [novoContado, setNovoContado] = useState("");
-  const [chaveTransferencia, setChaveTransferencia] = useState(() => crypto.randomUUID());
   const rpc = useRotinaRpc([
     "depositos",
     "deposito_saldos",
@@ -38,19 +34,33 @@ export function DepositosInventario({
     "estoque_disponivel",
   ]);
   const dep = useQuery({
-    queryKey: ["depositos", user?.id, "compartilhado"],
-    enabled: !!client,
+    queryKey: ["depositos", user?.id, centro],
+    enabled: !!client && !!centro,
     queryFn: async () => {
       const { data, error } = await client!
         .from("depositos")
         .select("*,centros(nome)")
         .eq("ativo", true)
+        .eq("centro_id", centro)
         .order("nome")
         .limit(100);
       if (error) throw new Error("Aplique a fase213 para usar depósitos e inventário.");
       return (data ?? []) as Registro[];
     },
   });
+  useEffect(() => {
+    const daLoja = (dep.data ?? []).filter((d) => d["centro_id"] === centro);
+    const principal =
+      daLoja.find((d) => d["padrao"] === true) ?? (daLoja.length === 1 ? daLoja[0] : undefined);
+    const novo = principal ? String(principal["id"]) : "";
+    if (deposito === novo) return;
+    setDeposito(novo);
+    setInventario("");
+    setContagens({});
+    setPaginaInventario(0);
+    setNovoContado("");
+    setEndereco("");
+  }, [centro, dep.data, deposito]);
   const saldos = useQuery({
     queryKey: ["deposito_saldos", user?.id, deposito, produto],
     enabled: !!client && !!deposito,
@@ -102,12 +112,11 @@ export function DepositosInventario({
   const label = (id: unknown) => String(produtos.find((p) => p["id"] === id)?.["descricao"] ?? id);
   return (
     <section className="space-y-4 rounded border p-4">
-      <h2 className="font-semibold">Depósitos e inventário</h2>
+      <h2 className="font-semibold">Depósito da loja</h2>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Operação no depósito">
         {[
-          { id: "transferir", nome: "Transferir produtos" },
           { id: "inventario", nome: "Contar estoque" },
-          { id: "organizar", nome: "Organizar depósitos" },
+          { id: "organizar", nome: "Localização dos produtos" },
         ].map((t) => (
           <Button
             key={t.id}
@@ -122,67 +131,35 @@ export function DepositosInventario({
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        Os depósitos compõem o estoque compartilhado das lojas. Entradas usam o depósito de estoque
-        compartilhado; saídas podem consumir os depósitos de qualquer centro.
+        O depósito principal é selecionado automaticamente conforme a loja escolhida. A lista abaixo
+        mostra somente depósitos dessa loja.
       </p>
       {dep.error && (
         <p role="alert" className="text-destructive text-sm">
           {dep.error.message}
         </p>
       )}
-      <label className="block text-sm">
-        {tarefa === "transferir" ? "Depósito de origem" : "Depósito"}
-        <select
-          className="block w-full rounded border bg-background p-2"
-          aria-label="Depósito"
-          value={deposito}
-          onChange={(e) => {
-            setDeposito(e.target.value);
-            setInventario("");
-            setContagens({});
-            setDestino("");
-            setQtd("");
-            setEndereco("");
-            setNovoContado("");
-            setPaginaInventario(0);
-            setChaveTransferencia(crypto.randomUUID());
-          }}
-        >
-          <option value="">Selecione</option>
-          {dep.data?.map((d) => (
-            <option key={String(d["id"])} value={String(d["id"])}>
-              {String(d["nome"])} ·{" "}
-              {String((d["centros"] as Registro | null)?.["nome"] ?? "Compartilhado")}
-            </option>
-          ))}
-        </select>
-      </label>
-      {!centro && perm.pode("deposito_operar") && (
-        <p className="text-xs text-muted-foreground">
-          Selecione um centro para cadastrar um novo depósito.
-        </p>
-      )}
-      {tarefa === "organizar" && perm.pode("deposito_operar") && (
-        <div className="flex flex-wrap gap-2">
-          <Input
-            aria-label="Nome do novo depósito"
-            placeholder="Novo depósito"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-          />
-          <Button
-            disabled={!centro || !nome.trim() || rpc.isPending}
-            onClick={() =>
-              rpc.mutate(
-                { nome: "gerenciar_deposito_213", args: { _centro: centro, _nome: nome } },
-                { onSuccess: () => setNome("") },
-              )
-            }
-          >
-            Criar depósito
-          </Button>
-        </div>
-      )}
+      <div className="space-y-2">
+        <label className="text-sm" htmlFor="deposito-loja">
+          Depósito vinculado à loja
+        </label>
+        <Input
+          id="deposito-loja"
+          readOnly
+          value={
+            dep.data?.find((d) => d["id"] === deposito)?.["nome"]
+              ? String(dep.data.find((d) => d["id"] === deposito)!["nome"])
+              : ""
+          }
+          placeholder={
+            !centro
+              ? "Selecione a loja no topo da página"
+              : dep.isPending
+                ? "Carregando depósito..."
+                : "Depósito principal não encontrado. Confira a fase271."
+          }
+        />
+      </div>
       {deposito && (
         <>
           {tarefa !== "inventario" && (
@@ -198,7 +175,6 @@ export function DepositosInventario({
                   onChange={(id) => {
                     setProduto(id);
                     setEndereco("");
-                    setChaveTransferencia(crypto.randomUUID());
                   }}
                   disabled={rpc.isPending}
                 />
@@ -235,90 +211,20 @@ export function DepositosInventario({
                   </Button>
                 </>
               )}
-              {tarefa === "transferir" && (
-                <>
-                  <label className="space-y-1 text-sm">
-                    Para qual depósito?
-                    <select
-                      aria-label="Depósito de destino"
-                      className="block w-full rounded border bg-background p-2"
-                      value={destino}
-                      onChange={(e) => {
-                        setDestino(e.target.value);
-                        setChaveTransferencia(crypto.randomUUID());
-                      }}
-                    >
-                      <option value="">Destino da transferência</option>
-                      {dep.data
-                        ?.filter((d) => d["id"] !== deposito)
-                        .map((d) => (
-                          <option key={String(d["id"])} value={String(d["id"])}>
-                            {String(d["nome"])} ·{" "}
-                            {String((d["centros"] as Registro | null)?.["nome"] ?? "Compartilhado")}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <label className="space-y-1 text-sm">
-                    Quantidade
-                    <Input
-                      aria-label="Quantidade para transferir"
-                      placeholder="Quantidade a transferir"
-                      type="number"
-                      min="0.001"
-                      step="0.001"
-                      value={qtd}
-                      onChange={(e) => {
-                        setQtd(e.target.value);
-                        setChaveTransferencia(crypto.randomUUID());
-                      }}
-                    />
-                  </label>
-                  <Button
-                    disabled={
-                      !produto ||
-                      !destino ||
-                      !Number.isFinite(Number(qtd)) ||
-                      !(Number(qtd) > 0) ||
-                      rpc.isPending
-                    }
-                    onClick={() =>
-                      rpc.mutate(
-                        {
-                          nome: "transferir_deposito_213",
-                          args: {
-                            _origem: deposito,
-                            _destino: destino,
-                            _produto: produto,
-                            _quantidade: Number(qtd),
-                            _chave: chaveTransferencia,
-                          },
-                        },
-                        {
-                          onSuccess: () => {
-                            setQtd("");
-                            setChaveTransferencia(crypto.randomUUID());
-                          },
-                        },
-                      )
-                    }
-                  >
-                    Transferir entre depósitos
-                  </Button>
-                </>
-              )}
             </div>
           )}
           {tarefa !== "inventario" && (
             <>
               {saldos.error && <p role="alert">{saldos.error.message}</p>}
               <div className="max-h-64 overflow-auto space-y-2">
-                {saldos.data?.rows.map((s) => (
-                  <div className="border-b py-2 text-sm" key={String(s["produto_id"])}>
-                    {label(s["produto_id"])} — {String(s["quantidade"])} ·{" "}
-                    {String(s["endereco"] ?? "Sem endereço")}
-                  </div>
-                ))}
+                {saldos.data?.rows
+                  .filter((s) => produtos.some((p) => p["id"] === s["produto_id"]))
+                  .map((s) => (
+                    <div className="border-b py-2 text-sm" key={String(s["produto_id"])}>
+                      {label(s["produto_id"])} — {String(s["quantidade"])} ·{" "}
+                      {String(s["endereco"] ?? "Sem endereço")}
+                    </div>
+                  ))}
               </div>
               {(saldos.data?.count ?? 0) > 1000 && (
                 <p role="alert">Mostrando os primeiros 1000 saldos deste depósito.</p>

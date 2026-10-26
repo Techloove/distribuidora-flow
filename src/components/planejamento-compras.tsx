@@ -27,7 +27,7 @@ export function PlanejamentoCompras() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_sugestao_compras_centro", user?.id, escopo, "compartilhado"],
+    queryKey: ["vw_sugestao_compras_centro", user?.id, escopo, "por-loja"],
     enabled: !!client && perm.pode("compras_planejar"),
     queryFn: async () => {
       return lerPaginas<Row>((inicio, fim) =>
@@ -107,8 +107,8 @@ export function PlanejamentoCompras() {
         <div>
           <h2 className="font-semibold">Planejamento e reposição</h2>
           <p className="text-sm text-muted-foreground">
-            Reposição do estoque compartilhado, considerando vendas, pedidos pendentes e compras das
-            lojas acessíveis.
+            Reposição por loja, considerando seu estoque, suas vendas, seus pedidos pendentes e suas
+            compras.
           </p>
         </div>
         <Button className="no-print" variant="outline" size="sm" onClick={() => window.print()}>

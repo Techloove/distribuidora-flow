@@ -7,7 +7,7 @@ import { DepositosInventario } from "@/components/depositos-inventario";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { ErpLayout } from "@/components/erp-layout";
@@ -88,17 +88,23 @@ function EstoquePage() {
   });
 
   const disponibilidade = useQuery({
-    queryKey: ["estoque_disponivel", "compartilhado"],
-    enabled: !!client,
+    queryKey: ["estoque_disponivel", "loja", centro],
+    enabled: !!client && !!centro,
     queryFn: async () =>
       await lerPaginas<Row>((inicio, fim) =>
         client!
-          .from("vw_estoque_compartilhado_226")
-          .select("*")
+          .rpc("saldos_estoque_loja_271", { _centro: centro })
           .order("produto_id")
           .range(inicio, fim),
       ),
   });
+  const produtosDaLoja = useMemo(() => {
+    const ids = new Set((disponibilidade.data ?? []).map((r) => String(r["produto_id"])));
+    return (produtos.data ?? []).filter((p) => ids.has(String(p["id"])));
+  }, [produtos.data, disponibilidade.data]);
+  useEffect(() => {
+    setForm((f) => ({ ...f, produto_id: "", quantidade: "1", custo: "", observacao: "" }));
+  }, [centro]);
   const reservadoProduto = (produto: unknown) =>
     disponibilidade.data
       ?.filter((r) => r["produto_id"] === produto)
@@ -121,7 +127,8 @@ function EstoquePage() {
 
   const lancar = useMutation({
     mutationFn: async () => {
-      if (!form.produto_id) throw new Error("Selecione o produto");
+      if (!form.produto_id || !produtosDaLoja.some((p) => p["id"] === form.produto_id))
+        throw new Error("Selecione um produto da loja atual");
       const qtd = Number(form.quantidade || 0);
       if (!Number.isFinite(qtd) || qtd <= 0)
         throw new Error("Informe uma quantidade maior que zero");
@@ -167,7 +174,7 @@ function EstoquePage() {
   );
 
   const produtosFiltrados = useMemo(() => {
-    let list = produtos.data ?? [];
+    let list = produtosDaLoja;
     const f = filtros;
     const termo = (f["busca"] ?? "").trim().toLowerCase();
     if (termo) {
@@ -185,7 +192,7 @@ function EstoquePage() {
       list = list.filter((p) => saldoProduto(p["id"]) <= Number(p["estoque_minimo"] ?? 0));
     }
     return list;
-  }, [produtos.data, filtros, saldoProduto]);
+  }, [produtosDaLoja, filtros, saldoProduto]);
 
   const movimentosFiltrados = useMemo(() => {
     let list = movimentos.data ?? [];
@@ -210,7 +217,7 @@ function EstoquePage() {
   return (
     <ErpLayout
       title="Estoque"
-      description="Registre entradas e saídas ou consulte o saldo compartilhado das lojas."
+      description="Cada loja movimenta o próprio estoque no depósito vinculado a ela."
       actions={
         aba === "saldos" || aba === "historico" ? (
           <Button variant="secondary" onClick={() => window.print()}>
@@ -223,8 +230,8 @@ function EstoquePage() {
       <div className="space-y-6">
         {disponibilidade.error && (
           <p role="alert" className="text-sm text-destructive">
-            Não foi possível consultar o estoque compartilhado. Confira a fase226 no Supabase e
-            atualize a página.
+            Não foi possível consultar o estoque da loja. Confira a fase271 no Supabase e atualize a
+            página.
           </p>
         )}
         <Tabs value={aba} onValueChange={setAba} className="space-y-5">
@@ -238,6 +245,11 @@ function EstoquePage() {
             <TabsTrigger value="depositos">Depósitos e inventário</TabsTrigger>
           </TabsList>
           <TabsContent value="movimentar" className="space-y-4">
+            {!centro && (
+              <p className="rounded-lg border p-3 text-sm">
+                Selecione a loja para consultar e movimentar o estoque dela.
+              </p>
+            )}
             <form
               className="mx-auto max-w-3xl space-y-5 rounded-xl border bg-card p-5"
               onSubmit={(e) => {
@@ -283,10 +295,17 @@ function EstoquePage() {
                   <Label htmlFor="estoque-produto">Produto</Label>
                   <SeletorProdutoEstoque
                     id="estoque-produto"
-                    produtos={produtos.data ?? []}
+                    produtos={produtosDaLoja}
                     value={form.produto_id}
                     onChange={(produto_id) => setForm((f) => ({ ...f, produto_id }))}
-                    disabled={produtos.isPending || produtos.isError || lancar.isPending}
+                    disabled={
+                      !centro ||
+                      disponibilidade.isPending ||
+                      disponibilidade.isError ||
+                      produtos.isPending ||
+                      produtos.isError ||
+                      lancar.isPending
+                    }
                   />
                 </div>
                 {form.produto_id && (
@@ -366,7 +385,7 @@ function EstoquePage() {
                     ))}
                   </select>
                   <p className="text-xs text-muted-foreground">
-                    O estoque é compartilhado. A loja identifica este lançamento.
+                    Entradas e saídas usam somente o depósito desta loja.
                   </p>
                 </div>
                 <details className="rounded-lg border p-3">
@@ -410,7 +429,9 @@ function EstoquePage() {
                     !Number.isFinite(Number(form.quantidade)) ||
                     Number(form.quantidade) <= 0 ||
                     lancar.isPending ||
-                    centrosCarregando
+                    centrosCarregando ||
+                    disponibilidade.isError ||
+                    !disponibilidade.data
                   }
                 >
                   {lancar.isPending && <Loader2 className="size-4 animate-spin" />}
@@ -463,7 +484,7 @@ function EstoquePage() {
             </FilterBar>{" "}
             <div className="print-area">
               <h2 className="mb-2 text-sm font-semibold text-foreground">
-                Estoque compartilhado por produto
+                Estoque da loja por produto
               </h2>
               <div className="rounded-lg border border-border bg-card">
                 {produtos.isLoading || disponibilidade.isLoading || centrosCarregando ? (
@@ -625,7 +646,17 @@ function EstoquePage() {
             </div>
           </TabsContent>
           <TabsContent value="depositos">
-            <DepositosInventario key={centro} centro={centro} produtos={produtos.data ?? []} />
+            {centro && disponibilidade.isSuccess ? (
+              <DepositosInventario key={centro} centro={centro} produtos={produtosDaLoja} />
+            ) : (
+              <p className="rounded-lg border p-4 text-sm">
+                {!centro
+                  ? "Selecione a loja para abrir o depósito correspondente."
+                  : disponibilidade.isError
+                    ? "Aplique a fase271 no Supabase e atualize a página para operar o depósito da loja."
+                    : "Consultando o estoque da loja..."}
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -107,7 +107,7 @@ const fields: CrudField[] = [
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   {
     name: "estoque_atual",
-    label: "Estoque compartilhado",
+    label: "Estoque total do produto",
     type: "number",
     step: "0.001",
     inTable: true,
@@ -242,7 +242,7 @@ function ProdutosPage() {
   return (
     <ErpLayout
       title="Produtos"
-      description="Cadastro geral e estoque compartilhado. Disponibilidade, preços de venda e limites de desconto são configurados por loja."
+      description="Cadastro geral de produtos. Consulte o estoque e o depósito da loja em Estoque; preços de venda e descontos são configurados por loja."
       actions={
         <Button asChild variant="secondary">
           <Link to="/estoque">

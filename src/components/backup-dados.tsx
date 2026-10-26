@@ -38,7 +38,7 @@ export function BackupDados() {
     <section className="mt-6 space-y-3 rounded-xl border bg-card p-5">
       <h2 className="font-semibold">Backup dos dados</h2>
       <p className="text-sm text-muted-foreground">
-        Cópia completa de todas as lojas, permissões, carteiras, estoque compartilhado, histórico
+        Cópia completa de todas as lojas, permissões, carteiras, estoques das lojas, histórico
         fiscal e arquivos privados. O backup é criptografado e restrito à administração.
       </p>
       <p className="text-sm text-muted-foreground">

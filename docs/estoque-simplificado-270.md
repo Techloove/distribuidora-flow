@@ -1,5 +1,7 @@
 # Fase270 — estoque mais direto
 
+A fase271 substitui a regra compartilhada por estoque próprio por loja e remove transferências/criação de depósitos extras. Consulte [Estoque próprio por loja](estoque-proprio-por-loja-271.md).
+
 Mudança de interface, sem migração SQL. Publicar o código após a sincronização com o Lovable.
 
 A tela Estoque abre em **Movimentar**: escolha Entrada, Saída ou Ajuste, busque o produto pelo código ou nome e informe a quantidade. O saldo físico, reservado e disponível aparecem ao selecionar o produto. A loja do lançamento pode ser selecionada entre as lojas já permitidas; o saldo continua compartilhado. Custo de entrada e observação são opcionais e ficam recolhidos.

@@ -51,7 +51,7 @@ export function ProvedorFiscalLoja({ loja }: { loja: string }) {
       <h3 className="font-semibold">Provedor fiscal da loja</h3>
       <p className="text-sm text-muted-foreground">
         Cada loja mantém seu CNPJ e suas regras fiscais. A conexão Forecast consulta a empresa
-        correspondente sem alterar documentos anteriores ou o estoque compartilhado.
+        correspondente sem alterar documentos anteriores ou os estoques das lojas.
       </p>
       {estado.error && (
         <p role="alert" className="text-destructive">

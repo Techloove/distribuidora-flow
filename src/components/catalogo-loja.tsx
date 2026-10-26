@@ -92,8 +92,8 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
       <h3 className="font-semibold">Produtos e preços — {nome}</h3>
       <p className="text-sm text-muted-foreground">
         O catálogo segue a categoria da loja. Ajuste aqui o preço-base, o teto de desconto ou uma
-        suspensão individual de venda. O estoque é compartilhado. Alterar a referência no cadastro
-        geral de Produtos não altera os preços já configurados nas lojas.
+        suspensão individual de venda. Cada loja usa seu próprio estoque. Alterar a referência no
+        cadastro geral de Produtos não altera os preços já configurados nas lojas.
       </p>
       <CategoriaLoja key={loja} loja={loja} editar={editar} />
       <Label htmlFor="busca-catalogo-loja">Buscar produto por código ou descrição</Label>

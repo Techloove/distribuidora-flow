@@ -269,6 +269,7 @@ insert into estoque_saldos(produto_id,centro_id,quantidade) values('${id(20)}','
     assert.equal(Number((await q("select total_reservado_226($1) n", [id(21)]))[0].n), 0);
     await db.exec("set test.active='true';set test.routine='false'");
     await assert.rejects(db.query("select abrir_inventario_213($1)", [id(60)]), /Sem acesso/);
+    await require("./lib/check-estoque-lojas271.cjs")(db, id);
     console.log(
       "OK fase226: legado1000 preservado, duas lojas, reservas globais, confirmação idempotente, depósitos e bloqueios.",
     );
@@ -276,6 +277,6 @@ insert into estoque_saldos(produto_id,centro_id,quantidade) values('${id(20)}','
     await db.close();
   }
 })().catch((error) => {
-  console.error(error);
+  console.error(error.message, error.detail ?? "", error.where ?? "");
   process.exitCode = 1;
 });
