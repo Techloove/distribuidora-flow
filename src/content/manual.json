@@ -1,0 +1,341 @@
+[
+  {
+    "id": "primeiros-passos",
+    "titulo": "Primeiros passos e escolha da loja",
+    "grupo": "Começar",
+    "resumo": "Entenda o menu, o perfil de acesso e a loja selecionada.",
+    "modulos": [],
+    "passos": [
+      "Entre com seu usuário e senha. No primeiro acesso, conclua o cadastro solicitado antes de operar.",
+      "Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.",
+      "Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.",
+      "Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual."
+    ],
+    "cuidados": [
+      "Cada perfil vê somente os módulos liberados. A ausência de um menu deve ser tratada com o administrador; o manual não concede acesso.",
+      "Representantes continuam restritos à própria carteira. Selecionar outra loja não libera clientes ou operações fora da sua permissão.",
+      "Todas as lojas é uma visão de consulta quando disponível. Para movimentar estoque, escolha uma loja específica."
+    ]
+  },
+  {
+    "id": "cadastros",
+    "titulo": "Clientes, fornecedores e outros cadastros",
+    "grupo": "Cadastros",
+    "resumo": "Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.",
+    "modulos": ["/pessoas", "/cadastros-padrao", "/rotas"],
+    "passos": [
+      "Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.",
+      "Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.",
+      "Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.",
+      "Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes."
+    ],
+    "cuidados": [
+      "Evite duplicar cadastros. Revise o documento e a busca antes de salvar.",
+      "A mudança de responsável comercial deve respeitar a gestão de carteiras; não compartilhe credenciais para acessar outro representante."
+    ]
+  },
+  {
+    "id": "lojas",
+    "titulo": "Lojas, categorias e produtos",
+    "grupo": "Cadastros",
+    "resumo": "Entenda como a categoria liga os produtos ao estoque da loja.",
+    "modulos": ["/centros", "/produtos"],
+    "passos": [
+      "Em Lojas, confira nome, CNPJ e a categoria dos produtos da loja. Cada loja ativa usa uma categoria exclusiva para o estoque.",
+      "Em Produtos, cadastre descrição, código, unidade, categoria e os demais dados exigidos.",
+      "A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.",
+      "Para alterar preço-base e limite de desconto de uma loja, abra o catálogo na configuração da loja. O preço de referência do cadastro geral não substitui os preços já configurados.",
+      "Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro."
+    ],
+    "cuidados": [
+      "Produto com saldo ou reserva não deve ser reclassificado para outra loja por edição da categoria. Solicite a conciliação ao administrador.",
+      "Estoque total do produto no cadastro não representa uma nova quantidade a somar aos depósitos. Consulte o saldo da loja em Estoque.",
+      "Dados fiscais e CNPJ precisam ser conferidos pelo responsável da empresa."
+    ]
+  },
+  {
+    "id": "promocoes",
+    "titulo": "Promoções, descontos e formas de pagamento",
+    "grupo": "Comercial",
+    "resumo": "Configure condições comerciais e confira sua aplicação no pedido.",
+    "modulos": ["/tabelas-preco", "/formas-pagamento", "/descontos-peso"],
+    "passos": [
+      "Em Promoção, escolha a campanha e edite os produtos, preços e período de validade na mesma área de trabalho.",
+      "Confira loja, vigência e condições da campanha antes de ativar.",
+      "Cadastre as formas de pagamento e suas condições de parcelamento no módulo correspondente.",
+      "Ao montar o pedido, confira o preço aplicado, descontos, parcelas e total antes de confirmar."
+    ],
+    "cuidados": [
+      "Uma promoção precisa estar vigente e atender às condições do pedido para ser aplicada.",
+      "Descontos, margem, crédito e disponibilidade podem exigir aprovação. Não contorne um bloqueio alterando dados do cliente ou da loja."
+    ]
+  },
+  {
+    "id": "pedidos",
+    "titulo": "Criar pedido ou orçamento",
+    "grupo": "Comercial",
+    "resumo": "Da escolha do cliente à confirmação da venda.",
+    "modulos": ["/pedidos"],
+    "passos": [
+      "Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.",
+      "Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.",
+      "Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.",
+      "Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.",
+      "Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.",
+      "Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas."
+    ],
+    "cuidados": [
+      "Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.",
+      "Orçamento não é uma venda confirmada. Não gere movimentação manual para simular sua confirmação.",
+      "Os produtos e suas reservas pertencem à loja do pedido. A venda não usa o estoque de outra loja.",
+      "Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado."
+    ]
+  },
+  {
+    "id": "regularizacao",
+    "titulo": "Regularizar o status de um pedido antigo",
+    "grupo": "Administração",
+    "resumo": "Uso exclusivo do administrador para etapas que já ocorreram fora do sistema.",
+    "modulos": ["/pedidos"],
+    "passos": [
+      "Como administrador, abra um pedido a partir da etapa Em separação e clique Regularizar status.",
+      "Escolha uma etapa posterior. Para pedido já entregue, pode escolher diretamente Entregue.",
+      "Informe a data em que a etapa ocorreu e um motivo com pelo menos 10 caracteres, por exemplo: Pedido já entregue ao cliente.",
+      "Marque a confirmação de que os registros foram conferidos e confirme o avanço. O usuário, a data e o motivo ficam registrados."
+    ],
+    "cuidados": [
+      "A regularização não cria nota fiscal, cobrança, comissão, baixa de estoque, carga ou comprovante de entrega.",
+      "Romaneios e cargas existentes precisam ser conferidos separadamente. Mudar o pedido para Entregue não encerra esses registros automaticamente.",
+      "Não é permitido retroceder etapas, marcar nota fiscal emitida manualmente ou usar a ferramenta para resolver entrega parcial/recusa.",
+      "Se o botão estiver desabilitado, confira etapa, data, tamanho do motivo e a caixa de confirmação."
+    ]
+  },
+  {
+    "id": "estoque",
+    "titulo": "Entrada, saída e ajuste de estoque",
+    "grupo": "Estoque",
+    "resumo": "Movimente somente o depósito da loja escolhida.",
+    "modulos": ["/estoque"],
+    "passos": [
+      "Escolha a loja no topo da tela e abra Estoque → Movimentar.",
+      "Selecione Entrada, Saída ou Ajuste e busque o produto pelo nome ou código.",
+      "Confira saldo físico, reservado e disponível. Informe a quantidade positiva.",
+      "No ajuste, escolha Acrescentar ou Retirar. Informe a diferença a corrigir, não o saldo final desejado.",
+      "Se necessário, abra os campos opcionais para informar custo da entrada e observação.",
+      "Registre a movimentação e aguarde a confirmação. Consulte o resultado em Consultar saldos ou Histórico."
+    ],
+    "cuidados": [
+      "Uma venda já confirmada faz a baixa pelo próprio fluxo. Não lance uma segunda saída manual para o mesmo pedido.",
+      "Saldo físico é a quantidade registrada; reservado é o que está comprometido; disponível é físico menos reservado.",
+      "Após a fase271, cada loja consome apenas o próprio saldo. Produto de outra categoria/loja é rejeitado.",
+      "Quantidade insuficiente ou mercadoria reservada pode bloquear a saída. Estoque negativo só é permitido quando essa política estiver expressamente habilitada para o produto."
+    ]
+  },
+  {
+    "id": "inventario",
+    "titulo": "Depósito e contagem de inventário",
+    "grupo": "Estoque",
+    "resumo": "Confira as quantidades físicas sem misturar os depósitos das lojas.",
+    "modulos": ["/estoque"],
+    "passos": [
+      "Selecione a loja e abra Estoque → Depósitos e inventário. O depósito principal é vinculado automaticamente.",
+      "Escolha Contar estoque e abra um inventário ou selecione uma contagem em andamento.",
+      "Conte os produtos no local e salve a quantidade contada de cada item. Use as páginas da lista quando necessário.",
+      "Use Contar outro produto para incluir um produto da mesma loja que precise ser contado fora da lista.",
+      "O responsável pela conferência deve revisar todos os itens e usar Conferir e aplicar diferenças.",
+      "Para informar rua ou prateleira, use Localização dos produtos."
+    ],
+    "cuidados": [
+      "A conferência aplica diferenças reais ao estoque e respeita as reservas.",
+      "Se o saldo mudou durante a contagem, abra um novo inventário. Não force uma contagem desatualizada.",
+      "Na migração da fase271, contagens abertas foram canceladas com histórico preservado. Reabra a contagem no depósito da loja.",
+      "Transferências entre lojas não são feitas pela antiga transferência de depósitos; exigem um procedimento próprio de conciliação."
+    ]
+  },
+  {
+    "id": "compras",
+    "titulo": "Planejamento e registro de compras",
+    "grupo": "Estoque",
+    "resumo": "Planeje a reposição e acompanhe a entrada das mercadorias.",
+    "modulos": ["/compras"],
+    "passos": [
+      "Consulte o planejamento de reposição da loja e confira estoque, pendências de venda e compras em trânsito.",
+      "Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.",
+      "Confira os dados antes de confirmar o documento e siga a ação indicada pela tela.",
+      "Após a operação, confira o histórico de estoque e os títulos financeiros gerados pelo fluxo."
+    ],
+    "cuidados": [
+      "Sugestão de reposição é uma orientação; confira necessidade, prazo e quantidades antes de comprar.",
+      "Não registre uma entrada manual adicional se a compra já gerou a entrada correspondente."
+    ]
+  },
+  {
+    "id": "separacao",
+    "titulo": "Separar e conferir pedidos",
+    "grupo": "Entregas",
+    "resumo": "Prepare a mercadoria antes da montagem da carga.",
+    "modulos": ["/separacao"],
+    "passos": [
+      "Escolha a loja e abra Separação. Localize os pedidos liberados para preparação.",
+      "Inicie a separação e confira os produtos e quantidades do pedido.",
+      "Registre o que foi separado e trate as divergências conforme as opções disponíveis.",
+      "Conclua a separação e a conferência. Os pedidos liberados seguem para a montagem da carga."
+    ],
+    "cuidados": [
+      "Não conclua uma conferência com quantidade divergente sem registrar o tratamento.",
+      "Imprima ou confira o pedido antes de carregar. A preparação logística não substitui o documento fiscal."
+    ]
+  },
+  {
+    "id": "cargas-entregas",
+    "titulo": "Montar carga, sair em rota e confirmar entrega",
+    "grupo": "Entregas",
+    "resumo": "Organize o transporte e formalize o recebimento do cliente.",
+    "modulos": ["/cargas", "/entregas"],
+    "passos": [
+      "Em Cargas de entrega, crie a carga e informe rota, motorista, veículo e os dados exigidos.",
+      "Inclua pedidos liberados da operação correspondente e confira capacidade, peso e documentos.",
+      "Feche e despache a carga pela ação indicada na tela, informando a data de saída.",
+      "Em Entregas, localize o pedido em rota e registre data, recebedor e o comprovante exigido.",
+      "Se houver entrega parcial ou recusa, registre a ocorrência e trate o saldo/devolução antes de concluir.",
+      "Confira que pedidos e carga chegaram à situação final esperada."
+    ],
+    "cuidados": [
+      "Não use a regularização de status para inventar um comprovante de entrega.",
+      "Uma carga só pode ser concluída quando as entregas e pendências exigidas estiverem resolvidas.",
+      "Documentos e clientes continuam sujeitos às permissões de loja e carteira."
+    ]
+  },
+  {
+    "id": "devolucoes",
+    "titulo": "Devoluções, recusas e créditos",
+    "grupo": "Entregas",
+    "resumo": "Trate o retorno da mercadoria e seus efeitos financeiros pelo fluxo correto.",
+    "modulos": ["/devolucoes", "/conciliacao-creditos"],
+    "passos": [
+      "Localize o pedido de origem e registre os produtos, quantidades e motivo da devolução.",
+      "Confira a loja e o vínculo com a entrega ou ocorrência correspondente.",
+      "Siga a conferência e confirmação previstas pela tela, verificando o retorno físico e os valores.",
+      "Confira os créditos gerados e sua utilização na conciliação de créditos, quando aplicável."
+    ],
+    "cuidados": [
+      "Não faça entrada manual nem desconto financeiro duplicado para uma devolução já tratada pelo fluxo.",
+      "Comissões e créditos dependem do tratamento da devolução e dos recebimentos existentes. Confira os registros antes de repetir operações."
+    ]
+  },
+  {
+    "id": "financeiro",
+    "titulo": "Receber, pagar, caixa e conciliação",
+    "grupo": "Financeiro",
+    "resumo": "Acompanhe títulos, registre baixas e confira o caixa da loja.",
+    "modulos": [
+      "/financeiro",
+      "/receber",
+      "/pagar",
+      "/contas",
+      "/movimentacoes",
+      "/fluxo-caixa",
+      "/dre",
+      "/relatorios-financeiros",
+      "/rota-despesas"
+    ],
+    "passos": [
+      "Escolha a loja e consulte Contas a receber ou Contas a pagar.",
+      "Localize o título e confira cliente/fornecedor, vencimento, valor e o que já foi pago.",
+      "Para registrar uma baixa, informe os dados exigidos, incluindo conta, valor e data, e confira o resultado.",
+      "Acompanhe saldos em Caixa e bancos e concilie os movimentos com os documentos existentes.",
+      "Use Dashboard financeiro, Fluxo de caixa, DRE e relatórios para acompanhar resultados e pendências.",
+      "Registre os custos de rota no módulo correspondente para acompanhar a operação."
+    ],
+    "cuidados": [
+      "Pedido entregue não significa título recebido. A baixa financeira precisa representar o pagamento real.",
+      "Evite registrar o mesmo recebimento manualmente se ele já entrou por conciliação ou integração.",
+      "Saldo bancário, caixa e resultado gerencial têm finalidades diferentes. Confira período e filtros antes de comparar relatórios."
+    ]
+  },
+  {
+    "id": "boletos-fiscal",
+    "titulo": "Boletos e notas fiscais",
+    "grupo": "Financeiro",
+    "resumo": "Entenda os cuidados com documentos bancários e fiscais.",
+    "modulos": ["/boletos", "/notas"],
+    "passos": [
+      "Para boletos, localize o título elegível e confira loja, cliente, valor, vencimento e a configuração bancária correspondente.",
+      "Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.",
+      "Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.",
+      "A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.",
+      "XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional."
+    ],
+    "cuidados": [
+      "Não use documentos de homologação como nota fiscal ou cobrança real.",
+      "Um botão de consulta não confirma, sozinho, que houve autorização fiscal ou liquidação bancária. Confira o estado retornado.",
+      "A integração fiscal ainda precisa de validação dos retornos reais e dos cenários fiscais antes da liberação de produção.",
+      "Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat."
+    ]
+  },
+  {
+    "id": "comercial-gestao",
+    "titulo": "Agenda, metas, comissões e relatórios",
+    "grupo": "Gestão",
+    "resumo": "Acompanhe clientes, atividades e resultados da carteira.",
+    "modulos": [
+      "/agenda-comercial",
+      "/metas",
+      "/comissoes",
+      "/relatorio-vendas",
+      "/pendencias",
+      "/notificacoes"
+    ],
+    "passos": [
+      "Na Agenda comercial, organize visitas, contatos e acompanhamento dos clientes da sua carteira.",
+      "Consulte metas e compare o período selecionado com os resultados apresentados.",
+      "Em Comissões, confira a situação dos valores e os recebimentos/devoluções que influenciam sua apuração.",
+      "Use Relatórios de Vendas para analisar os resultados com os filtros corretos.",
+      "Acompanhe Central de pendências e Notificações para identificar as próximas ações."
+    ],
+    "cuidados": [
+      "Representantes consultam sua própria carteira, conforme as permissões atribuídas.",
+      "Comissão prevista, liberada e paga representam situações diferentes. Não trate uma previsão como pagamento realizado.",
+      "Confira filtros de loja, período e situação do pedido antes de comparar totais."
+    ]
+  },
+  {
+    "id": "administracao-backup",
+    "titulo": "Usuários, auditoria e backup",
+    "grupo": "Administração",
+    "resumo": "Administre os acessos e acompanhe as cópias de segurança.",
+    "modulos": ["/usuarios", "/auditoria", "/configuracoes"],
+    "passos": [
+      "Em Usuários e papéis, o administrador atribui perfis, módulos, lojas e rotinas conforme a responsabilidade de cada pessoa.",
+      "Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.",
+      "Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.",
+      "Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila.",
+      "Consulte o número da versão no menu e informe-o ao pedir suporte."
+    ],
+    "cuidados": [
+      "O backup manual e o agendamento diário dependem de executor e armazenamento externo configurados. A presença do botão não significa que o backup está ativo.",
+      "Restauração deve ser testada em ambiente separado pelo responsável técnico; não há restauração destrutiva pelo manual.",
+      "Limpar dados do sistema é uma ação destrutiva. Ela não faz parte de gerar backup ou de atualizar a versão.",
+      "Nunca compartilhe sua senha ou inclua tokens e chaves em capturas de tela."
+    ]
+  },
+  {
+    "id": "duvidas",
+    "titulo": "Dúvidas frequentes e pedido de suporte",
+    "grupo": "Começar",
+    "resumo": "O que conferir quando uma opção não aparece ou uma ação fica bloqueada.",
+    "modulos": [],
+    "passos": [
+      "Menu ausente: confira o perfil e solicite ao administrador a revisão do acesso ao módulo e à loja.",
+      "Botão desabilitado: confira os campos obrigatórios, a loja, a quantidade/data e as confirmações exigidas. Na regularização do pedido, o motivo precisa ter 10 caracteres ou mais.",
+      "Produto ausente na loja: confira categoria do produto, categoria configurada para a loja e disponibilidade no catálogo.",
+      "Saldo insuficiente: confira o saldo disponível da loja e as reservas. Não use a mercadoria de outra loja para contornar o bloqueio.",
+      "Mensagem pedindo uma fase do banco: encaminhe o texto ao administrador. Somente o arquivo SQL indicado deve ser executado no Supabase; guias com títulos e textos explicativos não são SQL.",
+      "Ao pedir suporte, informe versão, tela, loja, número do pedido/documento e o texto do erro. Não envie senha, token ou chave de integração."
+    ],
+    "cuidados": [
+      "Antes de repetir uma operação após erro ou demora, confira se ela já foi registrada no histórico.",
+      "Se a tela publicada estiver antiga, o responsável deve conferir a sincronização com o GitHub e a publicação no Lovable."
+    ]
+  }
+]

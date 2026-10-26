@@ -1,0 +1,15 @@
+[
+  {
+    "versao": "1.0.0",
+    "data": "2026-10-26",
+    "titulo": "Versão inicial com manual do usuário",
+    "novidades": [
+      "Número da versão visível no sistema e histórico das atualizações.",
+      "Manual com busca, orientações das rotinas e atalhos conforme o acesso do usuário.",
+      "Estoque próprio por loja, com depósito selecionado automaticamente.",
+      "Regularização administrativa de pedidos antigos com motivo, data e auditoria.",
+      "Solicitação de backup com histórico; a execução depende da infraestrutura configurada.",
+      "Integração Forecast Fiscal em homologação; emissão em produção permanece bloqueada."
+    ]
+  }
+]

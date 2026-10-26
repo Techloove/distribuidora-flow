@@ -1,3 +1,4 @@
+import { VERSAO_SISTEMA } from "@/lib/versao";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Landmark,
@@ -34,6 +35,7 @@ import {
   Wallet,
   Menu,
   Search,
+  BookOpen,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -269,6 +271,19 @@ function SidebarContent({
           compact ? "px-1 py-2" : "px-2 py-2.5"
         }`}
       >
+        {acesso.pode("/ajuda") && (
+          <Link
+            to="/ajuda"
+            onClick={onNavigate}
+            title={`Manual do usuário · Versão ${VERSAO_SISTEMA}`}
+            aria-label={`Manual do usuário, versão ${VERSAO_SISTEMA}`}
+            className={`mb-3 flex rounded-md border border-sidebar-border p-2 text-sidebar-foreground hover:bg-sidebar-accent ${compact ? "flex-col items-center gap-1" : "items-center gap-2"}`}
+          >
+            <BookOpen className="size-4 shrink-0" />
+            {!compact && <span className="flex-1">Manual do usuário</span>}
+            <span className="text-[10px] text-sidebar-foreground/70">v{VERSAO_SISTEMA}</span>
+          </Link>
+        )}
         {!compact && (
           <>
             <p className="truncate font-medium">{email}</p>

@@ -169,7 +169,8 @@ export function useAcesso(): Acesso {
     permitidos,
     carregando,
     erro: q.error?.message,
-    pode: (path: string) => permitidos.has(ALIASES[path] ?? path),
+    // A ajuda é documentação: não libera um módulo operacional nem requer SQL novo.
+    pode: (path: string) => podeModuloPermitido(path, permitidos),
   };
 }
 
@@ -190,8 +191,14 @@ const ALIASES: Record<string, string> = {
   "/comissao-faixas": "/comissoes",
 };
 
+/** Documentação herda o acesso ao sistema; não acrescenta rotinas operacionais. */
+export function podeModuloPermitido(path: string, permitidos: ReadonlySet<string>) {
+  return (path === "/ajuda" && permitidos.size > 0) || permitidos.has(ALIASES[path] ?? path);
+}
+
 /** Descobre qual módulo controla a rota atual. */
 export function moduloDaRota(pathname: string): string | null {
+  if (pathname === "/ajuda" || pathname.startsWith("/ajuda/")) return "/ajuda";
   for (const [alias, destino] of Object.entries(ALIASES)) {
     if (pathname === alias || pathname.startsWith(`${alias}/`)) return destino;
   }

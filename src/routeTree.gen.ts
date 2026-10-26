@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppAgendaComercialRouteImport } from './routes/_app/agenda-comercial'
+import { Route as AppAjudaRouteImport } from './routes/_app/ajuda'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppBoletosRouteImport } from './routes/_app/boletos'
 import { Route as AppCadastrosPadraoRouteImport } from './routes/_app/cadastros-padrao'
@@ -82,6 +83,11 @@ const AuthRoute = AuthRouteImport.update({
 const AppAgendaComercialRoute = AppAgendaComercialRouteImport.update({
   id: '/agenda-comercial',
   path: '/agenda-comercial',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAjudaRoute = AppAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
+  '/ajuda': typeof AppAjudaRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
   '/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
+  '/ajuda': typeof AppAjudaRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/boletos': typeof AppBoletosRoute
   '/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_app/agenda-comercial': typeof AppAgendaComercialRoute
+  '/_app/ajuda': typeof AppAjudaRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/boletos': typeof AppBoletosRoute
   '/_app/cadastros-padrao': typeof AppCadastrosPadraoRoute
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-comercial'
+    | '/ajuda'
     | '/auditoria'
     | '/boletos'
     | '/cadastros-padrao'
@@ -574,6 +584,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-comercial'
+    | '/ajuda'
     | '/auditoria'
     | '/boletos'
     | '/cadastros-padrao'
@@ -631,6 +642,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/_app/agenda-comercial'
+    | '/_app/ajuda'
     | '/_app/auditoria'
     | '/_app/boletos'
     | '/_app/cadastros-padrao'
@@ -718,6 +730,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda-comercial'
       fullPath: '/agenda-comercial'
       preLoaderRoute: typeof AppAgendaComercialRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/ajuda': {
+      id: '/_app/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AppAjudaRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/auditoria': {
@@ -1082,6 +1101,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppAgendaComercialRoute: typeof AppAgendaComercialRoute
+  AppAjudaRoute: typeof AppAjudaRoute
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppBoletosRoute: typeof AppBoletosRoute
   AppCadastrosPadraoRoute: typeof AppCadastrosPadraoRoute
@@ -1137,6 +1157,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAgendaComercialRoute: AppAgendaComercialRoute,
+  AppAjudaRoute: AppAjudaRoute,
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppBoletosRoute: AppBoletosRoute,
   AppCadastrosPadraoRoute: AppCadastrosPadraoRoute,
