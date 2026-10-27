@@ -1,3 +1,4 @@
+import { FalhaConsultaSicredi } from "./sicredi-diagnostico";
 import { fetchWithTimeout } from "./fetch-timeout";
 type TokenConfig = {
   base: string;
@@ -58,17 +59,26 @@ export async function tokenSicredi(c: TokenConfig, rpc: Rpc) {
     // Renovação definitivamente recusada: volta ao fluxo de usuário/senha uma vez.
     if (claim.refresh_token && [400, 401].includes(response.status)) response = await request();
     if (!response.ok)
-      throw new Error(
+      throw new FalhaConsultaSicredi(
+        { etapa: "token", tipo: "http", http_status: response.status },
         `Autenticação Sicredi recusada (${response.status}). Confira as credenciais do ambiente selecionado.`,
       );
-    const data = (await response.json()) as Record<string, unknown>;
+    const data = (await response.json().catch(() => {
+      throw new FalhaConsultaSicredi({ etapa: "token", tipo: "retorno_invalido" });
+    })) as Record<string, unknown>;
     if (
+      !data ||
+      typeof data !== "object" ||
+      Array.isArray(data) ||
       typeof data["access_token"] !== "string" ||
       !data["access_token"] ||
       !Number.isFinite(Number(data["expires_in"])) ||
       Number(data["expires_in"]) <= 15
     )
-      throw new Error("Sicredi retornou token ou prazo de validade inválido.");
+      throw new FalhaConsultaSicredi(
+        { etapa: "token", tipo: "retorno_invalido" },
+        "Sicredi retornou token ou prazo de validade inválido.",
+      );
     await rpc("sicredi_token_concluir_224", { _chave: key, _lease: lease, _dados: data });
     return data["access_token"];
   } catch (e) {

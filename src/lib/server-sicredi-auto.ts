@@ -1,3 +1,8 @@
+import {
+  FalhaConsultaSicredi,
+  diagnosticoConsultaSicredi,
+  type DiagnosticoConsultaSicredi,
+} from "./sicredi-diagnostico";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { liquidacaoSicredi } from "./sicredi-api";
 import { tokenSicredi } from "./sicredi-token";
@@ -36,6 +41,7 @@ export async function executarConsultaAutomatica(secret: string, io: IO) {
   for (const b of reserva.itens) {
     let situacao = "adiado";
     let dados: ReturnType<typeof liquidacaoSicredi> | null = null;
+    let diagnostico: DiagnosticoConsultaSicredi | null = null;
     if (agora() < limite) {
       if (!b.responsavel) situacao = "sem_responsavel";
       else if (
@@ -63,7 +69,8 @@ export async function executarConsultaAutomatica(secret: string, io: IO) {
           } else if (["BAIXADO", "BAIXADA", "CANCELADO", "CANCELADA"].includes(estado))
             situacao = "baixado";
           else situacao = estado ? "pendente" : "dados_incompletos";
-        } catch {
+        } catch (erro) {
+          diagnostico = diagnosticoConsultaSicredi(erro);
           situacao = "consulta_falhou";
         }
       }
@@ -74,7 +81,7 @@ export async function executarConsultaAutomatica(secret: string, io: IO) {
       _lease: reserva.lease,
       _boleto: b.id,
       _situacao: situacao,
-      _dados: dados,
+      _dados: diagnostico ? { diagnostico } : dados,
     });
     if (resultado === "liquidado") processados++;
   }
@@ -152,7 +159,11 @@ export async function atenderSicrediAutomatico(request: Request): Promise<Respon
         };
       },
       consultar: async (b) => {
-        token ??= await tokenSicredi(banco, rpc);
+        try {
+          token ??= await tokenSicredi(banco, rpc);
+        } catch (erro) {
+          throw new FalhaConsultaSicredi(diagnosticoConsultaSicredi(erro, "token"));
+        }
         const res = await fetchWithTimeout(
           `${banco.base}/cobranca/boleto/v2/boletos?codigoBeneficiario=${encodeURIComponent(banco.beneficiario)}&nossoNumero=${encodeURIComponent(b.nosso_numero)}`,
           {
@@ -166,8 +177,18 @@ export async function atenderSicrediAutomatico(request: Request): Promise<Respon
           },
           5_000,
         );
-        if (!res.ok) throw new Error("Consulta bancária indisponível");
-        return (await res.json()) as Record<string, unknown>;
+        if (!res.ok)
+          throw new FalhaConsultaSicredi({
+            etapa: "consulta",
+            tipo: "http",
+            http_status: res.status,
+          });
+        const retorno: unknown = await res.json().catch(() => {
+          throw new FalhaConsultaSicredi({ etapa: "consulta", tipo: "retorno_invalido" });
+        });
+        if (!retorno || typeof retorno !== "object" || Array.isArray(retorno))
+          throw new FalhaConsultaSicredi({ etapa: "consulta", tipo: "retorno_invalido" });
+        return retorno as Record<string, unknown>;
       },
     });
     return Response.json(resultado, { headers });

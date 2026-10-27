@@ -171,3 +171,15 @@ A prioridade de investigação é **`db/conferir_erros_sicredi_somente_leitura.s
 O teste local cobriu erro ativo de consulta, erro histórico em boleto liquidado, retorno divergente em boleto cancelado e ocultação de mensagem desconhecida. Não houve mudança de estado dos boletos.
 
 Para a implantação fiscal, os pré-requisitos verificados permitem preparar a sequência das fases faltantes: executar manualmente `db/fase266_envio_homologacao_forecast.sql` e depois `db/fase267_documentos_homologacao_forecast.sql`, completos. Não é necessário reaplicar265 ou outras fases antigas com base nesse resultado. Esses scripts não transmitem notas e não habilitam homologação automaticamente. O código correspondente já existe no repositório. A configuração de tokens de homologação deve ser feita dentro do sistema, por loja/CNPJ, nunca enviada por chat. Homologação externa ainda requer validar o contrato/retorno da Forecast; produção permanece bloqueada.
+
+## Classificação das pendências Sicredi — CSV(4)
+
+O arquivo recebido contém10 linhas:9 pendências atuais de Ferragens e1 histórico. Todas têm `CONSULTA_FALHOU`; nos nove casos atuais, boleto está registrado, título aberto e responsável definido/ativo. O histórico tem boleto liquidado e título pago e não deve ser reprocessado. O arquivo original não foi incluído no repositório.
+
+O código atual permitiu concluir que a consulta falhou antes de obter um retorno tratável, mas descartava a etapa e o detalhe HTTP. Não há evidência suficiente para atribuir a causa a senha, token, permissão bancária, indisponibilidade ou rede. O cadastro do responsável ativo não comprova a validade das credenciais bancárias.
+
+Foi preparada a versão1.3.4 / fase277, descrita em `docs/sicredi-diagnostico-277.md`: acrescenta somente diagnóstico técnico filtrado às próximas tentativas e preserva o corpo do finalizador instalado. Não limpa as pendências antigas nem afirma resolver o acesso bancário. A causa deve ser analisada após a próxima consulta do agendamento.
+
+Aplicar manualmente `db/fase277_diagnostico_consulta_sicredi.sql`, publicar1.3.4 e, após a próxima tentativa prevista, executar a versão atualizada de `db/conferir_erros_sicredi_somente_leitura.sql`. Boleto histórico pago não precisa de nova tentativa. Nenhuma cobrança/baixa real foi acionada durante esta entrega.
+
+Validação:168 testes unitários,46 suítes de banco, verificação de tipos e compilação Lovable aprovados. A regressão nova verifica que o corpo do finalizador é preservado salvo a atribuição do diagnóstico, que campos livres são descartados, permissões de execução são mantidas e uma função incompatível aborta toda a migração. Não houve erro de lint; permanecem os9 avisos anteriores de Fast Refresh.

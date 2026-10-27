@@ -7,6 +7,7 @@ with erros as (
  b.ambiente,b.canal,b.conta_receber_id,t.status as estado_titulo,
  f.actor is not null as responsavel_definido,coalesce(p.ativo,false) as responsavel_ativo,
  f.ultima_consulta,f.proxima_consulta,
+ to_jsonb(f)->'diagnostico_277' as diagnostico_tecnico,
  case when f.erro in('SITUACAO_DIVERGENTE','CONFERENCIA_FINANCEIRA','CONSULTA_FALHOU',
  'CONVENIO_DIVERGENTE','SEM_RESPONSAVEL','DADOS_INCOMPLETOS') then f.erro
  else 'OUTRO_CODIGO_NAO_EXIBIDO' end as codigo_erro,
@@ -25,6 +26,14 @@ select loja,boleto_id,conta_receber_id,
  case when pendente_no_painel then 'PENDÊNCIA ATUAL' else 'HISTÓRICO — conferir estado atual' end as classificacao,
  codigo_erro,resultado_automatico,estado_boleto,estado_titulo,ambiente,canal,
  responsavel_definido,responsavel_ativo,
+ case when diagnostico_tecnico->>'etapa' in('token','consulta') then diagnostico_tecnico->>'etapa'
+ when not pendente_no_painel then 'Histórico — sem nova tentativa necessária'
+ when estado_boleto is distinct from 'registrado' then 'Conferência manual necessária'
+ else 'Aguardando diagnóstico da próxima consulta após versão1.3.4' end as etapa_da_falha,
+ case when diagnostico_tecnico->>'tipo' in('http','timeout','rede','retorno_invalido','nao_identificada')
+ then diagnostico_tecnico->>'tipo' else null end as tipo_da_falha,
+ case when coalesce(diagnostico_tecnico->>'http_status','') ~ '^[45][0-9]{2}$'
+ then (diagnostico_tecnico->>'http_status')::integer else null end as status_http,
  ultima_consulta at time zone 'America/Sao_Paulo' as ultima_consulta_brasilia,
  proxima_consulta at time zone 'America/Sao_Paulo' as proxima_consulta_brasilia,
  case codigo_erro
