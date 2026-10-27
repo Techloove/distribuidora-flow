@@ -157,7 +157,7 @@ export function BoletosPage() {
     () =>
       ordenarBoletos(
         filtrarBoletos(daLoja, filtros, cliName),
-        filtros["ordem"] ?? "vencimento_desc",
+        filtros["ordem"] ?? "vencimento_asc",
       ),
     [daLoja, filtros, cliName],
   );
@@ -378,11 +378,11 @@ export function BoletosPage() {
             label="Ordenar por"
             value={filtros["ordem"] ?? ""}
             onChange={(v) => setF("ordem", v)}
-            allLabel="Padrão: vencimento mais recente"
+            allLabel="Padrão: primeiro vencimento"
             options={[
               { value: "emissao_asc", label: "Emissão: mais antiga primeiro" },
               { value: "emissao_desc", label: "Emissão: mais recente primeiro" },
-              { value: "vencimento_asc", label: "Vencimento: mais antigo primeiro" },
+              { value: "vencimento_asc", label: "Vencimento: primeiro vencimento" },
               { value: "vencimento_desc", label: "Vencimento: mais recente primeiro" },
             ]}
           />

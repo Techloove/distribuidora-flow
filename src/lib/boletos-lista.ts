@@ -86,7 +86,7 @@ export function ordenarBoletos(rows: Row[], ordem: string): Row[] {
     vencimento_asc: ["vencimento", 1],
     vencimento_desc: ["vencimento", -1],
   };
-  const [campo, sentido] = opcoes[ordem] ?? opcoes["vencimento_desc"]!;
+  const [campo, sentido] = opcoes[ordem] ?? opcoes["vencimento_asc"]!;
   return [...rows].sort((a, b) => {
     const da = dataBoleto(a[campo]),
       db = dataBoleto(b[campo]);

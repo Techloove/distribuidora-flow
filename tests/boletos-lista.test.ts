@@ -85,12 +85,14 @@ test("ordena emissão e vencimento em ambos os sentidos, sem alterar a coleção
   expect(ids("emissao_asc")).toEqual(["3", "1", "2"]);
   expect(ids("emissao_desc")).toEqual(["2", "1", "3"]);
   expect(ids("vencimento_asc")).toEqual(["1", "3", "2"]);
+  expect(ids("")).toEqual(["1", "3", "2"]);
+  expect(ids("desconhecida")).toEqual(["1", "3", "2"]);
   expect(ids("vencimento_desc")).toEqual(["2", "1", "3"]);
   expect(rows.map((r) => r.id)).toEqual(["1", "2", "3"]);
 });
 test("datas ausentes ficam no fim nos dois sentidos e ordenar mantém os filtros", () => {
-  for (const ordem of ["emissao_asc", "emissao_desc"])
-    expect(ordenarBoletos([...rows, { id: "0", data_emissao: null }], ordem).at(-1)?.id).toBe("0");
+  for (const ordem of ["emissao_asc", "emissao_desc", "vencimento_asc", "vencimento_desc", ""])
+    expect(ordenarBoletos([...rows, { id: "0", data_emissao: null, vencimento: null }], ordem).at(-1)?.id).toBe("0");
   expect(
     ordenarBoletos(filtrarBoletos(rows, { cliente: "a" }, nome), "emissao_asc").map((r) => r.id),
   ).toEqual(["3", "1"]);
