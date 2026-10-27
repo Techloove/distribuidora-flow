@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, Loader2, Printer, RefreshCw } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -24,6 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  filtrarBoletos,
+  dataBoleto,
+  periodoBoletosInvalido,
+  agruparTarifasApi,
+} from "@/lib/boletos-lista";
 import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import {
   sicrediBaixarBoleto,
@@ -45,10 +51,8 @@ const statusLabel: Record<string, string> = {
 };
 
 function dataBr(v: unknown) {
-  const s = String(v ?? "");
-  if (!s || s === "null") return "—";
-  const d = new Date(`${s}T12:00:00`);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleDateString("pt-BR");
+  const s = dataBoleto(v);
+  return s ? s.split("-").reverse().join("/") : "—";
 }
 
 export function BoletosPage() {
@@ -58,6 +62,7 @@ export function BoletosPage() {
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [expandido, setExpandido] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const consultarFn = useServerFn(sicrediConsultarBoleto);
@@ -76,28 +81,43 @@ export function BoletosPage() {
   });
 
   const boletos = useQuery({
-    queryKey: ["boletos", "lista"],
-    enabled: !!client,
+    queryKey: ["boletos", "lista", session?.user.id, centro],
+    enabled: !!client && !!session,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("boletos")
-        .select("*")
-        .order("vencimento", { ascending: false });
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        let query = client!
+          .from("boletos")
+          .select("*")
+          .order("vencimento", { ascending: false })
+          .order("id");
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query.range(offset, offset + 499);
+        if (error) throw new Error(error.message);
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      return rows;
     },
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "options"],
-    enabled: !!client,
+    queryKey: ["clientes", "options", session?.user.id],
+    enabled: !!client && !!session,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("clientes")
-        .select("id, razao_social")
-        .order("razao_social");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await client!
+          .from("clientes")
+          .select("id, razao_social")
+          .order("razao_social")
+          .order("id")
+          .range(offset, offset + 499);
+        if (error) throw new Error(error.message);
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      return rows;
     },
   });
 
@@ -110,34 +130,84 @@ export function BoletosPage() {
     queryClient.invalidateQueries({ queryKey: ["vw_boletos_pendentes"] });
     queryClient.invalidateQueries({ queryKey: ["boletos"] });
     queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
+    queryClient.invalidateQueries({ queryKey: ["sicredi-tarifa"] });
   };
 
-  const boletosFiltrados = useMemo(() => {
-    let list = filtrarCentro(boletos.data ?? [], centro);
-    const f = filtros;
-    if (f["status"]) list = list.filter((b) => String(b["status"]) === f["status"]);
-    if (f["de"]) list = list.filter((b) => String(b["vencimento"] ?? "") >= f["de"]!);
-    if (f["ate"]) list = list.filter((b) => String(b["vencimento"] ?? "") <= f["ate"]!);
-    if (f["min"]) list = list.filter((b) => Number(b["valor"] ?? 0) >= Number(f["min"]));
-    if (f["max"]) list = list.filter((b) => Number(b["valor"] ?? 0) <= Number(f["max"]));
-    const termo = (f["busca"] ?? "").trim().toLowerCase();
-    if (termo) {
-      list = list.filter(
-        (b) =>
-          cliName(b["cliente_id"]).toLowerCase().includes(termo) ||
-          String(b["nosso_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(b["seu_numero"] ?? "")
-            .toLowerCase()
-            .includes(termo) ||
-          String(b["linha_digitavel"] ?? "")
-            .toLowerCase()
-            .includes(termo),
-      );
-    }
-    return list;
-  }, [boletos.data, centro, filtros, cliName]);
+  const daLoja = useMemo(() => filtrarCentro(boletos.data ?? [], centro), [boletos.data, centro]);
+  const opcoesClientes = useMemo(() => {
+    const ids = new Set(daLoja.map((b) => String(b["cliente_id"])));
+    return (clientes.data ?? [])
+      .filter((c) => ids.has(String(c["id"])))
+      .map((c) => ({ value: String(c["id"]), label: String(c["razao_social"]) }));
+  }, [daLoja, clientes.data]);
+  const boletosFiltrados = useMemo(
+    () => filtrarBoletos(daLoja, filtros, cliName),
+    [daLoja, filtros, cliName],
+  );
+  const periodoInvalido = periodoBoletosInvalido(filtros);
+  const tarifas = useQuery({
+    queryKey: ["sicredi-tarifa", "lista", session?.user.id, centro],
+    enabled: !!client && !!session && canFinance,
+    queryFn: async () => {
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        let query = client!
+          .from("sicredi_tarifas_279")
+          .select("boleto_id,valor,origem,movimentos_financeiros(status)")
+          .order("boleto_id");
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query.range(offset, offset + 499);
+        if (error)
+          throw new Error(
+            "Não foi possível conferir as tarifas. Confira o acesso e a instalação da fase279.",
+          );
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      return new Map(rows.map((r) => [String(r["boleto_id"]), r]));
+    },
+  });
+
+  const tarifasApi = useQuery({
+    queryKey: ["sicredi-tarifas-api", session?.user.id, centro],
+    enabled: !!client && !!session && canFinance,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        let query = client!
+          .from("sicredi_tarifas_api_280")
+          .select("boleto_id,data_lancamento,tarifa_total,outros_debitos,debitos")
+          .order("boleto_id")
+          .order("data_lancamento");
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query.range(offset, offset + 499);
+        if (error)
+          throw new Error(
+            "Tarifas da API indisponíveis. Confira o acesso e a instalação da fase280.",
+          );
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      return agruparTarifasApi(rows);
+    },
+  });
+  const statusTarifas = useQuery({
+    queryKey: ["sicredi-tarifas-status", session?.user.id, centro],
+    enabled: !!client && !!session && canFinance,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("sicredi_tarifas_status_280", {
+        _centro: centro || null,
+      });
+      if (error) throw new Error("Não foi possível conferir o agendamento das tarifas.");
+      return data as {
+        ultima_consulta: string | null;
+        dias_pendentes: number;
+        dias_com_erro: number;
+      };
+    },
+  });
 
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
@@ -230,6 +300,13 @@ export function BoletosPage() {
             onChange={(v) => setF("busca", v)}
           />
           <FilterSelect
+            label="Cliente"
+            value={filtros["cliente"] ?? ""}
+            onChange={(v) => setF("cliente", v)}
+            options={opcoesClientes}
+            allLabel="Todos os clientes da loja"
+          />
+          <FilterSelect
             label="Situação do boleto"
             value={filtros["status"] ?? ""}
             onChange={(v) => setF("status", v)}
@@ -248,6 +325,30 @@ export function BoletosPage() {
             onChange={(v) => setF("ate", v)}
           />
           <FilterText
+            label="Emissão de"
+            type="date"
+            value={filtros["emissao_de"] ?? ""}
+            onChange={(v) => setF("emissao_de", v)}
+          />
+          <FilterText
+            label="Emissão até"
+            type="date"
+            value={filtros["emissao_ate"] ?? ""}
+            onChange={(v) => setF("emissao_ate", v)}
+          />
+          <FilterText
+            label="Liquidação de"
+            type="date"
+            value={filtros["liquidacao_de"] ?? ""}
+            onChange={(v) => setF("liquidacao_de", v)}
+          />
+          <FilterText
+            label="Liquidação até"
+            type="date"
+            value={filtros["liquidacao_ate"] ?? ""}
+            onChange={(v) => setF("liquidacao_ate", v)}
+          />
+          <FilterText
             label="Valor mínimo"
             type="number"
             value={filtros["min"] ?? ""}
@@ -260,6 +361,22 @@ export function BoletosPage() {
             onChange={(v) => setF("max", v)}
           />
         </FilterBar>
+        {periodoInvalido && (
+          <p role="alert" className="text-sm text-destructive">
+            A data inicial deve ser anterior ou igual à data final de cada período.
+          </p>
+        )}
+        {clientes.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            Não foi possível carregar os clientes. Atualize a página para conferir os nomes e o
+            filtro.
+          </p>
+        )}
+        {canFinance && tarifas.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {tarifas.error.message}
+          </p>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <article className="rounded-lg border border-border bg-card p-5">
@@ -274,6 +391,28 @@ export function BoletosPage() {
 
         <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
+          <p className="text-xs text-muted-foreground">
+            Valores e totais consideram os filtros selecionados. Tarifas identificadas pelo banco
+            chegam pela consulta automática de movimentações financeiras. Débitos sem identificação
+            de tarifa ficam para conferência; a ausência de informação não significa tarifa zero.
+          </p>
+          {canFinance && (tarifasApi.isError || statusTarifas.isError) && (
+            <p role="alert" className="text-sm text-destructive">
+              {tarifasApi.error?.message ?? statusTarifas.error?.message}
+            </p>
+          )}
+          {statusTarifas.data && (
+            <p className="text-xs text-muted-foreground">
+              Tarifas API ·{" "}
+              {statusTarifas.data.ultima_consulta
+                ? `Última consulta: ${new Date(statusTarifas.data.ultima_consulta).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+                : "Aguardando primeira consulta agendada"}{" "}
+              · {statusTarifas.data.dias_pendentes} dia(s) aguardando consulta
+              {statusTarifas.data.dias_com_erro > 0
+                ? ` · ${statusTarifas.data.dias_com_erro} dia(s) com falha; nova tentativa automática`
+                : ""}
+            </p>
+          )}
           <div className="rounded-lg border border-border bg-card">
             {boletos.isLoading ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -283,121 +422,232 @@ export function BoletosPage() {
               <div className="p-6 text-sm text-destructive">{(boletos.error as Error).message}</div>
             ) : boletosFiltrados.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Nenhum boleto emitido ainda.
+                Nenhum boleto encontrado para os filtros selecionados.
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nosso número</TableHead>
+                    <TableHead>Boleto / parcela</TableHead>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Parcela</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Datas</TableHead>
+                    <TableHead className="text-right">Valores</TableHead>
+                    <TableHead className="text-right">Tarifas do boleto</TableHead>
                     <TableHead>Situação</TableHead>
-                    <TableHead>Linha digitável</TableHead>
                     <TableHead className="no-print text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {boletosFiltrados.map((b) => {
                     const st = String(b["status"]);
+                    const id = String(b["id"]);
+                    const tarifa = tarifas.data?.get(id);
+                    const tarifaApi = tarifasApi.data?.get(id);
+                    const tarifaStatus = (
+                      tarifa?.["movimentos_financeiros"] as { status?: string } | null
+                    )?.status;
                     return (
-                      <TableRow key={String(b["id"])}>
-                        <TableCell>{String(b["nosso_numero"] ?? "—")}</TableCell>
-                        <TableCell>{cliName(b["cliente_id"])}</TableCell>
-                        <TableCell>
-                          {String(b["documento"] ?? "—")}/{String(b["parcela"] ?? 1)}
-                        </TableCell>
-                        <TableCell>{dataBr(b["vencimento"])}</TableCell>
-                        <TableCell className="text-right">{brl(b["valor"])}</TableCell>
-                        <TableCell className={st === "erro" ? "text-destructive" : ""}>
-                          {statusLabel[st] ?? st}
-                          {["erro", "em_processamento"].includes(st) && b["erro"] ? (
-                            <span className="block text-xs text-muted-foreground">
-                              {String(b["erro"]).slice(0, 90)}
+                      <Fragment key={id}>
+                        <TableRow>
+                          <TableCell className="whitespace-nowrap font-medium">
+                            {String(b["nosso_numero"] ?? "—")}
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              {String(b["documento"] ?? "—")}/{String(b["parcela"] ?? 1)}
                             </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="max-w-52 truncate text-xs">
-                          {String(b["linha_digitavel"] ?? "—")}
-                        </TableCell>
-                        <TableCell className="no-print space-x-1 text-right">
-                          {st === "liquidado" &&
-                            b["banco"] === "sicredi" &&
-                            b["canal"] === "api" &&
-                            canFinance && <LiquidacaoSicredi key={String(b["id"])} boleto={b} />}
-                          <AlterarVencimentoBoleto boleto={b} />
-                          {b["pedido_id"] ? (
-                            <EmitirBoletosPedido
-                              pedidoId={String(b["pedido_id"])}
-                              centroId={String(b["centro_id"] ?? "")}
-                              compact
-                            />
-                          ) : b["conta_receber_id"] ? (
-                            <EmitirBoletoTitulo
-                              contaId={String(b["conta_receber_id"])}
-                              centroId={String(b["centro_id"] ?? "")}
-                            />
-                          ) : null}
-                          {b["linha_digitavel"] ? (
+                          </TableCell>
+                          <TableCell className="min-w-40 max-w-64 break-words">
+                            {cliName(b["cliente_id"])}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-xs">
+                            <p>
+                              <span className="text-muted-foreground">Emissão:</span>{" "}
+                              {dataBr(b["data_emissao"])}
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Vencimento:</span>{" "}
+                              {dataBr(b["vencimento"])}
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Liquidação:</span>{" "}
+                              {dataBr(b["data_liquidacao"])}
+                            </p>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-right tabular-nums">
+                            <p>{brl(b["valor"])}</p>
+                            {st === "liquidado" && (
+                              <p className="text-xs text-muted-foreground">
+                                Recebido {brl(b["valor_liquidado"])}
+                              </p>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-xs">
+                            {!canFinance ? (
+                              "Acesso financeiro necessário"
+                            ) : tarifaApi && tarifaApi.valor > 0 ? (
+                              <>
+                                <strong className="whitespace-nowrap">
+                                  {brl(tarifaApi.valor)}
+                                </strong>
+                                <span className="block text-muted-foreground">API Sicredi</span>
+                                {tarifa && (
+                                  <span className="block text-muted-foreground">
+                                    Despesa{" "}
+                                    {tarifaStatus === "estornado" ? "estornada" : "registrada"}:{" "}
+                                    {brl(tarifa["valor"])}
+                                  </span>
+                                )}
+                                {tarifaApi.outros > 0 && (
+                                  <span className="block text-muted-foreground">
+                                    Há outros débitos a conferir
+                                  </span>
+                                )}
+                              </>
+                            ) : tarifas.isPending || tarifasApi.isPending ? (
+                              "Conferindo…"
+                            ) : tarifas.isError || tarifasApi.isError ? (
+                              "Indisponível"
+                            ) : tarifa ? (
+                              <>
+                                <strong className="whitespace-nowrap">
+                                  {brl(tarifa["valor"])}
+                                </strong>
+                                <span className="block text-muted-foreground">
+                                  {tarifaStatus === "estornado"
+                                    ? "Estornada"
+                                    : tarifaStatus === "ativo"
+                                      ? "Conferida no extrato"
+                                      : "Conferir movimento"}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {tarifaApi?.outros ? "Débito a conferir" : "Sem tarifa confirmada"}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-block rounded-full bg-muted px-2 py-1 text-xs font-medium">
+                              {statusLabel[st] ?? st}
+                            </span>
+                            {["erro", "em_processamento"].includes(st) && b["erro"] ? (
+                              <span className="block text-xs text-destructive">
+                                {String(b["erro"]).slice(0, 90)}
+                              </span>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="no-print text-right">
                             <Button
                               size="sm"
-                              variant="ghost"
-                              title="Copiar linha digitável"
-                              onClick={() => copiar(b["linha_digitavel"])}
+                              variant="outline"
+                              aria-expanded={expandido === id}
+                              aria-controls={`boleto-opcoes-${id}`}
+                              onClick={() => setExpandido(expandido === id ? null : id)}
                             >
-                              <Copy className="size-4" />
+                              {expandido === id ? "Fechar" : "Opções"}
                             </Button>
-                          ) : null}
-                          {b["canal"] === "cnab240" ? (
-                            <div className="space-y-2">
-                              <span className="text-xs text-muted-foreground">
-                                CNAB 240 · acompanhe pelo retorno
-                              </span>
-                              {st === "registrado" && b["qrcode_pix"] && b["txid"] ? (
-                                <BoletoPix
-                                  payload={String(b["qrcode_pix"])}
-                                  txid={String(b["txid"])}
-                                />
-                              ) : null}
-                            </div>
-                          ) : b["nosso_numero"] || b["linha_digitavel"] ? (
-                            <>
-                              <ConfirmarNossoNumero boleto={b} />
-                              {!b["nosso_numero"] && (
-                                <span className="block text-xs text-muted-foreground">
-                                  Registro recuperado. Confirme o nosso número com o Sicredi para
-                                  consultar ou alterar.
-                                </span>
+                          </TableCell>
+                        </TableRow>
+                        {expandido === id && (
+                          <TableRow className="no-print bg-muted/20" id={`boleto-opcoes-${id}`}>
+                            <TableCell colSpan={7}>
+                              <p className="mb-3 break-all text-xs">
+                                <span className="font-medium">Linha digitável:</span>{" "}
+                                {String(b["linha_digitavel"] ?? "Não disponível")}
+                              </p>
+                              {tarifaApi && (
+                                <div className="mb-3 space-y-1 text-xs">
+                                  <p className="font-medium">
+                                    Débitos retornados pela API Sicredi (não geram despesa
+                                    automaticamente)
+                                  </p>
+                                  {tarifaApi.itens.map((item, i) => (
+                                    <p key={`${item.dia}-${i}`}>
+                                      {dataBr(item.dia)} · {item.descricao} · {brl(item.valor)}
+                                    </p>
+                                  ))}
+                                </div>
                               )}
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                title="Consultar situação no Sicredi"
-                                disabled={consultar.isPending || !b["nosso_numero"]}
-                                onClick={() => consultar.mutate(b)}
-                              >
-                                <RefreshCw className="size-4" />
-                              </Button>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {st === "liquidado" &&
+                                  b["banco"] === "sicredi" &&
+                                  b["canal"] === "api" &&
+                                  canFinance && (
+                                    <LiquidacaoSicredi key={String(b["id"])} boleto={b} />
+                                  )}
+                                <AlterarVencimentoBoleto boleto={b} />
+                                {b["pedido_id"] ? (
+                                  <EmitirBoletosPedido
+                                    pedidoId={String(b["pedido_id"])}
+                                    centroId={String(b["centro_id"] ?? "")}
+                                    compact
+                                  />
+                                ) : b["conta_receber_id"] ? (
+                                  <EmitirBoletoTitulo
+                                    contaId={String(b["conta_receber_id"])}
+                                    centroId={String(b["centro_id"] ?? "")}
+                                  />
+                                ) : null}
+                                {b["linha_digitavel"] ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    title="Copiar linha digitável"
+                                    onClick={() => copiar(b["linha_digitavel"])}
+                                  >
+                                    <Copy className="size-4" />
+                                  </Button>
+                                ) : null}
+                                {b["canal"] === "cnab240" ? (
+                                  <div className="space-y-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      CNAB 240 · acompanhe pelo retorno
+                                    </span>
+                                    {st === "registrado" && b["qrcode_pix"] && b["txid"] ? (
+                                      <BoletoPix
+                                        payload={String(b["qrcode_pix"])}
+                                        txid={String(b["txid"])}
+                                      />
+                                    ) : null}
+                                  </div>
+                                ) : b["nosso_numero"] || b["linha_digitavel"] ? (
+                                  <>
+                                    <ConfirmarNossoNumero boleto={b} />
+                                    {!b["nosso_numero"] && (
+                                      <span className="block text-xs text-muted-foreground">
+                                        Registro recuperado. Confirme o nosso número com o Sicredi
+                                        para consultar ou alterar.
+                                      </span>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      title="Consultar situação no Sicredi"
+                                      disabled={consultar.isPending || !b["nosso_numero"]}
+                                      onClick={() => consultar.mutate(b)}
+                                    >
+                                      <RefreshCw className="size-4" />
+                                    </Button>
 
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  !canFinance ||
-                                  !b["nosso_numero"] ||
-                                  baixar.isPending ||
-                                  !["registrado", "pendente"].includes(st)
-                                }
-                                onClick={() => baixar.mutate(b)}
-                              >
-                                Baixar
-                              </Button>
-                            </>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={
+                                        !canFinance ||
+                                        !b["nosso_numero"] ||
+                                        baixar.isPending ||
+                                        !["registrado", "pendente"].includes(st)
+                                      }
+                                      onClick={() => baixar.mutate(b)}
+                                    >
+                                      Baixar
+                                    </Button>
+                                  </>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </TableBody>

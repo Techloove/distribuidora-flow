@@ -146,8 +146,9 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
           </div>
           <p className="text-xs text-muted-foreground">
             Juros e multa são os acréscimos retornados pelo banco sobre o valor do boleto. Não são
-            calculados novamente nesta tela. A API não tem campo de tarifa confirmado nesta
-            implantação.
+            calculados novamente nesta tela. As tarifas da consulta de movimentações financeiras
+            aparecem na lista de boletos. Confira os lançamentos existentes antes de registrar uma
+            despesa.
           </p>
           {q.isPending ? (
             <p>Conferindo tarifa registrada…</p>
