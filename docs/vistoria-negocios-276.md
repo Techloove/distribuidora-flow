@@ -73,3 +73,18 @@ Para o diagnóstico atualizado aparecer dentro da aplicação, execute manualmen
 É necessário receber o resultado do Supabase para afirmar se os dados existentes estão coerentes e se as migrações/índices/gatilhos necessários estão instalados. Preço que não chegou a ser salvo no banco não é recuperado por esta vistoria; o diagnóstico de26/10 continua disponível no arquivo de conferência de preços.
 
 Forecast: homologação real ainda depende de credenciais por loja e de retorno real para validar autorização/protocolo/XML; produção permanece bloqueada. Sicredi: automação e liquidação reais dependem de credenciais, convênio, agendamentos e respostas bancárias. Backup: botão/fila não comprovam cópia externa; é preciso executor ativo, histórico de cópia verificada e restauração testada em ambiente separado.
+
+## Resultado recebido do Supabase
+
+Foi analisado o CSV `Supabase Snippet Untitled query.csv` enviado pelo responsável após executar a consulta: **44 verificações,42 zeradas e2 não zeradas**. O arquivo original não foi incluído no repositório.
+
+As verificações de cadastro/vínculos, limites, preços normais sincronizados, reservas, estoque por loja/depósito, parcelas duplicadas, centro dos títulos, duplicidades de cobrança e presença/habilitação dos motores consultados retornaram zero ocorrências. Também não foram encontrados, no recorte da consulta, pedidos com confirmação auditada sem baixa registrada ou sem recebíveis/cobertura por crédito.
+
+Os resultados não zerados foram:
+
+- `Atualização necessária: diagnóstico da tela anterior à fase276 =1`: aplicar manualmente o SQL da fase276 para atualizar a consulta na tela. Isso não é uma divergência de preço, estoque ou financeiro.
+- `Operação: estoque negativo permitido pelo cadastro =8`: existem oito posições produto/loja negativas com permissão explícita. Não são uma violação da regra configurada, mas precisam ser conferidas fisicamente e com o responsável pelo estoque. Não foram ajustadas automaticamente.
+
+Para identificar os produtos e as lojas, executar **somente** `db/conferir_saldos_negativos_somente_leitura.sql`. A consulta lista quantidade negativa, permissão, reserva e soma dos depósitos. Depois da conferência, tratar entradas ou inventário pelo fluxo autorizado; não zerar saldos nem desativar a permissão indiscriminadamente para ocultar a ocorrência.
+
+Esta evidência confirma a ausência de ocorrências nos critérios e no momento consultados. Não comprova a exatidão da contagem física, a integralidade de todos os valores financeiros, integrações externas ou cenários não cobertos pelas consultas/testes. Forecast/Sicredi reais e restauração do backup continuam com os limites descritos acima.
