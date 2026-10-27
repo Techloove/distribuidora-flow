@@ -113,3 +113,22 @@ A soma histórica é global por produto porque movimentos anteriores à fase271 
 A consulta foi validada em PGlite com histórico em loja antiga, produto negativo sem histórico, compras pendentes/recebidas e produto positivo excluído. Os saldos permaneceram intactos. Não há mudança de versão da aplicação nesta etapa, pois a entrega acrescenta apenas consulta de investigação e documentação.
 
 Permanece pendente o resultado dessa consulta e a contagem física dos produtos para decidir o tratamento operacional. Nenhum saldo foi zerado, nenhuma compra foi recebida novamente e nenhum lançamento financeiro foi criado para forçar a regularização.
+
+## Encerramento da conferência central e pendências externas
+
+O responsável esclareceu que a venda sem saldo foi autorizada intencionalmente pela opção Permite estoque negativo. Assim, a investigação adicional desses oito saldos não é requisito para encerrar a conferência das regras centrais. A consulta de origem permanece disponível caso apareça uma divergência futura, mas não precisa ser executada apenas por haver negativo permitido. Isso não substitui os inventários físicos rotineiros.
+
+A conferência central disponível está concluída: testes locais e CSV do Supabase não apontaram divergências nos critérios consultados de cadastros, preços, reservas, saldos e vínculos financeiros. Não houve ajuste de dados. Restam evidências das rotinas externas, que não podem ser inferidas desses testes.
+
+A próxima consulta é **`db/verificar_integracoes_backup_somente_leitura.sql`**, para o SQL Editor administrativo. Exportar o resultado CSV. Não é migração, não muda a versão da aplicação e não faz chamadas à Forecast/Sicredi nem inicia backup.
+
+Ela retorna somente estados, contagens e datas: cópias com sucesso/verificação externa registrados; fila de backup; presença de credencial Forecast e ambiente declarado por loja; compatibilidade do CNPJ sem exibi-lo; registros de homologação/XML; atividade e erros da fila Sicredi; estados locais de boletos API; presença da extensão de agendamento. Não retorna tokens, segredos, certificados, conteúdo fiscal ou caminhos privados.
+
+Interpretação:
+
+- Backup sem sucesso registrado continua sem comprovação de execução. Uma execução recente com sucesso é evidência do executor, mas o destino externo e a restauração devem ser conferidos no host administrativo. O cron do banco não executa o backup em host Linux.
+- Forecast com credencial cadastrada não equivale a conexão ou homologação aprovada. Zero tentativas/autorizações/XML indica ausência desses registros, não autoriza emitir notas para testar. A emissão de produção continua bloqueada pelo fluxo implementado.
+- Sicredi marcado ativo sem última chamada/consulta não comprova automação em funcionamento. Boletos com estado liquidado no banco não comprovam isoladamente a origem automática da baixa nem conciliação com extrato. Zero boletos registrados pode simplesmente significar ausência de cobranças naquele ambiente/canal.
+- A extensão pg_cron instalada não comprova que o agendamento está ativo ou que o endpoint funciona. Não foram consultados comandos de jobs, pois podem conter segredos de transporte.
+
+Depois desse CSV, será possível distinguir configuração ausente, ausência de uso e execução registrada. Teste real de restauração e homologações externas dependem da infraestrutura e do ambiente de testes apropriado; não serão simulados como sucesso com base apenas na existência dos botões.
