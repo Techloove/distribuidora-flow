@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.2.0 · 2026-10-27
+Versão 1.2.1 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -85,6 +85,7 @@ Cuidados:
 - Orçamento não é uma venda confirmada. Não gere movimentação manual para simular sua confirmação.
 - Os produtos e suas reservas pertencem à loja do pedido. A venda não usa o estoque de outra loja.
 - Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.
+- Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
 
 ## Regularizar o status de um pedido antigo
 

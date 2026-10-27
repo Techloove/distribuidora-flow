@@ -2347,10 +2347,12 @@ export function DocumentoPage({
                 </p>
               )}
             </div>
-            {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
+            {config.table === "pedidos" && (
+              <MargemPedido key={`margem-${String(doc["id"])}`} pedido={doc} />
+            )}
             {config.table === "pedidos" && (
               <ObservacoesPedido
-                key={String(doc["id"])}
+                key={`observacoes-${String(doc["id"])}`}
                 doc={doc}
                 editavel={
                   propostaEditavel && ["rascunho", "digitacao"].includes(String(doc["status"]))

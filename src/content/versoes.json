@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.2.1",
+    "data": "2026-10-27",
+    "titulo": "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos",
+    "novidades": [
+      "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"
+    ]
+  },
+  {
     "versao": "1.2.0",
     "data": "2026-10-27",
     "titulo": "Nome fantasia do cliente e observações na impressão dos pedidos",

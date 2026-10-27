@@ -36,32 +36,38 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
   const [despesas, setDespesas] = useState(String(pedido["despesas_variaveis"] ?? 0));
   const q = useQuery({
     queryKey: ["vw_margem_pedido_209", user?.id, pedido["id"]],
-    enabled: !!client && permissoes.pode("margem_pedido_ver"),
+    enabled: !!client && !!user && permissoes.pode("margem_pedido_ver"),
+    retry: false,
     queryFn: async () => {
       const { data, error } = await client!
         .from("vw_resultado_estimado_215")
         .select("*")
         .eq("pedido_id", pedido["id"])
-        .single();
+        .abortSignal(AbortSignal.timeout(15000))
+        .maybeSingle();
       if (error)
         throw new Error(
-          error.message.includes("schema cache") || error.message.includes("does not exist")
-            ? "Aplique a fase215 no Supabase para consultar resultado estimado."
-            : error.message,
+          /abort|timeout/i.test(error.message)
+            ? "A consulta da margem demorou mais que o esperado. Tente novamente."
+            : error.message.includes("schema cache") || error.message.includes("does not exist")
+              ? "Aplique a fase215 no Supabase para consultar resultado estimado."
+              : error.message,
         );
       return data as Registro;
     },
   });
   const itens = useQuery({
     queryKey: ["margem-produtos", user?.id, pedido["id"]],
-    enabled: !!client && permissoes.pode("margem_pedido_ver"),
+    enabled: !!client && !!user && permissoes.pode("margem_pedido_ver"),
+    retry: false,
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedido_itens")
         .select(
           "id,quantidade,total,custo_unitario_base,produtos(descricao,custo_medio,preco_custo,ultimo_custo)",
         )
-        .eq("pedido_id", pedido["id"]);
+        .eq("pedido_id", pedido["id"])
+        .abortSignal(AbortSignal.timeout(15000));
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as Registro[];
     },
@@ -72,7 +78,20 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
     <section className="rounded-lg border bg-card p-4 space-y-3">
       <h2 className="text-sm font-semibold">Margem de contribuição do pedido</h2>
       <AvisoRotina erro={q.error} />
-      {q.isPending ? (
+      {q.isError ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={q.isFetching}
+          onClick={() => void q.refetch()}
+        >
+          {q.isFetching ? "Consultando…" : "Tentar consultar margem novamente"}
+        </Button>
+      ) : q.isPaused ? (
+        <p className="text-sm">
+          Sem conexão. A consulta da margem será retomada quando a conexão voltar.
+        </p>
+      ) : q.isLoading ? (
         <p className="text-sm">Calculando margem…</p>
       ) : q.data ? (
         <>
@@ -209,7 +228,9 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
             })}
           </details>
         </>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted-foreground">Margem indisponível para este pedido.</p>
+      )}
     </section>
   );
 }
