@@ -120,9 +120,9 @@ O responsável esclareceu que a venda sem saldo foi autorizada intencionalmente 
 
 A conferência central disponível está concluída: testes locais e CSV do Supabase não apontaram divergências nos critérios consultados de cadastros, preços, reservas, saldos e vínculos financeiros. Não houve ajuste de dados. Restam evidências das rotinas externas, que não podem ser inferidas desses testes.
 
-A próxima consulta é **`db/verificar_integracoes_backup_somente_leitura.sql`**, para o SQL Editor administrativo. Exportar o resultado CSV. Não é migração, não muda a versão da aplicação e não faz chamadas à Forecast/Sicredi nem inicia backup.
+A próxima consulta é **`db/verificar_integracoes_backup_somente_leitura.sql`**, para o SQL Editor administrativo. Exportar o resultado CSV. Não é migração, não muda a versão da aplicação e não faz chamadas à Forecast/Sicredi nem inicia backup. Após a falha relatada abaixo, o arquivo foi substituído por um inventário de estruturas que funciona com tabelas ausentes.
 
-Ela retorna somente estados, contagens e datas: cópias com sucesso/verificação externa registrados; fila de backup; presença de credencial Forecast e ambiente declarado por loja; compatibilidade do CNPJ sem exibi-lo; registros de homologação/XML; atividade e erros da fila Sicredi; estados locais de boletos API; presença da extensão de agendamento. Não retorna tokens, segredos, certificados, conteúdo fiscal ou caminhos privados.
+A versão atual retorna presença de tabelas, colunas necessárias, funções e extensão de agendamento. Não lê registros comerciais ou credenciais, não executa as funções verificadas e não retorna tokens, segredos, certificados, conteúdo fiscal ou caminhos privados. O levantamento de estados, contagens e datas de execução depende primeiro de identificar as estruturas instaladas.
 
 Interpretação:
 
@@ -131,4 +131,13 @@ Interpretação:
 - Sicredi marcado ativo sem última chamada/consulta não comprova automação em funcionamento. Boletos com estado liquidado no banco não comprovam isoladamente a origem automática da baixa nem conciliação com extrato. Zero boletos registrados pode simplesmente significar ausência de cobranças naquele ambiente/canal.
 - A extensão pg_cron instalada não comprova que o agendamento está ativo ou que o endpoint funciona. Não foram consultados comandos de jobs, pois podem conter segredos de transporte.
 
-Depois desse CSV, será possível distinguir configuração ausente, ausência de uso e execução registrada. Teste real de restauração e homologações externas dependem da infraestrutura e do ambiente de testes apropriado; não serão simulados como sucesso com base apenas na existência dos botões.
+Depois do inventário, será possível preparar as consultas de execução apenas para as estruturas efetivamente presentes; o inventário sozinho não distingue ausência de uso e execução registrada. Teste real de restauração e homologações externas dependem da infraestrutura e do ambiente de testes apropriado; não serão simulados como sucesso com base apenas na existência dos botões.
+
+
+## Estrutura de homologação Forecast ausente no banco real
+
+O responsável recebeu `42P01: relation public.forecast_homologacoes_266 does not exist` ao executar a primeira consulta externa. Isso confirma ausência dessa tabela naquele banco; não prova, isoladamente, que toda a fase266 está ausente ou que as demais integrações estejam instaladas. A primeira consulta pressupunha uma implantação completa e foi corrigida.
+
+O arquivo `db/verificar_integracoes_backup_somente_leitura.sql` agora usa apenas catálogos do PostgreSQL, `to_regclass` e `to_regprocedure`. Retorna AUSENTE, INCOMPLETA ou PRESENTE para estruturas esperadas. Mesmo tabelas opcionais inexistentes não são referenciadas diretamente. O teste local cobriu banco sem integrações, implantação parcial, colunas faltantes e uma função que lançaria erro caso fosse executada; o inventário não a chamou.
+
+A implantação/homologação Forecast permanece pendente de conferência. Não instalar tabelas isoladas nem reaplicar fases antigas em massa: após receber o inventário, revisar os pré-requisitos e preparar somente a implantação necessária preservando as funções atuais. Nenhuma estrutura, credencial, nota, boleto, estoque ou título foi alterado por esta correção de consulta.

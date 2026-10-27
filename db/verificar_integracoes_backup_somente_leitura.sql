@@ -1,70 +1,52 @@
--- SOMENTE LEITURA. Execute no SQL Editor administrativo e exporte o resultado CSV.
--- Não emite notas, não registra boletos, não baixa títulos e não inicia backups.
--- Não retorna token, senha, segredo, conteúdo fiscal ou caminhos dos arquivos.
--- Registro no banco é evidência de execução, não certificação do serviço externo.
-with linhas as (
- select 'Backup'::text as area,'Todas as lojas'::text as loja,
- 'Cópias com sucesso e verificação externa registrada'::text as verificacao,
- count(*)::text as resultado from public.backup_execucoes_268 where estado='sucesso' and copia_externa_verificada
+-- ETAPA1: inventário de estruturas, SOMENTE LEITURA.
+-- Execute no SQL Editor administrativo e exporte o resultado CSV.
+-- Funciona mesmo quando as tabelas das integrações ainda não existem.
+-- Não lê credenciais/conteúdo das tabelas, não cria estruturas e não chama serviços.
+-- Presença de uma estrutura não comprova configuração, execução ou homologação.
+with tabelas(area,nome,fase,colunas) as (
+ values
+ ('Backup','public.backup_execucoes_268','268',array['estado','copia_externa_verificada','finalizado_em','solicitado_em']::text[]),
+ ('Forecast','public.forecast_credenciais_262','262',array['centro_id','cnpj','ambiente_declarado']::text[]),
+ ('Forecast','public.forecast_liberacao_hml_266','266',array['centro_id','liberado']::text[]),
+ ('Forecast','public.forecast_homologacoes_266','266',array['nota_id','centro_id','estado','envio_iniciado_em']::text[]),
+ ('Forecast','public.forecast_documentos_hml_267','267',array['nota_id','tipo']::text[]),
+ ('Sicredi','public.sicredi_auto_config_247','247',array['id','ativo','ultima_chamada']::text[]),
+ ('Sicredi','public.sicredi_auto_fila_247','247',array['ultima_consulta','erro']::text[]),
+ ('Sicredi','public.boletos','cobrança/API',array['id','centro_id','banco','canal','ambiente','status']::text[]),
+ ('Cadastro','public.centros','lojas',array['id','nome','ativo','cnpj']::text[])
+), funcoes(area,assinatura,fase) as (
+ values
+ ('Backup','public.solicitar_backup_268()','268'),
+ ('Backup','public.listar_backups_268()','268'),
+ ('Backup','public.assumir_backup_268(boolean)','268'),
+ ('Backup','public.finalizar_backup_268(uuid,uuid,boolean,text)','268'),
+ ('Forecast','public.estado_conexao_forecast_262(uuid)','262'),
+ ('Forecast','public.estado_homologacao_forecast_266(uuid)','266'),
+ ('Forecast','public.status_hml_forecast_266(uuid)','266'),
+ ('Forecast','public.documentos_hml_forecast_267(uuid)','267'),
+ ('Sicredi','public.sicredi_auto_status_247(uuid)','247'),
+ ('Sicredi','public.sicredi_auto_disparar_247()','247')
+), estruturas as (
+ select t.*,to_regclass(t.nome) as relacao,
+ array(select col from unnest(t.colunas) col where not exists(
+   select 1 from pg_attribute a where a.attrelid=to_regclass(t.nome)
+   and a.attname=col and a.attnum>0 and not a.attisdropped
+ )) as colunas_ausentes
+ from tabelas t
+), linhas as (
+ select area,nome as objeto,'Estrutura e colunas necessárias'::text as verificacao,
+ case when relacao is null then 'AUSENTE — conferir implantação da fase '||fase
+ when cardinality(colunas_ausentes)>0 then 'INCOMPLETA — faltam colunas: '||array_to_string(colunas_ausentes,', ')
+ else 'PRESENTE — execução/configuração ainda precisam ser conferidas' end as resultado
+ from estruturas
  union all
- select 'Backup','Todas as lojas','Última cópia com verificação externa registrada (Brasília)',
- coalesce(to_char(max(finalizado_em) at time zone 'America/Sao_Paulo','YYYY-MM-DD HH24:MI:SS'),'Nenhum registro')
- from public.backup_execucoes_268 where estado='sucesso' and copia_externa_verificada
+ select area,assinatura,'Função necessária',
+ case when to_regprocedure(assinatura) is null then 'AUSENTE — conferir implantação da fase '||fase
+ else 'PRESENTE — presença não valida corpo nem execução' end
+ from funcoes
  union all
- select 'Backup','Todas as lojas','Solicitações aguardando executor',count(*)::text from public.backup_execucoes_268 where estado='pendente'
- union all
- select 'Backup','Todas as lojas','Execuções em andamento',count(*)::text from public.backup_execucoes_268 where estado='executando'
- union all
- select 'Backup','Todas as lojas','Execuções com falha nos últimos 7 dias',count(*)::text from public.backup_execucoes_268
- where estado='falha' and solicitado_em>=now()-interval '7 days'
- union all
- select 'Forecast',c.nome,'Credencial cadastrada',case when f.centro_id is not null then 'Sim' else 'Não' end
- from public.centros c left join public.forecast_credenciais_262 f on f.centro_id=c.id where c.ativo
- union all
- select 'Forecast',c.nome,'Ambiente declarado na credencial',coalesce(f.ambiente_declarado,'Não configurado')
- from public.centros c left join public.forecast_credenciais_262 f on f.centro_id=c.id where c.ativo
- union all
- select 'Forecast',c.nome,'CNPJ da credencial coincide com cadastro atual',case when f.centro_id is null then 'Sem credencial'
- when f.cnpj=upper(regexp_replace(coalesce(c.cnpj,''),'[^A-Za-z0-9]','','g')) then 'Sim' else 'Não' end
- from public.centros c left join public.forecast_credenciais_262 f on f.centro_id=c.id where c.ativo
- union all
- select 'Forecast',c.nome,'Tentativas de homologação com envio iniciado',count(h.nota_id)::text
- from public.centros c left join public.forecast_homologacoes_266 h on h.centro_id=c.id and h.envio_iniciado_em is not null
- where c.ativo group by c.id,c.nome
- union all
- select 'Forecast',c.nome,'Homologações com estado autorizada registrado',count(h.nota_id)::text
- from public.centros c left join public.forecast_homologacoes_266 h on h.centro_id=c.id and h.estado='autorizada'
- where c.ativo group by c.id,c.nome
- union all
- select 'Forecast',c.nome,'XML de homologação armazenado',count(d.nota_id)::text
- from public.centros c left join public.forecast_homologacoes_266 h on h.centro_id=c.id
- left join public.forecast_documentos_hml_267 d on d.nota_id=h.nota_id and d.tipo='xml'
- where c.ativo group by c.id,c.nome
- union all
- select 'Sicredi','Todas as lojas','Consulta automática marcada como ativa',
- case when exists(select 1 from public.sicredi_auto_config_247 where id and ativo) then 'Sim' else 'Não' end
- union all
- select 'Sicredi','Todas as lojas','Última chamada aceita pela rotina (Brasília)',
- coalesce(to_char(max(ultima_chamada) at time zone 'America/Sao_Paulo','YYYY-MM-DD HH24:MI:SS'),'Nenhum registro')
- from public.sicredi_auto_config_247
- union all
- select 'Sicredi','Todas as lojas','Última consulta de boleto concluída pela rotina (Brasília)',
- coalesce(to_char(max(ultima_consulta) at time zone 'America/Sao_Paulo','YYYY-MM-DD HH24:MI:SS'),'Nenhum registro')
- from public.sicredi_auto_fila_247
- union all
- select 'Sicredi','Todas as lojas','Consultas com erro registrado na fila',count(*)::text from public.sicredi_auto_fila_247 where erro is not null
- union all
- select 'Sicredi',c.nome,'Boletos API de produção registrados (ainda não liquidados)',count(b.id)::text
- from public.centros c left join public.boletos b on b.centro_id=c.id and b.banco='sicredi'
- and b.canal='api' and b.ambiente='producao' and b.status='registrado'
- where c.ativo group by c.id,c.nome
- union all
- select 'Sicredi',c.nome,'Boletos API de produção com estado liquidado registrado',count(b.id)::text
- from public.centros c left join public.boletos b on b.centro_id=c.id and b.banco='sicredi'
- and b.canal='api' and b.ambiente='producao' and b.status='liquidado'
- where c.ativo group by c.id,c.nome
- union all
- select 'Infraestrutura','Banco','Extensão pg_cron instalada (não comprova agendamento ativo)',
- case when exists(select 1 from pg_extension where extname='pg_cron') then 'Sim' else 'Não' end
+ select 'Infraestrutura','pg_cron','Extensão de agendamento',
+ case when exists(select 1 from pg_extension where extname='pg_cron')
+ then 'PRESENTE — não comprova agendamento ativo' else 'AUSENTE — não comprova ausência de outro agendador externo' end
 )
-select area,loja,verificacao,resultado from linhas order by area,loja,verificacao;
+select area,objeto,verificacao,resultado from linhas order by area,objeto;
