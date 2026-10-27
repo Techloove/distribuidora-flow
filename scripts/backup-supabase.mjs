@@ -1,3 +1,4 @@
+import { inventariarStorage, assinaturaInventario } from "./inventario-backup-storage.mjs";
 /** Backup manual/agendável, criptografado. Não altera banco nem objetos. */
 import { createCipheriv, randomBytes, createHash } from "node:crypto";
 import { createWriteStream, createReadStream } from "node:fs";
@@ -5,7 +6,8 @@ import { mkdir, writeFile, appendFile, rename, rm } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const required = [
   "PGHOST",
@@ -61,18 +63,11 @@ const request = async (path, options = {}) => {
 };
 let dumpProcess;
 try {
-  const dump = spawn(
-    "pg_dump",
-    [
-      "--format=custom",
-      "--no-owner",
-      "--no-acl",
-      "--schema=public",
-      "--schema=auth",
-      "--schema=storage",
-    ],
-    { env: { ...process.env, PGSSLMODE: "verify-full" }, stdio: ["ignore", "pipe", "pipe"] },
-  );
+  const inventory = await inventariarStorage(request);
+  const dump = spawn("pg_dump", ["--format=custom"], {
+    env: { ...process.env, PGSSLMODE: "verify-full" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   dumpProcess = dump;
   const done = new Promise((ok, no) => {
     dump.on("error", () => no(new Error("Instale pg_dump compatível com a versão do banco.")));
@@ -84,64 +79,70 @@ try {
   dump.stderr.resume();
   const [sha256] = await Promise.all([encrypt(dump.stdout, "banco.dump.enc"), done]);
   files.push({ kind: "database", file: "banco.dump.enc", sha256 });
-  const buckets = await (await request("/storage/v1/bucket")).json();
-  for (const bucket of buckets) {
-    if (typeof bucket.id !== "string") throw new Error("Lista de buckets inválida.");
-    const folders = [""];
-    for (let index = 0; index < folders.length; index++) {
-      const prefix = folders[index];
-      for (let offset = 0; ; offset += 100) {
-        const entries = await (
-          await request("/storage/v1/object/list/" + encodeURIComponent(bucket.id), {
-            method: "POST",
-            body: JSON.stringify({
-              prefix,
-              limit: 100,
-              offset,
-              sortBy: { column: "name", order: "asc" },
-            }),
-          })
-        ).json();
-        if (!Array.isArray(entries)) throw new Error("Lista de objetos inválida.");
-        for (const object of entries) {
-          if (
-            typeof object.name !== "string" ||
-            object.name.includes("/") ||
-            [".", ".."].includes(object.name)
-          )
-            throw new Error("Nome de objeto inválido.");
-          const objectPath = prefix ? prefix + "/" + object.name : object.name;
-          if (!object.id) {
-            folders.push(objectPath);
-            continue;
-          }
-          const filename =
-            createHash("sha256")
-              .update(bucket.id + "\0" + objectPath)
-              .digest("hex") + ".object.enc";
-          const response = await request(
-            "/storage/v1/object/" +
-              encodeURIComponent(bucket.id) +
-              "/" +
-              objectPath.split("/").map(encodeURIComponent).join("/"),
-          );
-          if (!response.body) throw new Error("Objeto sem corpo.");
-          const digest = await encrypt(Readable.fromWeb(response.body), filename);
-          files.push({
-            kind: "object",
-            file: filename,
-            bucket: bucket.id,
-            name: objectPath,
-            sha256: digest,
-          });
+  const root = fileURLToPath(new URL("../", import.meta.url));
+  const revision = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+  const source = spawn("git", ["archive", "--format=tar", revision], {
+    cwd: root,
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  const sourceDone = new Promise((ok, no) => {
+    source.on("error", () => no(new Error("Não foi possível incluir o código versionado.")));
+    source.on("close", (code) =>
+      code === 0 ? ok() : no(new Error("Falha ao incluir o código versionado.")),
+    );
+  });
+  const [sourceHash] = await Promise.all([encrypt(source.stdout, "aplicacao.tar.enc"), sourceDone]);
+  files.push({ kind: "application", file: "aplicacao.tar.enc", sha256: sourceHash, revision });
+  for (const object of inventory.objects) {
+    const filename =
+      createHash("sha256")
+        .update(object.bucket + "\0" + object.name)
+        .digest("hex") + ".object.enc";
+    const response = await request(
+      "/storage/v1/object/" +
+        encodeURIComponent(object.bucket) +
+        "/" +
+        object.name.split("/").map(encodeURIComponent).join("/"),
+    );
+    if (!response.body) throw new Error("Objeto sem corpo.");
+    const checked = Readable.from(
+      (async function* () {
+        let bytes = 0;
+        for await (const chunk of response.body) {
+          bytes += chunk.byteLength;
+          yield chunk;
         }
-        if (entries.length < 100) break;
-      }
-    }
+        if (Number.isSafeInteger(object.metadata?.size) && bytes !== object.metadata.size)
+          throw new Error("Objeto incompleto no backup de Storage.");
+      })(),
+    );
+    const digest = await encrypt(checked, filename);
+    files.push({
+      kind: "object",
+      file: filename,
+      bucket: object.bucket,
+      name: object.name,
+      sha256: digest,
+    });
   }
+  const after = await inventariarStorage(request);
+  if (assinaturaInventario(inventory) !== assinaturaInventario(after))
+    throw new Error("Storage alterado durante o backup. Execute novamente em janela controlada.");
   await encrypt(
     Readable.from([
-      JSON.stringify({ version: 1, created_at: new Date().toISOString(), buckets, files }),
+      JSON.stringify({
+        version: 2,
+        created_at: new Date().toISOString(),
+        scope: "all_database_schemas_and_application_storage",
+        excluded_buckets: ["erp-backups"],
+        application_revision: revision,
+        buckets: inventory.buckets,
+        files,
+      }),
     ]),
     "manifesto.enc",
   );

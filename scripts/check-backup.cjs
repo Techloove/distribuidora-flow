@@ -12,13 +12,13 @@ const fs = require("node:fs/promises"),
     await fs.mkdir(bin);
     await fs.writeFile(
       path.join(bin, "pg_dump"),
-      '#!/usr/bin/env node\nprocess.stdout.write("PGDMP-fixture");\n',
+      '#!/usr/bin/env node\nif(process.argv.slice(2).join(" ")!=="--format=custom")process.exit(42);process.stdout.write("PGDMP-fixture");\n',
       { mode: 0o700 },
     );
     const hook = path.join(temp, "storage.cjs");
     await fs.writeFile(
       hook,
-      `globalThis.fetch=async(url,options)=>{const p=new URL(url).pathname;let data;if(p==='/storage/v1/bucket')data=[{id:'entrega-comprovantes',public:false}];else if(p.includes('/list/')){const b=JSON.parse(options.body);data=b.prefix===''?[{name:'expedicao',id:null}]:[{name:'prova.pdf',id:'object-id'}];}else return new Response('comprovante-fixture');return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});};`,
+      `let pass=0;globalThis.fetch=async(url,options)=>{const p=new URL(url).pathname;let data;if(p==='/storage/v1/bucket'){pass++;data=[{id:'entrega-comprovantes',public:false},{id:'novo-bucket',public:false},{id:'erp-backups',public:false}];}else if(p.includes('/list/erp-backups'))throw new Error('Backup recursivo proibido');else if(p.includes('/list/')){const b=JSON.parse(options.body);data=b.prefix===''?[{name:'expedicao',id:null}]:[{name:'prova.pdf',id:'object-id',updated_at:process.env.TEST_STORAGE_CHANGED==='true'&&pass>1?'changed':'same',metadata:{size:Buffer.byteLength('comprovante-fixture')}}];}else return new Response(process.env.TEST_TRUNCATED==='true'?'x':'comprovante-fixture');return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});};`,
     );
     const env = {
       ...process.env,
@@ -52,6 +52,12 @@ const fs = require("node:fs/promises"),
     const result = run("verificar-backup.mjs", [backup, "--extrair", extracted]);
     assert.equal(result.status, 0, result.stderr);
     assert.equal(await fs.readFile(path.join(extracted, "banco.dump"), "utf8"), "PGDMP-fixture");
+    const source = await fs.readFile(path.join(extracted, "aplicacao.tar"));
+    assert.ok(source.length > 0);
+    assert.equal(
+      spawnSync("tar", ["-tf", path.join(extracted, "aplicacao.tar")], { encoding: "utf8" }).status,
+      0,
+    );
     assert.equal(
       await fs.readFile(
         path.join(extracted, "storage", "entrega-comprovantes", "expedicao", "prova.pdf"),
@@ -59,11 +65,25 @@ const fs = require("node:fs/promises"),
       ),
       "comprovante-fixture",
     );
+    assert.equal(
+      await fs.readFile(
+        path.join(extracted, "storage", "novo-bucket", "expedicao", "prova.pdf"),
+        "utf8",
+      ),
+      "comprovante-fixture",
+    );
+    await assert.rejects(fs.stat(path.join(extracted, "storage", "erp-backups")), /ENOENT/);
     assert.notEqual(
       run("verificar-backup.mjs", [backup], { ERP_BACKUP_KEY: "2".repeat(64) }).status,
       0,
       "Chave errada deve falhar",
     );
+    for (const scenario of ["TEST_STORAGE_CHANGED", "TEST_TRUNCATED"]) {
+      const changedRoot = path.join(temp, scenario);
+      const failed = run("backup-supabase.mjs", [changedRoot], { [scenario]: "true" });
+      assert.notEqual(failed.status, 0, scenario + " deve falhar");
+      assert.deepEqual(await fs.readdir(changedRoot), [], "Não publicar backup parcial");
+    }
     const database = path.join(backup, "banco.dump.enc"),
       bytes = await fs.readFile(database);
     bytes[22] ^= 1;

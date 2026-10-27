@@ -1,6 +1,6 @@
 # Backup manual e diário — fase268
 
-Esta entrega acrescenta **Manutenção do sistema → Backup dos dados**, disponível exclusivamente a administradores ativos. O botão solicita uma cópia global de todas as lojas. Outros papéis, inclusive gestores e representantes, não podem solicitar, ler o histórico nem obter os arquivos. A interface nunca recebe dump, credenciais, chaves ou caminhos do host.
+Esta entrega acrescenta **Manutenção do sistema → Backup dos dados**, disponível exclusivamente a administradores ativos. O botão solicita uma cópia global de todas as lojas. Outros papéis, inclusive gestores e representantes, não podem solicitar, ler o histórico nem obter os arquivos. A interface nunca recebe credenciais, chaves ou caminhos do host. Com a fase283 instalada, administradores podem baixar o pacote criptografado por link temporário.
 
 ## Instalação
 
@@ -16,7 +16,7 @@ Nenhuma instalação, credencial, agendamento ou cópia de produção foi ativad
 
 ## Execução e resultado
 
-O executor administrativo usa `assumir_backup_268` para reservar uma única solicitação, gera um dump personalizado dos schemas `public`, `auth`, `storage` e copia todos os objetos dos buckets, inclusive privados. Arquivos e manifesto são criptografados com AES-256-GCM. Verifica a integridade local, copia para uma pasta externa temporária, verifica novamente e só então publica a pasta final e registra sucesso no sistema. Não apaga backups antigos automaticamente.
+O executor administrativo usa `assumir_backup_268` para reservar uma única solicitação, gera um dump personalizado de todos os schemas exportáveis do banco, sem lista fixa e copia todos os objetos dos buckets, inclusive privados. Arquivos e manifesto são criptografados com AES-256-GCM. Verifica a integridade local, copia para uma pasta externa temporária, verifica novamente e só então publica a pasta final e registra sucesso no sistema. Não apaga backups antigos automaticamente.
 
 A fila evita duplicação de solicitações e limita novas solicitações a uma a cada cinco minutos. O bloqueio local impede que uma execução direta concorra com o executor no mesmo host. Use um único host executor. Uma reserva expirada é marcada como falha quando o executor retorna, sem presumir sucesso ou repetir automaticamente a tarefa interrompida. O responsável pode solicitar uma nova execução após revisar o incidente.
 
@@ -30,7 +30,7 @@ Configure monitoramento externo de saída não zero, unidades com falha, backups
 
 Se houver interrupção abrupta, confira se nenhum processo está ativo antes de remover `.rotina.lock`. Preserve/revise pastas `.partial`; elas não são backups concluídos. Falhas controladas descartam apenas o estágio criado pela execução atual. O script não remove cópias concluídas.
 
-O backup abrange dados sensíveis, permissões e credenciais persistidas no banco. Deve permanecer privado e criptografado. Ele não emite notas, não chama a Forecast/Sicredi, não altera estoque nem títulos. Dump e Storage são lidos separadamente: coordene gravações ou uma janela controlada para consistência entre ambos. O dump omite donos/ACL globais; restaure papéis, grants e configuração de infraestrutura separadamente conforme o projeto de destino. Autenticação, RLS, lojas e carteiras precisam ser verificadas após a recuperação.
+O backup abrange dados sensíveis, permissões e credenciais persistidas no banco. Deve permanecer privado e criptografado. Ele não emite notas, não chama a Forecast/Sicredi, não altera estoque nem títulos. Dump e Storage são lidos separadamente: coordene gravações ou uma janela controlada para consistência entre ambos. O dump atual preserva donos e grants e inclui o código do commit Git do executor, mas não define papéis globais nem configura o provedor. Prepare os papéis e a infraestrutura no destino. Autenticação, RLS, lojas e carteiras precisam ser verificadas após a recuperação.
 
 Siga `docs/backup_recuperacao.md` para verificação, extração e restauração **em projeto isolado**. Testes reais de restauração são necessários antes de considerar o processo homologado. Não há restauração destrutiva disponível na interface. Mantenha os executores e timers desligados no projeto restaurado de teste, para não processar a fila copiada nem acessar integrações de produção.
 
@@ -39,3 +39,8 @@ Siga `docs/backup_recuperacao.md` para verificação, extração e restauração
 - `npm run check:backup`: geração e extração com banco/Storage sintéticos, rejeição de chave errada e adulteração; rotina com cópia verificada, destinos inválidos, concorrência e falha durante verificação externa.
 - `node scripts/check-backup-database.cjs`: exige `@electric-sql/pglite` disponível no ambiente de validação; verifica migração reaplicável, acesso administrativo, fila única, reservas, expiração e histórico sem segredos.
 - Tipagem, build e verificações de segurança da aplicação.
+
+
+## Atualização fase283 — download manual
+
+Aplique também `db/fase283_backup_download_privado.sql`, mantenha o host com Git/tar e checkout atualizado e configure `ERP_BACKUP_PUBLICAR_DOWNLOAD=true` conforme `infra/backup/backup.env.example`. O bucket é privado e as políticas negam leitura a não administradores e gravação/exclusão aos usuários da aplicação, mesmo se houver políticas amplas antigas. Apenas uma execução com cópia externa e upload verificados oferece **Salvar no computador**. Consulte `docs/backup_recuperacao.md` para limites, extração e guarda da chave. Os scripts continuam sem ativar infraestrutura de produção automaticamente.

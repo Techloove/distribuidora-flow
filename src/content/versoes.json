@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.9.0",
+    "data": "2026-10-27",
+    "titulo": "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador",
+    "novidades": [
+      "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador"
+    ]
+  },
+  {
     "versao": "1.8.0",
     "data": "2026-10-27",
     "titulo": "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências",

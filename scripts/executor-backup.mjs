@@ -1,4 +1,6 @@
 /** Executor administrativo chamado por timer; segredos somente no host. */
+import { join } from "node:path";
+import { publicarBackupDownload } from "./publicar-backup-download.mjs";
 import { executarRotina } from "./rotina-backup.mjs";
 async function rpc(nome, args) {
   const url = new URL(process.env.EXT_SUPABASE_URL),
@@ -24,6 +26,19 @@ try {
         local: process.env.ERP_BACKUP_LOCAL,
         externo: process.env.ERP_BACKUP_EXTERNO,
       });
+      if (process.env.ERP_BACKUP_PUBLICAR_DOWNLOAD === "true") {
+        const download = await publicarBackupDownload({
+          diretorio: join(process.env.ERP_BACKUP_EXTERNO, result.backup),
+          id: job.id,
+        });
+        await rpc("registrar_download_backup_283", {
+          _id: job.id,
+          _lease: job.lease,
+          _objeto: download.objeto,
+          _sha256: download.sha256,
+          _bytes: download.bytes,
+        });
+      }
     } catch {
       await rpc("finalizar_backup_268", {
         _id: job.id,

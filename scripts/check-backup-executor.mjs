@@ -21,7 +21,12 @@ try {
     hook,
     `const fs=require('node:fs');globalThis.fetch=async(url,options)=>{
  const p=new URL(url).pathname;
- if(p.endsWith('/assumir_backup_268'))return Response.json(process.env.TEST_EMPTY==='true'?null:{id:'fixture-id',lease:'fixture-lease'});
+ if(p.endsWith('/assumir_backup_268'))return Response.json(process.env.TEST_EMPTY==='true'?null:{id:'11111111-1111-4111-8111-111111111111',lease:'22222222-2222-4222-8222-222222222222'});
+ if(p.endsWith('/registrar_download_backup_283')){fs.writeFileSync(process.env.TEST_LOG+'.download',options.body);return Response.json(null);}
+ if(p.startsWith('/storage/v1/object/erp-backups/')) {
+  if(options.method==='POST'){ if(process.env.TEST_UPLOAD_FAILED==='true')return new Response('',{status:500});const chunks=[];for await(const chunk of options.body)chunks.push(Buffer.from(chunk));fs.writeFileSync(process.env.TEST_LOG+'.tar',Buffer.concat(chunks));return Response.json({});}
+  const bytes=fs.readFileSync(process.env.TEST_LOG+'.tar');if(process.env.TEST_CORRUPT_DOWNLOAD==='true')bytes[0]^=1;return new Response(bytes);
+ }
  if(p.endsWith('/finalizar_backup_268')){fs.writeFileSync(process.env.TEST_LOG,options.body);return Response.json(null);}
  if(p==='/storage/v1/bucket')return Response.json([{id:'privado',public:false}]);
  if(p.includes('/list/'))return Response.json([{name:'arquivo.txt',id:'obj'}]);
@@ -41,6 +46,7 @@ try {
     ERP_BACKUP_KEY: "1".repeat(64),
     ERP_BACKUP_LOCAL: local,
     ERP_BACKUP_EXTERNO: externo,
+    ERP_BACKUP_PUBLICAR_DOWNLOAD: "false",
   };
   const run = (extra) =>
     spawnSync(process.execPath, ["scripts/executor-backup.mjs"], {
@@ -59,8 +65,27 @@ try {
   const failed = JSON.parse(await readFile(log));
   assert.equal(failed._sucesso, false);
   assert.equal(failed._arquivo, null);
+  const published = run({ ERP_BACKUP_PUBLICAR_DOWNLOAD: "true" });
+  assert.equal(published.status, 0, published.stderr);
+  const download = JSON.parse(await readFile(log + ".download"));
+  assert.match(download._objeto, /^11111111-1111-4111-8111-111111111111\/backup-.+\.tar$/);
+  assert.ok(download._bytes > 0);
+  assert.match(download._sha256, /^[a-f0-9]{64}$/);
+  assert.equal(JSON.parse(await readFile(log))._sucesso, true);
+  await rm(log + ".download");
+  assert.notEqual(
+    run({ ERP_BACKUP_PUBLICAR_DOWNLOAD: "true", TEST_CORRUPT_DOWNLOAD: "true" }).status,
+    0,
+  );
+  assert.equal(JSON.parse(await readFile(log))._sucesso, false);
+  await assert.rejects(readFile(log + ".download"), /ENOENT/);
+  assert.notEqual(
+    run({ ERP_BACKUP_PUBLICAR_DOWNLOAD: "true", TEST_UPLOAD_FAILED: "true" }).status,
+    0,
+  );
+  assert.equal(JSON.parse(await readFile(log))._sucesso, false);
   console.log(
-    "Executor OK: fluxo completo sintético, sucesso apenas após verificação externa, fila vazia sem backup e falha reportada sem segredos.",
+    "Executor OK: download privado verificado, adulteração/upload recusados, fluxo completo sintético, sucesso apenas após verificação externa, fila vazia sem backup e falha reportada sem segredos.",
   );
 } finally {
   await rm(temp, { recursive: true, force: true });

@@ -14,6 +14,16 @@ const assert = require("node:assert/strict");
   const sql = readFileSync("db/fase268_backup_administrativo.sql", "utf8");
   await db.exec(sql);
   await db.exec(sql);
+  await db.exec(`create schema storage;
+    create table storage.buckets(id text primary key,name text,public boolean);
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text);
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to authenticated,anon;
+    grant all on storage.objects to authenticated,anon;
+    create policy antiga_ampla on storage.objects for all to authenticated,anon using(true) with check(true);`);
+  const downloadSql = readFileSync("db/fase283_backup_download_privado.sql", "utf8");
+  await db.exec(downloadSql);
+  await db.exec(downloadSql);
   const user = () => db.exec("reset role;set teste.role='authenticated';set role authenticated"),
     service = () => db.exec("reset role;set teste.role='service_role';set role service_role"),
     owner = () => db.exec("reset role");
@@ -55,10 +65,77 @@ const assert = require("node:assert/strict");
   assert.equal(job.id, id);
   assert.equal(await claim(true), null);
   await assert.rejects(finish(job, true, uid), /expirada ou divergente/);
+  const objeto = job.id + "/backup-2026-10-24T03-00-00-000Z.tar";
+  const registrar = (path = objeto, lease = job.lease) =>
+    db.query("select registrar_download_backup_283($1,$2,$3,$4,$5)", [
+      job.id,
+      lease,
+      path,
+      "a".repeat(64),
+      1024,
+    ]);
+  await assert.rejects(registrar("../outro.tar"), /inválido/);
+  await assert.rejects(registrar(objeto, uid), /divergente/);
+  await registrar();
+  await owner();
+  await db.query(
+    "insert into storage.objects(bucket_id,name) values('erp-backups',$1),('erp-backups','outro.tar'),('comprovantes','prova.pdf')",
+    [objeto],
+  );
+  await user();
+  assert.equal(
+    (await db.query("select * from storage.objects where bucket_id='erp-backups'")).rows.length,
+    0,
+  );
+  await assert.rejects(
+    db.query("select obter_download_backup_283($1)", [job.id]),
+    /não disponível/,
+  );
+  await service();
   await finish(job);
   await assert.rejects(finish(job), /expirada ou divergente/);
   await user();
   assert.equal((await list())[0].copia_externa_verificada, true);
+  assert.equal((await list())[0].download_disponivel, true);
+  const info = (await db.query("select obter_download_backup_283($1) info", [job.id])).rows[0].info;
+  assert.equal(info.objeto, objeto);
+  assert.equal(info.bytes, 1024);
+  assert.equal(
+    (await db.query("select * from storage.objects where bucket_id='erp-backups'")).rows.length,
+    1,
+  );
+  await assert.rejects(registrar(), /permission denied/);
+  await assert.rejects(
+    db.query("insert into storage.objects(bucket_id,name) values('erp-backups','invasao.tar')"),
+    /row-level security/,
+  );
+  assert.equal(
+    (await db.query("delete from storage.objects where bucket_id='erp-backups' returning *")).rows
+      .length,
+    0,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "update storage.objects set name='alterado.tar' where bucket_id='erp-backups' returning *",
+      )
+    ).rows.length,
+    0,
+  );
+  assert.equal(
+    (await db.query("select * from storage.objects where bucket_id='comprovantes'")).rows.length,
+    1,
+  );
+  await db.exec("set teste.admin='false'");
+  assert.equal(
+    (await db.query("select * from storage.objects where bucket_id='erp-backups'")).rows.length,
+    0,
+  );
+  await assert.rejects(
+    db.query("select obter_download_backup_283($1)", [job.id]),
+    /administrador ativo/,
+  );
+  await db.exec("set teste.admin='true'");
   await assert.rejects(request(), /cinco minutos/);
   await service();
   job = await claim(true);
@@ -76,6 +153,11 @@ const assert = require("node:assert/strict");
   await db.exec("set role anon");
   await assert.rejects(request(), /permission denied/);
   await assert.rejects(list(), /permission denied/);
+  assert.equal(
+    (await db.query("select * from storage.objects where bucket_id='erp-backups'")).rows.length,
+    0,
+  );
+  await assert.rejects(db.query("select obter_download_backup_283($1)", [id]), /permission denied/);
   await owner();
   assert.equal(
     (await db.query("select count(*)::int n from backup_execucoes_268 where estado='sucesso'"))
@@ -84,7 +166,7 @@ const assert = require("node:assert/strict");
   );
   await db.close();
   console.log(
-    "Backup268 OK: reaplicação, administrador ativo, negação direta/anon, fila única, lease, intervalo, expiração e resultado sem segredos.",
+    "Backup268/283 OK: download privado, bloqueio contra políticas amplas, reaplicação, administrador ativo, negação direta/anon, fila única, lease, intervalo, expiração e resultado sem segredos.",
   );
 })().catch((e) => {
   console.error(e);

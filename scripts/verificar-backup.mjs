@@ -40,7 +40,7 @@ await decrypt(
   }),
 );
 const manifest = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-if (manifest.version !== 1 || !Array.isArray(manifest.files))
+if (![1, 2].includes(manifest.version) || !Array.isArray(manifest.files))
   throw new Error("Manifesto inválido.");
 for (const entry of manifest.files) {
   if (!/^[a-zA-Z0-9.-]+\.enc$/.test(entry.file)) throw new Error("Caminho inválido.");
@@ -58,7 +58,9 @@ for (const entry of manifest.files) {
     target =
       entry.kind === "database"
         ? join(output, "banco.dump")
-        : resolve(output, "storage", entry.bucket, entry.name);
+        : entry.kind === "application"
+          ? join(output, "aplicacao.tar")
+          : resolve(output, "storage", entry.bucket, entry.name);
     if (!target.startsWith(output + sep)) throw new Error("Caminho de objeto inválido.");
     await mkdir(resolve(target, ".."), { recursive: true, mode: 0o700 });
     try {
