@@ -156,3 +156,18 @@ O CSV `Supabase Snippet Untitled query (2).csv` contém20 objetos verificados:14
 A continuação usa **`db/conferir_execucao_integracoes_somente_leitura.sql`**, exportando CSV. A consulta lê apenas as tabelas confirmadas presentes, sem referenciar homologação266/267. Mostra execuções de backup, atividade Sicredi e estado da conexão262; verifica por metadados a prévia265, a configuração fiscal256, o vínculo261 e a coluna legada que bloquearia a prévia. Não chama funções de emissão, banco ou backup e não retorna credenciais.
 
 A consulta foi validada num banco local sem as fases265/266/267, com backup pendente, automação sem chamada registrada e conexão262 presente. Não é migração e não exige publicação. A sequência de implantação da homologação será definida após conferir esses pré-requisitos; não há recomendação de reaplicar fases antigas indiscriminadamente.
+
+## Estado de execução recebido — CSV(3)
+
+O responsável enviou `Supabase Snippet Untitled query (3).csv`. Não foi incluído o arquivo original no repositório.
+
+- Backup: zero registros de cópia concluída/verificada, zero solicitações pendentes, em execução ou com falha nos últimos7 dias. Não há comprovação de backup no histórico da aplicação; isso não exclui uma cópia externa feita fora da fila. É necessário confirmar se o executor/host foi instalado e validar restauração em ambiente isolado.
+- Forecast Cimento/Ferragens: sem credenciais e sem ambiente declarado. A prévia265, configuração fiscal256 e vínculo261 estão presentes; a coluna legada `faznotas_estado` não existe. Combinado ao inventário anterior, faltam os componentes266/267 verificados e a configuração da conexão por loja.
+- Sicredi Ferragens:40 boletos API de produção com estado registrado e1 com estado liquidado. Cimento:zero nesses estados/canal. Não comprova, isoladamente, se a liquidação foi automática nem se está conciliada com extrato.
+- Automação Sicredi marcada ativa: última chamada aceita27/10/2026 às11:05:04 e última consulta concluída na rotina às11:05:10, horário de Brasília. Existem9 linhas da fila com erro. Essa contagem bruta pode incluir histórico; exige classificar os estados atuais antes de tratar como nove falhas abertas.
+
+A prioridade de investigação é **`db/conferir_erros_sicredi_somente_leitura.sql`**. Exportar CSV. A consulta usa a mesma condição do painel para pendência atual, distingue histórico e retorna somente códigos de erro conhecidos, estado de boleto/título, indicação de responsável ativo e datas. Mensagem desconhecida é ocultada. Não consulta o banco Sicredi e não refaz emissão, cobrança ou baixa.
+
+O teste local cobriu erro ativo de consulta, erro histórico em boleto liquidado, retorno divergente em boleto cancelado e ocultação de mensagem desconhecida. Não houve mudança de estado dos boletos.
+
+Para a implantação fiscal, os pré-requisitos verificados permitem preparar a sequência das fases faltantes: executar manualmente `db/fase266_envio_homologacao_forecast.sql` e depois `db/fase267_documentos_homologacao_forecast.sql`, completos. Não é necessário reaplicar265 ou outras fases antigas com base nesse resultado. Esses scripts não transmitem notas e não habilitam homologação automaticamente. O código correspondente já existe no repositório. A configuração de tokens de homologação deve ser feita dentro do sistema, por loja/CNPJ, nunca enviada por chat. Homologação externa ainda requer validar o contrato/retorno da Forecast; produção permanece bloqueada.
