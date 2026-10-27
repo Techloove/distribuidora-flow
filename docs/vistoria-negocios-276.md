@@ -141,3 +141,18 @@ O responsável recebeu `42P01: relation public.forecast_homologacoes_266 does no
 O arquivo `db/verificar_integracoes_backup_somente_leitura.sql` agora usa apenas catálogos do PostgreSQL, `to_regclass` e `to_regprocedure`. Retorna AUSENTE, INCOMPLETA ou PRESENTE para estruturas esperadas. Mesmo tabelas opcionais inexistentes não são referenciadas diretamente. O teste local cobriu banco sem integrações, implantação parcial, colunas faltantes e uma função que lançaria erro caso fosse executada; o inventário não a chamou.
 
 A implantação/homologação Forecast permanece pendente de conferência. Não instalar tabelas isoladas nem reaplicar fases antigas em massa: após receber o inventário, revisar os pré-requisitos e preparar somente a implantação necessária preservando as funções atuais. Nenhuma estrutura, credencial, nota, boleto, estoque ou título foi alterado por esta correção de consulta.
+
+## Inventário externo recebido
+
+O CSV `Supabase Snippet Untitled query (2).csv` contém20 objetos verificados:14 presentes e6 ausentes. O arquivo original não foi incluído no repositório.
+
+- Backup: fila/histórico e quatro funções esperadas presentes. Não comprova configuração do host, execução ou restauração.
+- Sicredi: tabela de boletos, configuração/fila automáticas e funções de acompanhamento/disparo presentes. Não comprova chamada ao banco ou liquidação automática.
+- Forecast: tabela de credenciais e função de estado da conexão262 presentes. Isso não comprova que exista uma credencial preenchida/válida.
+- Forecast266: liberação, tentativas de homologação e funções de estado/consulta verificadas ausentes.
+- Forecast267: tabela de documentos e função de listagem verificadas ausentes.
+- pg_cron presente; jobs ativos e execução não foram comprovados.
+
+A continuação usa **`db/conferir_execucao_integracoes_somente_leitura.sql`**, exportando CSV. A consulta lê apenas as tabelas confirmadas presentes, sem referenciar homologação266/267. Mostra execuções de backup, atividade Sicredi e estado da conexão262; verifica por metadados a prévia265, a configuração fiscal256, o vínculo261 e a coluna legada que bloquearia a prévia. Não chama funções de emissão, banco ou backup e não retorna credenciais.
+
+A consulta foi validada num banco local sem as fases265/266/267, com backup pendente, automação sem chamada registrada e conexão262 presente. Não é migração e não exige publicação. A sequência de implantação da homologação será definida após conferir esses pré-requisitos; não há recomendação de reaplicar fases antigas indiscriminadamente.
