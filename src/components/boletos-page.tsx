@@ -1,3 +1,4 @@
+import { ReimprimirBoleto } from "@/components/reimprimir-boleto";
 import { LiquidacaoSicredi } from "@/components/liquidacao-sicredi";
 import { SicrediAutomatico } from "@/components/sicredi-automatico";
 import { EmitirBoletosPedido, EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
@@ -649,24 +650,7 @@ export function BoletosPage() {
                           </TableCell>
                           <TableCell className="no-print text-right">
                             <div className="flex flex-wrap justify-end gap-2">
-                              {canFinance &&
-                                b["banco"] === "sicredi" &&
-                                b["canal"] === "api" &&
-                                st === "registrado" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-destructive"
-                                    disabled={
-                                      !b["nosso_numero"] ||
-                                      baixar.isPending ||
-                                      cancelamentoBoletoPendente(b)
-                                    }
-                                    onClick={() => setCancelarBoleto(b)}
-                                  >
-                                    Cancelar boleto
-                                  </Button>
-                                )}
+                              <ReimprimirBoleto boleto={b} />
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -761,6 +745,26 @@ export function BoletosPage() {
                                     </Button>
                                   </>
                                 ) : null}
+                                <div className="ml-auto border-l pl-4">
+                                  {canFinance &&
+                                    b["banco"] === "sicredi" &&
+                                    b["canal"] === "api" &&
+                                    st === "registrado" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-destructive"
+                                        disabled={
+                                          !b["nosso_numero"] ||
+                                          baixar.isPending ||
+                                          cancelamentoBoletoPendente(b)
+                                        }
+                                        onClick={() => setCancelarBoleto(b)}
+                                      >
+                                        Cancelar boleto
+                                      </Button>
+                                    )}
+                                </div>
                               </div>
                             </TableCell>
                           </TableRow>

@@ -35,7 +35,9 @@ export function boletoAtual(boletos: BoletoDocumento[], conta: string) {
     );
   return lista[0] ?? null;
 }
-export function boletoImprimivel(b: BoletoDocumento | null) {
+export function boletoImprimivel(
+  b: Pick<BoletoDocumento, "banco" | "canal" | "status" | "linha_digitavel"> | null,
+) {
   return (
     !!b &&
     b.banco === "sicredi" &&
