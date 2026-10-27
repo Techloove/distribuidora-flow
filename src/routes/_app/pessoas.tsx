@@ -324,13 +324,13 @@ function PessoasPage() {
           },
           {
             id: "cliente",
-            label: "Cliente",
+            label: "Limites Rotas e Representantes",
             fields: ["rota_id", "limite_credito", "condicao_pagamento", "representante_id"],
             extra: true,
           },
           {
             id: "representante",
-            label: "Representante",
+            label: "Dados Representante",
             fields: ["tipo_representante", "comissao_percentual", "meta_mensal", "regiao"],
             extra: true,
           },
