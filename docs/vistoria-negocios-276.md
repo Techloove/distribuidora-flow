@@ -183,3 +183,13 @@ Foi preparada a versão1.3.4 / fase277, descrita em `docs/sicredi-diagnostico-27
 Aplicar manualmente `db/fase277_diagnostico_consulta_sicredi.sql`, publicar1.3.4 e, após a próxima tentativa prevista, executar a versão atualizada de `db/conferir_erros_sicredi_somente_leitura.sql`. Boleto histórico pago não precisa de nova tentativa. Nenhuma cobrança/baixa real foi acionada durante esta entrega.
 
 Validação:168 testes unitários,46 suítes de banco, verificação de tipos e compilação Lovable aprovados. A regressão nova verifica que o corpo do finalizador é preservado salvo a atribuição do diagnóstico, que campos livres são descartados, permissões de execução são mantidas e uma função incompatível aborta toda a migração. Não houve erro de lint; permanecem os9 avisos anteriores de Fast Refresh.
+
+## Primeira evidência técnica após fase277 — CSV(5)
+
+O arquivo recebido tem9 linhas:8 pendências atuais e1 histórico pago. Uma tentativa nova da Ferragens, às11:30:04 de27/10/2026 (Brasília), registrou etapa `token`, tipo `nao_identificada` e HTTP nulo. As demais pendências ainda não tinham diagnóstico novo. O arquivo original não foi incluído no repositório.
+
+Isso comprova que o diagnóstico da versão1.3.4 chegou ao banco e situa essa falha na obtenção/cache de autenticação, antes do GET do boleto. Não comprova credencial inválida ou falha do banco. As demais pendências não devem receber essa causa por suposição.
+
+O próximo passo é `db/conferir_cache_token_sicredi_somente_leitura.sql`: verifica tabela/colunas do cache224, funções de reservar/concluir, nomes dos parâmetros usados pelo PostgREST, tipos de retorno e permissões da service_role. O arquivo não lê registros/tokens nem executa as funções. Foi validado em banco local com estruturas ausentes e completas, incluindo funções que lançariam erro caso fossem executadas.
+
+Não reaplicar a fase224 inteira apenas por esse erro: ela também contém outras rotinas bancárias. Caso se confirme estrutura ausente/incompatível, preparar somente a correção correspondente, preservando o finalizador277 e os lançamentos existentes. Não foram alteradas credenciais ou realizadas chamadas reais durante essa investigação.
