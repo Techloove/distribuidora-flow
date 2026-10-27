@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.7.2",
+    "data": "2026-10-27",
+    "titulo": "Esclarecer confirmação de cancelamento do boleto sem senha",
+    "novidades": [
+      "Esclarecer confirmação de cancelamento do boleto sem senha"
+    ]
+  },
+  {
     "versao": "1.7.1",
     "data": "2026-10-27",
     "titulo": "Mover cancelamento para Opções e destacar reimpressão individual do boleto",

@@ -318,7 +318,7 @@ export function BoletosPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Solicitar cancelamento do boleto?</AlertDialogTitle>
+            <AlertDialogTitle>Deseja realmente cancelar este boleto?</AlertDialogTitle>
             <AlertDialogDescription>
               Cliente: {cliName(cancelarBoleto?.["cliente_id"])} · Nosso número:{" "}
               {String(cancelarBoleto?.["nosso_numero"] ?? "")} · Valor:{" "}
@@ -336,7 +336,7 @@ export function BoletosPage() {
                 if (cancelarBoleto) baixar.mutate(cancelarBoleto);
               }}
             >
-              {baixar.isPending ? "Enviando…" : "Confirmar solicitação ao Sicredi"}
+              {baixar.isPending ? "Enviando…" : "Sim, solicitar cancelamento"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

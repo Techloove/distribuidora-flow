@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.7.1 · 2026-10-27
+Versão 1.7.2 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -228,7 +228,7 @@ Entenda os cuidados com documentos bancários e fiscais.
 3. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
 4. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
 5. Em Ordenar por, escolha emissão ou vencimento, com as datas mais antigas ou mais recentes primeiro. A ordenação respeita os filtros e mantém datas ausentes no final.
-6. Para solicitar baixa no Sicredi, abra Opções e use Cancelar boleto, à direita, em um boleto API registrado. Confira cliente, nosso número e valor e confirme a solicitação. A linha fica como Cancelamento solicitado até a consulta bancária confirmar a baixa.
+6. Para solicitar baixa no Sicredi, abra Opções e use Cancelar boleto, à direita, em um boleto API registrado. Na pergunta “Deseja realmente cancelar este boleto?”, confira cliente, nosso número e valor. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar a solicitação, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta bancária confirmar a baixa.
 7. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
 8. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
 9. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
