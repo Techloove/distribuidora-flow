@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import { brl } from "@/components/documento-page";
+import { brl } from "@/lib/formatacao";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -32,7 +34,13 @@ export function HistoricoCliente({
   clienteId?: string | null;
 }) {
   const { client } = useSupabase();
-  const chave = clienteId ? { coluna: "cliente_id", valor: clienteId } : pessoaId ? { coluna: "pessoa_id", valor: pessoaId } : null;
+  const [paginaPedidos, setPaginaPedidos] = useState(0);
+  const [paginaFinanceiro, setPaginaFinanceiro] = useState(0);
+  const chave = clienteId
+    ? { coluna: "cliente_id", valor: clienteId }
+    : pessoaId
+      ? { coluna: "pessoa_id", valor: pessoaId }
+      : null;
 
   const hist = useQuery({
     queryKey: ["vw_historico_cliente", chave?.coluna, chave?.valor],
@@ -75,6 +83,10 @@ export function HistoricoCliente({
   const totalQtd = linhas.reduce((s, r) => s + num(r["quantidade_total"]), 0);
 
   const fin = titulos.data ?? [];
+  const totalPaginasPedidos = Math.max(1, Math.ceil(linhas.length / 4));
+  const totalPaginasFinanceiro = Math.max(1, Math.ceil(fin.length / 4));
+  const pp = Math.min(paginaPedidos, totalPaginasPedidos - 1);
+  const pf = Math.min(paginaFinanceiro, totalPaginasFinanceiro - 1);
   const aberto = fin
     .filter((t) => !["pago", "cancelado"].includes(String(t["status_efetivo"])))
     .reduce((s, t) => s + num(t["saldo"]), 0);
@@ -84,7 +96,7 @@ export function HistoricoCliente({
   const pago = fin.reduce((s, t) => s + num(t["valor_pago"]), 0);
 
   return (
-    <section className="rounded-lg border border-border">
+    <section className="min-w-0 rounded-lg border border-border">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold">Histórico do cliente</h3>
         <p className="text-xs text-muted-foreground">
@@ -113,8 +125,8 @@ export function HistoricoCliente({
               Nenhum pedido registrado para este cliente.
             </p>
           ) : (
-            <div className="max-h-72 overflow-auto">
-              <Table>
+            <div className="min-w-0">
+              <Table className="table-fixed text-xs [&_th]:whitespace-normal [&_td]:whitespace-normal [&_td]:break-words [&_th]:p-2 [&_td]:p-2">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Pedido</TableHead>
@@ -126,7 +138,7 @@ export function HistoricoCliente({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {linhas.map((r) => (
+                  {linhas.slice(pp * 4, pp * 4 + 4).map((r) => (
                     <TableRow key={String(r["pedido_id"])}>
                       <TableCell className="font-medium">
                         {String(r["pedido_numero"] ?? "")}
@@ -144,6 +156,11 @@ export function HistoricoCliente({
                   ))}
                 </TableBody>
               </Table>
+              <PaginasHistorico
+                pagina={pp}
+                total={totalPaginasPedidos}
+                onChange={setPaginaPedidos}
+              />
             </div>
           )}
         </TabsContent>
@@ -164,8 +181,8 @@ export function HistoricoCliente({
               Nenhum título financeiro para este cliente.
             </p>
           ) : (
-            <div className="max-h-72 overflow-auto">
-              <Table>
+            <div className="min-w-0">
+              <Table className="table-fixed text-xs [&_th]:whitespace-normal [&_td]:whitespace-normal [&_td]:break-words [&_th]:p-2 [&_td]:p-2">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Pedido</TableHead>
@@ -179,14 +196,12 @@ export function HistoricoCliente({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fin.map((t) => (
+                  {fin.slice(pf * 4, pf * 4 + 4).map((t) => (
                     <TableRow key={String(t["titulo_id"])}>
                       <TableCell className="font-medium">
                         {String(t["pedido_numero"] ?? "—")}
                       </TableCell>
-                      <TableCell className="max-w-[12rem] truncate">
-                        {String(t["documento"] ?? t["descricao"] ?? "—")}
-                      </TableCell>
+                      <TableCell>{String(t["documento"] ?? t["descricao"] ?? "—")}</TableCell>
                       <TableCell>{String(t["parcela"] ?? "—")}</TableCell>
                       <TableCell>{fmtDate(t["vencimento"])}</TableCell>
                       <TableCell className="capitalize">
@@ -199,10 +214,53 @@ export function HistoricoCliente({
                   ))}
                 </TableBody>
               </Table>
+              <PaginasHistorico
+                pagina={pf}
+                total={totalPaginasFinanceiro}
+                onChange={setPaginaFinanceiro}
+              />
             </div>
           )}
         </TabsContent>
       </Tabs>
     </section>
+  );
+}
+
+function PaginasHistorico({
+  pagina,
+  total,
+  onChange,
+}: {
+  pagina: number;
+  total: number;
+  onChange: (pagina: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs">
+      <span>
+        Página {pagina + 1} de {total}
+      </span>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pagina === 0}
+          onClick={() => onChange(pagina - 1)}
+        >
+          Anterior
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pagina + 1 >= total}
+          onClick={() => onChange(pagina + 1)}
+        >
+          Próxima
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -30,7 +30,9 @@
       "Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.",
       "Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.",
       "Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.",
-      "Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes."
+      "Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.",
+      "No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.",
+      "Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros."
     ],
     "cuidados": [
       "Evite duplicar cadastros. Revise o documento e a busca antes de salvar.",

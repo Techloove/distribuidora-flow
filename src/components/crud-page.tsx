@@ -227,6 +227,7 @@ export function CrudPage({
   onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
   /** Blocos extras dentro do formulário (ex.: comissão do representante). */
   extraForm?: (ctx: {
+    sectionId?: string | undefined;
     form: Record<string, string | boolean>;
     editing: Row | null;
     /** Preenche campos do formulário sem gravar (ex.: consulta cadastral). */
@@ -839,7 +840,7 @@ export function CrudPage({
           </DialogHeader>
           {formSections && (
             <nav
-              aria-label="Seções do produto"
+              aria-label="Seções do cadastro"
               className="flex shrink-0 flex-wrap gap-2 border-b pb-3"
             >
               {formSections.map((section, index) => (
@@ -861,9 +862,10 @@ export function CrudPage({
               formSections ? "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden" : undefined
             }
           >
-            {extraForm && extraFormTop ? (
+            {extraForm && extraFormTop && (!formSections || activeSection?.extra) ? (
               <div className="mb-4">
                 {extraForm({
+                  sectionId: activeSection?.id,
                   form,
                   editing,
                   patch: (values) => setForm((f) => ({ ...f, ...values })),
@@ -1007,7 +1009,7 @@ export function CrudPage({
                       )}
                     </div>
                     {field.after ? (
-                      <div className="sm:col-span-4">
+                      <div className="sm:col-span-4 lg:col-span-full">
                         {field.after({
                           form,
                           editing,
@@ -1032,6 +1034,7 @@ export function CrudPage({
             {extraForm && !extraFormTop && (!formSections || activeSection?.extra) ? (
               <div className="mt-4">
                 {extraForm({
+                  sectionId: activeSection?.id,
                   form,
                   editing,
                   patch: (values) => setForm((f) => ({ ...f, ...values })),

@@ -148,7 +148,12 @@ const fields: CrudField[] = [
     name: "regiao",
     label: "Região de atuação",
     showIf: "is_representante",
-    after: ({ editing }) => <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />,
+    after: ({ editing }) => (
+      <div className="space-y-4">
+        <ComissaoDaPessoa pessoaId={editing ? String(editing["id"]) : null} />
+        <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
+      </div>
+    ),
   },
 
   // Endereço
@@ -161,14 +166,7 @@ const fields: CrudField[] = [
   {
     name: "uf",
     label: "UF",
-    after: ({ form, patch, editing }) => (
-      <div className="space-y-4">
-        <CodigoIbge form={form} patch={patch} />
-        {form["is_representante"] ? (
-          <RotasRepresentante pessoaId={editing ? String(editing["id"]) : null} />
-        ) : null}
-      </div>
-    ),
+    after: ({ form, patch }) => <CodigoIbge form={form} patch={patch} />,
   },
   { name: "codigo_ibge", label: "Código IBGE", hiddenInForm: true },
 
@@ -270,23 +268,116 @@ function PessoasPage() {
         table="pessoas"
         initialEditId={pessoa}
         fields={camposComFormas}
+        formSections={[
+          {
+            id: "identificacao",
+            label: "CPF / CNPJ",
+            fields: ["codigo", "tipo_pessoa", "cnpj_cpf"],
+            extra: true,
+          },
+          {
+            id: "geral",
+            label: "Dados gerais",
+            fields: [
+              "razao_social",
+              "nome_fantasia",
+              "papeis",
+              "centro_id",
+              "status",
+              "ativo",
+              "data_nascimento",
+            ],
+          },
+          {
+            id: "endereco",
+            label: "Contato e endereço",
+            fields: [
+              "email",
+              "telefone",
+              "whatsapp",
+              "cep",
+              "logradouro",
+              "numero",
+              "complemento",
+              "bairro",
+              "cidade",
+              "uf",
+              "codigo_ibge",
+            ],
+          },
+          {
+            id: "fiscal",
+            label: "Dados fiscais",
+            fields: [
+              "inscricao_estadual",
+              "uf_inscricao_estadual",
+              "situacao_inscricao_estadual",
+              "indicador_contribuinte_icms",
+              "situacao_cadastral",
+              "data_abertura",
+              "natureza_juridica",
+              "porte",
+              "cnae_principal",
+              "cnae_secundarios",
+            ],
+            extra: true,
+          },
+          {
+            id: "cliente",
+            label: "Cliente",
+            fields: ["rota_id", "limite_credito", "condicao_pagamento", "representante_id"],
+            extra: true,
+          },
+          {
+            id: "representante",
+            label: "Representante",
+            fields: ["tipo_representante", "comissao_percentual", "meta_mensal", "regiao"],
+            extra: true,
+          },
+          { id: "historico", label: "Histórico", fields: [], extra: true },
+          { id: "observacoes", label: "Observações", fields: ["observacoes"] },
+        ]}
         orderBy="razao_social"
         emptyLabel="Nenhuma pessoa cadastrada ainda."
         searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
         extraFormTop
-        extraForm={({ form, editing, patch, openRow }) => (
+        extraForm={({ form, editing, patch, openRow, sectionId }) => (
           <div className="space-y-4">
-            <ConsultaCadastral
-              form={form}
-              editing={editing}
-              patch={patch}
-              openRow={openRow}
-              escopo="pessoas"
-            />
-            <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
-            {form["is_cliente"] ? (
-              <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
-            ) : null}
+            {sectionId === "identificacao" && (
+              <ConsultaCadastral
+                form={form}
+                editing={editing}
+                patch={patch}
+                openRow={openRow}
+                escopo="pessoas"
+              />
+            )}
+            {sectionId === "fiscal" &&
+              (naoSoRepresentante(form) ? (
+                <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Dados fiscais não se aplicam a um cadastro somente de representante.
+                </p>
+              ))}
+            {sectionId === "cliente" && !form["is_cliente"] && (
+              <p className="text-sm text-muted-foreground">
+                Marque a função Cliente em Dados gerais para preencher as condições comerciais.
+              </p>
+            )}
+            {sectionId === "representante" && !form["is_representante"] && (
+              <p className="text-sm text-muted-foreground">
+                Marque a função Representante em Dados gerais para acessar comissões e rotas.
+              </p>
+            )}
+            {sectionId === "historico" &&
+              (form["is_cliente"] ? (
+                <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  O histórico comercial está disponível para cadastros com a função Cliente.
+                </p>
+              ))}
           </div>
         )}
       />

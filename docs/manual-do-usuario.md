@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.3.1 · 2026-10-27
+Versão 1.3.2 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -30,6 +30,8 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 2. Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.
 3. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
 4. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
+5. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
+6. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
 
 Cuidados:
 
