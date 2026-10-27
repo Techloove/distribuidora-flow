@@ -48,7 +48,8 @@
       "Em Produtos, cadastre descrição, código, unidade, categoria e os demais dados exigidos.",
       "A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.",
       "Altere o preço normal em Produtos ou em Lojas → Produtos e preços. Após salvar, o mesmo preço é sincronizado nas duas telas e usado em novos itens de pedidos. Promoções podem aplicar um preço especial; descontos e disponibilidade continuam por loja.",
-      "Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro."
+      "Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro.",
+      "Ao editar um produto, use as seções Dados gerais, Preços e estoque, Dados fiscais e Histórico. Os campos preenchidos permanecem ao trocar de seção; clique Salvar para gravar. O histórico tem botões Anterior e Próxima."
     ],
     "cuidados": [
       "Produto com saldo ou reserva não deve ser reclassificado para outra loja por edição da categoria. Solicite a conciliação ao administrador.",

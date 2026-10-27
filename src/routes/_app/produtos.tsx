@@ -263,6 +263,46 @@ function ProdutosPage() {
         uppercase
         table="produtos"
         fields={fields}
+        formSections={[
+          {
+            id: "geral",
+            label: "Dados gerais",
+            fields: [
+              "codigo",
+              "descricao",
+              "categoria",
+              "marca",
+              "grupo",
+              "unidade",
+              "peso_kg",
+              "ativo",
+            ],
+          },
+          {
+            id: "precos",
+            label: "Preços e estoque",
+            fields: [
+              "ultimo_custo",
+              "custo_medio",
+              "markup_percentual",
+              "preco_venda",
+              "promo_preco",
+              "promo_fim",
+              "comissao_percentual",
+              "comissao_fixa_unidade",
+              "estoque_minimo",
+              "estoque_atual",
+              "comprado_qtd",
+              "permite_estoque_negativo",
+            ],
+          },
+          {
+            id: "fiscal",
+            label: "Dados fiscais",
+            fields: ["ncm", "cest", "ean", "origem_fiscal", "cfop", "cfop_interestadual"],
+          },
+          { id: "historico", label: "Histórico", fields: [], extra: true },
+        ]}
         orderBy="descricao"
         emptyLabel="Nenhum produto cadastrado ainda."
         searchColumns={["codigo", "descricao", "categoria", "marca", "grupo"]}

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
-import { brl } from "@/components/documento-page";
+import { brl } from "@/lib/formatacao";
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ const num = (v: unknown) => Number(v ?? 0);
 
 export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
   const { client } = useSupabase();
+  const [pagina, setPagina] = useState(0);
   const [tipo, setTipo] = useState<"todos" | "compra" | "venda">("todos");
 
   const hist = useQuery({
@@ -49,6 +50,10 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
   const todas = hist.data ?? [];
   const linhas = tipo === "todos" ? todas : todas.filter((r) => r["tipo"] === tipo);
 
+  const totalPaginas = Math.max(1, Math.ceil(linhas.length / 4));
+  const paginaAtual = Math.min(pagina, totalPaginas - 1);
+  const visiveis = linhas.slice(paginaAtual * 4, paginaAtual * 4 + 4);
+
   const soma = (t: string, campo: string) =>
     todas.filter((r) => r["tipo"] === t).reduce((s, r) => s + num(r[campo]), 0);
 
@@ -58,7 +63,7 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
   const vendidoValor = soma("venda", "total");
 
   return (
-    <section className="rounded-lg border border-border">
+    <section className="min-w-0 rounded-lg border border-border">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold">Histórico de compras e saídas</h3>
         <div className="flex flex-wrap gap-1">
@@ -66,7 +71,10 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
             <button
               key={t}
               type="button"
-              onClick={() => setTipo(t)}
+              onClick={() => {
+                setTipo(t);
+                setPagina(0);
+              }}
               className={`rounded-full border px-3 py-1 text-xs capitalize transition-colors ${
                 tipo === t
                   ? "border-primary bg-primary text-primary-foreground"
@@ -105,8 +113,17 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
           Nenhuma movimentação registrada para este produto.
         </p>
       ) : (
-        <div className="max-h-72 overflow-auto">
-          <Table>
+        <div className="min-w-0">
+          <Table className="table-fixed text-xs [&_th]:whitespace-normal [&_td]:whitespace-normal [&_td]:break-words [&_th]:p-2 [&_td]:p-2">
+            <colgroup>
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "30%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "15%" }} />
+              <col style={{ width: "15%" }} />
+            </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>Tipo</TableHead>
@@ -119,16 +136,14 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {linhas.map((r, i) => (
+              {visiveis.map((r, i) => (
                 <TableRow key={`${String(r["tipo"])}-${String(r["documento_id"])}-${i}`}>
                   <TableCell className="capitalize">{String(r["tipo"] ?? "")}</TableCell>
                   <TableCell className="font-medium">
                     {String(r["documento_numero"] ?? "")}
                   </TableCell>
                   <TableCell>{fmtDate(r["data"])}</TableCell>
-                  <TableCell className="max-w-[14rem] truncate">
-                    {String(r["parceiro"] ?? "")}
-                  </TableCell>
+                  <TableCell>{String(r["parceiro"] ?? "")}</TableCell>
                   <TableCell className="text-right">
                     {num(r["quantidade"]).toLocaleString("pt-BR")}
                   </TableCell>
@@ -138,6 +153,29 @@ export function HistoricoProduto({ produtoId }: { produtoId: string | null }) {
               ))}
             </TableBody>
           </Table>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t p-3 text-xs">
+            <span>
+              {linhas.length} movimentação(ões) · Página {paginaAtual + 1} de {totalPaginas}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="rounded-md border px-3 py-1.5 disabled:opacity-40"
+                disabled={paginaAtual === 0}
+                onClick={() => setPagina(paginaAtual - 1)}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="rounded-md border px-3 py-1.5 disabled:opacity-40"
+                disabled={paginaAtual + 1 >= totalPaginas}
+                onClick={() => setPagina(paginaAtual + 1)}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

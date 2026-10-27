@@ -205,7 +205,9 @@ export function CrudPage({
   uppercase = false,
   initialEditId,
   defaultValues,
+  formSections,
 }: {
+  formSections?: { id: string; label: string; fields: string[]; extra?: boolean }[];
   table: string;
   fields: CrudField[];
   orderBy: string;
@@ -263,7 +265,13 @@ export function CrudPage({
     }
   }
   const [open, setOpen] = useState(false);
+  const [formSection, setFormSection] = useState(0);
+  const activeSection = formSections?.[formSection];
   const [editing, setEditing] = useState<Row | null>(null);
+  const editingId = editing?.["id"];
+  useEffect(() => {
+    setFormSection(0);
+  }, [open, editingId]);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
   const [search, setSearch] = useState("");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
@@ -812,7 +820,13 @@ export function CrudPage({
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent
+          className={
+            formSections
+              ? "flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[1440px] flex-col overflow-hidden sm:max-w-[1440px]"
+              : "max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+          }
+        >
           <DialogHeader>
             <DialogTitle>
               {editing
@@ -823,178 +837,210 @@ export function CrudPage({
             </DialogTitle>
             <DialogDescription>Preencha os campos e salve para gravar no banco.</DialogDescription>
           </DialogHeader>
-          {extraForm && extraFormTop ? (
-            <div className="mb-4">
-              {extraForm({
-                form,
-                editing,
-                patch: (values) => setForm((f) => ({ ...f, ...values })),
-                openRow: (row) => openEdit(row),
-              })}
-            </div>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-4">
-            {fields
-              .filter(
-                (f) =>
-                  !f.hiddenInForm &&
-                  (!f.showIf || !!form[f.showIf]) &&
-                  (!f.showWhen || f.showWhen(form)),
-              )
-              .map((field) => (
-                <Fragment key={field.name}>
-                  {field.section ? (
-                    <h3 className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-4">
-                      {field.section}
-                    </h3>
-                  ) : null}
-                  <div
-                    key={field.name}
-                    className={`space-y-1.5 ${
-                      field.span === 2
-                        ? "sm:col-span-4"
-                        : field.span === 1
-                          ? "sm:col-span-1"
-                          : "sm:col-span-2"
-                    }`}
-                  >
-                    <Label htmlFor={field.name}>{field.label}</Label>
-                    {field.auto ? (
-                      <Input
-                        id={field.name}
-                        readOnly
-                        disabled
-                        value={String(form[field.name] ?? "")}
-                        placeholder="Gerado automaticamente"
-                      />
-                    ) : field.type === "multicheck" ? (
-                      <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
-                        {(field.checks ?? []).map((c) => (
-                          <label
-                            key={c.name}
-                            className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                              form[c.name]
-                                ? "border-primary bg-primary/10 text-foreground"
-                                : "border-input text-muted-foreground hover:bg-accent/40"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={Boolean(form[c.name])}
-                              disabled={directWriteBlocked}
-                              onChange={(e) =>
-                                setForm((f) => ({ ...f, [c.name]: e.target.checked }))
-                              }
-                              className="size-4 accent-primary"
-                            />
-                            {c.label}
-                          </label>
-                        ))}
-                      </div>
-                    ) : field.type === "ref" ? (
-                      <RefSelect
-                        field={field}
-                        value={String(form[field.name] ?? "")}
-                        disabled={directWriteBlocked}
-                        onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
-                      />
-                    ) : field.type === "select" ? (
-                      <select
-                        id={field.name}
-                        value={String(form[field.name] ?? "")}
-                        onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
-                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="">—</option>
-                        {field.options?.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field.type === "checkbox" ? (
-                      <div className="flex h-9 items-center">
-                        <input
-                          id={field.name}
-                          type="checkbox"
-                          checked={Boolean(form[field.name])}
-                          disabled={directWriteBlocked}
-                          onChange={(e) =>
-                            setForm((f) => ({ ...f, [field.name]: e.target.checked }))
-                          }
-                          className="size-4 accent-primary"
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        {field.lookup ? (
-                          <LookupList id={`lk-${field.name}`} table={field.lookup} />
-                        ) : null}
+          {formSections && (
+            <nav
+              aria-label="Seções do produto"
+              className="flex shrink-0 flex-wrap gap-2 border-b pb-3"
+            >
+              {formSections.map((section, index) => (
+                <Button
+                  key={section.id}
+                  type="button"
+                  size="sm"
+                  variant={formSection === index ? "default" : "outline"}
+                  aria-pressed={formSection === index}
+                  onClick={() => setFormSection(index)}
+                >
+                  {section.label}
+                </Button>
+              ))}
+            </nav>
+          )}
+          <div
+            className={
+              formSections ? "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden" : undefined
+            }
+          >
+            {extraForm && extraFormTop ? (
+              <div className="mb-4">
+                {extraForm({
+                  form,
+                  editing,
+                  patch: (values) => setForm((f) => ({ ...f, ...values })),
+                  openRow: (row) => openEdit(row),
+                })}
+              </div>
+            ) : null}
+            <div
+              className={
+                formSections
+                  ? "grid min-w-0 gap-3 sm:grid-cols-4 lg:grid-cols-6"
+                  : "grid gap-4 sm:grid-cols-4"
+              }
+            >
+              {fields
+                .filter(
+                  (f) =>
+                    !f.hiddenInForm &&
+                    (!activeSection || activeSection.fields.includes(f.name)) &&
+                    (!f.showIf || !!form[f.showIf]) &&
+                    (!f.showWhen || f.showWhen(form)),
+                )
+                .map((field) => (
+                  <Fragment key={field.name}>
+                    {field.section ? (
+                      <h3 className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-4 lg:col-span-full">
+                        {field.section}
+                      </h3>
+                    ) : null}
+                    <div
+                      key={field.name}
+                      className={`min-w-0 space-y-1.5 ${
+                        field.span === 2
+                          ? "sm:col-span-4 lg:col-span-full"
+                          : field.span === 1
+                            ? "sm:col-span-1"
+                            : "sm:col-span-2"
+                      }`}
+                    >
+                      <Label htmlFor={field.name}>{field.label}</Label>
+                      {field.auto ? (
                         <Input
                           id={field.name}
-                          list={field.lookup ? `lk-${field.name}` : undefined}
-                          autoComplete={field.lookup ? "off" : undefined}
-                          type={field.type === "number" ? "number" : (field.type ?? "text")}
-                          step={field.step}
+                          readOnly
+                          disabled
+                          value={String(form[field.name] ?? "")}
+                          placeholder="Gerado automaticamente"
+                        />
+                      ) : field.type === "multicheck" ? (
+                        <div className="flex flex-wrap gap-2 rounded-md border border-input bg-background p-3">
+                          {(field.checks ?? []).map((c) => (
+                            <label
+                              key={c.name}
+                              className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                                form[c.name]
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : "border-input text-muted-foreground hover:bg-accent/40"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={Boolean(form[c.name])}
+                                disabled={directWriteBlocked}
+                                onChange={(e) =>
+                                  setForm((f) => ({ ...f, [c.name]: e.target.checked }))
+                                }
+                                className="size-4 accent-primary"
+                              />
+                              {c.label}
+                            </label>
+                          ))}
+                        </div>
+                      ) : field.type === "ref" ? (
+                        <RefSelect
+                          field={field}
                           value={String(form[field.name] ?? "")}
                           disabled={directWriteBlocked}
-                          onBlur={(e) => {
-                            if (field.type !== "number" || !field.step) return;
-                            const dec = (field.step.split(".")[1] ?? "").length;
-                            const raw = e.target.value;
-                            if (raw === "" || Number.isNaN(Number(raw))) return;
-                            const fixed = Number(raw).toFixed(dec);
-                            if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
-                          }}
-                          onChange={(e) =>
-                            setForm((f) => {
-                              const val =
-                                uppercase && isUpperField(field)
-                                  ? e.target.value.toUpperCase()
-                                  : e.target.value;
-                              const next = { ...f, [field.name]: val };
-                              const patch = onFieldChange?.(field.name, val, next);
-                              return patch ? { ...next, ...patch } : next;
-                            })
-                          }
+                          onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
                         />
-                      </>
-                    )}
-                  </div>
-                  {field.after ? (
-                    <div className="sm:col-span-4">
-                      {field.after({
-                        form,
-                        editing,
-                        patch: (values) => setForm((f) => ({ ...f, ...values })),
-                        openRow: (row) => openEdit(row),
-                      })}
+                      ) : field.type === "select" ? (
+                        <select
+                          id={field.name}
+                          value={String(form[field.name] ?? "")}
+                          onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="">—</option>
+                          {field.options?.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === "checkbox" ? (
+                        <div className="flex h-9 items-center">
+                          <input
+                            id={field.name}
+                            type="checkbox"
+                            checked={Boolean(form[field.name])}
+                            disabled={directWriteBlocked}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, [field.name]: e.target.checked }))
+                            }
+                            className="size-4 accent-primary"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          {field.lookup ? (
+                            <LookupList id={`lk-${field.name}`} table={field.lookup} />
+                          ) : null}
+                          <Input
+                            id={field.name}
+                            list={field.lookup ? `lk-${field.name}` : undefined}
+                            autoComplete={field.lookup ? "off" : undefined}
+                            type={field.type === "number" ? "number" : (field.type ?? "text")}
+                            step={field.step}
+                            value={String(form[field.name] ?? "")}
+                            disabled={directWriteBlocked}
+                            onBlur={(e) => {
+                              if (field.type !== "number" || !field.step) return;
+                              const dec = (field.step.split(".")[1] ?? "").length;
+                              const raw = e.target.value;
+                              if (raw === "" || Number.isNaN(Number(raw))) return;
+                              const fixed = Number(raw).toFixed(dec);
+                              if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
+                            }}
+                            onChange={(e) =>
+                              setForm((f) => {
+                                const val =
+                                  uppercase && isUpperField(field)
+                                    ? e.target.value.toUpperCase()
+                                    : e.target.value;
+                                const next = { ...f, [field.name]: val };
+                                const patch = onFieldChange?.(field.name, val, next);
+                                return patch ? { ...next, ...patch } : next;
+                              })
+                            }
+                          />
+                        </>
+                      )}
                     </div>
-                  ) : null}
-                </Fragment>
-              ))}
+                    {field.after ? (
+                      <div className="sm:col-span-4">
+                        {field.after({
+                          form,
+                          editing,
+                          patch: (values) => setForm((f) => ({ ...f, ...values })),
+                          openRow: (row) => openEdit(row),
+                        })}
+                      </div>
+                    ) : null}
+                  </Fragment>
+                ))}
+            </div>
+            {extraFormEnd ? (
+              <div className="mt-4">
+                {extraFormEnd({
+                  form,
+                  editing,
+                  patch: (values) => setForm((f) => ({ ...f, ...values })),
+                  openRow: (row) => openEdit(row),
+                })}
+              </div>
+            ) : null}
+            {extraForm && !extraFormTop && (!formSections || activeSection?.extra) ? (
+              <div className="mt-4">
+                {extraForm({
+                  form,
+                  editing,
+                  patch: (values) => setForm((f) => ({ ...f, ...values })),
+                  openRow: (row) => openEdit(row),
+                })}
+              </div>
+            ) : null}
           </div>
-          {extraFormEnd ? (
-            <div className="mt-4">
-              {extraFormEnd({
-                form,
-                editing,
-                patch: (values) => setForm((f) => ({ ...f, ...values })),
-                openRow: (row) => openEdit(row),
-              })}
-            </div>
-          ) : null}
-          {extraForm && !extraFormTop ? (
-            <div className="mt-4">
-              {extraForm({
-                form,
-                editing,
-                patch: (values) => setForm((f) => ({ ...f, ...values })),
-                openRow: (row) => openEdit(row),
-              })}
-            </div>
-          ) : null}
-          <DialogFooter>
+          <DialogFooter className={formSections ? "shrink-0 border-t pt-3" : undefined}>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
