@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.5.0 · 2026-10-27
+Versão 1.6.0 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -227,12 +227,14 @@ Entenda os cuidados com documentos bancários e fiscais.
 2. Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.
 3. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
 4. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
-5. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
-6. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
-7. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
-8. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
-9. Para a tarifa de cobrança comprovada, informe o valor efetivamente cobrado, a data do débito, a categoria de despesa e a referência bancária. Confira se já existe lançamento anterior e registre a despesa da tarifa na mesma conta e loja do recebimento.
-10. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
+5. Em Ordenar por, escolha emissão ou vencimento, com as datas mais antigas ou mais recentes primeiro. A ordenação respeita os filtros e mantém datas ausentes no final.
+6. Para solicitar baixa no Sicredi, use Cancelar boleto na linha de um boleto API registrado. Confira cliente, nosso número e valor e confirme a solicitação. A linha fica como Cancelamento solicitado até a consulta bancária confirmar a baixa.
+7. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
+8. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
+9. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
+10. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
+11. Para a tarifa de cobrança comprovada, informe o valor efetivamente cobrado, a data do débito, a categoria de despesa e a referência bancária. Confira se já existe lançamento anterior e registre a despesa da tarifa na mesma conta e loja do recebimento.
+12. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
 
 Cuidados:
 
@@ -246,6 +248,7 @@ Cuidados:
 - A consulta de movimentações financeiras (Francesinha) traz débitos por boleto. A lista soma como tarifa apenas os débitos cuja descrição identifica TARIFA; os demais aparecem como débitos a conferir. Sem retorno confirmado ou em caso de falha de acesso, não é exibida tarifa zero como se houvesse isenção.
 - A consulta automática de tarifas não gera despesas financeiras. Um valor da API e uma despesa conferida no extrato são apresentados separadamente, sem somá-los como se fossem duas cobranças. Confira lançamentos anteriores antes de registrar qualquer despesa.
 - O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha.
+- Cancelar boleto envia um pedido de baixa ao Sicredi; não cancela a venda nem quita a conta a receber. Boletos liquidados, já baixados ou com solicitação pendente não permitem novo cancelamento. Se o banco ainda não confirmar a baixa, consulte a situação e confira com o Sicredi antes de qualquer nova cobrança.
 
 ## Agenda, metas, comissões e relatórios
 

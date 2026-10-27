@@ -78,3 +78,30 @@ export function agruparTarifasApi(rows: Row[]) {
   }
   return mapa;
 }
+
+export function ordenarBoletos(rows: Row[], ordem: string): Row[] {
+  const opcoes: Record<string, [string, number]> = {
+    emissao_asc: ["data_emissao", 1],
+    emissao_desc: ["data_emissao", -1],
+    vencimento_asc: ["vencimento", 1],
+    vencimento_desc: ["vencimento", -1],
+  };
+  const [campo, sentido] = opcoes[ordem] ?? opcoes["vencimento_desc"]!;
+  return [...rows].sort((a, b) => {
+    const da = dataBoleto(a[campo]),
+      db = dataBoleto(b[campo]);
+    if (!da || !db) return da ? -1 : db ? 1 : String(a["id"]).localeCompare(String(b["id"]));
+    return da.localeCompare(db) * sentido || String(a["id"]).localeCompare(String(b["id"]));
+  });
+}
+
+export function cancelamentoBoletoPendente(b: Row): boolean {
+  const retorno = b["retorno"];
+  return (
+    b["status"] === "registrado" &&
+    !!retorno &&
+    typeof retorno === "object" &&
+    !Array.isArray(retorno) &&
+    (retorno as Row)["cancelamento_sicredi_pendente"] === true
+  );
+}

@@ -274,6 +274,8 @@
       "Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.",
       "Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.",
       "Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.",
+      "Em Ordenar por, escolha emissão ou vencimento, com as datas mais antigas ou mais recentes primeiro. A ordenação respeita os filtros e mantém datas ausentes no final.",
+      "Para solicitar baixa no Sicredi, use Cancelar boleto na linha de um boleto API registrado. Confira cliente, nosso número e valor e confirme a solicitação. A linha fica como Cancelamento solicitado até a consulta bancária confirmar a baixa.",
       "Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.",
       "A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.",
       "XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.",
@@ -291,7 +293,8 @@
       "A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem deduz tarifa pela diferença entre o valor emitido e recebido. No registro manual de despesa, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade.",
       "A consulta de movimentações financeiras (Francesinha) traz débitos por boleto. A lista soma como tarifa apenas os débitos cuja descrição identifica TARIFA; os demais aparecem como débitos a conferir. Sem retorno confirmado ou em caso de falha de acesso, não é exibida tarifa zero como se houvesse isenção.",
       "A consulta automática de tarifas não gera despesas financeiras. Um valor da API e uma despesa conferida no extrato são apresentados separadamente, sem somá-los como se fossem duas cobranças. Confira lançamentos anteriores antes de registrar qualquer despesa.",
-      "O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha."
+      "O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha.",
+      "Cancelar boleto envia um pedido de baixa ao Sicredi; não cancela a venda nem quita a conta a receber. Boletos liquidados, já baixados ou com solicitação pendente não permitem novo cancelamento. Se o banco ainda não confirmar a baixa, consulte a situação e confira com o Sicredi antes de qualquer nova cobrança."
     ]
   },
   {

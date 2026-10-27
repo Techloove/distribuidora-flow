@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { dataBoleto, filtrarBoletos, periodoBoletosInvalido } from "../src/lib/boletos-lista";
+import {
+  dataBoleto,
+  filtrarBoletos,
+  periodoBoletosInvalido,
+  ordenarBoletos,
+  cancelamentoBoletoPendente,
+} from "../src/lib/boletos-lista";
 
 const rows = [
   {
@@ -72,4 +78,32 @@ test("datas SQL mantêm o dia e valores ausentes ou impossíveis não viram data
   expect(dataBoleto("2026-10-01")).toBe("2026-10-01");
   for (const value of [null, "", "2026-02-30", "2026-10-01T00:00:00Z"])
     expect(dataBoleto(value)).toBe("");
+});
+
+test("ordena emissão e vencimento em ambos os sentidos, sem alterar a coleção original", () => {
+  const ids = (ordem: string) => ordenarBoletos(rows, ordem).map((r) => r.id);
+  expect(ids("emissao_asc")).toEqual(["3", "1", "2"]);
+  expect(ids("emissao_desc")).toEqual(["2", "1", "3"]);
+  expect(ids("vencimento_asc")).toEqual(["1", "3", "2"]);
+  expect(ids("vencimento_desc")).toEqual(["2", "1", "3"]);
+  expect(rows.map((r) => r.id)).toEqual(["1", "2", "3"]);
+});
+test("datas ausentes ficam no fim nos dois sentidos e ordenar mantém os filtros", () => {
+  for (const ordem of ["emissao_asc", "emissao_desc"])
+    expect(ordenarBoletos([...rows, { id: "0", data_emissao: null }], ordem).at(-1)?.id).toBe("0");
+  expect(
+    ordenarBoletos(filtrarBoletos(rows, { cliente: "a" }, nome), "emissao_asc").map((r) => r.id),
+  ).toEqual(["3", "1"]);
+});
+test("cancelamento pendente não é confundido com baixa ou liquidação", () => {
+  expect(
+    cancelamentoBoletoPendente({
+      status: "registrado",
+      retorno: { cancelamento_sicredi_pendente: true },
+    }),
+  ).toBe(true);
+  for (const status of ["liquidado", "baixado", "cancelado"])
+    expect(
+      cancelamentoBoletoPendente({ status, retorno: { cancelamento_sicredi_pendente: true } }),
+    ).toBe(false);
 });

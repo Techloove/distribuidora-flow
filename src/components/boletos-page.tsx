@@ -17,6 +17,15 @@ import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -29,6 +38,8 @@ import {
   dataBoleto,
   periodoBoletosInvalido,
   agruparTarifasApi,
+  ordenarBoletos,
+  cancelamentoBoletoPendente,
 } from "@/lib/boletos-lista";
 import { filtrarCentro, useCentro } from "@/lib/centro-store";
 import {
@@ -62,6 +73,7 @@ export function BoletosPage() {
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [cancelarBoleto, setCancelarBoleto] = useState<Row | null>(null);
   const [expandido, setExpandido] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
@@ -141,7 +153,11 @@ export function BoletosPage() {
       .map((c) => ({ value: String(c["id"]), label: String(c["razao_social"]) }));
   }, [daLoja, clientes.data]);
   const boletosFiltrados = useMemo(
-    () => filtrarBoletos(daLoja, filtros, cliName),
+    () =>
+      ordenarBoletos(
+        filtrarBoletos(daLoja, filtros, cliName),
+        filtros["ordem"] ?? "vencimento_desc",
+      ),
     [daLoja, filtros, cliName],
   );
   const periodoInvalido = periodoBoletosInvalido(filtros);
@@ -236,7 +252,8 @@ export function BoletosPage() {
       });
     },
     onSuccess: () => {
-      toast.success("Boleto baixado no Sicredi");
+      toast.success("Cancelamento solicitado ao Sicredi. A consulta confirmará a baixa.");
+      setCancelarBoleto(null);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -266,6 +283,37 @@ export function BoletosPage() {
         </div>
       }
     >
+      <AlertDialog
+        open={!!cancelarBoleto}
+        onOpenChange={(v) => {
+          if (!v && !baixar.isPending) setCancelarBoleto(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Solicitar cancelamento do boleto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cliente: {cliName(cancelarBoleto?.["cliente_id"])} · Nosso número:{" "}
+              {String(cancelarBoleto?.["nosso_numero"] ?? "")} · Valor:{" "}
+              {brl(cancelarBoleto?.["valor"])}. O pedido de baixa será enviado ao Sicredi e precisa
+              de confirmação pela consulta bancária. Isso não cancela o pedido de venda nem quita a
+              conta a receber.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={baixar.isPending}>Voltar</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={baixar.isPending || !cancelarBoleto || !canFinance}
+              onClick={() => {
+                if (cancelarBoleto) baixar.mutate(cancelarBoleto);
+              }}
+            >
+              {baixar.isPending ? "Enviando…" : "Confirmar solicitação ao Sicredi"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="space-y-6">
         <SicrediAutomatico />
         <p className="text-sm text-muted-foreground">
@@ -298,6 +346,18 @@ export function BoletosPage() {
             label="Busca (cliente/nº)"
             value={filtros["busca"] ?? ""}
             onChange={(v) => setF("busca", v)}
+          />
+          <FilterSelect
+            label="Ordenar por"
+            value={filtros["ordem"] ?? ""}
+            onChange={(v) => setF("ordem", v)}
+            allLabel="Padrão: vencimento mais recente"
+            options={[
+              { value: "emissao_asc", label: "Emissão: mais antiga primeiro" },
+              { value: "emissao_desc", label: "Emissão: mais recente primeiro" },
+              { value: "vencimento_asc", label: "Vencimento: mais antigo primeiro" },
+              { value: "vencimento_desc", label: "Vencimento: mais recente primeiro" },
+            ]}
           />
           <FilterSelect
             label="Cliente"
@@ -527,7 +587,9 @@ export function BoletosPage() {
                           </TableCell>
                           <TableCell>
                             <span className="inline-block rounded-full bg-muted px-2 py-1 text-xs font-medium">
-                              {statusLabel[st] ?? st}
+                              {cancelamentoBoletoPendente(b)
+                                ? "Cancelamento solicitado"
+                                : (statusLabel[st] ?? st)}
                             </span>
                             {["erro", "em_processamento"].includes(st) && b["erro"] ? (
                               <span className="block text-xs text-destructive">
@@ -536,15 +598,35 @@ export function BoletosPage() {
                             ) : null}
                           </TableCell>
                           <TableCell className="no-print text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              aria-expanded={expandido === id}
-                              aria-controls={`boleto-opcoes-${id}`}
-                              onClick={() => setExpandido(expandido === id ? null : id)}
-                            >
-                              {expandido === id ? "Fechar" : "Opções"}
-                            </Button>
+                            <div className="flex flex-wrap justify-end gap-2">
+                              {canFinance &&
+                                b["banco"] === "sicredi" &&
+                                b["canal"] === "api" &&
+                                st === "registrado" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-destructive"
+                                    disabled={
+                                      !b["nosso_numero"] ||
+                                      baixar.isPending ||
+                                      cancelamentoBoletoPendente(b)
+                                    }
+                                    onClick={() => setCancelarBoleto(b)}
+                                  >
+                                    Cancelar boleto
+                                  </Button>
+                                )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                aria-expanded={expandido === id}
+                                aria-controls={`boleto-opcoes-${id}`}
+                                onClick={() => setExpandido(expandido === id ? null : id)}
+                              >
+                                {expandido === id ? "Fechar" : "Opções"}
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                         {expandido === id && (
@@ -626,20 +708,6 @@ export function BoletosPage() {
                                       onClick={() => consultar.mutate(b)}
                                     >
                                       <RefreshCw className="size-4" />
-                                    </Button>
-
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      disabled={
-                                        !canFinance ||
-                                        !b["nosso_numero"] ||
-                                        baixar.isPending ||
-                                        !["registrado", "pendente"].includes(st)
-                                      }
-                                      onClick={() => baixar.mutate(b)}
-                                    >
-                                      Baixar
                                     </Button>
                                   </>
                                 ) : null}

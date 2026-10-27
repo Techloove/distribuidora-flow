@@ -1,3 +1,4 @@
+import { cancelamentoBoletoPendente } from "./boletos-lista";
 import { erroPersistenciaSicredi } from "./sicredi-persistencia";
 import {
   SICREDI_SANDBOX,
@@ -650,7 +651,10 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
         _actor_id: user.id,
         _boleto_id: data.boletoId,
         _status: baixado ? "baixado" : "registrado",
-        _retorno: jsonPayload(txt),
+        _retorno:
+          !baixado && cancelamentoBoletoPendente(boleto)
+            ? { ...json, cancelamento_sicredi_pendente: true }
+            : jsonPayload(txt),
       });
     }
     return {
@@ -671,6 +675,14 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
       data.accessToken,
     );
     const boleto = await carregarBoleto(accessToken, data.boletoId);
+    if (boleto["canal"] !== "api" || boleto["status"] !== "registrado")
+      throw new Error(
+        "Cancelamento disponível somente para boleto API registrado e não liquidado.",
+      );
+    if (cancelamentoBoletoPendente(boleto))
+      throw new Error(
+        "Cancelamento já solicitado. Consulte a situação no Sicredi antes de tentar novamente.",
+      );
     const nossoNumero = String(boleto["nosso_numero"]);
     const c = await conf();
     conferirConvenio(boleto, c);
@@ -680,14 +692,16 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
       { method: "PATCH", headers: headers(c, tk), body: JSON.stringify({}) },
     );
     const txt = await res.text();
-    if (!res.ok) throw new Error(`Baixa no Sicredi falhou (${res.status}): ${txt.slice(0, 300)}`);
-    await serviceRpc("sincronizar_boleto_sicredi_servidor", {
-      _actor_id: user.id,
-      _boleto_id: data.boletoId,
-      _status: "baixado",
+    if (!res.ok)
+      throw new Error(
+        `Pedido de cancelamento recusado pelo Sicredi (HTTP ${res.status}). Consulte a situação antes de tentar novamente.`,
+      );
+    await serviceRpc("sicredi_registrar_pedido_baixa_281", {
+      _actor: user.id,
+      _boleto: data.boletoId,
       _retorno: jsonPayload(txt),
     });
-    return { ok: true, retorno: txt.slice(0, 500) };
+    return { ok: true, solicitado: true };
   });
 
 /** Segunda via em PDF (base64) do boleto registrado. */

@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.6.0",
+    "data": "2026-10-27",
+    "titulo": "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação",
+    "novidades": [
+      "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação"
+    ]
+  },
+  {
     "versao": "1.5.0",
     "data": "2026-10-27",
     "titulo": "Melhorar lista de boletos e consultar tarifas automaticamente pela API Sicredi",

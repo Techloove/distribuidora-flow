@@ -15,6 +15,7 @@ mock.module("@tanstack/react-start", () => ({
 }));
 const {
   sicrediPdfBoleto,
+  sicrediBaixarBoleto,
   sicrediConsultarBoleto,
   sicrediEmitirBoleto,
   sicrediConfirmarNossoNumero,
@@ -60,6 +61,10 @@ type Options = {
   configChanged?: boolean;
   persistFailed?: boolean;
   centroBloqueado?: boolean;
+  statusLocal?: string;
+  cancelamentoPendente?: boolean;
+  bankBaixado?: boolean;
+  cancelStatus?: number;
 };
 function backend(o: Options = {}) {
   const calls: {
@@ -143,7 +148,8 @@ function backend(o: Options = {}) {
           nosso_numero: o.missingNosso ? null : "262000020",
           linha_digitavel: o.invalidLine ? "" : line,
           valor: 100,
-          status: "registrado",
+          status: o.statusLocal ?? "registrado",
+          retorno: o.cancelamentoPendente ? { cancelamento_sicredi_pendente: true } : {},
           canal: "api",
           ambiente,
           cooperativa: coop,
@@ -188,7 +194,7 @@ function backend(o: Options = {}) {
         out = { nossoNumero: "262000020", linhaDigitavel: line, codigoBarras: barcode };
       } else
         out = {
-          situacao: o.liquidado ? "LIQUIDADO" : "REGISTRADO",
+          situacao: o.liquidado ? "LIQUIDADO" : o.bankBaixado ? "BAIXADO" : "REGISTRADO",
           linhaDigitavel: o.wrongLine ? "748" + "1".repeat(44) : line,
           dataMovimento: "2026-10-14",
           dadosLiquidacao: o.badSettlement
@@ -202,6 +208,11 @@ function backend(o: Options = {}) {
                 data: "2026-10-14T12:00:00Z",
               },
         };
+    } else if (u.hostname === "api-parceiro.sicredi.com.br" && p.endsWith("/baixa")) {
+      return new Response(
+        JSON.stringify({ statusComando: "MOVIMENTO_ENVIADO", tipoMensagem: "BAIXA" }),
+        { status: o.cancelStatus ?? 202 },
+      );
     } else if (p.endsWith("/registrar_boleto_sicredi_servidor") && o.persistFailed)
       return new Response(
         JSON.stringify({ code: "P0001", message: "Titulo mudou depois do envio" }),
@@ -475,4 +486,53 @@ test("registro limita nome do pagador a40 caracteres sem alterar a razão social
     shortCalls.find((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos")?.body
       .pagador,
   ).toMatchObject({ nome: "Cliente teste" });
+});
+
+test("cancelamento envia pedido de baixa e preserva registrado até confirmação bancária", async () => {
+  const calls = backend();
+  expect(
+    await sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+  ).toEqual({ ok: true, solicitado: true });
+  expect(calls.filter((c) => c.path.endsWith("/baixa"))).toHaveLength(1);
+  expect(calls.find((c) => c.path.endsWith("/baixa"))?.method).toBe("PATCH");
+  const sync = calls.find((c) => c.path.endsWith("/sicredi_registrar_pedido_baixa_281"));
+  expect(sync?.body["_status"]).toBeUndefined();
+  expect(sync?.body["_retorno"]).toMatchObject({
+    statusComando: "MOVIMENTO_ENVIADO",
+    tipoMensagem: "BAIXA",
+  });
+  expect(calls.some((c) => /receber_titulo|liquidar_api|lancar_movimento/.test(c.path))).toBe(
+    false,
+  );
+});
+test("cancelamento bloqueia boleto liquidado, baixado, pendente ou com solicitação em andamento antes do banco", async () => {
+  for (const option of [
+    { statusLocal: "liquidado" },
+    { statusLocal: "baixado" },
+    { statusLocal: "pendente" },
+    { cancelamentoPendente: true },
+  ]) {
+    const calls = backend(option);
+    await expect(
+      sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+    ).rejects.toThrow();
+    expect(calls.some((c) => c.path.endsWith("/baixa"))).toBe(false);
+  }
+});
+test("recusa do banco não marca cancelamento ou baixa local", async () => {
+  const calls = backend({ cancelStatus: 422 });
+  await expect(
+    sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+  ).rejects.toThrow("recusado");
+  expect(calls.some((c) => c.path.endsWith("/sicredi_registrar_pedido_baixa_281"))).toBe(false);
+});
+test("consulta preserva pedido em andamento e só registra baixado quando o banco confirmar", async () => {
+  for (const confirmado of [false, true]) {
+    const calls = backend({ cancelamentoPendente: true, bankBaixado: confirmado });
+    await sicrediConsultarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } });
+    const sync = calls.find((c) => c.path.endsWith("/sincronizar_boleto_sicredi_servidor"));
+    expect(sync?.body["_status"]).toBe(confirmado ? "baixado" : "registrado");
+    if (!confirmado)
+      expect(sync?.body["_retorno"]).toMatchObject({ cancelamento_sicredi_pendente: true });
+  }
 });
