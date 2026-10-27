@@ -95,7 +95,7 @@ const fields: CrudField[] = [
   },
   {
     name: "preco_venda",
-    label: "Preço de referência",
+    label: "Preço de venda",
     type: "number",
     step: "0.01",
     inTable: true,
@@ -242,7 +242,7 @@ function ProdutosPage() {
   return (
     <ErpLayout
       title="Produtos"
-      description="Cadastro geral de produtos. Consulte o estoque e o depósito da loja em Estoque; preços de venda e descontos são configurados por loja."
+      description="Cadastro geral de produtos. Consulte o estoque e o depósito da loja em Estoque; o preço normal é sincronizado com o catálogo das lojas."
       actions={
         <Button asChild variant="secondary">
           <Link to="/estoque">
@@ -252,10 +252,10 @@ function ProdutosPage() {
       }
     >
       <p className="mb-4 text-sm text-muted-foreground">
-        O preço de referência inicializa o catálogo de novos produtos e novas lojas. Para alterar
-        preços nas lojas existentes,{" "}
+        O preço de venda é o mesmo em Produtos e no catálogo da loja. Salve a alteração para
+        atualizar o preço normal usado em novos itens de pedidos. Também é possível editar em{" "}
         <Link to="/centros" className="font-medium underline">
-          acesse Lojas → Produtos e preços
+          Lojas → Produtos e preços
         </Link>
         .
       </p>

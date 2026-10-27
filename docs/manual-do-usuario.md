@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.2.1 · 2026-10-27
+Versão 1.3.0 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -43,7 +43,7 @@ Entenda como a categoria liga os produtos ao estoque da loja.
 1. Em Lojas, confira nome, CNPJ e a categoria dos produtos da loja. Cada loja ativa usa uma categoria exclusiva para o estoque.
 2. Em Produtos, cadastre descrição, código, unidade, categoria e os demais dados exigidos.
 3. A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.
-4. Para alterar preço-base e limite de desconto de uma loja, abra o catálogo na configuração da loja. O preço de referência do cadastro geral não substitui os preços já configurados.
+4. Altere o preço normal em Produtos ou em Lojas → Produtos e preços. Após salvar, o mesmo preço é sincronizado nas duas telas e usado em novos itens de pedidos. Promoções podem aplicar um preço especial; descontos e disponibilidade continuam por loja.
 5. Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro.
 
 Cuidados:
@@ -51,6 +51,7 @@ Cuidados:
 - Produto com saldo ou reserva não deve ser reclassificado para outra loja por edição da categoria. Solicite a conciliação ao administrador.
 - Estoque total do produto no cadastro não representa uma nova quantidade a somar aos depósitos. Consulte o saldo da loja em Estoque.
 - Dados fiscais e CNPJ precisam ser conferidos pelo responsável da empresa.
+- Alterar o preço normal não reescreve itens de pedidos ou vendas já gravados. Revise os itens de pedidos em digitação pelo fluxo comercial quando precisar atualizar uma proposta.
 
 ## Promoções, descontos e formas de pagamento
 

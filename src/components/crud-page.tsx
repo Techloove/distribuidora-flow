@@ -460,7 +460,9 @@ export function CrudPage({
         const { error } = await client!
           .from(table)
           .update(payload)
-          .eq("id", editing["id"] as string);
+          .eq("id", editing["id"] as string)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
       } else {
         const { error } = await client!.from(table).insert(payload);
@@ -472,7 +474,7 @@ export function CrudPage({
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: [table] });
       if (table === "produtos") {
-        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido", "preco_produto_info"])
           void queryClient.invalidateQueries({ queryKey: [key] });
       }
       if (table === "desconto_faixas_peso")
@@ -495,7 +497,7 @@ export function CrudPage({
       toast.success("Registro excluído");
       queryClient.invalidateQueries({ queryKey: [table] });
       if (table === "produtos") {
-        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido", "preco_produto_info"])
           void queryClient.invalidateQueries({ queryKey: [key] });
       }
       if (table === "desconto_faixas_peso")
@@ -511,14 +513,14 @@ export function CrudPage({
   const inlineUpdate = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
       assertDirectWriteAllowed();
-      const { error } = await client!.from(table).update(patch).eq("id", id);
+      const { error } = await client!.from(table).update(patch).eq("id", id).select("id").single();
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Atualizado");
       queryClient.invalidateQueries({ queryKey: [table] });
       if (table === "produtos") {
-        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido"])
+        for (const key of ["loja-catalogo", "vw_promocoes", "validar_pedido", "preco_produto_info"])
           void queryClient.invalidateQueries({ queryKey: [key] });
       }
       if (table === "desconto_faixas_peso")
@@ -730,6 +732,7 @@ export function CrudPage({
                           type="number"
                           step={f.step ?? "0.01"}
                           aria-label={f.label}
+                          disabled={inlineUpdate.isPending}
                           defaultValue={
                             row[f.name] === null || row[f.name] === undefined
                               ? ""
@@ -746,7 +749,15 @@ export function CrudPage({
                               ? onInlineSave(row, f.name, e.target.value)
                               : { [f.name]: e.target.value === "" ? null : Number(e.target.value) };
                             if (Object.keys(patch).length === 0) return;
-                            inlineUpdate.mutate({ id: row["id"] as string, patch });
+                            const input = e.currentTarget;
+                            inlineUpdate.mutate(
+                              { id: row["id"] as string, patch },
+                              {
+                                onError: () => {
+                                  input.value = antes;
+                                },
+                              },
+                            );
                           }}
                         />
                       ) : f.type === "multicheck" ? (

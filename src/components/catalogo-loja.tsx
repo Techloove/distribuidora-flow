@@ -74,9 +74,10 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success(`Produto atualizado em ${nome}.`);
+      toast.success(`Produto atualizado em ${nome}. Preço normal sincronizado.`);
       setProduto(null);
-      void qc.invalidateQueries({ queryKey: ["loja-catalogo"] });
+      for (const key of ["produtos", "loja-catalogo", "vw_promocoes", "preco_produto_info"])
+        void qc.invalidateQueries({ queryKey: [key] });
       void qc.invalidateQueries({ queryKey: ["validar_pedido"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -92,8 +93,9 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
       <h3 className="font-semibold">Produtos e preços — {nome}</h3>
       <p className="text-sm text-muted-foreground">
         O catálogo segue a categoria da loja. Ajuste aqui o preço-base, o teto de desconto ou uma
-        suspensão individual de venda. Cada loja usa seu próprio estoque. Alterar a referência no
-        cadastro geral de Produtos não altera os preços já configurados nas lojas.
+        suspensão individual de venda. Cada loja usa seu próprio estoque. O preço normal é
+        sincronizado com o cadastro geral de Produtos. Alterar o preço em qualquer uma dessas telas
+        atualiza o mesmo produto. Promoções e descontos seguem suas regras.
       </p>
       <CategoriaLoja key={loja} loja={loja} editar={editar} />
       <Label htmlFor="busca-catalogo-loja">Buscar produto por código ou descrição</Label>
@@ -198,7 +200,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
             <option value="true">Disponível</option>
             <option value="false">Indisponível</option>
           </select>
-          <Label htmlFor="produto-loja-preco">Preço-base nesta loja (R$)</Label>
+          <Label htmlFor="produto-loja-preco">Preço normal do produto (R$)</Label>
           <Input
             id="produto-loja-preco"
             type="number"
