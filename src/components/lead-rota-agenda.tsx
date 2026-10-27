@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -337,12 +339,9 @@ export function LeadRotaAgenda({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <button
-                            className="truncate text-left font-semibold hover:underline"
-                            onClick={() => setClienteAberto(txt(c["cliente_id"]))}
-                          >
+                          <ReferenciaRegistro tipo="cliente" id={c["cliente_id"]}>
                             {txt(c["razao_social"])}
-                          </button>
+                          </ReferenciaRegistro>
                           {c["nome_fantasia"] ? (
                             <p className="truncate text-xs text-muted-foreground">
                               {txt(c["nome_fantasia"])}
@@ -502,7 +501,7 @@ export function LeadRotaAgenda({
   );
 }
 
-function Info({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
+function Info({ label, value, danger }: { label: string; value: ReactNode; danger?: boolean }) {
   return (
     <div className="min-w-0">
       <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</dt>
@@ -555,7 +554,11 @@ function ClientePanel({
             </p>
           )}
         <DialogHeader>
-          <DialogTitle>{txt(cliente["razao_social"])}</DialogTitle>
+          <DialogTitle>
+            <ReferenciaRegistro tipo="cliente" id={cliente["cliente_id"]}>
+              {txt(cliente["razao_social"])}
+            </ReferenciaRegistro>
+          </DialogTitle>
           <DialogDescription>
             {txt(cliente["rota"])} · {txt(cliente["representante"]) || "sem vendedor"}
           </DialogDescription>
@@ -583,7 +586,14 @@ function ClientePanel({
           </Bloco>
 
           <Bloco titulo="Comercial">
-            <Info label="Último pedido" value={txt(cliente["ultimo_pedido_numero"]) || "—"} />
+            <Info
+              label="Último pedido"
+              value={
+                <ReferenciaRegistro tipo="pedido" id={cliente["ultimo_pedido_id"]}>
+                  {txt(cliente["ultimo_pedido_numero"]) || "—"}
+                </ReferenciaRegistro>
+              }
+            />
             <Info label="Última compra" value={fmtDate(cliente["ultima_compra"])} />
             <Info label="Ticket médio" value={brl(cliente["ticket_medio"])} />
             <Info label="Total comprado" value={brl(cliente["total_comprado"])} />
@@ -627,7 +637,11 @@ function ClientePanel({
                   <TableBody>
                     {(pedidos.data ?? []).map((p) => (
                       <TableRow key={txt(p["pedido_id"])}>
-                        <TableCell className="font-medium">{txt(p["numero"])}</TableCell>
+                        <TableCell className="font-medium">
+                          <ReferenciaRegistro tipo="pedido" id={p["pedido_id"]}>
+                            {txt(p["numero"])}
+                          </ReferenciaRegistro>
+                        </TableCell>
                         <TableCell>{fmtDate(p["data_pedido"])}</TableCell>
                         <TableCell>{txt(p["representante"]) || "—"}</TableCell>
                         <TableCell className="text-right">{num(p["qtd_itens"])}</TableCell>
@@ -806,7 +820,11 @@ function HistoricoDialog({ clienteId, onClose }: { clienteId: string; onClose: (
                 <TableBody>
                   {(pedidos.data ?? []).map((p) => (
                     <TableRow key={txt(p["pedido_id"])}>
-                      <TableCell className="font-medium">{txt(p["numero"])}</TableCell>
+                      <TableCell className="font-medium">
+                        <ReferenciaRegistro tipo="pedido" id={p["pedido_id"]}>
+                          {txt(p["numero"])}
+                        </ReferenciaRegistro>
+                      </TableCell>
                       <TableCell>{fmtDate(p["data_pedido"])}</TableCell>
                       <TableCell>{txt(p["representante"]) || "—"}</TableCell>
                       <TableCell className="text-right">{num(p["qtd_itens"])}</TableCell>

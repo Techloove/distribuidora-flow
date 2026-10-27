@@ -1,9 +1,11 @@
+import { buscaReferencias } from "@/lib/referencias-registros";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ErpLayout } from "@/components/erp-layout";
 import { TitulosPage, type TitulosConfig } from "@/components/titulos-page";
 
 export const Route = createFileRoute("/_app/receber")({
+  validateSearch: buscaReferencias,
   head: () => ({
     meta: [
       { title: "Contas a receber — ERP Distribuidora" },
@@ -34,12 +36,13 @@ const config: TitulosConfig = {
 };
 
 function ReceberPage() {
+  const referencia = Route.useSearch();
   return (
     <ErpLayout
       title="Contas a receber"
       description="Parcelas geradas na confirmação dos pedidos. Baixas parciais atualizam o saldo automaticamente."
     >
-      <TitulosPage config={config} />
+      <TitulosPage key={JSON.stringify(referencia)} config={config} referencia={referencia} />
     </ErpLayout>
   );
 }

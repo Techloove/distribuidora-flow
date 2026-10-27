@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ConciliacaoExtrato } from "@/components/conciliacao-extrato";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -315,7 +316,14 @@ function MovimentacoesPage() {
                   <TableRow key={String(m["id"])}>
                     <TableCell>{String(m["data"])}</TableCell>
                     <TableCell>{String(m["conta_nome"] ?? "—")}</TableCell>
-                    <TableCell>{String(m["origem"])}</TableCell>
+                    <TableCell>
+                      <ReferenciaRegistro
+                        tipo={m["conta_receber_id"] ? "receber" : "pagar"}
+                        id={m["conta_receber_id"] ?? m["conta_pagar_id"]}
+                      >
+                        {String(m["origem"])}
+                      </ReferenciaRegistro>
+                    </TableCell>
                     <TableCell>
                       {String(m["categoria_pai"] ?? m["categoria_nome"] ?? "—")}
                       {m["categoria_pai"] && m["categoria_nome"] ? (

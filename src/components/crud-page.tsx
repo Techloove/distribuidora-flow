@@ -375,7 +375,7 @@ export function CrudPage({
   const abertoInicial = useRef("");
   const registroInicial = useQuery({
     queryKey: [table, "editar-registro", user?.id, initialEditId],
-    enabled: !!client && !!initialEditId && !effectiveReadOnly,
+    enabled: !!client && !!initialEditId,
     queryFn: async () => {
       const { data, error } = await client!
         .from(table)

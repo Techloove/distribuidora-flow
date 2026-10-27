@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -86,6 +87,7 @@ function RelatoriosFinanceirosPage() {
         map.get(id) ??
         ({
           chave: String(r[k.nome] ?? "—"),
+          referencia_id: r[k.id],
           quantidade: 0,
           receita: 0,
           custo: 0,
@@ -108,6 +110,7 @@ function RelatoriosFinanceirosPage() {
       const pedidos = (r["pedidos"] as Set<string>).size;
       return {
         chave: String(r["chave"]),
+        referencia_id: r["referencia_id"],
         quantidade: Number(r["quantidade"]),
         receita,
         custo: Number(r["custo"]),
@@ -127,7 +130,9 @@ function RelatoriosFinanceirosPage() {
           : ordem === "margem"
             ? "margem"
             : "lucro";
-    return lista.sort((a, b) => Number(b[campo as keyof typeof b]) - Number(a[campo as keyof typeof a]));
+    return lista.sort(
+      (a, b) => Number(b[campo as keyof typeof b]) - Number(a[campo as keyof typeof a]),
+    );
   }, [itens.data, agrupar, de, ate, ordem]);
 
   const totais = linhas.reduce(
@@ -260,7 +265,15 @@ function RelatoriosFinanceirosPage() {
               <TableBody>
                 {linhas.slice(0, 200).map((l) => (
                   <TableRow key={l.chave}>
-                    <TableCell>{l.chave}</TableCell>
+                    <TableCell>
+                      {agrupar === "cliente" || agrupar === "pedido" ? (
+                        <ReferenciaRegistro tipo={agrupar} id={l.referencia_id}>
+                          {l.chave}
+                        </ReferenciaRegistro>
+                      ) : (
+                        l.chave
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{l.quantidade.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{brl(l.receita)}</TableCell>
                     {mostraCusto ? (

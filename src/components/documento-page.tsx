@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ObservacoesPedido } from "@/components/observacoes-pedido";
 import { Textarea } from "@/components/ui/textarea";
 import { RegularizarStatusPedido } from "@/components/regularizar-status-pedido";
@@ -97,6 +98,9 @@ export function DocumentoPage({
   const [encargosPendentes, setEncargosPendentes] = useState(false);
   const [observacoesPendentes, setObservacoesPendentes] = useState(false);
   const [selected, setSelected] = useState<string | null>(initialDocId);
+  useEffect(() => {
+    setSelected(initialDocId);
+  }, [initialDocId]);
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
   const [item, setItem] = useState({ ...emptyItem });
@@ -1275,6 +1279,19 @@ export function DocumentoPage({
             );
           })()
         : null}
+      {config.table === "pedidos" && (
+        <nav
+          aria-label="Registros relacionados ao pedido"
+          className="no-print mt-4 flex flex-wrap gap-4 text-sm"
+        >
+          <ReferenciaRegistro tipo="financeiroPedido" id={doc["id"]}>
+            Contas a receber deste pedido
+          </ReferenciaRegistro>
+          <ReferenciaRegistro tipo="boletosPedido" id={doc["id"]}>
+            Boletos deste pedido
+          </ReferenciaRegistro>
+        </nav>
+      )}
       <div className="mt-4 flex flex-wrap gap-2">
         {config.table === "pedidos" ? (
           <ImprimirPedidos
@@ -1638,7 +1655,14 @@ export function DocumentoPage({
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold">#{String(d["numero"])}</p>
-                          <p className="truncate text-sm">{partnerName(d[config.partnerKey])}</p>
+                          <p className="truncate text-sm">
+                            <ReferenciaRegistro
+                              tipo={config.table === "pedidos" ? "cliente" : "fornecedor"}
+                              id={d[config.partnerKey]}
+                            >
+                              {partnerName(d[config.partnerKey])}
+                            </ReferenciaRegistro>
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {fmtDate(d[config.dateField])}
                           </p>
@@ -1689,7 +1713,12 @@ export function DocumentoPage({
                       >
                         <td className="px-4 py-2.5 font-semibold">#{String(d["numero"])}</td>
                         <td className="max-w-[380px] truncate px-4 py-2.5">
-                          {partnerName(d[config.partnerKey])}
+                          <ReferenciaRegistro
+                            tipo={config.table === "pedidos" ? "cliente" : "fornecedor"}
+                            id={d[config.partnerKey]}
+                          >
+                            {partnerName(d[config.partnerKey])}
+                          </ReferenciaRegistro>
                         </td>
                         {config.table === "pedidos" ? (
                           <td className="max-w-[220px] truncate px-4 py-2.5 text-muted-foreground">
@@ -1792,7 +1821,13 @@ export function DocumentoPage({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {config.partnerLabel}: {partnerName(doc[config.partnerKey])}
+                    {config.partnerLabel}:{" "}
+                    <ReferenciaRegistro
+                      tipo={config.table === "pedidos" ? "cliente" : "fornecedor"}
+                      id={doc[config.partnerKey]}
+                    >
+                      {partnerName(doc[config.partnerKey])}
+                    </ReferenciaRegistro>
                   </p>
                   <h2 className="text-lg font-semibold">
                     #{String(doc["numero"])} ·{" "}

@@ -1,3 +1,6 @@
+import { ContextoReferencia } from "@/components/contexto-referencia";
+import { ReferenciaRegistro } from "@/components/referencia-registro";
+import { correspondeReferencia, type BuscaReferencias } from "@/lib/referencias-registros";
 import { ReimprimirBoleto } from "@/components/reimprimir-boleto";
 import { LiquidacaoSicredi } from "@/components/liquidacao-sicredi";
 import { SicrediAutomatico } from "@/components/sicredi-automatico";
@@ -67,7 +70,7 @@ function dataBr(v: unknown) {
   return s ? s.split("-").reverse().join("/") : "—";
 }
 
-export function BoletosPage() {
+export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const { client, roles, session } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
@@ -156,10 +159,14 @@ export function BoletosPage() {
   const boletosFiltrados = useMemo(
     () =>
       ordenarBoletos(
-        filtrarBoletos(daLoja, filtros, cliName),
+        filtrarBoletos(
+          daLoja.filter((r) => !referencia || correspondeReferencia(r, referencia, true)),
+          filtros,
+          cliName,
+        ),
         filtros["ordem"] ?? "vencimento_asc",
       ),
-    [daLoja, filtros, cliName],
+    [daLoja, filtros, cliName, referencia],
   );
   const periodoInvalido = periodoBoletosInvalido(filtros);
   const tarifas = useQuery({
@@ -310,6 +317,7 @@ export function BoletosPage() {
         </div>
       }
     >
+      <ContextoReferencia busca={referencia} to="/boletos" />
       <AlertDialog
         open={!!cancelarBoleto}
         onOpenChange={(v) => {
@@ -545,13 +553,20 @@ export function BoletosPage() {
                       <Fragment key={id}>
                         <TableRow>
                           <TableCell className="whitespace-nowrap font-medium">
-                            {String(b["nosso_numero"] ?? "—")}
+                            <ReferenciaRegistro tipo="receber" id={b["conta_receber_id"]}>
+                              {String(b["nosso_numero"] ?? "—")}
+                            </ReferenciaRegistro>
                             <span className="block text-xs font-normal text-muted-foreground">
-                              {String(b["documento"] ?? "—")}/{String(b["parcela"] ?? 1)}
+                              <ReferenciaRegistro tipo="pedido" id={b["pedido_id"]}>
+                                {String(b["documento"] ?? "—")}
+                              </ReferenciaRegistro>
+                              /{String(b["parcela"] ?? 1)}
                             </span>
                           </TableCell>
                           <TableCell className="min-w-40 max-w-64 break-words">
-                            {cliName(b["cliente_id"])}
+                            <ReferenciaRegistro tipo="cliente" id={b["cliente_id"]}>
+                              {cliName(b["cliente_id"])}
+                            </ReferenciaRegistro>
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-xs">
                             <p>

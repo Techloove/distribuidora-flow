@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { TrocaDevolucao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -433,7 +434,11 @@ function DevolucoesPage() {
                       className={`cursor-pointer ${selected === d["id"] ? "bg-muted/60" : ""}`}
                     >
                       <TableCell>#{String(d["numero"])}</TableCell>
-                      <TableCell>{cliName(d["cliente_id"])}</TableCell>
+                      <TableCell>
+                        <ReferenciaRegistro tipo="cliente" id={d["cliente_id"]}>
+                          {cliName(d["cliente_id"])}
+                        </ReferenciaRegistro>
+                      </TableCell>
                       <TableCell>{String(d["data_devolucao"])}</TableCell>
                       <TableCell className="text-right">{brl(d["valor_total"])}</TableCell>
                       <TableCell>{String(d["status"])}</TableCell>
@@ -458,7 +463,10 @@ function DevolucoesPage() {
                   <div>
                     <p className="text-sm font-semibold">Devolução #{String(doc["numero"])}</p>
                     <p className="text-xs text-muted-foreground">
-                      {cliName(doc["cliente_id"])} · {String(doc["status"])}
+                      <ReferenciaRegistro tipo="cliente" id={doc["cliente_id"]}>
+                        {cliName(doc["cliente_id"])}
+                      </ReferenciaRegistro>{" "}
+                      · {String(doc["status"])}
                     </p>
                   </div>
                   <p className="text-lg font-semibold">{brl(doc["valor_total"])}</p>

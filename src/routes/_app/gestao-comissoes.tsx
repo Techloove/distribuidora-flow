@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -181,7 +182,9 @@ function GestaoComissoesPage() {
     mutationFn: async () => {
       const ids = [...selecionadas];
       const reps = new Set(
-        linhas.filter((l) => selecionadas.has(String(l["comissao_id"]))).map((l) => String(l["representante_id"])),
+        linhas
+          .filter((l) => selecionadas.has(String(l["comissao_id"])))
+          .map((l) => String(l["representante_id"])),
       );
       if (reps.size !== 1) {
         throw new Error("Selecione comissões de um único representante para gerar o pagamento.");
@@ -227,9 +230,15 @@ function GestaoComissoesPage() {
     if (termo) {
       lista = lista.filter(
         (r) =>
-          String(r["representante"] ?? "").toLowerCase().includes(termo) ||
-          String(r["cliente"] ?? "").toLowerCase().includes(termo) ||
-          String(r["pedido_numero"] ?? "").toLowerCase().includes(termo),
+          String(r["representante"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["cliente"] ?? "")
+            .toLowerCase()
+            .includes(termo) ||
+          String(r["pedido_numero"] ?? "")
+            .toLowerCase()
+            .includes(termo),
       );
     }
     return lista;
@@ -442,14 +451,18 @@ function GestaoComissoesPage() {
                               />
                             </TableCell>
                             <TableCell className="font-medium">
-                              {String(r["pedido_numero"] ?? "—")}
+                              <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                                {String(r["pedido_numero"] ?? "—")}
+                              </ReferenciaRegistro>
                             </TableCell>
                             <TableCell>{fmtDate(r["data_pedido"])}</TableCell>
                             <TableCell className="max-w-[12rem] truncate">
                               {String(r["representante"] ?? "—")}
                             </TableCell>
                             <TableCell className="max-w-[14rem] truncate">
-                              {String(r["cliente"] ?? "—")}
+                              <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                                {String(r["cliente"] ?? "—")}
+                              </ReferenciaRegistro>
                             </TableCell>
                             <TableCell>{String(r["centro"] ?? "—")}</TableCell>
                             <TableCell className="text-right">{brl(r["base_calculo"])}</TableCell>
@@ -596,8 +609,8 @@ function GestaoComissoesPage() {
           <DialogHeader>
             <DialogTitle>Pagar comissões</DialogTitle>
             <DialogDescription>
-              Gera uma conta a pagar de {brl(selecionadasValor)} com as {selecionadas.size} comissões
-              selecionadas e marca cada uma como paga.
+              Gera uma conta a pagar de {brl(selecionadasValor)} com as {selecionadas.size}{" "}
+              comissões selecionadas e marca cada uma como paga.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">

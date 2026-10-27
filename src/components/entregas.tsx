@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { ImprimirPedidos } from "@/components/imprimir-pedidos";
 import { useEffect, useState } from "react";
@@ -208,10 +209,17 @@ export function Entregas() {
           <article key={e.expedicao_id} className="min-w-0 rounded-xl border bg-card p-4 space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 className="font-semibold">Pedido #{e.numero}</h2>
+                <h2 className="font-semibold">
+                  Pedido{" "}
+                  <ReferenciaRegistro tipo="pedido" id={e.pedido_id}>
+                    #{e.numero}
+                  </ReferenciaRegistro>
+                </h2>
                 <p className="text-sm">
                   {e.codigo_cliente ? `${e.codigo_cliente} · ` : ""}
-                  {e.cliente}
+                  <ReferenciaRegistro tipo="clientePedido" id={e.pedido_id}>
+                    {e.cliente}
+                  </ReferenciaRegistro>
                 </p>
               </div>
               <span

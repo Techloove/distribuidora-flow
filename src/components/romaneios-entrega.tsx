@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Printer } from "lucide-react";
@@ -330,7 +331,17 @@ export function RomaneiosEntrega() {
                     >
                       <td className="px-4 py-2.5 font-semibold">#{String(r["numero"])}</td>
                       <td className="max-w-[320px] truncate px-4 py-2.5">
-                        {pedidoLabel(r["pedido_id"])}
+                        <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                          #
+                          {String(
+                            pedidos.data?.find((p) => p["id"] === r["pedido_id"])?.["numero"] ??
+                              "—",
+                          )}
+                        </ReferenciaRegistro>
+                        {" · "}
+                        <ReferenciaRegistro tipo="clientePedido" id={r["pedido_id"]}>
+                          {pedidoLabel(r["pedido_id"]).split(" · ").slice(1).join(" · ") || "—"}
+                        </ReferenciaRegistro>
                       </td>
                       <td className="px-4 py-2.5">{transportadoraLabel(r["transportadora_id"])}</td>
                       <td className="px-4 py-2.5">

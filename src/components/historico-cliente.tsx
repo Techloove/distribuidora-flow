@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
@@ -141,7 +142,9 @@ export function HistoricoCliente({
                   {linhas.slice(pp * 4, pp * 4 + 4).map((r) => (
                     <TableRow key={String(r["pedido_id"])}>
                       <TableCell className="font-medium">
-                        {String(r["pedido_numero"] ?? "")}
+                        <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                          {String(r["pedido_numero"] ?? "")}
+                        </ReferenciaRegistro>
                       </TableCell>
                       <TableCell>{fmtDate(r["data_pedido"])}</TableCell>
                       <TableCell className="capitalize">
@@ -199,9 +202,15 @@ export function HistoricoCliente({
                   {fin.slice(pf * 4, pf * 4 + 4).map((t) => (
                     <TableRow key={String(t["titulo_id"])}>
                       <TableCell className="font-medium">
-                        {String(t["pedido_numero"] ?? "—")}
+                        <ReferenciaRegistro tipo="pedido" id={t["pedido_id"]}>
+                          {String(t["pedido_numero"] ?? "—")}
+                        </ReferenciaRegistro>
                       </TableCell>
-                      <TableCell>{String(t["documento"] ?? t["descricao"] ?? "—")}</TableCell>
+                      <TableCell>
+                        <ReferenciaRegistro tipo="receber" id={t["titulo_id"]}>
+                          {String(t["documento"] ?? t["descricao"] ?? "—")}
+                        </ReferenciaRegistro>
+                      </TableCell>
                       <TableCell>{String(t["parcela"] ?? "—")}</TableCell>
                       <TableCell>{fmtDate(t["vencimento"])}</TableCell>
                       <TableCell className="capitalize">

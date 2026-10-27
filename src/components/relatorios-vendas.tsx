@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
   Bar,
   BarChart,
@@ -203,6 +204,7 @@ export function RelatoriosVendas() {
   ];
   const ranking = (dados?.ranking ?? []).map((r) => ({
     ...r,
+    cliente_id: grupo === "cliente" ? r["chave"] : r["cliente_id"],
     margem_exibida: n(r["vendas"]) === 0 ? null : (n(r[liquidoKey]) / n(r["vendas"])) * 100,
   }));
   const colunasPedidos: Coluna[] = [
@@ -851,9 +853,23 @@ function Tabela({
                       key={c.key}
                       className={`p-3 ${dinheiro.has(c.key) ? "whitespace-nowrap tabular-nums" : ""}`}
                     >
-                      {c.key === "margem_exibida"
-                        ? percentual(r[c.key])
-                        : formatar(c.key, r[c.key])}
+                      {c.key === "numero" ? (
+                        <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                          {formatar(c.key, r[c.key])}
+                        </ReferenciaRegistro>
+                      ) : c.key === "cliente" ? (
+                        <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                          {formatar(c.key, r[c.key])}
+                        </ReferenciaRegistro>
+                      ) : c.key === "nome" ? (
+                        <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                          {formatar(c.key, r[c.key])}
+                        </ReferenciaRegistro>
+                      ) : c.key === "margem_exibida" ? (
+                        percentual(r[c.key])
+                      ) : (
+                        formatar(c.key, r[c.key])
+                      )}
                     </td>
                   ))}
                 </tr>

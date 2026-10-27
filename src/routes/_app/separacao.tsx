@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
   SeparacaoLote,
   AcoesAposSeparacao,
@@ -189,6 +190,7 @@ function SeparacaoPage() {
         numero: string;
         centroId: string;
         cliente: string;
+        clienteId: unknown;
         status: string;
         rota: string;
         seq: string;
@@ -202,6 +204,7 @@ function SeparacaoPage() {
         numero: String(r["numero"]),
         centroId: String(r["centro_id"] ?? ""),
         cliente: String(r["cliente"] ?? "—"),
+        clienteId: r["cliente_id"],
         status: String(r["status"]),
         rota: String(r["rota"] ?? "—"),
         romaneio: r["romaneio_numero"]
@@ -582,8 +585,16 @@ function SeparacaoPage() {
                               }
                             />
                           </td>
-                          <td className="px-4 py-2.5 font-semibold">#{p.numero}</td>
-                          <td className="max-w-[320px] truncate px-4 py-2.5">{p.cliente}</td>
+                          <td className="px-4 py-2.5 font-semibold">
+                            <ReferenciaRegistro tipo="pedido" id={id}>
+                              #{p.numero}
+                            </ReferenciaRegistro>
+                          </td>
+                          <td className="max-w-[320px] truncate px-4 py-2.5">
+                            <ReferenciaRegistro tipo="cliente" id={p.clienteId}>
+                              {p.cliente}
+                            </ReferenciaRegistro>
+                          </td>
                           <td className="px-4 py-2.5">{p.rota}</td>
                           <td className="px-4 py-2.5 text-xs text-muted-foreground">
                             {p.seq || "—"}

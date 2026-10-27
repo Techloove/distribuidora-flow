@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -339,8 +340,11 @@ export function ComissaoProporcional() {
           return (
             <div className="grid gap-2 sm:grid-cols-3 border-b py-2" key={id}>
               <span className="text-sm">
-                Pedido #{String(r["pedido_numero"])} · disponível {brl(r["disponivel"])} · agendado{" "}
-                {brl(r["agendado"])}
+                Pedido{" "}
+                <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                  #{String(r["pedido_numero"])}
+                </ReferenciaRegistro>{" "}
+                · disponível {brl(r["disponivel"])} · agendado {brl(r["agendado"])}
               </span>
               <Input
                 aria-label={`Comissão proporcional do pedido ${r["pedido_numero"]}`}

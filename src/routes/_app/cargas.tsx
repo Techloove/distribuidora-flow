@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { SelecionarPedidosLote, DespacharCarga } from "@/components/logistica-pratica";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { lerPaginas } from "@/lib/paginacao";
@@ -300,9 +301,15 @@ function CargasPage() {
                       className="flex items-center justify-between gap-2 py-2"
                     >
                       <span className="min-w-0">
-                        <span className="font-semibold">#{String(p["numero"])}</span>{" "}
+                        <span className="font-semibold">
+                          <ReferenciaRegistro tipo="pedido" id={p["pedido_id"]}>
+                            #{String(p["numero"])}
+                          </ReferenciaRegistro>
+                        </span>{" "}
                         <span className="text-muted-foreground">
-                          {String(p["cliente"] ?? "—")}
+                          <ReferenciaRegistro tipo="clientePedido" id={p["pedido_id"]}>
+                            {String(p["cliente"] ?? "—")}
+                          </ReferenciaRegistro>
                           {p["nf_numero"] ? ` · NF ${String(p["nf_numero"])}` : ""}
                         </span>
                       </span>
@@ -359,9 +366,15 @@ function CargasPage() {
                       className="flex items-center justify-between gap-2 py-2"
                     >
                       <span className="min-w-0">
-                        <span className="font-semibold">#{String(p["numero"])}</span>{" "}
+                        <span className="font-semibold">
+                          <ReferenciaRegistro tipo="pedido" id={p["pedido_id"]}>
+                            #{String(p["numero"])}
+                          </ReferenciaRegistro>
+                        </span>{" "}
                         <span className="text-muted-foreground">
-                          {String(p["cliente"] ?? "—")}
+                          <ReferenciaRegistro tipo="clientePedido" id={p["pedido_id"]}>
+                            {String(p["cliente"] ?? "—")}
+                          </ReferenciaRegistro>
                           {p["nf_numero"] ? ` · NF ${String(p["nf_numero"])}` : ""}
                         </span>
                       </span>

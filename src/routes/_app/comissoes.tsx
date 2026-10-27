@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ComissaoProporcional } from "@/components/financeiro-novas-rotinas";
 import { AjustesComissao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -455,14 +456,18 @@ function ComissoesPage() {
                               />
                             </TableCell>
                             <TableCell className="font-medium">
-                              {String(r["pedido_numero"] ?? "—")}
+                              <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                                {String(r["pedido_numero"] ?? "—")}
+                              </ReferenciaRegistro>
                             </TableCell>
                             <TableCell>{fmtDate(r["data_pedido"])}</TableCell>
                             <TableCell className="max-w-[12rem] truncate">
                               {String(r["representante"] ?? "—")}
                             </TableCell>
                             <TableCell className="max-w-[14rem] truncate">
-                              {String(r["cliente"] ?? "—")}
+                              <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                                {String(r["cliente"] ?? "—")}
+                              </ReferenciaRegistro>
                             </TableCell>
                             <TableCell>{String(r["centro"] ?? "—")}</TableCell>
                             <TableCell className="text-right">{brl(r["base_calculo"])}</TableCell>

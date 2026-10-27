@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesLeadCliente } from "@/components/lead-rota-agenda";
 import {
   FILTROS_AGENDA,
@@ -235,6 +236,11 @@ export function AgendaClientes({
             ) : (
               q.data?.rows.map((r) => (
                 <article key={`${r["cliente_id"]}-${r["centro_id"]}`} className="rounded border">
+                  <h3 className="px-3 pt-3 text-sm font-semibold">
+                    <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                      {String(r["codigo"] ?? "")} · {String(r["razao_social"])}
+                    </ReferenciaRegistro>
+                  </h3>
                   <button
                     type="button"
                     aria-pressed={cliente?.["cliente_id"] === r["cliente_id"]}
@@ -252,9 +258,7 @@ export function AgendaClientes({
                     }}
                     className={`w-full rounded p-3 text-left text-sm ${cliente?.["cliente_id"] === r["cliente_id"] ? "border-primary bg-accent" : ""}`}
                   >
-                    <strong>
-                      {String(r["codigo"] ?? "")} · {String(r["razao_social"])}
-                    </strong>
+                    <strong>Abrir acompanhamento</strong>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {[r["representante"], r["rota"], r["cidade"]].filter(Boolean).join(" · ")}
                     </p>
@@ -410,7 +414,11 @@ export function AgendaClientes({
           {cliente && (
             <section className="rounded border bg-card p-4 space-y-3">
               <div className="flex justify-between gap-2">
-                <h2 className="font-semibold">{String(cliente["razao_social"])}</h2>
+                <h2 className="font-semibold">
+                  <ReferenciaRegistro tipo="cliente" id={cliente["cliente_id"]}>
+                    {String(cliente["razao_social"])}
+                  </ReferenciaRegistro>
+                </h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -528,7 +536,9 @@ export function AgendaClientes({
               atividades.data?.rows.map((a) => (
                 <article key={String(a["id"])} className="rounded border p-3 text-sm space-y-1">
                   <strong>
-                    {String((a["clientes"] as Registro | null)?.["razao_social"] ?? "Cliente")}
+                    <ReferenciaRegistro tipo="cliente" id={a["cliente_id"]}>
+                      {String((a["clientes"] as Registro | null)?.["razao_social"] ?? "Cliente")}
+                    </ReferenciaRegistro>
                   </strong>
                   <p
                     className={

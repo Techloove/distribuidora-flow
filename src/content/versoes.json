@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.8.0",
+    "data": "2026-10-27",
+    "titulo": "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências",
+    "novidades": [
+      "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências"
+    ]
+  },
+  {
     "versao": "1.7.3",
     "data": "2026-10-27",
     "titulo": "Exibir primeiro vencimento no topo da lista de boletos por padrão",

@@ -1,9 +1,11 @@
+import { buscaReferencias } from "@/lib/referencias-registros";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ErpLayout } from "@/components/erp-layout";
 import { TitulosPage, type TitulosConfig } from "@/components/titulos-page";
 
 export const Route = createFileRoute("/_app/pagar")({
+  validateSearch: buscaReferencias,
   head: () => ({
     meta: [
       { title: "Contas a pagar — ERP Distribuidora" },
@@ -34,12 +36,13 @@ const config: TitulosConfig = {
 };
 
 function PagarPage() {
+  const referencia = Route.useSearch();
   return (
     <ErpLayout
       title="Contas a pagar"
       description="Parcelas criadas no recebimento das NFs de compra, com controle de vencidos e baixas."
     >
-      <TitulosPage config={config} />
+      <TitulosPage key={JSON.stringify(referencia)} config={config} referencia={referencia} />
     </ErpLayout>
   );
 }

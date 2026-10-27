@@ -1,3 +1,6 @@
+import { ContextoReferencia } from "@/components/contexto-referencia";
+import { ReferenciaRegistro } from "@/components/referencia-registro";
+import { correspondeReferencia, type BuscaReferencias } from "@/lib/referencias-registros";
 import { AcoesFinanceirasTitulo } from "@/components/financeiro-novas-rotinas";
 import { StatusBadge } from "@/components/status-badge";
 import { HistoricoTitulo } from "@/components/historico-titulo";
@@ -76,10 +79,18 @@ const novoTituloVazio = {
 
 const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
 
-export function TitulosPage({ config }: { config: TitulosConfig }) {
+export function TitulosPage({
+  config,
+  referencia,
+}: {
+  config: TitulosConfig;
+  referencia?: BuscaReferencias;
+}) {
   const { client, roles } = useSupabase();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<(typeof statuses)[number]>("aberto");
+  const [status, setStatus] = useState<(typeof statuses)[number]>(
+    referencia && Object.values(referencia).some(Boolean) ? "todos" : "aberto",
+  );
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
   const { centro: centroGlobal } = useCentro();
@@ -218,7 +229,9 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   };
 
   const rows = useMemo(() => {
-    let list = titulos.data ?? [];
+    let list = (titulos.data ?? []).filter(
+      (r) => !referencia || correspondeReferencia(r, referencia),
+    );
     if (status !== "todos") list = list.filter((r) => tituloNoStatus(r, status));
     if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
     if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
@@ -275,6 +288,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
     }
     return list;
   }, [
+    referencia,
     titulos.data,
     status,
     filtros,
@@ -289,8 +303,13 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
   const totalFiltrado = rows.reduce((s, r) => s + saldoTitulo(r), 0);
 
   const totals = useMemo(
-    () => totaisTitulos(titulos.data ?? [], filtros["centro"] ?? "", hojeSaoPaulo()),
-    [titulos.data, filtros],
+    () =>
+      totaisTitulos(
+        (titulos.data ?? []).filter((r) => !referencia || correspondeReferencia(r, referencia)),
+        filtros["centro"] ?? "",
+        hojeSaoPaulo(),
+      ),
+    [titulos.data, filtros, referencia],
   );
   const idsVisiveis = useMemo(() => selecaoVisivel(selecionados, rows), [selecionados, rows]);
   useEffect(() => {
@@ -388,6 +407,7 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
         <Card label="A vencer (futuro)" value={brl(totals.futuros)} />
       </div>
 
+      <ContextoReferencia busca={referencia} to={isReceber ? "/receber" : "/pagar"} />
       <FilterBar
         onClear={() => setFiltros({ centro: centroGlobal })}
         extra={
@@ -595,9 +615,18 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                       }
                     />
                   </TableCell>
-                  <TableCell data-label="Documento">{String(r["documento"] ?? "—")}</TableCell>
+                  <TableCell data-label="Documento">
+                    <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                      {String(r["documento"] ?? "—")}
+                    </ReferenciaRegistro>
+                  </TableCell>
                   <TableCell data-label="Cliente / fornecedor">
-                    {partnerName(r[config.partnerKey])}
+                    <ReferenciaRegistro
+                      tipo={isReceber ? "cliente" : "fornecedor"}
+                      id={r[config.partnerKey]}
+                    >
+                      {partnerName(r[config.partnerKey])}
+                    </ReferenciaRegistro>
                   </TableCell>
                   <TableCell data-label="Parcela">{String(r["parcela"])}</TableCell>
                   <TableCell data-label="Vencimento">{String(r["vencimento"])}</TableCell>
@@ -624,7 +653,12 @@ export function TitulosPage({ config }: { config: TitulosConfig }) {
                               : undefined
                         }
                       >
-                        {boletoLabel(r)}
+                        <ReferenciaRegistro
+                          tipo="boleto"
+                          id={boletoPorConta.get(String(r["id"]))?.["id"]}
+                        >
+                          {boletoLabel(r)}
+                        </ReferenciaRegistro>
                       </span>
                       {boletoPorConta.get(String(r["id"]))?.["vencimento_solicitado"] ? (
                         <span className="block text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import { idReferencia } from "@/lib/referencias-registros";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -12,10 +13,19 @@ import { RotasRepresentante } from "@/components/rotas-representante";
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/pessoas")({
-  validateSearch: (search: Record<string, unknown>): { pessoa?: string } =>
-    typeof search["pessoa"] === "string" && /^[a-f0-9-]{36}$/i.test(search["pessoa"])
-      ? { pessoa: search["pessoa"] }
-      : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    pessoa?: string | undefined;
+    cliente?: string | undefined;
+    fornecedor?: string | undefined;
+    pedido?: string | undefined;
+  } => ({
+    pessoa: idReferencia(search["pessoa"]),
+    pedido: idReferencia(search["pedido"]),
+    cliente: idReferencia(search["cliente"]),
+    fornecedor: idReferencia(search["fornecedor"]),
+  }),
   head: () => ({
     meta: [
       { title: "Cadastro unificado — ERP Distribuidora" },
@@ -207,8 +217,34 @@ function naoSoRepresentante(form: Record<string, string | boolean>) {
 }
 
 function PessoasPage() {
-  const { pessoa } = Route.useSearch();
+  const { pessoa, cliente, fornecedor, pedido } = Route.useSearch();
   const { client } = useSupabase();
+
+  const vinculo = useQuery({
+    queryKey: ["pessoa-referencia", cliente, fornecedor, pedido],
+    enabled: !!client && !pessoa && !!(cliente || fornecedor || pedido),
+    queryFn: async () => {
+      let clienteId = cliente;
+      if (!clienteId && !fornecedor && pedido) {
+        const resultado = await client!
+          .from("pedidos")
+          .select("cliente_id")
+          .eq("id", pedido)
+          .maybeSingle();
+        if (resultado.error || !resultado.data?.cliente_id)
+          throw new Error("Cliente do pedido indisponível para seu acesso.");
+        clienteId = String(resultado.data.cliente_id);
+      }
+      const { data, error } = await client!
+        .from(clienteId ? "clientes" : "fornecedores")
+        .select("pessoa_id")
+        .eq("id", clienteId ?? fornecedor!)
+        .maybeSingle();
+      if (error) throw new Error("Não foi possível abrir o cadastro relacionado.");
+      if (!data?.pessoa_id) throw new Error("Cadastro relacionado indisponível para seu acesso.");
+      return String(data.pessoa_id);
+    },
+  });
 
   const formas = useQuery({
     queryKey: ["formas_pagamento", "pessoas"],
@@ -263,124 +299,130 @@ function PessoasPage() {
       title="Cadastro unificado"
       description="Um único cadastro por pessoa ou empresa. Marque as funções (cliente, fornecedor, representante, usuário) e o sistema replica automaticamente nos módulos correspondentes."
     >
-      <CrudPage
-        uppercase
-        table="pessoas"
-        initialEditId={pessoa}
-        fields={camposComFormas}
-        formSections={[
-          {
-            id: "identificacao",
-            label: "CPF / CNPJ",
-            fields: ["codigo", "tipo_pessoa", "cnpj_cpf"],
-            extra: true,
-          },
-          {
-            id: "geral",
-            label: "Dados gerais",
-            fields: [
-              "razao_social",
-              "nome_fantasia",
-              "papeis",
-              "centro_id",
-              "status",
-              "ativo",
-              "data_nascimento",
-            ],
-          },
-          {
-            id: "endereco",
-            label: "Contato e endereço",
-            fields: [
-              "email",
-              "telefone",
-              "whatsapp",
-              "cep",
-              "logradouro",
-              "numero",
-              "complemento",
-              "bairro",
-              "cidade",
-              "uf",
-              "codigo_ibge",
-            ],
-          },
-          {
-            id: "fiscal",
-            label: "Dados fiscais",
-            fields: [
-              "inscricao_estadual",
-              "uf_inscricao_estadual",
-              "situacao_inscricao_estadual",
-              "indicador_contribuinte_icms",
-              "situacao_cadastral",
-              "data_abertura",
-              "natureza_juridica",
-              "porte",
-              "cnae_principal",
-              "cnae_secundarios",
-            ],
-            extra: true,
-          },
-          {
-            id: "cliente",
-            label: "Limites Rotas e Representantes",
-            fields: ["rota_id", "limite_credito", "condicao_pagamento", "representante_id"],
-            extra: true,
-          },
-          {
-            id: "representante",
-            label: "Dados Representante",
-            fields: ["tipo_representante", "comissao_percentual", "meta_mensal", "regiao"],
-            extra: true,
-          },
-          { id: "historico", label: "Histórico", fields: [], extra: true },
-          { id: "observacoes", label: "Observações", fields: ["observacoes"] },
-        ]}
-        orderBy="razao_social"
-        emptyLabel="Nenhuma pessoa cadastrada ainda."
-        searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
-        extraFormTop
-        extraForm={({ form, editing, patch, openRow, sectionId }) => (
-          <div className="space-y-4">
-            {sectionId === "identificacao" && (
-              <ConsultaCadastral
-                form={form}
-                editing={editing}
-                patch={patch}
-                openRow={openRow}
-                escopo="pessoas"
-              />
-            )}
-            {sectionId === "fiscal" &&
-              (naoSoRepresentante(form) ? (
-                <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
-              ) : (
+      {!pessoa && (cliente || fornecedor || pedido) && (vinculo.isPending || vinculo.isError) ? (
+        <p role="status" className="p-4 text-sm">
+          {vinculo.isError ? vinculo.error.message : "Abrindo cadastro relacionado…"}
+        </p>
+      ) : (
+        <CrudPage
+          uppercase
+          table="pessoas"
+          initialEditId={pessoa ?? vinculo.data}
+          fields={camposComFormas}
+          formSections={[
+            {
+              id: "identificacao",
+              label: "CPF / CNPJ",
+              fields: ["codigo", "tipo_pessoa", "cnpj_cpf"],
+              extra: true,
+            },
+            {
+              id: "geral",
+              label: "Dados gerais",
+              fields: [
+                "razao_social",
+                "nome_fantasia",
+                "papeis",
+                "centro_id",
+                "status",
+                "ativo",
+                "data_nascimento",
+              ],
+            },
+            {
+              id: "endereco",
+              label: "Contato e endereço",
+              fields: [
+                "email",
+                "telefone",
+                "whatsapp",
+                "cep",
+                "logradouro",
+                "numero",
+                "complemento",
+                "bairro",
+                "cidade",
+                "uf",
+                "codigo_ibge",
+              ],
+            },
+            {
+              id: "fiscal",
+              label: "Dados fiscais",
+              fields: [
+                "inscricao_estadual",
+                "uf_inscricao_estadual",
+                "situacao_inscricao_estadual",
+                "indicador_contribuinte_icms",
+                "situacao_cadastral",
+                "data_abertura",
+                "natureza_juridica",
+                "porte",
+                "cnae_principal",
+                "cnae_secundarios",
+              ],
+              extra: true,
+            },
+            {
+              id: "cliente",
+              label: "Limites Rotas e Representantes",
+              fields: ["rota_id", "limite_credito", "condicao_pagamento", "representante_id"],
+              extra: true,
+            },
+            {
+              id: "representante",
+              label: "Dados Representante",
+              fields: ["tipo_representante", "comissao_percentual", "meta_mensal", "regiao"],
+              extra: true,
+            },
+            { id: "historico", label: "Histórico", fields: [], extra: true },
+            { id: "observacoes", label: "Observações", fields: ["observacoes"] },
+          ]}
+          orderBy="razao_social"
+          emptyLabel="Nenhuma pessoa cadastrada ainda."
+          searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
+          extraFormTop
+          extraForm={({ form, editing, patch, openRow, sectionId }) => (
+            <div className="space-y-4">
+              {sectionId === "identificacao" && (
+                <ConsultaCadastral
+                  form={form}
+                  editing={editing}
+                  patch={patch}
+                  openRow={openRow}
+                  escopo="pessoas"
+                />
+              )}
+              {sectionId === "fiscal" &&
+                (naoSoRepresentante(form) ? (
+                  <ConsultaIe form={form} editing={editing} patch={patch} escopo="pessoas" />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Dados fiscais não se aplicam a um cadastro somente de representante.
+                  </p>
+                ))}
+              {sectionId === "cliente" && !form["is_cliente"] && (
                 <p className="text-sm text-muted-foreground">
-                  Dados fiscais não se aplicam a um cadastro somente de representante.
+                  Marque a função Cliente em Dados gerais para preencher as condições comerciais.
                 </p>
-              ))}
-            {sectionId === "cliente" && !form["is_cliente"] && (
-              <p className="text-sm text-muted-foreground">
-                Marque a função Cliente em Dados gerais para preencher as condições comerciais.
-              </p>
-            )}
-            {sectionId === "representante" && !form["is_representante"] && (
-              <p className="text-sm text-muted-foreground">
-                Marque a função Representante em Dados gerais para acessar comissões e rotas.
-              </p>
-            )}
-            {sectionId === "historico" &&
-              (form["is_cliente"] ? (
-                <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
-              ) : (
+              )}
+              {sectionId === "representante" && !form["is_representante"] && (
                 <p className="text-sm text-muted-foreground">
-                  O histórico comercial está disponível para cadastros com a função Cliente.
+                  Marque a função Representante em Dados gerais para acessar comissões e rotas.
                 </p>
-              ))}
-          </div>
-        )}
-      />
+              )}
+              {sectionId === "historico" &&
+                (form["is_cliente"] ? (
+                  <HistoricoCliente pessoaId={editing ? String(editing["id"]) : null} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    O histórico comercial está disponível para cadastros com a função Cliente.
+                  </p>
+                ))}
+            </div>
+          )}
+        />
+      )}
     </ErpLayout>
   );
 }

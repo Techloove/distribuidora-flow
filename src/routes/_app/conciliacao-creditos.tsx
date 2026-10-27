@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, Loader2, RefreshCw, Search } from "lucide-react";
@@ -14,9 +15,16 @@ export const Route = createFileRoute("/_app/conciliacao-creditos")({
   head: () => ({
     meta: [
       { title: "Conciliação de créditos — ERP Distribuidora" },
-      { name: "description", content: "Conferência e migração segura dos antigos créditos DEV para créditos de clientes." },
+      {
+        name: "description",
+        content:
+          "Conferência e migração segura dos antigos créditos DEV para créditos de clientes.",
+      },
       { property: "og:title", content: "Conciliação de créditos — ERP Distribuidora" },
-      { property: "og:description", content: "Conferência dos créditos de clientes no Caparaó System." },
+      {
+        property: "og:description",
+        content: "Conferência dos créditos de clientes no Caparaó System.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -99,7 +107,11 @@ function ConciliacaoCreditosPage() {
       description="Revise os antigos lançamentos DEV antes de convertê-los em créditos de clientes."
       actions={
         <Button variant="outline" onClick={() => dados.refetch()} disabled={dados.isFetching}>
-          {dados.isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+          {dados.isFetching ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <RefreshCw className="size-4" />
+          )}
           Atualizar
         </Button>
       }
@@ -116,12 +128,18 @@ function ConciliacaoCreditosPage() {
             <div>
               <h2 className="text-sm font-semibold">Créditos legados</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                A migração só é liberada quando cliente, centro, devolução e valor estiverem consistentes.
+                A migração só é liberada quando cliente, centro, devolução e valor estiverem
+                consistentes.
               </p>
             </div>
             <div className="relative w-full sm:w-80">
               <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
-              <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar documento, devolução ou situação..." className="pl-9" />
+              <Input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar documento, devolução ou situação..."
+                className="pl-9"
+              />
             </div>
           </div>
 
@@ -146,26 +164,49 @@ function ConciliacaoCreditosPage() {
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhum crédito legado encontrado.</td></tr>
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        Nenhum crédito legado encontrado.
+                      </td>
+                    </tr>
                   ) : (
                     rows.map((r) => {
                       const situacao = String(r["situacao"] ?? "");
                       const apto = situacao === "apto_para_migracao";
                       return (
-                        <tr key={String(r["conta_receber_id"])} className="border-b border-border/60">
+                        <tr
+                          key={String(r["conta_receber_id"])}
+                          className="border-b border-border/60"
+                        >
                           <td className="p-3 font-medium">{String(r["documento"] ?? "—")}</td>
-                          <td className="p-3">{r["devolucao_numero"] ? "#" + String(r["devolucao_numero"]) : "—"}</td>
-                          <td className="p-3">{brl(Math.abs(Number(r["valor"] ?? 0)))}</td>
-                          <td className="max-w-[260px] truncate p-3 text-xs text-muted-foreground">{String(r["cliente_id"] ?? "—")}</td>
                           <td className="p-3">
-                            <span className={apto ? "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700" : "inline-flex rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground"}>
+                            {r["devolucao_numero"] ? "#" + String(r["devolucao_numero"]) : "—"}
+                          </td>
+                          <td className="p-3">{brl(Math.abs(Number(r["valor"] ?? 0)))}</td>
+                          <td className="max-w-[260px] truncate p-3 text-xs text-muted-foreground">
+                            <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
+                              {String(r["cliente_id"] ?? "—")}
+                            </ReferenciaRegistro>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={
+                                apto
+                                  ? "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700"
+                                  : "inline-flex rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground"
+                              }
+                            >
                               {apto ? <CheckCircle2 className="size-3" /> : null}
                               {situacoes[situacao] ?? situacao}
                             </span>
                           </td>
                           <td className="p-3 text-right">
                             {apto ? (
-                              <Button size="sm" disabled={migrar.isPending} onClick={() => migrar.mutate(String(r["conta_receber_id"]))}>
+                              <Button
+                                size="sm"
+                                disabled={migrar.isPending}
+                                onClick={() => migrar.mutate(String(r["conta_receber_id"]))}
+                              >
                                 Migrar para crédito
                               </Button>
                             ) : null}

@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -72,7 +73,9 @@ function NotasPage() {
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedidos")
-        .select("id, numero, data_pedido, total_liquido, centro_id, clientes(razao_social)")
+        .select(
+          "id, numero, cliente_id, data_pedido, total_liquido, centro_id, clientes(razao_social)",
+        )
         .eq("status", "conferido")
         .order("numero");
       if (error) throw new Error(error.message);
@@ -87,7 +90,7 @@ function NotasPage() {
       const { data, error } = await client!
         .from("notas_saida")
         .select(
-          "id, numero, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, centro_id, pedidos(numero), clientes(razao_social)",
+          "id, numero, pedido_id, cliente_id, nf_numero, serie, status, data_emissao, valor_total, chave_acesso, protocolo, mensagem_retorno, centro_id, pedidos(numero), clientes(razao_social)",
         )
         .order("created_at", { ascending: false })
         .limit(300);
@@ -156,9 +159,15 @@ function NotasPage() {
                 <tbody className="divide-y divide-border">
                   {listaPedidos.map((p) => (
                     <tr key={String(p["id"])} className="hover:bg-accent/50">
-                      <td className="px-4 py-2.5 font-semibold">#{String(p["numero"])}</td>
+                      <td className="px-4 py-2.5 font-semibold">
+                        <ReferenciaRegistro tipo="pedido" id={p["id"]}>
+                          #{String(p["numero"])}
+                        </ReferenciaRegistro>
+                      </td>
                       <td className="max-w-[320px] truncate px-4 py-2.5">
-                        {String((p["clientes"] as Row | null)?.["razao_social"] ?? "—")}
+                        <ReferenciaRegistro tipo="cliente" id={p["cliente_id"]}>
+                          {String((p["clientes"] as Row | null)?.["razao_social"] ?? "—")}
+                        </ReferenciaRegistro>
                       </td>
                       <td className="px-4 py-2.5">
                         {p["data_pedido"]
@@ -224,12 +233,16 @@ function NotasPage() {
                       <tr key={String(n["id"])} className="hover:bg-accent/50">
                         <td className="px-4 py-2.5 font-semibold">#{String(n["numero"])}</td>
                         <td className="px-4 py-2.5">
-                          {(n["pedidos"] as Row | null)?.["numero"]
-                            ? `#${String((n["pedidos"] as Row)["numero"])}`
-                            : "—"}
+                          <ReferenciaRegistro tipo="pedido" id={n["pedido_id"]}>
+                            {(n["pedidos"] as Row | null)?.["numero"]
+                              ? `#${String((n["pedidos"] as Row)["numero"])}`
+                              : "—"}
+                          </ReferenciaRegistro>
                         </td>
                         <td className="max-w-[260px] truncate px-4 py-2.5">
-                          {String((n["clientes"] as Row | null)?.["razao_social"] ?? "—")}
+                          <ReferenciaRegistro tipo="cliente" id={n["cliente_id"]}>
+                            {String((n["clientes"] as Row | null)?.["razao_social"] ?? "—")}
+                          </ReferenciaRegistro>
                         </td>
                         <td className="px-4 py-2.5">
                           {n["nf_numero"]

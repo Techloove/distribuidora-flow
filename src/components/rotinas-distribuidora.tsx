@@ -1,3 +1,4 @@
+import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { EntregaPorItem, AbrirComprovante } from "@/components/entrega-por-item";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
@@ -510,7 +511,12 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
         créditos. O vínculo sozinho não consome o crédito.
       </p>
       {devolucao["pedido_troca_id"] != null && (
-        <p>Pedido vinculado: {String(devolucao["pedido_troca_id"])}</p>
+        <p>
+          Pedido vinculado:{" "}
+          <ReferenciaRegistro tipo="pedido" id={devolucao["pedido_troca_id"]}>
+            {String(devolucao["pedido_troca_id"])}
+          </ReferenciaRegistro>
+        </p>
       )}
       <AvisoRotina erro={q.error} />
       {canManage && permissoes.pode("troca_vincular") && (
@@ -610,7 +616,9 @@ export function AjustesComissao() {
           <article key={id} className="rounded border p-3 space-y-2 text-sm">
             <p>
               Ajuste de comissão paga: <strong>{brl(a["valor"])}</strong> · pedido{" "}
-              {String(a["pedido_id"])}
+              <ReferenciaRegistro tipo="pedido" id={a["pedido_id"]}>
+                {String(a["pedido_id"])}
+              </ReferenciaRegistro>
             </p>
             {pode && (
               <>
