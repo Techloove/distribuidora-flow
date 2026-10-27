@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.3.3",
+    "data": "2026-10-27",
+    "titulo": "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio",
+    "novidades": [
+      "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"
+    ]
+  },
+  {
     "versao": "1.3.2",
     "data": "2026-10-27",
     "titulo": "Ampliar Cadastro Unificado e dividir formulário em seções",

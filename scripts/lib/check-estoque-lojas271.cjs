@@ -177,6 +177,7 @@ module.exports = async (db, id) => {
     ).rows[0].n,
     1,
   );
+  await require("./check-fluxo-integrado276.cjs")(db, id);
   console.log(
     "Estoque271 OK: categoria ambígua/reserva incorreta abortam sem efeitos, redistribuição por loja preserva total e histórico, duas lojas isoladas, entradas/saídas locais, reservas, renomeação e acesso ao inventário verificados.",
   );

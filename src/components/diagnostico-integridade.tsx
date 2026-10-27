@@ -20,9 +20,9 @@ export function DiagnosticoIntegridade() {
     <section className="rounded border p-4 space-y-3">
       <h2 className="font-semibold">Diagnóstico de integridade</h2>
       <p className="text-xs text-muted-foreground">
-        Consulta atualizada a cada minuto enquanto esta tela estiver aberta. Contagens e recusas
-        pendentes podem fazer parte da operação normal; confira cada ocorrência antes de ajustar
-        dados.
+        Consulta somente de leitura, por lojas autorizadas, atualizada a cada minuto. Itens
+        “Operação” são informativos; itens “Atenção” e “Revisar” precisam de conferência. Nenhum
+        registro é corrigido automaticamente.
       </p>
       <Button variant="outline" disabled={q.isFetching} onClick={() => void q.refetch()}>
         Atualizar diagnóstico
@@ -30,7 +30,10 @@ export function DiagnosticoIntegridade() {
       {q.isPending && <p>Consultando…</p>}
       {q.error && <p role="alert">{q.error.message}</p>}
       {q.data?.map((r) => (
-        <p key={r.verificacao} className="text-sm">
+        <p
+          key={r.verificacao}
+          className={`text-sm ${r.pendencias > 0 && !r.verificacao.startsWith("Operação:") ? "font-medium text-amber-700 dark:text-amber-400" : ""}`}
+        >
           {r.verificacao}: <strong>{r.pendencias}</strong>
         </p>
       ))}

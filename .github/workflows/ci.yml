@@ -23,6 +23,7 @@ jobs:
       - run: bun run check:server
       - run: bun run check:backup
       - run: bun run test
+      - run: bun run check:database
       - run: bun run typecheck
       - run: bun run lint
       - run: bun run build
