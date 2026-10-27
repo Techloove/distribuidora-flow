@@ -274,7 +274,9 @@
       "Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.",
       "Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.",
       "A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.",
-      "XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional."
+      "XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.",
+      "Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.",
+      "Para a tarifa de cobrança comprovada, informe o valor efetivamente cobrado, a data do débito, a categoria de despesa e a referência bancária. Confira se já existe lançamento anterior e registre a despesa da tarifa na mesma conta e loja do recebimento."
     ],
     "cuidados": [
       "Não use documentos de homologação como nota fiscal ou cobrança real.",
@@ -282,7 +284,8 @@
       "A integração fiscal ainda precisa de validação dos retornos reais e dos cenários fiscais antes da liberação de produção.",
       "Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.",
       "CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.",
-      "Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas."
+      "Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.",
+      "A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem um campo de tarifa na API. Neste fluxo, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade."
     ]
   },
   {

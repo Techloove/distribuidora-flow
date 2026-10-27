@@ -1,3 +1,4 @@
+import { LiquidacaoSicredi } from "@/components/liquidacao-sicredi";
 import { SicrediAutomatico } from "@/components/sicredi-automatico";
 import { EmitirBoletosPedido, EmitirBoletoTitulo } from "@/components/emitir-boletos-pedido";
 import { ConfirmarNossoNumero } from "@/components/confirmar-nosso-numero";
@@ -322,6 +323,10 @@ export function BoletosPage() {
                           {String(b["linha_digitavel"] ?? "—")}
                         </TableCell>
                         <TableCell className="no-print space-x-1 text-right">
+                          {st === "liquidado" &&
+                            b["banco"] === "sicredi" &&
+                            b["canal"] === "api" &&
+                            canFinance && <LiquidacaoSicredi key={String(b["id"])} boleto={b} />}
                           <AlterarVencimentoBoleto boleto={b} />
                           {b["pedido_id"] ? (
                             <EmitirBoletosPedido

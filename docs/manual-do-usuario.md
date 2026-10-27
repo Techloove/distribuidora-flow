@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.3.5 · 2026-10-27
+Versão 1.4.0 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -228,6 +228,8 @@ Entenda os cuidados com documentos bancários e fiscais.
 3. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
 4. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
 5. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
+6. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
+7. Para a tarifa de cobrança comprovada, informe o valor efetivamente cobrado, a data do débito, a categoria de despesa e a referência bancária. Confira se já existe lançamento anterior e registre a despesa da tarifa na mesma conta e loja do recebimento.
 
 Cuidados:
 
@@ -237,6 +239,7 @@ Cuidados:
 - Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.
 - CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.
 - Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
+- A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem um campo de tarifa na API. Neste fluxo, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade.
 
 ## Agenda, metas, comissões e relatórios
 
