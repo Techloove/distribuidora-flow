@@ -1,3 +1,4 @@
+import { TarifasFinanceiro } from "@/components/tarifas-financeiro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -48,6 +49,32 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
           "Não foi possível conferir a tarifa. Confira o acesso e a implantação da fase279.",
         );
       return data as Row | null;
+    },
+  });
+  const api = useQuery({
+    queryKey: ["sicredi-tarifas-api-boleto", user?.id, boleto["id"]],
+    enabled: !!client && open,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("sicredi_tarifas_api_280")
+        .select("data_lancamento,tarifa_total,outros_debitos,debitos")
+        .eq("boleto_id", String(boleto["id"]))
+        .order("data_lancamento");
+      if (error) throw new Error("Não foi possível conferir o retorno das tarifas da API.");
+      return (data ?? []) as Row[];
+    },
+  });
+  const historicoApi = useQuery({
+    queryKey: ["sicredi-tarifa-historico", user?.id, boleto["id"]],
+    enabled: !!client && open,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("sicredi_tarifas_financeiro_282")
+        .select("boleto_id")
+        .eq("boleto_id", String(boleto["id"]))
+        .limit(1);
+      if (error) throw new Error("Confira a implantação financeira da fase282.");
+      return (data ?? []).length > 0;
     },
   });
   const categorias = useQuery({
@@ -114,7 +141,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
   return (
     <>
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-        Liquidação e tarifa
+        {boleto["status"] === "liquidado" ? "Liquidação e tarifa" : "Tarifas e financeiro"}
       </Button>
       <Dialog
         open={open}
@@ -124,7 +151,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
       >
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Liquidação Sicredi · {String(boleto["nosso_numero"] ?? "")}</DialogTitle>
+            <DialogTitle>Sicredi · {String(boleto["nosso_numero"] ?? "")}</DialogTitle>
             <DialogDescription>
               Valores do retorno bancário e tarifa conferida no extrato. A tarifa é despesa da loja.
             </DialogDescription>
@@ -150,7 +177,13 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
             aparecem na lista de boletos. Confira os lançamentos existentes antes de registrar uma
             despesa.
           </p>
-          {q.isPending ? (
+          {api.isPending || historicoApi.isPending ? (
+            <p>Carregando tarifas do Sicredi…</p>
+          ) : api.error || historicoApi.error ? (
+            <p role="alert">{api.error?.message ?? historicoApi.error?.message}</p>
+          ) : (api.data?.length ?? 0) > 0 || historicoApi.data ? (
+            <TarifasFinanceiro boleto={boleto} dados={api.data!} />
+          ) : q.isPending ? (
             <p>Conferindo tarifa registrada…</p>
           ) : q.error ? (
             <p role="alert">{q.error.message}</p>

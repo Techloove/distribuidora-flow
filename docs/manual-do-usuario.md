@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.6.0 · 2026-10-27
+Versão 1.7.0 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -233,8 +233,9 @@ Entenda os cuidados com documentos bancários e fiscais.
 8. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
 9. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
 10. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
-11. Para a tarifa de cobrança comprovada, informe o valor efetivamente cobrado, a data do débito, a categoria de despesa e a referência bancária. Confira se já existe lançamento anterior e registre a despesa da tarifa na mesma conta e loja do recebimento.
+11. Quando a tarifa já chegou pela API, valor, data e descrição aparecem preenchidos em Liquidação e tarifa ou Tarifas e financeiro. Escolha a conta financeira e a categoria de Despesas Financeiras da loja. A categoria sugerida é Tarifas de emissão de boletos.
 12. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
+13. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
 
 Cuidados:
 
@@ -246,9 +247,11 @@ Cuidados:
 - Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
 - A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem deduz tarifa pela diferença entre o valor emitido e recebido. No registro manual de despesa, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade.
 - A consulta de movimentações financeiras (Francesinha) traz débitos por boleto. A lista soma como tarifa apenas os débitos cuja descrição identifica TARIFA; os demais aparecem como débitos a conferir. Sem retorno confirmado ou em caso de falha de acesso, não é exibida tarifa zero como se houvesse isenção.
-- A consulta automática de tarifas não gera despesas financeiras. Um valor da API e uma despesa conferida no extrato são apresentados separadamente, sem somá-los como se fossem duas cobranças. Confira lançamentos anteriores antes de registrar qualquer despesa.
+- A contabilização automática só começa depois de configurar e autorizar a loja. Ela gera saídas na conta escolhida, em Despesas Financeiras no DRE, sem reduzir o valor recebido do cliente. A instalação da fase282 não cria despesas. Confira os lançamentos anteriores antes de ativar o período retroativo.
 - O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha.
 - Cancelar boleto envia um pedido de baixa ao Sicredi; não cancela a venda nem quita a conta a receber. Boletos liquidados, já baixados ou com solicitação pendente não permitem novo cancelamento. Se o banco ainda não confirmar a baixa, consulte a situação e confira com o Sicredi antes de qualquer nova cobrança.
+- Reconsultar a API não duplica despesas. Tarifas manuais conhecidas com data, valor, conta e categoria correspondentes podem ser vinculadas sem novo lançamento. Uma saída avulsa semelhante, divergência no retorno, conta/categoria inativa, responsável sem acesso ou estorno exige conferência. Não há correção ou relançamento automático de movimentos estornados.
+- A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
 
 ## Agenda, metas, comissões e relatórios
 

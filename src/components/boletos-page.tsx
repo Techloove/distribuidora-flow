@@ -225,6 +225,32 @@ export function BoletosPage() {
     },
   });
 
+  const financeiroTarifas = useQuery({
+    queryKey: ["sicredi-tarifa-financeiro-lista", session?.user.id, centro],
+    enabled: !!client && !!session && canFinance,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        let query = client!
+          .from("sicredi_tarifas_financeiro_282")
+          .select("boleto_id,estado,movimento_id,movimento:movimentos_financeiros(status)")
+          .order("boleto_id")
+          .order("data_lancamento");
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query.range(offset, offset + 499);
+        if (error) throw new Error("Confira o acesso e a instalação financeira da fase282.");
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      const result = new Map<string, Row[]>();
+      for (const row of rows) {
+        const key = String(row["boleto_id"]);
+        result.set(key, [...(result.get(key) ?? []), row]);
+      }
+      return result;
+    },
+  });
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
       const res = await consultarFn({
@@ -453,12 +479,19 @@ export function BoletosPage() {
           <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
           <p className="text-xs text-muted-foreground">
             Valores e totais consideram os filtros selecionados. Tarifas identificadas pelo banco
-            chegam pela consulta automática de movimentações financeiras. Débitos sem identificação
-            de tarifa ficam para conferência; a ausência de informação não significa tarifa zero.
+            chegam pela consulta automática de movimentações financeiras. Configure conta e
+            categoria por loja em Liquidação e tarifa para contabilizar as despesas. Débitos sem
+            identificação de tarifa ficam para conferência; a ausência de informação não significa
+            tarifa zero.
           </p>
           {canFinance && (tarifasApi.isError || statusTarifas.isError) && (
             <p role="alert" className="text-sm text-destructive">
               {tarifasApi.error?.message ?? statusTarifas.error?.message}
+            </p>
+          )}
+          {financeiroTarifas.error && (
+            <p role="alert" className="text-sm text-destructive">
+              {financeiroTarifas.error.message}
             </p>
           )}
           {statusTarifas.data && (
@@ -503,6 +536,7 @@ export function BoletosPage() {
                     const id = String(b["id"]);
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
+                    const financeiro = financeiroTarifas.data?.get(id);
                     const tarifaStatus = (
                       tarifa?.["movimentos_financeiros"] as { status?: string } | null
                     )?.status;
@@ -549,6 +583,18 @@ export function BoletosPage() {
                                   {brl(tarifaApi.valor)}
                                 </strong>
                                 <span className="block text-muted-foreground">API Sicredi</span>
+                                {financeiro && (
+                                  <span className="block text-muted-foreground">
+                                    {financeiro.every(
+                                      (f) =>
+                                        ["lancado", "vinculado_manual"].includes(
+                                          String(f["estado"]),
+                                        ) && (f["movimento"] as Row | null)?.["status"] === "ativo",
+                                    )
+                                      ? "Contabilizada no financeiro"
+                                      : "Conferir contabilização"}
+                                  </span>
+                                )}
                                 {tarifa && (
                                   <span className="block text-muted-foreground">
                                     Despesa{" "}
@@ -581,7 +627,11 @@ export function BoletosPage() {
                               </>
                             ) : (
                               <span className="text-muted-foreground">
-                                {tarifaApi?.outros ? "Débito a conferir" : "Sem tarifa confirmada"}
+                                {tarifaApi?.outros
+                                  ? "Débito a conferir"
+                                  : financeiro?.some((f) => !!f["movimento_id"])
+                                    ? "Há despesa vinculada: conferir retorno"
+                                    : "Sem tarifa confirmada"}
                               </span>
                             )}
                           </TableCell>
@@ -639,8 +689,8 @@ export function BoletosPage() {
                               {tarifaApi && (
                                 <div className="mb-3 space-y-1 text-xs">
                                   <p className="font-medium">
-                                    Débitos retornados pela API Sicredi (não geram despesa
-                                    automaticamente)
+                                    Débitos retornados pela API Sicredi (confira a contabilização em
+                                    Tarifas e financeiro)
                                   </p>
                                   {tarifaApi.itens.map((item, i) => (
                                     <p key={`${item.dia}-${i}`}>
@@ -650,7 +700,7 @@ export function BoletosPage() {
                                 </div>
                               )}
                               <div className="flex flex-wrap items-center gap-2">
-                                {st === "liquidado" &&
+                                {(st === "liquidado" || !!tarifaApi || !!financeiro) &&
                                   b["banco"] === "sicredi" &&
                                   b["canal"] === "api" &&
                                   canFinance && (

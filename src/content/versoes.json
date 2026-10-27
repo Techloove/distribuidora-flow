@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.7.0",
+    "data": "2026-10-27",
+    "titulo": "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE",
+    "novidades": [
+      "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"
+    ]
+  },
+  {
     "versao": "1.6.0",
     "data": "2026-10-27",
     "titulo": "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação",
