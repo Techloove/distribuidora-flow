@@ -88,3 +88,28 @@ Os resultados não zerados foram:
 Para identificar os produtos e as lojas, executar **somente** `db/conferir_saldos_negativos_somente_leitura.sql`. A consulta lista quantidade negativa, permissão, reserva e soma dos depósitos. Depois da conferência, tratar entradas ou inventário pelo fluxo autorizado; não zerar saldos nem desativar a permissão indiscriminadamente para ocultar a ocorrência.
 
 Esta evidência confirma a ausência de ocorrências nos critérios e no momento consultados. Não comprova a exatidão da contagem física, a integralidade de todos os valores financeiros, integrações externas ou cenários não cobertos pelas consultas/testes. Forecast/Sicredi reais e restauração do backup continuam com os limites descritos acima.
+
+## Continuidade: origem dos oito saldos negativos
+
+O responsável confirmou a execução bem-sucedida da fase276 e enviou a consulta detalhada dos negativos. São oito posições: uma em Cimento e sete em Ferragens. Em todas, o saldo da loja coincide com o saldo global do produto e com a soma dos depósitos; a permissão de negativo está ativa e a reserva é zero. Não foi identificado descompasso entre esses registros no arquivo recebido.
+
+| Loja | Código | Produto | Saldo informado |
+| --- | --- | --- | ---: |
+| Cimento | 4 | CIMENTO CP3 CSN | -350 |
+| Ferragens | 19 | ARAME LISO BWG12 | -20 |
+| Ferragens | 2 | ARAME LISO BWG18 | -4000 |
+| Ferragens | 20 | ARAME LISO BWM14 | -420 |
+| Ferragens | 21 | GRAMPO POLIDO1"X9 | -20 |
+| Ferragens | 17 | PREGO C/CABE16X24 | -160 |
+| Ferragens | 40 | PREGO C/CABE17X21 | -360 |
+| Ferragens | 32 | PREGO C/CABE25X72 | -220 |
+
+Para investigar a causa, executar **`db/origem_saldos_negativos_somente_leitura.sql`** e exportar o resultado CSV. Não é migração e não muda o estado do sistema. A consulta parte das posições que estiverem negativas no momento da execução; a lista pode mudar se a operação continuar.
+
+O resultado contém a unidade cadastrada, totais de entrada/saída/ajuste em todas as lojas, quantidade e datas dos movimentos, diferença entre o saldo global e o saldo calculado pelo histórico, compras pendentes, compras recebidas com entrada divergente e os últimos15 movimentos. Os totais usam o histórico completo acessível; os15 registros são apenas uma amostra recente. Não some quantidades de produtos com unidades diferentes.
+
+A soma histórica é global por produto porque movimentos anteriores à fase271 podem pertencer à loja antiga; redistribuições internas de depósito não representam nova entrada de mercadoria. Diferença entre saldo atual e histórico não comprova falha: pode ser saldo inicial, legado ou histórico incompleto. Compra pendente não prova entrega física, e compra recebida divergente exige análise do documento e da auditoria antes de corrigir.
+
+A consulta foi validada em PGlite com histórico em loja antiga, produto negativo sem histórico, compras pendentes/recebidas e produto positivo excluído. Os saldos permaneceram intactos. Não há mudança de versão da aplicação nesta etapa, pois a entrega acrescenta apenas consulta de investigação e documentação.
+
+Permanece pendente o resultado dessa consulta e a contagem física dos produtos para decidir o tratamento operacional. Nenhum saldo foi zerado, nenhuma compra foi recebida novamente e nenhum lançamento financeiro foi criado para forçar a regularização.
