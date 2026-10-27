@@ -1,3 +1,5 @@
+import { ObservacoesPedido } from "@/components/observacoes-pedido";
+import { Textarea } from "@/components/ui/textarea";
 import { RegularizarStatusPedido } from "@/components/regularizar-status-pedido";
 import { EncargosPedido } from "@/components/encargos-pedido";
 import { OrcamentoPedido } from "@/components/orcamento-pedido";
@@ -93,6 +95,7 @@ export function DocumentoPage({
       void queryClient.invalidateQueries({ queryKey: ["acompanhamento_pedido_235"] });
   };
   const [encargosPendentes, setEncargosPendentes] = useState(false);
+  const [observacoesPendentes, setObservacoesPendentes] = useState(false);
   const [selected, setSelected] = useState<string | null>(initialDocId);
   const [openNew, setOpenNew] = useState(false);
   const [header, setHeader] = useState<Record<string, string>>({});
@@ -1148,6 +1151,7 @@ export function DocumentoPage({
     ) * Number(it["quantidade"] ?? 0);
   const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
   const edicaoPendente =
+    observacoesPendentes ||
     encargosPendentes ||
     addItem.isPending ||
     updateItem.isPending ||
@@ -2344,6 +2348,16 @@ export function DocumentoPage({
               )}
             </div>
             {config.table === "pedidos" && <MargemPedido key={String(doc["id"])} pedido={doc} />}
+            {config.table === "pedidos" && (
+              <ObservacoesPedido
+                key={String(doc["id"])}
+                doc={doc}
+                editavel={
+                  propostaEditavel && ["rascunho", "digitacao"].includes(String(doc["status"]))
+                }
+                onPendente={setObservacoesPendentes}
+              />
+            )}
             {config.table === "pedidos" && fechamentoDocumento}
             {config.table === "pedidos" && (
               <OrcamentoPedido
@@ -2520,7 +2534,8 @@ export function DocumentoPage({
 
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Observações</Label>
-              <Input
+              <Textarea
+                maxLength={4000}
                 value={header["observacoes"] ?? ""}
                 onChange={(e) => setHeader((h) => ({ ...h, observacoes: e.target.value }))}
               />

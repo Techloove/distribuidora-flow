@@ -134,3 +134,15 @@ footer {
     padding: 0;
   }
 }
+
+.order-observations {
+  margin-top: 20px;
+  border-top: 1px solid var(--rule);
+  padding-top: 10px;
+  overflow-wrap: anywhere;
+}
+.order-observations div {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  margin-top: 6px;
+}

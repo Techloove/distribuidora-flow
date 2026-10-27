@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.2.0",
+    "data": "2026-10-27",
+    "titulo": "Nome fantasia do cliente e observações na impressão dos pedidos",
+    "novidades": [
+      "Nome fantasia do cliente e observações na impressão dos pedidos"
+    ]
+  },
+  {
     "versao": "1.1.0",
     "data": "2026-10-26",
     "titulo": "Atualização automática ao entrar e aviso de nova versão durante o uso",

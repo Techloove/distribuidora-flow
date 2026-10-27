@@ -85,7 +85,9 @@
       "Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.",
       "Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.",
       "Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.",
-      "Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas."
+      "Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.",
+      "No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.",
+      "A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento."
     ],
     "cuidados": [
       "Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.",

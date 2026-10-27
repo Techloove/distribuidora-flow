@@ -95,3 +95,30 @@ test("pedido e orçamento exibem frete manual, por volume e outras despesas sepa
     expect(html).toContain("1.380,00");
   }
 });
+
+test("imprime razão social, nome fantasia e observações ao final com texto seguro", () => {
+  const html = gerarHtmlPedidos(
+    [
+      {
+        ...pedido,
+        cliente: { razao_social: "Razão Social Ltda", nome_fantasia: "Loja <Centro>" },
+        pedido: {
+          ...pedido.pedido,
+          observacoes: "Entregar na lateral\nProcurar João <script>alert(1)</script>",
+        },
+      },
+    ],
+    "",
+  );
+  expect(html).toContain("Razão Social Ltda");
+  expect(html).toContain("<strong>Nome fantasia:</strong> Loja &lt;Centro&gt;");
+  expect(html).toContain("Entregar na lateral\nProcurar João &lt;script&gt;");
+  expect(html).not.toContain("<script>");
+  expect(html.indexOf('class="order-observations"')).toBeGreaterThan(
+    html.indexOf('class="totals"'),
+  );
+  expect(html.indexOf('class="order-observations"')).toBeLessThan(
+    html.indexOf('class="signature"'),
+  );
+  expect(gerarHtmlPedidos([pedido], "")).not.toContain('class="order-observations"');
+});

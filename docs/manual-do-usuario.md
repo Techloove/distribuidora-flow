@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.1.0 · 2026-10-26
+Versão 1.2.0 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -76,6 +76,8 @@ Da escolha do cliente à confirmação da venda.
 4. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.
 5. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
 6. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
+7. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
+8. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
 
 Cuidados:
 
