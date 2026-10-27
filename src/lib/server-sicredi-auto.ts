@@ -109,7 +109,9 @@ export async function atenderSicrediAutomatico(request: Request): Promise<Respon
       8_000,
     );
     if (!res.ok) throw new Error("Operação de conciliação não concluída");
-    return (await res.json()) as T;
+    // RPCs de retorno void podem responder204/sem corpo, inclusive ao salvar o token.
+    const body = await res.text();
+    return (body.trim() ? JSON.parse(body) : null) as T;
   };
   let banco: {
     base: string;

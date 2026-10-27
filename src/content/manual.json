@@ -281,7 +281,8 @@
       "Um botão de consulta não confirma, sozinho, que houve autorização fiscal ou liquidação bancária. Confira o estado retornado.",
       "A integração fiscal ainda precisa de validação dos retornos reais e dos cenários fiscais antes da liberação de produção.",
       "Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.",
-      "CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta."
+      "CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.",
+      "Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas."
     ]
   },
   {

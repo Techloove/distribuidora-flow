@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.3.4 · 2026-10-27
+Versão 1.3.5 · 2026-10-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -236,6 +236,7 @@ Cuidados:
 - A integração fiscal ainda precisa de validação dos retornos reais e dos cenários fiscais antes da liberação de produção.
 - Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.
 - CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.
+- Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
 
 ## Agenda, metas, comissões e relatórios
 

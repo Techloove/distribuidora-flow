@@ -183,3 +183,73 @@ test("endpoint distingue HTTP bancário sem copiar corpo privado e sem repetir c
     else process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = keyOriginal;
   }
 });
+
+test("token salvo com resposta RPC vazia permite continuar a consulta automática", async () => {
+  const fetchOriginal = globalThis.fetch;
+  const urlOriginal = process.env["EXT_SUPABASE_URL"];
+  const keyOriginal = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+  process.env["EXT_SUPABASE_URL"] = "https://db.test";
+  process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = "service-fixture";
+  try {
+    for (const statusVazio of [204, 200]) {
+      let autenticacoes = 0,
+        conclusoes = 0,
+        consultas = 0;
+      const gravacoes: Record<string, unknown>[] = [];
+      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.endsWith("sicredi_auto_reservar_247"))
+          return Response.json({ lease: "lease", itens: [boleto] });
+        if (url.includes("/sicredi_config?"))
+          return Response.json([
+            {
+              ...config,
+              api_key: "fixture-api",
+              username: `${boleto.codigo_beneficiario}${boleto.cooperativa}`,
+              password: "fixture-password",
+            },
+          ]);
+        if (url.endsWith("sicredi_token_reservar_224"))
+          return Response.json({ lease: "fixture-token-lease" });
+        if (url.endsWith("/auth/openapi/token")) {
+          autenticacoes++;
+          return Response.json({ access_token: "private-fixture-token", expires_in: 300 });
+        }
+        if (url.endsWith("sicredi_token_concluir_224")) {
+          conclusoes++;
+          return new Response(null, { status: statusVazio });
+        }
+        if (url.includes("/cobranca/boleto/v2/boletos?")) {
+          consultas++;
+          expect(init?.method ?? "GET").toBe("GET");
+          return Response.json({ situacao: "REGISTRADO" });
+        }
+        if (url.endsWith("sicredi_auto_finalizar_247")) {
+          const args = JSON.parse(String(init?.body));
+          gravacoes.push(args);
+          return Response.json(args._situacao);
+        }
+        throw new Error("Chamada inesperada no transporte simulado");
+      }) as typeof fetch;
+      const response = await atenderSicrediAutomatico(
+        new Request("https://erp/api/sicredi/sincronizar", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${"a".repeat(64)}` },
+        }),
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ consultados: 1, processados: 0 });
+      expect(autenticacoes).toBe(1);
+      expect(conclusoes).toBe(1);
+      expect(consultas).toBe(1);
+      expect(gravacoes[0]?.["_situacao"]).toBe("pendente");
+      expect(gravacoes[0]?.["_dados"]).toBeNull();
+    }
+  } finally {
+    globalThis.fetch = fetchOriginal;
+    if (urlOriginal === undefined) delete process.env["EXT_SUPABASE_URL"];
+    else process.env["EXT_SUPABASE_URL"] = urlOriginal;
+    if (keyOriginal === undefined) delete process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];
+    else process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = keyOriginal;
+  }
+});

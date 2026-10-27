@@ -193,3 +193,11 @@ Isso comprova que o diagnóstico da versão1.3.4 chegou ao banco e situa essa fa
 O próximo passo é `db/conferir_cache_token_sicredi_somente_leitura.sql`: verifica tabela/colunas do cache224, funções de reservar/concluir, nomes dos parâmetros usados pelo PostgREST, tipos de retorno e permissões da service_role. O arquivo não lê registros/tokens nem executa as funções. Foi validado em banco local com estruturas ausentes e completas, incluindo funções que lançariam erro caso fossem executadas.
 
 Não reaplicar a fase224 inteira apenas por esse erro: ela também contém outras rotinas bancárias. Caso se confirme estrutura ausente/incompatível, preparar somente a correção correspondente, preservando o finalizador277 e os lançamentos existentes. Não foram alteradas credenciais ou realizadas chamadas reais durante essa investigação.
+
+## Cache verificado e defeito de resposta vazia corrigido — CSV(6)
+
+O responsável retornou15 verificações do cache: todas compatíveis/presentes. Não foram encontradas nesse inventário falta de tabela/coluna, ausência de permissão da service_role ou divergência de nome de parâmetro/retorno. Isso não lê tokens nem certifica a validade das credenciais bancárias.
+
+A comparação entre os adaptadores manual e automático identificou um defeito concreto: a consulta automática exigia JSON mesmo em resposta bem-sucedida sem corpo da RPC de retorno void que conclui o token. O cenário foi reproduzido em teste e corrigido na versão1.3.5, sem SQL novo. Ver `docs/sicredi-resposta-vazia-278.md`.
+
+O teste falhou no código anterior e passou com a correção para HTTP204 e HTTP200 vazios. A consulta GET então ocorre sem repetir autenticação/conclusão e sem interpretar boleto registrado como pagamento. A recuperação das pendências reais precisa ser confirmada após publicar e aguardar o agendamento; não houve consulta real, reemissão ou baixa acionada pelo desenvolvimento.
