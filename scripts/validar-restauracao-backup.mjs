@@ -55,6 +55,9 @@ function motivoSeguro(stderr) {
     ).exec(stderr);
     if (match) return ` (${kind}: ${match[1]})`;
   }
+  if (stderr.includes("must be superuser") || stderr.includes("must be a superuser"))
+    return " (privilégio estrutural do papel de destino)";
+  if (stderr.includes("permission denied")) return " (permissão estrutural no destino isolado)";
   if (stderr.includes("can only be created in database")) return " (banco exigido pela extensão)";
   if (stderr.includes("must be loaded via shared_preload_libraries"))
     return " (pré-carregamento da extensão)";
@@ -185,7 +188,10 @@ export async function validarRestauracao(etapa, env = process.env) {
     docker(["exec", "--user", "root", container, "chown", "postgres:postgres", "/tmp/banco.dump"]),
     "Falha na permissão do dump temporário.",
   );
-  let placeholders = 0;
+  // Donos de EVENT TRIGGER precisam ser superusuários no PostgreSQL. Este papel
+  // existe assim no Supabase, mas aqui não tem login e está num contêiner sem rede.
+  psql('CREATE ROLE "supabase_admin" NOLOGIN SUPERUSER;');
+  let placeholders = 1;
   for (const section of ["pre-data", "data", "post-data"]) {
     let complete = false;
     for (let attempt = 0; attempt < 50; attempt++) {
