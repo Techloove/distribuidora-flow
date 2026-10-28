@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.12.0",
+    "data": "2026-10-28",
+    "titulo": "Recuperação de senha pelo próprio usuário e orientação após aprovação",
+    "novidades": [
+      "Recuperação de senha pelo próprio usuário e orientação após aprovação"
+    ]
+  },
+  {
     "versao": "1.11.1",
     "data": "2026-10-28",
     "titulo": "Corrigir publicação do manifesto de versão e cache na Vercel",

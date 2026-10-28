@@ -10,7 +10,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app")({ ssr: false, component: AppLayout });
 function AppLayout() {
-  const { session, loading, error, signOut, needsCadastro } = useSupabase();
+  const { session, loading, error, signOut, needsCadastro, passwordRecovery } = useSupabase();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const acesso = useAcesso();
@@ -21,9 +21,26 @@ function AppLayout() {
     if (!loading && !session) void navigate({ to: "/auth", replace: true });
   }, [loading, session, navigate]);
   useEffect(() => {
-    if (!needsCadastro && bloqueado && destino && !error && !acesso.erro && destino !== pathname)
+    if (passwordRecovery) void navigate({ to: "/recuperar-senha", replace: true });
+  }, [passwordRecovery, navigate]);
+  useEffect(() => {
+    if (
+      !passwordRecovery &&
+      !needsCadastro &&
+      bloqueado &&
+      destino &&
+      !error &&
+      !acesso.erro &&
+      destino !== pathname
+    )
       void navigate({ to: destino, replace: true });
-  }, [needsCadastro, bloqueado, destino, error, acesso.erro, pathname, navigate]);
+  }, [passwordRecovery, needsCadastro, bloqueado, destino, error, acesso.erro, pathname, navigate]);
+  if (passwordRecovery)
+    return (
+      <p role="status" className="p-6">
+        Abrindo recuperação de senha…
+      </p>
+    );
   if (loading || (!error && session && !needsCadastro && acesso.carregando))
     return (
       <div

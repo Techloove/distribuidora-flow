@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.11.1 · 2026-10-28
+Versão 1.12.0 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -8,14 +8,16 @@ Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão 
 
 Entenda o menu, o perfil de acesso e a loja selecionada.
 
-1. Entre com seu usuário e senha. No primeiro acesso, conclua o cadastro solicitado antes de operar.
-2. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
-3. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
-4. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
-5. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
-6. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
-7. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
-8. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+1. Entre com seu e-mail e senha. Após a aprovação, use a mesma senha definida no primeiro cadastro. No primeiro acesso, conclua o cadastro solicitado antes de operar.
+2. Para trocar sua senha, use Alterar minha senha no menu e informe a senha atual e a nova senha duas vezes. Você pode trocar novamente sempre que precisar; não há um limite total de trocas, mas o serviço pode limitar muitas tentativas em pouco tempo.
+3. Se esqueceu sua senha, preencha o e-mail na tela de entrada e clique Esqueci minha senha. Abra o link recebido no e-mail, defina uma nova senha e entre novamente. O link expira e deve ser solicitado novamente se já foi usado. Redefinir a senha não aprova um cadastro pendente.
+4. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
+5. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
+6. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
+7. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
+8. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
+9. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+10. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 
 Cuidados:
 

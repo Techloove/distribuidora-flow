@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/lib/supabase-provider";
+import { mensagemLogin } from "@/lib/auth-senhas";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -36,11 +37,13 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 function AuthPage() {
-  const { client, session, loading, error } = useSupabase();
+  const { client, session, loading, error, passwordRecovery } = useSupabase();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recuperando, setRecuperando] = useState(false);
+  const [recuperacaoEnviada, setRecuperacaoEnviada] = useState(false);
   const [cadastro, setCadastro] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [nome, setNome] = useState("");
@@ -58,12 +61,39 @@ function AuthPage() {
     },
   });
   useEffect(() => {
+    if (session && passwordRecovery) {
+      void navigate({ to: "/recuperar-senha", replace: true });
+      return;
+    }
     if (session && !cadastro && !busy && !enviado)
       void navigate({ to: "/dashboard", replace: true });
-  }, [session, navigate, cadastro, busy, enviado]);
+  }, [session, navigate, cadastro, busy, enviado, passwordRecovery]);
+  async function recuperarSenha() {
+    if (!client || busy || recuperando) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Preencha seu e-mail acima para receber o link de recuperação.");
+      return;
+    }
+    setRecuperando(true);
+    setRecuperacaoEnviada(false);
+    try {
+      const { error } = await client.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin + "/recuperar-senha",
+      });
+      if (error)
+        throw new Error(
+          "Não foi possível enviar o link agora. Aguarde alguns minutos e tente novamente.",
+        );
+      setRecuperacaoEnviada(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha de conexão. Tente novamente.");
+    } finally {
+      setRecuperando(false);
+    }
+  }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!client || busy) return;
+    if (!client || busy || recuperando) return;
     setBusy(true);
     try {
       if (cadastro) {
@@ -92,7 +122,9 @@ function AuthPage() {
                 ? "Aguarde alguns minutos antes de tentar novamente."
                 : code === "weak_password"
                   ? "Escolha uma senha mais forte, conforme as regras de segurança."
-                  : "Não foi possível solicitar o cadastro. Confira os dados e tente novamente ou procure o administrador.",
+                  : code === "user_already_exists" || code === "email_exists"
+                    ? "Não foi possível criar outra conta com esses dados. Se já fez seu cadastro, volte para entrar ou use Esqueci minha senha. Repetir o cadastro não redefine a senha anterior."
+                    : "Não foi possível solicitar o cadastro. Confira os dados e tente novamente ou procure o administrador.",
           );
         }
         setEnviado(true);
@@ -104,10 +136,7 @@ function AuthPage() {
           email: email.trim(),
           password: senha,
         });
-        if (result.error)
-          throw new Error(
-            "Não foi possível entrar. Confira suas credenciais e a confirmação do e-mail.",
-          );
+        if (result.error) throw new Error(mensagemLogin(result.error.code));
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao entrar.");
@@ -188,11 +217,12 @@ function AuthPage() {
               <p className="font-semibold">Solicitação de cadastro recebida</p>
               <p className="text-sm text-muted-foreground">
                 Se receber um e-mail de confirmação, confirme seu endereço. Aguarde a autorização do
-                administrador para acessar o sistema.
+                administrador para acessar o sistema. Depois da aprovação, entre com o mesmo e-mail
+                e a mesma senha definidos no primeiro cadastro.
               </p>
               <p className="text-xs text-muted-foreground">
-                Caso este e-mail já tenha uma conta, entre com seus dados ou procure o
-                administrador.
+                Repetir um cadastro com um e-mail já utilizado não redefine sua senha. Nesse caso,
+                volte para entrar e use Esqueci minha senha, se necessário.
               </p>
             </div>
           ) : (
@@ -273,6 +303,7 @@ function AuthPage() {
                   !client ||
                   (!cadastro && loading) ||
                   busy ||
+                  recuperando ||
                   (cadastro && disponivel.data !== true)
                 }
                 type="submit"
@@ -284,12 +315,32 @@ function AuthPage() {
                 )}{" "}
                 {busy ? "Aguarde…" : cadastro ? "Solicitar cadastro" : "Acessar o sistema"}
               </Button>
+              {!cadastro && (
+                <>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full"
+                    disabled={!client || busy || recuperando}
+                    onClick={() => void recuperarSenha()}
+                  >
+                    {recuperando ? "Enviando link…" : "Esqueci minha senha"}
+                  </Button>
+                  {recuperacaoEnviada && (
+                    <p role="status" className="text-sm text-muted-foreground">
+                      Se houver uma conta para esse e-mail, você receberá um link para definir uma
+                      nova senha. Confira também o spam. A recuperação de senha não aprova um
+                      cadastro pendente.
+                    </p>
+                  )}
+                </>
+              )}
             </form>
           )}
           <Button
             className="mt-4 w-full"
             variant="outline"
-            disabled={busy}
+            disabled={busy || recuperando}
             onClick={() => {
               setCadastro(!cadastro);
               setEnviado(false);

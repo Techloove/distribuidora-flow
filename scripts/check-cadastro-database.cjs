@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, ".."),
     await db.exec(`create role authenticated;create role anon;create role service_role;create schema auth;
  create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
  create type app_role as enum('admin','gestor','representante','financeiro','estoque','expedicao');
- create table auth.users(id uuid primary key default gen_random_uuid(),email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz);
+ create table auth.users(id uuid primary key default gen_random_uuid(),email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,encrypted_password text default 'hash-original-fixture');
  create table profiles(id uuid primary key references auth.users(id),nome text,email text,telefone text,ativo boolean default true,todos_centros boolean default false,created_at timestamptz default now(),updated_at timestamptz default now());
  create table user_roles(user_id uuid references profiles(id),role app_role,primary key(user_id,role));
  create table centros(id uuid primary key,nome text,ativo boolean default true);
@@ -106,6 +106,14 @@ const root = path.resolve(__dirname, ".."),
       id(20),
       [id(10)],
     ]);
+    // Aprovar o cadastro não deve substituir nem apagar a credencial do Auth.
+    await db.exec("reset role");
+    assert.equal(
+      (await db.query("select encrypted_password from auth.users where id=$1", [id(100)])).rows[0]
+        .encrypted_password,
+      "hash-original-fixture",
+    );
+    await login(1);
     assert.equal(
       (await db.query("select cadastro_status from profiles where id=$1", [id(100)])).rows[0]
         .cadastro_status,

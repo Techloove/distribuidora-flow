@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as AppAgendaComercialRouteImport } from './routes/_app/agenda-comercial'
 import { Route as AppAjudaRouteImport } from './routes/_app/ajuda'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
@@ -78,6 +79,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAgendaComercialRoute = AppAgendaComercialRouteImport.update({
@@ -351,6 +357,7 @@ const AppUsuariosRoute = AppUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
   '/ajuda': typeof AppAjudaRoute
   '/auditoria': typeof AppAuditoriaRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
   '/ajuda': typeof AppAjudaRoute
   '/auditoria': typeof AppAuditoriaRoute
@@ -467,6 +475,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/_app/agenda-comercial': typeof AppAgendaComercialRoute
   '/_app/ajuda': typeof AppAjudaRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/recuperar-senha'
     | '/agenda-comercial'
     | '/ajuda'
     | '/auditoria'
@@ -583,6 +593,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/recuperar-senha'
     | '/agenda-comercial'
     | '/ajuda'
     | '/auditoria'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/recuperar-senha'
     | '/_app/agenda-comercial'
     | '/_app/ajuda'
     | '/_app/auditoria'
@@ -700,6 +712,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -723,6 +736,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/agenda-comercial': {
@@ -1219,6 +1239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

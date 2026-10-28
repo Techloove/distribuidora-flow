@@ -4,6 +4,7 @@ import { useRouter } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "./supabase-client";
 import { setCentro } from "./centro-store";
+import { estadoRecuperacaoSenha } from "./auth-senhas";
 
 export type AppRole =
   "admin" | "gestor" | "financeiro" | "comercial" | "representante" | "estoque" | "expedicao";
@@ -13,6 +14,7 @@ type SupabaseContextValue = {
   user: User | null;
   roles: AppRole[];
   needsCadastro: boolean;
+  passwordRecovery: boolean;
   loading: boolean;
   error: string | null;
   canManage: boolean;
@@ -24,6 +26,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   const [client, setClient] = useState<SupabaseClient | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -49,6 +52,8 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         setClient(sb);
         const { data: listener } = sb.auth.onAuthStateChange((event, next) => {
+          if (!active) return;
+          setPasswordRecovery((anterior) => estadoRecuperacaoSenha(anterior, event));
           revision++;
           accept(next);
           if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
@@ -74,7 +79,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
 
   const permissions = useQuery({
     queryKey: ["session-permissions", session?.user.id],
-    enabled: !!client && !!session,
+    enabled: !!client && !!session && !passwordRecovery,
     staleTime: 0,
     refetchInterval: 60_000,
     retry: 1,
@@ -102,7 +107,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   const roles = session && !permissions.isError ? (permissions.data?.roles ?? []) : [];
   const needsCadastro =
     !!session && !permissions.isError && permissions.data?.needsCadastro === true;
-  const loading = initializing || (!!session && permissions.isPending);
+  const loading = initializing || (!!session && !passwordRecovery && permissions.isPending);
   const error =
     connectionError ?? (session && permissions.error ? permissions.error.message : null);
   useEffect(() => {
@@ -135,6 +140,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         roles,
         needsCadastro,
+        passwordRecovery,
         loading,
         error,
         canManage: !loading && !error && (roles.includes("admin") || roles.includes("gestor")),

@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useSupabase } from "@/lib/supabase-provider";
+import { validarNovaSenha, mensagemTrocaSenha } from "@/lib/auth-senhas";
 
 /** Permite alterar somente a senha da sessão atual, sem permissões administrativas. */
 export function AlterarSenha({ compact }: { compact: boolean }) {
@@ -40,9 +41,8 @@ export function AlterarSenha({ compact }: { compact: boolean }) {
     event.preventDefault();
     if (busy || !client || !user) return;
     setErro(null);
-    if (nova.length < 8) return setErro("A nova senha deve ter pelo menos 8 caracteres.");
-    if (nova !== confirmacao) return setErro("As novas senhas não conferem.");
-    if (nova === atual) return setErro("Escolha uma senha diferente da atual.");
+    const invalid = validarNovaSenha(nova, confirmacao, atual);
+    if (invalid) return setErro(invalid);
     setBusy(true);
     try {
       // Confira a senha atual sem substituir a sessão do ERP.
@@ -65,9 +65,7 @@ export function AlterarSenha({ compact }: { compact: boolean }) {
       }
       const { error } = await client.auth.updateUser({ password: nova, current_password: atual });
       if (error) {
-        setErro(
-          "Não foi possível alterar a senha. Confira a senha atual e os requisitos de segurança da sua conta. Se o problema continuar, procure o administrador.",
-        );
+        setErro(mensagemTrocaSenha(error.code));
         return;
       }
       setAtual("");
@@ -99,7 +97,7 @@ export function AlterarSenha({ compact }: { compact: boolean }) {
         <DialogHeader>
           <DialogTitle>Alterar minha senha</DialogTitle>
           <DialogDescription>
-            Atualize a senha da sua própria conta. Use pelo menos 8 caracteres.
+            Atualize a senha da sua própria conta sempre que precisar. Use pelo menos 8 caracteres.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={salvar} className="space-y-4">
