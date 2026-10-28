@@ -2,7 +2,7 @@ import { CentralPendencias } from "@/components/central-pendencias";
 import { PainelRepresentante } from "@/components/painel-representante";
 import { perfilPainel, hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { useAcesso } from "@/lib/permissoes";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "lucide-react";
 
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_app/dashboard")({
 type Row = Record<string, unknown>;
 
 function Dashboard() {
+  const qc = useQueryClient();
   const { client, user, roles } = useSupabase();
   const acesso = useAcesso();
   const perfil = perfilPainel(roles);
@@ -90,6 +91,7 @@ function Dashboard() {
         <button
           onClick={() => {
             void data.refetch();
+            void qc.invalidateQueries({ queryKey: ["painel-representante"] });
           }}
           disabled={data.isFetching}
           className="rounded-xl border border-white/30 px-4 py-2 text-sm hover:bg-white/10 disabled:opacity-50"
@@ -108,7 +110,7 @@ function Dashboard() {
       )}
       {perfil === "representante" && <PainelRepresentante />}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {acesso.pode("/pedidos") && (
+        {acesso.pode("/pedidos") && perfil !== "representante" && (
           <Kpi
             label="Vendas confirmadas"
             value={d ? brl(d.vendasConfirmadas) : "—"}

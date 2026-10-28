@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.12.0 · 2026-10-28
+Versão 1.13.0 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -13,11 +13,13 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 3. Se esqueceu sua senha, preencha o e-mail na tela de entrada e clique Esqueci minha senha. Abra o link recebido no e-mail, defina uma nova senha e entre novamente. O link expira e deve ser solicitado novamente se já foi usado. Redefinir a senha não aprova um cadastro pendente.
 4. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
 5. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
-6. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
-7. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
-8. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
-9. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
-10. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+6. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
+7. No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.
+8. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
+9. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
+10. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
+11. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+12. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 
 Cuidados:
 
@@ -33,13 +35,16 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 1. Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.
 2. Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.
 3. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
-4. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
-5. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
-6. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
+4. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
+5. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
+6. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
+7. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
+8. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
 
 Cuidados:
 
 - Evite duplicar cadastros. Revise o documento e a busca antes de salvar.
+- Somente administradores podem definir ou alterar o limite de crédito. O representante não pode liberar crédito, retirar a pendência ou desbloquear um cliente. Clientes antigos não são colocados em pendência por esta atualização.
 - A mudança de responsável comercial deve respeitar a gestão de carteiras; não compartilhe credenciais para acessar outro representante.
 
 ## Lojas, categorias e produtos

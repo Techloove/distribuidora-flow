@@ -11,6 +11,10 @@ import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
 import { RotasRepresentante } from "@/components/rotas-representante";
 import { useSupabase } from "@/lib/supabase-provider";
+import {
+  CadastrarClienteRepresentante,
+  CreditosClientesPendentes,
+} from "@/components/clientes-credito";
 
 export const Route = createFileRoute("/_app/pessoas")({
   validateSearch: (
@@ -218,7 +222,8 @@ function naoSoRepresentante(form: Record<string, string | boolean>) {
 
 function PessoasPage() {
   const { pessoa, cliente, fornecedor, pedido } = Route.useSearch();
-  const { client } = useSupabase();
+  const { client, roles } = useSupabase();
+  const representante = roles.includes("representante") && !roles.includes("admin");
 
   const vinculo = useQuery({
     queryKey: ["pessoa-referencia", cliente, fornecedor, pedido],
@@ -273,6 +278,7 @@ function PessoasPage() {
   });
 
   const camposComFormas: CrudField[] = fields.map((f) => {
+    if (f.name === "limite_credito" && !roles.includes("admin")) return { ...f, auto: true };
     if (f.name === "condicao_pagamento")
       return {
         ...f,
@@ -299,6 +305,8 @@ function PessoasPage() {
       title="Cadastro unificado"
       description="Um único cadastro por pessoa ou empresa. Marque as funções (cliente, fornecedor, representante, usuário) e o sistema replica automaticamente nos módulos correspondentes."
     >
+      {representante && <CadastrarClienteRepresentante />}
+      {roles.includes("admin") && <CreditosClientesPendentes />}
       {!pessoa && (cliente || fornecedor || pedido) && (vinculo.isPending || vinculo.isError) ? (
         <p role="status" className="p-4 text-sm">
           {vinculo.isError ? vinculo.error.message : "Abrindo cadastro relacionado…"}
@@ -306,9 +314,19 @@ function PessoasPage() {
       ) : (
         <CrudPage
           uppercase
+          readOnly={representante}
           table="pessoas"
           initialEditId={pessoa ?? vinculo.data}
-          fields={camposComFormas}
+          fields={[
+            ...camposComFormas,
+            {
+              name: "credito_pendente",
+              label: "Crédito pendente",
+              type: "checkbox",
+              auto: true,
+              inTable: true,
+            },
+          ]}
           formSections={[
             {
               id: "identificacao",

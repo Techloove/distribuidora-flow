@@ -11,6 +11,8 @@
       "Se esqueceu sua senha, preencha o e-mail na tela de entrada e clique Esqueci minha senha. Abra o link recebido no e-mail, defina uma nova senha e entre novamente. O link expira e deve ser solicitado novamente se já foi usado. Redefinir a senha não aprova um cadastro pendente.",
       "Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.",
       "Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.",
+      "Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.",
+      "No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.",
       "Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.",
       "No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.",
       "Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.",
@@ -34,12 +36,15 @@
       "Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.",
       "Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.",
       "Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.",
+      "O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.",
+      "Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.",
       "Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.",
       "No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.",
       "Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros."
     ],
     "cuidados": [
       "Evite duplicar cadastros. Revise o documento e a busca antes de salvar.",
+      "Somente administradores podem definir ou alterar o limite de crédito. O representante não pode liberar crédito, retirar a pendência ou desbloquear um cliente. Clientes antigos não são colocados em pendência por esta atualização.",
       "A mudança de responsável comercial deve respeitar a gestão de carteiras; não compartilhe credenciais para acessar outro representante."
     ]
   },
