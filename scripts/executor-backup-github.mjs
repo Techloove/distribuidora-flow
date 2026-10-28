@@ -31,6 +31,10 @@ export async function executarEtapa(
       },
       body: JSON.stringify(args),
     });
+    if (r.status === 401 || r.status === 403)
+      throw new Error(
+        "BACKUP_SUPABASE_SERVICE_ROLE_KEY recusada. Confira o valor de caparao_backup_service_role no Vault do Supabase.",
+      );
     if (!r.ok) throw new Error("Falha no controle do backup (HTTP " + r.status + ").");
     return r.json();
   };
@@ -47,7 +51,9 @@ export async function executarEtapa(
     for (const key of ["PGHOST", "PGUSER", "PGPASSWORD", "ERP_BACKUP_KEY"])
       if (!env[key]) throw new Error("Configure " + key + " no GitHub antes de ativar o backup.");
     if (!/^[a-f0-9]{64}$/i.test(env.ERP_BACKUP_KEY))
-      throw new Error("Chave de recuperação inválida.");
+      throw new Error(
+        "ERP_BACKUP_KEY inválida. Copie o valor de caparao_backup_recovery_key do Vault do Supabase, sem aspas ou espaços.",
+      );
     const job = await rpc("assumir_backup_268", {
       _agendado: env.BACKUP_CRIAR_SOLICITACAO === "true",
     });
@@ -140,7 +146,11 @@ async function executarScript(name, args, env) {
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   executarEtapa(process.argv[2]).catch((error) => {
-    console.error(error.message);
+    const message = String(error.message)
+      .replace(/%/g, "%25")
+      .replace(/\r/g, "%0D")
+      .replace(/\n/g, "%0A");
+    console.error("::error::" + message);
     process.exitCode = 1;
   });
 }

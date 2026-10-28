@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.10.1 · 2026-10-28
+Versão 1.10.2 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
