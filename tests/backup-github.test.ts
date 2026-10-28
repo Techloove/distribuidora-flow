@@ -57,7 +57,9 @@ test("executor GitHub só anuncia sucesso depois de recuperar e conferir o artef
       env,
       request: async (url: URL, init: RequestInit) => {
         calls.push({ nome: url.pathname.split("/").at(-1)!, args: JSON.parse(String(init.body)) });
-        return Response.json(url.pathname.endsWith("assumir_backup_268") ? { id, lease } : null);
+        return url.pathname.endsWith("assumir_backup_268")
+          ? Response.json({ id, lease })
+          : new Response(null, { status: 204 });
       },
       run: async (name: string, args: string[]) => {
         if (name === "backup-supabase.mjs") {

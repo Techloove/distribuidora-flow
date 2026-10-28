@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.10.3",
+    "data": "2026-10-28",
+    "titulo": "Validar certificado Supabase e tratar respostas vazias no backup",
+    "novidades": [
+      "Validar certificado Supabase e tratar respostas vazias no backup"
+    ]
+  },
+  {
     "versao": "1.10.2",
     "data": "2026-10-28",
     "titulo": "Identificar configurações incompletas na rotina de backup",

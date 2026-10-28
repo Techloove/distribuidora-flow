@@ -72,7 +72,8 @@ try {
   let diagnostico = "CONEXAO";
   dump.stderr.on("data", (chunk) => {
     const message = chunk.toString().toLowerCase();
-    if (/certificate|ssl|tls/.test(message)) diagnostico = "TLS";
+    if (/password authentication|sasl authentication/.test(message)) diagnostico = "SENHA_BANCO";
+    else if (/certificate|ssl|tls/.test(message)) diagnostico = "TLS";
     else if (/permission denied|row-level security|must be owner/.test(message))
       diagnostico = "PRIVILEGIOS";
     else if (/version mismatch|server version/.test(message)) diagnostico = "VERSAO";

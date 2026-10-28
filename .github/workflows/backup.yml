@@ -52,6 +52,14 @@ jobs:
         if: steps.fila.outputs.ativo == 'true'
         run: |
           docker pull postgres:17
+          # Mesma CA publicada pelo painel oficial do Supabase.
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt \
+            -o "$RUNNER_TEMP/supabase-ca.crt"
+          openssl x509 -in "$RUNNER_TEMP/supabase-ca.crt" -noout -checkend 86400
+          openssl verify -check_ss_sig -CAfile "$RUNNER_TEMP/supabase-ca.crt" "$RUNNER_TEMP/supabase-ca.crt"
+          cat /etc/ssl/certs/ca-certificates.crt "$RUNNER_TEMP/supabase-ca.crt" > "$RUNNER_TEMP/backup-ca.pem"
+          echo "PGSSLROOTCERT=$RUNNER_TEMP/backup-ca.pem" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/backup-bin"
           cp infra/backup/pg_dump-github "$RUNNER_TEMP/backup-bin/pg_dump"
           chmod 700 "$RUNNER_TEMP/backup-bin/pg_dump"

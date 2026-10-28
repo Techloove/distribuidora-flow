@@ -22,12 +22,12 @@ try {
     `const fs=require('node:fs');globalThis.fetch=async(url,options)=>{
  const p=new URL(url).pathname;
  if(p.endsWith('/assumir_backup_268'))return Response.json(process.env.TEST_EMPTY==='true'?null:{id:'11111111-1111-4111-8111-111111111111',lease:'22222222-2222-4222-8222-222222222222'});
- if(p.endsWith('/registrar_download_backup_283')){fs.writeFileSync(process.env.TEST_LOG+'.download',options.body);return Response.json(null);}
+ if(p.endsWith('/registrar_download_backup_283')){fs.writeFileSync(process.env.TEST_LOG+'.download',options.body);return new Response(null,{status:204});}
  if(p.startsWith('/storage/v1/object/erp-backups/')) {
   if(options.method==='POST'){ if(process.env.TEST_UPLOAD_FAILED==='true')return new Response('',{status:500});const chunks=[];for await(const chunk of options.body)chunks.push(Buffer.from(chunk));fs.writeFileSync(process.env.TEST_LOG+'.tar',Buffer.concat(chunks));return Response.json({});}
   const bytes=fs.readFileSync(process.env.TEST_LOG+'.tar');if(process.env.TEST_CORRUPT_DOWNLOAD==='true')bytes[0]^=1;return new Response(bytes);
  }
- if(p.endsWith('/finalizar_backup_268')){fs.writeFileSync(process.env.TEST_LOG,options.body);return Response.json(null);}
+ if(p.endsWith('/finalizar_backup_268')){fs.writeFileSync(process.env.TEST_LOG,options.body);return new Response(null,{status:204});}
  if(p==='/storage/v1/bucket')return Response.json([{id:'privado',public:false}]);
  if(p.includes('/list/'))return Response.json([{name:'arquivo.txt',id:'obj'}]);
  return new Response('objeto-sintetico');};`,

@@ -35,7 +35,7 @@ Depois de publicar e revisar o workflow em `main`, habilite `BACKUP_ATIVO=true`,
 
 ## Conexão, isolamento e recuperação
 
-O dump usa PostgreSQL 17 por Docker, compatível com o servidor 17.6 observado na implantação, e o pooler de **sessão** na porta5432. TLS permanece em `verify-full`, com o certificado raiz do sistema. Não use porta6543 (pooler transacional) nem desative a validação do certificado.
+O dump usa PostgreSQL 17 por Docker, compatível com o servidor 17.6 observado na implantação, e o pooler de **sessão** na porta5432. TLS permanece em `verify-full`, com as raízes do sistema e a CA publicada oficialmente pelo painel Supabase. O workflow obtém essa CA por HTTPS, valida o certificado e sua assinatura, e a acrescenta ao arquivo de confiança sem desativar a verificação. Não use porta6543 (pooler transacional) nem desative a validação do certificado.
 
 O workflow não roda em pull requests. Ele tem concorrência única, estado temporário fora do checkout, limite de cinco horas e limpeza dos arquivos locais. A cópia do GitHub só contém arquivos criptografados; a chave fica nos segredos, separada do artefato. Não publique os valores dos segredos em logs ou na aplicação. Interrupções abruptas podem deixar a reserva ativa até expirar; revise a execução antes de reenviar.
 

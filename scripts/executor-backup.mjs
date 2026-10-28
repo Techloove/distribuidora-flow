@@ -14,7 +14,8 @@ async function rpc(nome, args) {
     body: JSON.stringify(args),
   });
   if (!r.ok) throw new Error("Falha no controle de execução");
-  return r.json();
+  const body = await r.text();
+  return body.trim() ? JSON.parse(body) : null;
 }
 let job;
 try {

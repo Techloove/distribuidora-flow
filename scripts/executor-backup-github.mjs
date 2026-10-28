@@ -36,7 +36,8 @@ export async function executarEtapa(
         "BACKUP_SUPABASE_SERVICE_ROLE_KEY recusada. Confira o valor de caparao_backup_service_role no Vault do Supabase.",
       );
     if (!r.ok) throw new Error("Falha no controle do backup (HTTP " + r.status + ").");
-    return r.json();
+    const body = await r.text();
+    return body.trim() ? JSON.parse(body) : null;
   };
   const output = async (values) => {
     if (env.GITHUB_OUTPUT)
@@ -129,7 +130,7 @@ async function executarScript(name, args, env) {
       no(new Error("Não foi possível iniciar a geração/verificação do backup.")),
     );
     child.on("close", (code) => {
-      const reason = ["TLS", "PRIVILEGIOS", "VERSAO", "CONEXAO"].find((value) =>
+      const reason = ["TLS", "PRIVILEGIOS", "VERSAO", "CONEXAO", "SENHA_BANCO"].find((value) =>
         output.includes("[" + value + "]"),
       );
       code === 0
