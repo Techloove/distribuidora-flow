@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.10.3 · 2026-10-28
+Versão 1.11.0 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -280,8 +280,9 @@ Administre os acessos e acompanhe as cópias de segurança.
 2. Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.
 3. Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.
 4. Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila.
-5. Consulte o número da versão no menu e informe-o ao pedir suporte.
-6. Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas.
+5. O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.
+6. Consulte o número da versão no menu e informe-o ao pedir suporte.
+7. Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas.
 
 Cuidados:
 

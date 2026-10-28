@@ -340,6 +340,7 @@
       "Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.",
       "Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.",
       "Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila.",
+      "O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.",
       "Consulte o número da versão no menu e informe-o ao pedir suporte.",
       "Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas."
     ],

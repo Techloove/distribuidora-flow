@@ -65,3 +65,6 @@ A primeira execução real concluída foi [40710851509](https://github.com/Techl
 Foram exercitados o leitor exclusivo, PostgreSQL17 com TLS `verify-full` e a CA oficial, dump completo, captura do código versionado, inventário de Storage, criptografia, verificação local, upload e recuperação do artefato externo, verificação da cópia recuperada, publicação e releitura do pacote privado e conclusão no histórico. As respostas vazias das RPCs administrativas são tratadas corretamente.
 
 A variável `BACKUP_ATIVO=true` foi comprovada pela execução efetiva do job. O workflow ativo contém a solicitação diária às 03h07 de Brasília e a consulta horária da fila manual. Isso confirma a implantação atual; não é prova de que execuções futuras ocorrerão no horário exato ou de que a restauração completa da plataforma esteja homologada. O ensaio de restauração em projeto isolado e a cópia offline da chave continuam fazendo parte do plano de recuperação.
+
+
+Para conferir a recuperação sem acessar produção, use o [ensaio isolado de restauração](ensaio-restauracao-backup.md).

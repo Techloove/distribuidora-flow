@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.11.0",
+    "data": "2026-10-28",
+    "titulo": "Adicionar ensaio isolado de restauração dos backups",
+    "novidades": [
+      "Adicionar ensaio isolado de restauração dos backups"
+    ]
+  },
+  {
     "versao": "1.10.3",
     "data": "2026-10-28",
     "titulo": "Validar certificado Supabase e tratar respostas vazias no backup",

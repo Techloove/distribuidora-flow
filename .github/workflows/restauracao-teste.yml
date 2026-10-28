@@ -1,0 +1,62 @@
+name: Testar restauração isolada do backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_run_id:
+        description: ID de uma execução de backup concluída com sucesso
+        type: string
+        required: true
+      tentativa:
+        description: Tentativa da execução de backup
+        type: number
+        default: 1
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ensaio-restauracao-backup
+  cancel-in-progress: false
+
+jobs:
+  restauracao:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RESTORE_TEST_ROOT: /tmp/caparao-restore-${{ github.run_id }}-${{ github.run_attempt }}
+      RESTORE_CONTAINER: caparao-restore-${{ github.run_id }}-${{ github.run_attempt }}
+      RESTORE_SOURCE_RUN: ${{ inputs.backup_run_id }}
+      RESTORE_IMAGE: supabase/postgres:17.6.1.136
+      ERP_BACKUP_KEY: ${{ secrets.ERP_BACKUP_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Recuperar cópia criptografada externa
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.backup_run_id }}
+          name: caparao-backup-${{ inputs.backup_run_id }}-${{ inputs.tentativa }}
+          path: ${{ env.RESTORE_TEST_ROOT }}/criptografado
+      - name: Validar e extrair em diretório privado
+        run: node scripts/validar-restauracao-backup.mjs preparar
+      - name: Obter PostgreSQL oficial compatível com Supabase
+        run: docker pull "$RESTORE_IMAGE"
+      - name: Restaurar sem rede e comparar os dados
+        run: node scripts/validar-restauracao-backup.mjs restaurar
+      - name: Guardar somente o relatório sem dados ou credenciais
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-restauracao-${{ github.run_id }}
+          path: ${{ env.RESTORE_TEST_ROOT }}/relatorio.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Descartar banco isolado e arquivos descriptografados
+        if: always()
+        run: node scripts/validar-restauracao-backup.mjs limpar
