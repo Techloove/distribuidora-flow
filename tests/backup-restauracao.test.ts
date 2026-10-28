@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   dadosCopy,
+  linhasCopySaida,
   hashLinhas,
   nomePapelAusente,
   validarRestauracao,
@@ -48,4 +49,12 @@ test("restauração recusa destinos fora do diretório descartável antes de exe
       RESTORE_CONTAINER: "producao",
     }),
   ).rejects.toThrow("isolado inválido");
+});
+
+test("conferência distingue tabela vazia de uma linha com campo vazio", () => {
+  expect(linhasCopySaida("")).toEqual([]);
+  expect(linhasCopySaida("\n")).toEqual([""]);
+  expect(linhasCopySaida("\n\n")).toEqual(["", ""]);
+  expect(linhasCopySaida("valor\n")).toEqual(["valor"]);
+  expect(() => linhasCopySaida("valor")).toThrow("truncada");
 });

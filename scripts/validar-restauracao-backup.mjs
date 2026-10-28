@@ -45,6 +45,12 @@ export function hashLinhas(rows) {
   for (const line of [...rows].sort()) hash.update(line + "\n");
   return hash.digest("hex");
 }
+export function linhasCopySaida(text) {
+  if (!text.length) return [];
+  if (!text.endsWith("\n")) throw new Error("Saída COPY truncada na conferência.");
+  return text.slice(0, -1).split("\n");
+}
+
 export function nomePapelAusente(stderr) {
   return /ERROR:\s+role "([^"\n]+)" does not exist/.exec(stderr)?.[1];
 }
@@ -250,9 +256,7 @@ export async function validarRestauracao(etapa, env = process.env) {
         copy.columns +
         ") TO stdout;",
     );
-    const actualRows = actual.replace(/\n$/, "").split("\n");
-    // psql não deve imprimir comandos SET em modo silencioso; filtragem não é usada para esconder falhas.
-    if (actualRows.length === 1 && actualRows[0] === "") actualRows.pop();
+    const actualRows = linhasCopySaida(actual);
     if (copy.rows.length !== actualRows.length || hashLinhas(copy.rows) !== hashLinhas(actualRows))
       throw new Error("Conteúdo restaurado diverge do dump; nenhum dado é exibido no relatório.");
     rows += copy.rows.length;
@@ -307,6 +311,17 @@ export async function validarRestauracao(etapa, env = process.env) {
     mode: 0o600,
   });
   console.log(JSON.stringify(report));
+  console.log(
+    "::notice::Restauração verificada: " +
+      copies.length +
+      " tabelas, " +
+      rows +
+      " registros, " +
+      sourceFiles.length +
+      " arquivos de código, " +
+      storageObjects +
+      " objetos de Storage. Rede desativada; índices válidos.",
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
