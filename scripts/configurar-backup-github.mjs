@@ -90,7 +90,12 @@ commit;`);
 }
 
 async function github(args, input) {
-  const r = spawnSync("gh", args, { input, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  const r = spawnSync("gh", args, {
+    input,
+    encoding: "utf8",
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...process.env, GH_TOKEN: process.env.GITHUB_BACKUP_TOKEN || process.env.GH_TOKEN },
+  });
   if (r.status !== 0)
     throw new Error(
       "Não foi possível configurar o GitHub. Confira acesso à API e permissão de administração dos segredos do repositório.",

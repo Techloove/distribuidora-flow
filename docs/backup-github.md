@@ -13,7 +13,7 @@ Este é o executor sem servidor próprio. O workflow `.github/workflows/backup.y
 
 ## Provisionamento seguro
 
-As fases268 e 283 devem estar instaladas no Supabase. O comando administrativo `node scripts/configurar-backup-github.mjs` exige `SUPABASE_ACCESS_TOKEN` configurado com segurança e GitHub CLI autenticado com permissão de escrita nos segredos e variáveis deste repositório. Credenciais não são passadas em argumentos nem impressas.
+As fases268 e 283 devem estar instaladas no Supabase. O comando administrativo `node scripts/configurar-backup-github.mjs` exige `SUPABASE_ACCESS_TOKEN` configurado com segurança e GitHub CLI autenticado com permissão de escrita nos segredos e variáveis deste repositório. Se a integração padrão negar essa administração, configure `GITHUB_BACKUP_TOKEN` por segredo de rede para `api.github.com`, com acesso apenas a este repositório e permissões Secrets, Variables e Actions de leitura/escrita. O helper usa esse token somente no subprocesso GitHub CLI. Credenciais não são passadas em argumentos nem impressas.
 
 O provisionamento cria `caparao_backup_reader`, com login exclusivo, `pg_read_all_data`, leitura através de RLS para copiar todas as lojas e transações somente de leitura por padrão. Não altera a senha do usuário `postgres`. O usuário não recebe permissões de escrita, de criação de papéis, de criação de banco ou de replicação.
 
