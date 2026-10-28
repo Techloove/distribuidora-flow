@@ -57,3 +57,11 @@ Um administrador deve copiar os valores diretamente do Vault para **GitHub → S
 | `caparao_backup_service_role` | `BACKUP_SUPABASE_SERVICE_ROLE_KEY` |
 
 Na aba Variables, crie `BACKUP_ATIVO` com valor `true` somente após cadastrar os três segredos. URL, pooler e usuário já têm valores padrão corretos para este projeto no workflow; as variáveis opcionais permitem alterá-los se necessário. Não cole valores no chat ou em capturas. A ativação só estará validada depois de uma execução real concluir e disponibilizar o download.
+
+## Implantação verificada em 28/10/2026
+
+A primeira execução real concluída foi [40710851509](https://github.com/Techloove/distribuidora-flow/actions/runs/40710851509), na versão1.10.3. O histórico do Supabase registrou `sucesso`, cópia externa verificada e download disponível para `backup-2026-10-28T14-56-28-010Z` (8.529.920 bytes no pacote privado). O artefato correspondente também foi confirmado no GitHub, sem expiração naquele momento. Sua retenção inicial é de sete dias.
+
+Foram exercitados o leitor exclusivo, PostgreSQL17 com TLS `verify-full` e a CA oficial, dump completo, captura do código versionado, inventário de Storage, criptografia, verificação local, upload e recuperação do artefato externo, verificação da cópia recuperada, publicação e releitura do pacote privado e conclusão no histórico. As respostas vazias das RPCs administrativas são tratadas corretamente.
+
+A variável `BACKUP_ATIVO=true` foi comprovada pela execução efetiva do job. O workflow ativo contém a solicitação diária às 03h07 de Brasília e a consulta horária da fila manual. Isso confirma a implantação atual; não é prova de que execuções futuras ocorrerão no horário exato ou de que a restauração completa da plataforma esteja homologada. O ensaio de restauração em projeto isolado e a cópia offline da chave continuam fazendo parte do plano de recuperação.
