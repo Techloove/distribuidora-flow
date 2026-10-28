@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.11.1",
+    "data": "2026-10-28",
+    "titulo": "Corrigir publicação do manifesto de versão e cache na Vercel",
+    "novidades": [
+      "Corrigir publicação do manifesto de versão e cache na Vercel"
+    ]
+  },
+  {
     "versao": "1.11.0",
     "data": "2026-10-28",
     "titulo": "Adicionar ensaio isolado de restauração dos backups",

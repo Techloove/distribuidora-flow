@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.11.0 · 2026-10-28
+Versão 1.11.1 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -22,7 +22,7 @@ Cuidados:
 - Cada perfil vê somente os módulos liberados. A ausência de um menu deve ser tratada com o administrador; o manual não concede acesso.
 - Representantes continuam restritos à própria carteira. Selecionar outra loja não libera clientes ou operações fora da sua permissão.
 - Todas as lojas é uma visão de consulta quando disponível. Para movimentar estoque, escolha uma loja específica.
-- O aviso pode ser recolhido em Depois; ele continua disponível no canto da tela. A consulta é feita enquanto a página está aberta e com conexão.
+- O aviso pode ser recolhido em Depois; ele continua disponível no canto da tela. A consulta é feita enquanto a página está aberta e com conexão. O manifesto de versão deve ser publicado sem cache no provedor de hospedagem, inclusive na Vercel, para que a consulta reconheça as atualizações.
 
 ## Clientes, fornecedores e outros cadastros
 
