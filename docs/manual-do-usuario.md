@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.9.0 · 2026-10-27
+Versão 1.10.0 · 2026-10-28
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -286,6 +286,7 @@ Administre os acessos e acompanhe as cópias de segurança.
 Cuidados:
 
 - Em Manutenção do sistema → Backup dos dados, use Fazer backup manual. Aguarde a geração e a disponibilização e clique Salvar no computador no histórico. Em navegadores compatíveis, escolha a pasta e o nome; nos demais, confira as configurações e a conclusão dos downloads do navegador.
+- Na automação GitHub configurada, a cópia diária é solicitada às 03h07 de Brasília e a fila manual é verificada aproximadamente a cada hora. Aguarde o histórico confirmar a conclusão; horários podem variar pelo agendador.
 - O backup manual e o agendamento diário dependem de executor e armazenamento externo configurados. O download também exige a atualização fase283 e a publicação privada habilitada no executor. A presença do botão não significa que o backup está ativo.
 - A próxima execução inclui os novos schemas, tabelas, funções e buckets de dados da aplicação automaticamente, além do código versionado no host executor. Backups antigos não são atualizados retroativamente e cópias anteriores não são incluídas novamente no pacote.
 - O pacote é criptografado. Guarde a chave de recuperação separadamente; sem ela o arquivo não pode ser recuperado. Configurações do provedor, funções remotas fora do repositório, segredos e infraestrutura exigem guarda separada. A restauração deve ser testada em ambiente isolado.

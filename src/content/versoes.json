@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.10.0",
+    "data": "2026-10-28",
+    "titulo": "Automatizar backups no GitHub sem servidor separado",
+    "novidades": [
+      "Automatizar backups no GitHub sem servidor separado"
+    ]
+  },
+  {
     "versao": "1.9.0",
     "data": "2026-10-27",
     "titulo": "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador",

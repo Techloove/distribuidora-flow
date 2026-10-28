@@ -1,0 +1,88 @@
+name: Backup completo do ERP
+
+on:
+  workflow_dispatch:
+    inputs:
+      gerar_novo:
+        description: Gerar uma nova cópia se não houver solicitação pendente
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 * * * *"
+    - cron: "7 6 * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: backup-producao
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: vars.BACKUP_ATIVO == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    env:
+      BACKUP_RUN_ROOT: ${{ runner.temp }}/caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
+      EXT_SUPABASE_URL: ${{ vars.BACKUP_SUPABASE_URL }}
+      EXT_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
+      PGHOST: ${{ vars.BACKUP_PGHOST }}
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGUSER: ${{ vars.BACKUP_PGUSER }}
+      PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
+      PGSSLMODE: verify-full
+      PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+      ERP_BACKUP_KEY: ${{ secrets.ERP_BACKUP_KEY }}
+      BACKUP_CRIAR_SOLICITACAO: ${{ github.event.schedule == '7 6 * * *' || (github.event_name == 'workflow_dispatch' && inputs.gerar_novo) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verificar fila ou solicitar cópia diária
+        id: fila
+        run: node scripts/executor-backup-github.mjs assumir
+      - uses: actions/setup-node@v4
+        if: steps.fila.outputs.ativo == 'true'
+        with:
+          node-version: "24"
+      - name: Preparar cliente PostgreSQL 17
+        if: steps.fila.outputs.ativo == 'true'
+        run: |
+          docker pull postgres:17
+          mkdir -p "$RUNNER_TEMP/backup-bin"
+          cp infra/backup/pg_dump-github "$RUNNER_TEMP/backup-bin/pg_dump"
+          chmod 700 "$RUNNER_TEMP/backup-bin/pg_dump"
+          echo "$RUNNER_TEMP/backup-bin" >> "$GITHUB_PATH"
+      - name: Gerar e conferir cópia criptografada
+        id: gerar
+        if: steps.fila.outputs.ativo == 'true'
+        run: node scripts/executor-backup-github.mjs gerar
+      - name: Guardar cópia fora do Supabase
+        id: externo
+        if: steps.fila.outputs.ativo == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.gerar.outputs.diretorio }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Recuperar cópia externa para verificação independente
+        if: steps.fila.outputs.ativo == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.BACKUP_RUN_ROOT }}/externo/${{ steps.gerar.outputs.backup }}
+      - name: Conferir cópia externa e disponibilizar download no sistema
+        id: concluir
+        if: steps.fila.outputs.ativo == 'true'
+        run: node scripts/executor-backup-github.mjs concluir
+      - name: Registrar execução incompleta
+        if: ${{ always() && steps.fila.outputs.ativo == 'true' && steps.concluir.outcome != 'success' }}
+        run: node scripts/executor-backup-github.mjs falhar
+      - name: Limpar diretórios temporários
+        if: always()
+        run: rm -rf -- "$BACKUP_RUN_ROOT"

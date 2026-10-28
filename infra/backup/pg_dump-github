@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Encaminha variáveis pelo nome; nenhuma senha é interpolada nos argumentos.
+exec docker run --rm \
+  -e PGHOST -e PGPORT -e PGDATABASE -e PGUSER -e PGPASSWORD \
+  -e PGSSLMODE=verify-full -e PGSSLROOTCERT=/backup-ca.crt \
+  -v "${PGSSLROOTCERT:?Certificado CA necessário}:/backup-ca.crt:ro" \
+  postgres:17 pg_dump "$@"

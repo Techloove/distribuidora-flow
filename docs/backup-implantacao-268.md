@@ -1,5 +1,7 @@
 # Backup manual e diário — fase268
 
+Para a implantação sem servidor próprio (Lovable + Supabase), use [GitHub Actions](backup-github.md). As instruções systemd abaixo são a alternativa para quem mantém um host administrativo.
+
 Esta entrega acrescenta **Manutenção do sistema → Backup dos dados**, disponível exclusivamente a administradores ativos. O botão solicita uma cópia global de todas as lojas. Outros papéis, inclusive gestores e representantes, não podem solicitar, ler o histórico nem obter os arquivos. A interface nunca recebe credenciais, chaves ou caminhos do host. Com a fase283 instalada, administradores podem baixar o pacote criptografado por link temporário.
 
 ## Instalação

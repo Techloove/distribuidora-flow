@@ -69,14 +69,23 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
   });
   dumpProcess = dump;
+  let diagnostico = "CONEXAO";
+  dump.stderr.on("data", (chunk) => {
+    const message = chunk.toString().toLowerCase();
+    if (/certificate|ssl|tls/.test(message)) diagnostico = "TLS";
+    else if (/permission denied|row-level security|must be owner/.test(message))
+      diagnostico = "PRIVILEGIOS";
+    else if (/version mismatch|server version/.test(message)) diagnostico = "VERSAO";
+  });
   const done = new Promise((ok, no) => {
     dump.on("error", () => no(new Error("Instale pg_dump compatível com a versão do banco.")));
     dump.on("close", (code) =>
-      code === 0 ? ok() : no(new Error("pg_dump falhou. Confira conexão, CA e privilégios.")),
+      code === 0
+        ? ok()
+        : no(new Error("pg_dump falhou [" + diagnostico + "]. Confira conexão, CA e privilégios.")),
     );
   });
   // Evita imprimir respostas que possam conter dados de conexão.
-  dump.stderr.resume();
   const [sha256] = await Promise.all([encrypt(dump.stdout, "banco.dump.enc"), done]);
   files.push({ kind: "database", file: "banco.dump.enc", sha256 });
   const root = fileURLToPath(new URL("../", import.meta.url));
