@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.10.1",
+    "data": "2026-10-28",
+    "titulo": "Corrigir validação da rotina de backup no GitHub",
+    "novidades": [
+      "Corrigir validação da rotina de backup no GitHub"
+    ]
+  },
+  {
     "versao": "1.10.0",
     "data": "2026-10-28",
     "titulo": "Automatizar backups no GitHub sem servidor separado",

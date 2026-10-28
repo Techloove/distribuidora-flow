@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     env:
-      BACKUP_RUN_ROOT: ${{ runner.temp }}/caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
-      EXT_SUPABASE_URL: ${{ vars.BACKUP_SUPABASE_URL }}
+      BACKUP_RUN_ROOT: /tmp/caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
+      EXT_SUPABASE_URL: ${{ vars.BACKUP_SUPABASE_URL || 'https://zviwittrjdwyczhutvjf.supabase.co' }}
       EXT_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
-      PGHOST: ${{ vars.BACKUP_PGHOST }}
+      PGHOST: ${{ vars.BACKUP_PGHOST || 'aws-0-us-east-2.pooler.supabase.com' }}
       PGPORT: "5432"
       PGDATABASE: postgres
-      PGUSER: ${{ vars.BACKUP_PGUSER }}
+      PGUSER: ${{ vars.BACKUP_PGUSER || 'caparao_backup_reader.zviwittrjdwyczhutvjf' }}
       PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
       PGSSLMODE: verify-full
       PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt

@@ -5,6 +5,37 @@ import { tmpdir } from "node:os";
 import { executarEtapa } from "../scripts/executor-backup-github.mjs";
 import { configurarBackupGithub } from "../scripts/configurar-backup-github.mjs";
 
+test("preparação manual guarda os segredos no cofre e não tenta configurar o GitHub", async () => {
+  let guardou = false;
+  const result = await configurarBackupGithub({
+    somenteSupabase: true,
+    env: { SUPABASE_ACCESS_TOKEN: "fixture-pat" },
+    gh: async () => {
+      throw new Error("GitHub não deve ser chamado");
+    },
+    request: async (url: string, init: RequestInit) => {
+      const path = new URL(url).pathname;
+      if (path.endsWith("/api-keys"))
+        return Response.json([{ name: "service_role", api_key: "fixture-service" }]);
+      if (path.endsWith("/pooler"))
+        return Response.json([{ db_host: "fixture.pooler.supabase.com" }]);
+      const q = JSON.parse(String(init.body)).query;
+      if (q.startsWith("select name"))
+        return Response.json([
+          { name: "caparao_backup_recovery_key", decrypted_secret: "a".repeat(64) },
+          { name: "caparao_backup_pgpassword", decrypted_secret: "fixture-password" },
+        ]);
+      if (q.includes("caparao_backup_service_role")) guardou = true;
+      return Response.json([]);
+    },
+  });
+  expect(guardou).toBe(true);
+  expect(result.cofre_configurado).toBe(true);
+  expect(result.segredos).toHaveLength(3);
+  expect(JSON.stringify(result)).not.toContain("fixture-service");
+  expect(JSON.stringify(result)).not.toContain("fixture-password");
+});
+
 const id = "11111111-1111-4111-8111-111111111111";
 const lease = "22222222-2222-4222-8222-222222222222";
 const backup = "backup-2026-10-28T06-00-00-000Z";

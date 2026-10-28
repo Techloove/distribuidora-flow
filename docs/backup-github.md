@@ -40,3 +40,20 @@ O dump usa PostgreSQL 17 por Docker, compatível com o servidor 17.6 observado n
 O workflow não roda em pull requests. Ele tem concorrência única, estado temporário fora do checkout, limite de cinco horas e limpeza dos arquivos locais. A cópia do GitHub só contém arquivos criptografados; a chave fica nos segredos, separada do artefato. Não publique os valores dos segredos em logs ou na aplicação. Interrupções abruptas podem deixar a reserva ativa até expirar; revise a execução antes de reenviar.
 
 A conta de leitura contempla tabelas e schemas futuros. Falta de privilégio ou arquivos alterados/truncados durante a coleta causa falha, nunca redução silenciosa do escopo. A restauração real deve ser testada em projeto isolado. Funções remotas fora do repositório, configurações do provedor, papéis globais e segredos externos continuam exigindo plano separado de recuperação, conforme `backup_recuperacao.md`.
+
+
+## Alternativa quando a integração do Codex não administra os segredos
+
+Alguns ambientes injetam a autenticação da integração GitHub em todas as requisições para a API. Nesse caso, mesmo um token adicional pode continuar retornando `Resource not accessible by integration`; não gere novos tokens em sequência. O acesso ao Supabase é independente.
+
+O comando `NODE_USE_ENV_PROXY=1 node scripts/configurar-backup-github.mjs --somente-supabase` prepara o leitor e os três segredos no Vault sem acessar o GitHub e sem imprimir valores. Em máquinas sem proxy, omita `NODE_USE_ENV_PROXY=1`.
+
+Um administrador deve copiar os valores diretamente do Vault para **GitHub → Settings → Secrets and variables → Actions → New repository secret**:
+
+| Segredo no Vault do Supabase | Nome no GitHub |
+| --- | --- |
+| `caparao_backup_pgpassword` | `BACKUP_PGPASSWORD` |
+| `caparao_backup_recovery_key` | `ERP_BACKUP_KEY` |
+| `caparao_backup_service_role` | `BACKUP_SUPABASE_SERVICE_ROLE_KEY` |
+
+Na aba Variables, crie `BACKUP_ATIVO` com valor `true` somente após cadastrar os três segredos. URL, pooler e usuário já têm valores padrão corretos para este projeto no workflow; as variáveis opcionais permitem alterá-los se necessário. Não cole valores no chat ou em capturas. A ativação só estará validada depois de uma execução real concluir e disponibilizar o download.
