@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -112,7 +113,7 @@ export function PainelRepresentante() {
         </div>
         {q.data && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <Table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th className="p-2">Mês</th>
@@ -140,7 +141,7 @@ export function PainelRepresentante() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
         <p className="text-xs text-muted-foreground">

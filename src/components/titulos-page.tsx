@@ -1,3 +1,4 @@
+import { lerPaginas } from "@/lib/paginacao";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { dataBr } from "@/lib/formatacao";
 import { ContextoReferencia } from "@/components/contexto-referencia";
@@ -197,9 +198,9 @@ export function TitulosPage({
     queryKey: ["boletos", "por-conta"],
     enabled: !!client && isReceber,
     queryFn: async () => {
-      const { data: rows, error } = await client!.from("boletos").select("*").order("created_at");
-      if (error) throw new Error(error.message);
-      return (rows ?? []) as Row[];
+      return lerPaginas<Row>((inicio, fim) =>
+        client!.from("boletos").select("*").order("created_at").order("id").range(inicio, fim),
+      );
     },
   });
 
@@ -737,6 +738,11 @@ export function TitulosPage({
                               {isReceber && canFinance ? (
                                 <EmitirBoletoTitulo
                                   contaId={String(r["id"])}
+                                  statusBoleto={String(
+                                    boletoPorConta.get(String(r["id"]))?.["status"] ?? "",
+                                  )}
+                                  consultando={boletos.isPending}
+                                  falhaConsulta={boletos.isError}
                                   centroId={String(r["centro_id"] ?? "")}
                                 />
                               ) : null}

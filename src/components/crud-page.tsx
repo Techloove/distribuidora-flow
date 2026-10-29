@@ -1,3 +1,5 @@
+import { useColumnPreferences } from "@/lib/use-column-preferences";
+import { cn } from "@/lib/utils";
 import { lerPaginas } from "@/lib/paginacao";
 import { StatusBadge } from "@/components/status-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -556,38 +558,19 @@ export function CrudPage({
 
   const inlineSet = new Set(inlineEdit ?? []);
 
-  const [colunas, setColunas] = useState<string[] | null>(null);
-  useEffect(() => {
-    try {
-      const salvo = window.localStorage.getItem(`colunas:${table}`);
-      setColunas(salvo ? (JSON.parse(salvo) as string[]) : null);
-    } catch {
-      setColunas(null);
-    }
-  }, [table]);
-
-  const tableFields = colunas
-    ? fields.filter((f) => colunas.includes(f.name))
-    : fields.filter((f) => f.inTable);
-
+  const { saved: colunasSalvas, save: salvarColunas } = useColumnPreferences(`cadastro:${table}`);
+  const ocultasPadrao = fields.filter((f) => !f.inTable).map((f) => f.name);
+  const colunasOcultas = colunasSalvas.data ?? ocultasPadrao;
+  const tableFields = fields.filter((f) => !colunasOcultas.includes(f.name));
   function toggleColuna(name: string) {
-    const atuais = tableFields.map((f) => f.name);
-    const next = atuais.includes(name) ? atuais.filter((n) => n !== name) : [...atuais, name];
-    setColunas(next);
-    try {
-      window.localStorage.setItem(`colunas:${table}`, JSON.stringify(next));
-    } catch {
-      // armazenamento local indisponível: a seleção permanece apenas na sessão.
-    }
+    salvarColunas.mutate(
+      colunasOcultas.includes(name)
+        ? colunasOcultas.filter((n) => n !== name)
+        : [...colunasOcultas, name],
+    );
   }
-
   function resetColunas() {
-    setColunas(null);
-    try {
-      window.localStorage.removeItem(`colunas:${table}`);
-    } catch {
-      // armazenamento local indisponível.
-    }
+    salvarColunas.mutate(ocultasPadrao);
   }
 
   return (
@@ -612,19 +595,50 @@ export function CrudPage({
               <p className="mb-2 text-xs font-medium text-muted-foreground">
                 Dados visíveis na lista
               </p>
+              <p className="mb-2 text-xs text-muted-foreground">
+                Salvas na sua conta para esta lista.
+              </p>
+              {colunasSalvas.isError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {colunasSalvas.error.message}
+                  <button className="ml-1 underline" onClick={() => void colunasSalvas.refetch()}>
+                    Tentar novamente
+                  </button>
+                </p>
+              )}
               <div className="max-h-72 space-y-1 overflow-y-auto">
                 {fields.map((f) => (
                   <label key={f.name} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={tableFields.some((t) => t.name === f.name)}
+                      disabled={
+                        !colunasSalvas.isSuccess ||
+                        salvarColunas.isPending ||
+                        (tableFields.length === 1 && tableFields[0]?.name === f.name)
+                      }
                       onChange={() => toggleColuna(f.name)}
                     />
                     {f.label}
                   </label>
                 ))}
               </div>
-              <Button size="sm" variant="ghost" className="mt-2 w-full" onClick={resetColunas}>
+              <p role="status" className="mt-2 text-xs text-muted-foreground">
+                {salvarColunas.isPending
+                  ? "Salvando…"
+                  : colunasSalvas.isPending
+                    ? "Carregando…"
+                    : salvarColunas.isError || colunasSalvas.isError
+                      ? "Não foi possível sincronizar. Tente novamente."
+                      : "Preferências sincronizadas com sua conta."}
+              </p>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="mt-2 w-full"
+                onClick={resetColunas}
+                disabled={!colunasSalvas.isSuccess || salvarColunas.isPending}
+              >
                 Restaurar padrão
               </Button>
             </PopoverContent>
@@ -740,7 +754,14 @@ export function CrudPage({
         ) : rows.length === 0 ? (
           <div className="py-14 text-center text-sm text-muted-foreground">{emptyLabel}</div>
         ) : (
-          <Table className="mobile-cards">
+          <Table
+            columnPreferences={false}
+            className={cn(
+              "mobile-cards",
+              table === "produtos" &&
+                "sm:w-max sm:min-w-full [&_th]:whitespace-nowrap sm:[&_td]:whitespace-nowrap sm:[&_td[data-label=Descrição]]:min-w-72 sm:[&_td[data-label=Descrição]]:max-w-96 sm:[&_td[data-label=Descrição]]:whitespace-normal sm:[&_td[data-label=Marca]]:min-w-36",
+            )}
+          >
             <TableHeader>
               <TableRow>
                 {tableFields.map((f) => (

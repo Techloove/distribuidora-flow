@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useState } from "react";
 import { salvarBackupNoComputador } from "@/lib/backup-download";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -98,7 +99,7 @@ export function BackupDados() {
       )}
       {!!q.data?.length && (
         <div className="overflow-x-auto">
-          <table className="mobile-cards w-full text-left text-sm">
+          <Table className="mobile-cards w-full text-left text-sm">
             <thead>
               <tr>
                 <th className="p-2">Solicitado (Brasília)</th>
@@ -140,7 +141,7 @@ export function BackupDados() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
       <p className="text-xs text-muted-foreground">

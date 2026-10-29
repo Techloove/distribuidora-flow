@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -165,7 +166,7 @@ export function EncargosPedido({
       </div>
       {detalhes.length > 0 ? (
         <div className="overflow-auto">
-          <table className="w-full text-sm">
+          <Table className="w-full text-sm">
             <thead>
               <tr className="text-left">
                 <th className="p-2">Produto / cidade</th>
@@ -191,7 +192,7 @@ export function EncargosPedido({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">

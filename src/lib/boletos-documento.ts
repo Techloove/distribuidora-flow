@@ -70,3 +70,16 @@ export function saldoTituloBoleto(t: TituloBoleto) {
     Number(t.valor_pago ?? 0)
   );
 }
+
+/** RLS limita a leitura; esta seleção evita misturar clientes ou imprimir ciclos superados. */
+export function boletosParaImpressao<T extends BoletoDocumento & { cliente_id?: string }>(
+  rows: T[],
+  cliente: string,
+) {
+  return rows.filter(
+    (b) =>
+      (!cliente || b.cliente_id === cliente) &&
+      boletoImprimivel(b) &&
+      (!b.conta_receber_id || boletoAtual(rows, b.conta_receber_id)?.id === b.id),
+  );
+}

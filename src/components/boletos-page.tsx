@@ -810,6 +810,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   />
                                 ) : b["conta_receber_id"] ? (
                                   <EmitirBoletoTitulo
+                                    statusBoleto={String(b["status"] ?? "")}
                                     contaId={String(b["conta_receber_id"])}
                                     centroId={String(b["centro_id"] ?? "")}
                                   />

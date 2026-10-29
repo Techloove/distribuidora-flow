@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -146,7 +147,7 @@ function NotasPage() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="mobile-cards w-full min-w-[680px] text-sm">
+              <Table className="mobile-cards w-full min-w-[680px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Pedido</th>
@@ -196,7 +197,7 @@ function NotasPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </section>
@@ -216,7 +217,7 @@ function NotasPage() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="mobile-cards w-full min-w-[900px] text-sm">
+              <Table className="mobile-cards w-full min-w-[900px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Nº interno</th>
@@ -328,7 +329,7 @@ function NotasPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </section>

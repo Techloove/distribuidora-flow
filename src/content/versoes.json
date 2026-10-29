@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.17.0",
+    "data": "2026-10-29",
+    "titulo": "Colunas por usuário, leitura de produtos e impressão de boletos por cliente ou pedido",
+    "novidades": [
+      "Colunas salvas por usuário nas listagens, sincronizadas entre computadores.",
+      "Padrão de leitura em todas as tabelas: nomes completos, valores e códigos sem partir, rolagem interna e cartões no celular.",
+      "Financeiro com Emitir boleto ou Reimprimir boleto e seleção de PDFs por parcela, pedido ou cliente."
+    ]
+  },
+  {
     "versao": "1.16.0",
     "data": "2026-10-29",
     "titulo": "Vínculos de loja dos clientes e leitura dos títulos financeiros",
@@ -25,41 +35,31 @@
     "versao": "1.14.5",
     "data": "2026-10-29",
     "titulo": "Destacar vencimentos alterados e exibir histórico nas opções do boleto",
-    "novidades": [
-      "Destacar vencimentos alterados e exibir histórico nas opções do boleto"
-    ]
+    "novidades": ["Destacar vencimentos alterados e exibir histórico nas opções do boleto"]
   },
   {
     "versao": "1.14.4",
     "data": "2026-10-29",
     "titulo": "Corrigir identificação do beneficiário na alteração e baixa Sicredi",
-    "novidades": [
-      "Corrigir identificação do beneficiário na alteração e baixa Sicredi"
-    ]
+    "novidades": ["Corrigir identificação do beneficiário na alteração e baixa Sicredi"]
   },
   {
     "versao": "1.14.3",
     "data": "2026-10-29",
     "titulo": "Melhorar leitura e navegação no celular, cartões, filtros e formulários",
-    "novidades": [
-      "Melhorar leitura e navegação no celular, cartões, filtros e formulários"
-    ]
+    "novidades": ["Melhorar leitura e navegação no celular, cartões, filtros e formulários"]
   },
   {
     "versao": "1.14.2",
     "data": "2026-10-29",
     "titulo": "Mostrar representante e rota na impressão e orientar PDF no celular",
-    "novidades": [
-      "Mostrar representante e rota na impressão e orientar PDF no celular"
-    ]
+    "novidades": ["Mostrar representante e rota na impressão e orientar PDF no celular"]
   },
   {
     "versao": "1.14.1",
     "data": "2026-10-29",
     "titulo": "Permitir ao representante cancelar somente o próprio pedido aprovado",
-    "novidades": [
-      "Permitir ao representante cancelar somente o próprio pedido aprovado"
-    ]
+    "novidades": ["Permitir ao representante cancelar somente o próprio pedido aprovado"]
   },
   {
     "versao": "1.14.0",
@@ -81,57 +81,43 @@
     "versao": "1.12.0",
     "data": "2026-10-28",
     "titulo": "Recuperação de senha pelo próprio usuário e orientação após aprovação",
-    "novidades": [
-      "Recuperação de senha pelo próprio usuário e orientação após aprovação"
-    ]
+    "novidades": ["Recuperação de senha pelo próprio usuário e orientação após aprovação"]
   },
   {
     "versao": "1.11.1",
     "data": "2026-10-28",
     "titulo": "Corrigir publicação do manifesto de versão e cache na Vercel",
-    "novidades": [
-      "Corrigir publicação do manifesto de versão e cache na Vercel"
-    ]
+    "novidades": ["Corrigir publicação do manifesto de versão e cache na Vercel"]
   },
   {
     "versao": "1.11.0",
     "data": "2026-10-28",
     "titulo": "Adicionar ensaio isolado de restauração dos backups",
-    "novidades": [
-      "Adicionar ensaio isolado de restauração dos backups"
-    ]
+    "novidades": ["Adicionar ensaio isolado de restauração dos backups"]
   },
   {
     "versao": "1.10.3",
     "data": "2026-10-28",
     "titulo": "Validar certificado Supabase e tratar respostas vazias no backup",
-    "novidades": [
-      "Validar certificado Supabase e tratar respostas vazias no backup"
-    ]
+    "novidades": ["Validar certificado Supabase e tratar respostas vazias no backup"]
   },
   {
     "versao": "1.10.2",
     "data": "2026-10-28",
     "titulo": "Identificar configurações incompletas na rotina de backup",
-    "novidades": [
-      "Identificar configurações incompletas na rotina de backup"
-    ]
+    "novidades": ["Identificar configurações incompletas na rotina de backup"]
   },
   {
     "versao": "1.10.1",
     "data": "2026-10-28",
     "titulo": "Corrigir validação da rotina de backup no GitHub",
-    "novidades": [
-      "Corrigir validação da rotina de backup no GitHub"
-    ]
+    "novidades": ["Corrigir validação da rotina de backup no GitHub"]
   },
   {
     "versao": "1.10.0",
     "data": "2026-10-28",
     "titulo": "Automatizar backups no GitHub sem servidor separado",
-    "novidades": [
-      "Automatizar backups no GitHub sem servidor separado"
-    ]
+    "novidades": ["Automatizar backups no GitHub sem servidor separado"]
   },
   {
     "versao": "1.9.0",
@@ -153,33 +139,25 @@
     "versao": "1.7.3",
     "data": "2026-10-27",
     "titulo": "Exibir primeiro vencimento no topo da lista de boletos por padrão",
-    "novidades": [
-      "Exibir primeiro vencimento no topo da lista de boletos por padrão"
-    ]
+    "novidades": ["Exibir primeiro vencimento no topo da lista de boletos por padrão"]
   },
   {
     "versao": "1.7.2",
     "data": "2026-10-27",
     "titulo": "Esclarecer confirmação de cancelamento do boleto sem senha",
-    "novidades": [
-      "Esclarecer confirmação de cancelamento do boleto sem senha"
-    ]
+    "novidades": ["Esclarecer confirmação de cancelamento do boleto sem senha"]
   },
   {
     "versao": "1.7.1",
     "data": "2026-10-27",
     "titulo": "Mover cancelamento para Opções e destacar reimpressão individual do boleto",
-    "novidades": [
-      "Mover cancelamento para Opções e destacar reimpressão individual do boleto"
-    ]
+    "novidades": ["Mover cancelamento para Opções e destacar reimpressão individual do boleto"]
   },
   {
     "versao": "1.7.0",
     "data": "2026-10-27",
     "titulo": "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE",
-    "novidades": [
-      "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"
-    ]
+    "novidades": ["Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"]
   },
   {
     "versao": "1.6.0",
@@ -211,65 +189,49 @@
     "versao": "1.3.5",
     "data": "2026-10-27",
     "titulo": "Corrigir consulta automática Sicredi após salvar token com resposta vazia",
-    "novidades": [
-      "Corrigir consulta automática Sicredi após salvar token com resposta vazia"
-    ]
+    "novidades": ["Corrigir consulta automática Sicredi após salvar token com resposta vazia"]
   },
   {
     "versao": "1.3.4",
     "data": "2026-10-27",
     "titulo": "Identificar falhas da consulta automática Sicredi sem expor credenciais",
-    "novidades": [
-      "Identificar falhas da consulta automática Sicredi sem expor credenciais"
-    ]
+    "novidades": ["Identificar falhas da consulta automática Sicredi sem expor credenciais"]
   },
   {
     "versao": "1.3.3",
     "data": "2026-10-27",
     "titulo": "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio",
-    "novidades": [
-      "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"
-    ]
+    "novidades": ["Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"]
   },
   {
     "versao": "1.3.2",
     "data": "2026-10-27",
     "titulo": "Ampliar Cadastro Unificado e dividir formulário em seções",
-    "novidades": [
-      "Ampliar Cadastro Unificado e dividir formulário em seções"
-    ]
+    "novidades": ["Ampliar Cadastro Unificado e dividir formulário em seções"]
   },
   {
     "versao": "1.3.1",
     "data": "2026-10-27",
     "titulo": "Ampliar edição de produtos e organizar campos e histórico em seções",
-    "novidades": [
-      "Ampliar edição de produtos e organizar campos e histórico em seções"
-    ]
+    "novidades": ["Ampliar edição de produtos e organizar campos e histórico em seções"]
   },
   {
     "versao": "1.3.0",
     "data": "2026-10-27",
     "titulo": "Sincronizar preço normal entre Produtos e catálogo das lojas",
-    "novidades": [
-      "Sincronizar preço normal entre Produtos e catálogo das lojas"
-    ]
+    "novidades": ["Sincronizar preço normal entre Produtos e catálogo das lojas"]
   },
   {
     "versao": "1.2.1",
     "data": "2026-10-27",
     "titulo": "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos",
-    "novidades": [
-      "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"
-    ]
+    "novidades": ["Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"]
   },
   {
     "versao": "1.2.0",
     "data": "2026-10-27",
     "titulo": "Nome fantasia do cliente e observações na impressão dos pedidos",
-    "novidades": [
-      "Nome fantasia do cliente e observações na impressão dos pedidos"
-    ]
+    "novidades": ["Nome fantasia do cliente e observações na impressão dos pedidos"]
   },
   {
     "versao": "1.1.0",

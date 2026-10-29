@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -151,7 +152,7 @@ function ConciliacaoCreditosPage() {
             <p className="p-6 text-sm text-destructive">{(dados.error as Error).message}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="mobile-cards w-full min-w-[1050px] text-sm">
+              <Table className="mobile-cards w-full min-w-[1050px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="p-3">Documento</th>
@@ -223,7 +224,7 @@ function ConciliacaoCreditosPage() {
                     })
                   )}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </section>

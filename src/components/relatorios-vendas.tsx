@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
   Bar,
@@ -824,7 +825,7 @@ function Tabela({
       </div>
       {linhas.length ? (
         <div className="overflow-x-auto">
-          <table className="mobile-cards w-full text-left text-sm">
+          <Table className="mobile-cards w-full text-left text-sm">
             <caption className="sr-only">{titulo}</caption>
             <thead>
               <tr className="border-b bg-muted/30">
@@ -876,7 +877,7 @@ function Tabela({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       ) : (
         <p className="p-6 text-sm text-muted-foreground">Sem dados neste filtro.</p>

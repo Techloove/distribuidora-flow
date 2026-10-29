@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesLeadCliente } from "@/components/lead-rota-agenda";
 import {
@@ -306,7 +307,7 @@ export function AgendaClientes({
                       <AvisoRotina erro={parcelas.error} />
                       {!!parcelas.data?.rows.length && (
                         <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs">
+                          <Table className="w-full text-left text-xs">
                             <caption className="sr-only">
                               Parcelas em aberto do cliente selecionado
                             </caption>
@@ -344,7 +345,7 @@ export function AgendaClientes({
                                 </tr>
                               ))}
                             </tbody>
-                          </table>
+                          </Table>
                         </div>
                       )}
                       {parcelas.isPending && <p className="text-xs">Carregando parcelas…</p>}

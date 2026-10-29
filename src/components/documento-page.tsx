@@ -1652,54 +1652,7 @@ export function DocumentoPage({
             </div>
           ) : (
             <>
-              {/* Mobile: cartões */}
-              <ul className="divide-y divide-border sm:hidden">
-                {docsFiltrados.map((d) => {
-                  const ativo = selected === d["id"];
-                  return (
-                    <li
-                      key={String(d["id"])}
-                      onClick={() => setSelected(String(d["id"]))}
-                      className={`cursor-pointer border-l-2 p-3 transition-colors ${
-                        ativo
-                          ? "border-l-primary bg-accent"
-                          : "border-l-transparent active:bg-accent/50"
-                      }`}
-                    >
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold">#{String(d["numero"])}</p>
-                          <p className="truncate text-sm">
-                            <ReferenciaRegistro
-                              tipo={config.table === "pedidos" ? "cliente" : "fornecedor"}
-                              id={d[config.partnerKey]}
-                            >
-                              {partnerName(d[config.partnerKey])}
-                            </ReferenciaRegistro>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {fmtDate(d[config.dateField])}
-                          </p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-semibold">{brl(d["total_liquido"])}</p>
-                          <span
-                            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
-                              String(d["status"]),
-                            )}`}
-                          >
-                            {config.table === "pedidos"
-                              ? nomeStatusPedido(statusVisivelPedido(d, hoje))
-                              : String(d["status"]).replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <table className="hidden w-full min-w-[720px] text-sm sm:table">
+              <Table className="mobile-cards w-full sm:min-w-[720px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Nº</th>
@@ -1725,8 +1678,13 @@ export function DocumentoPage({
                             : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
                         }`}
                       >
-                        <td className="px-4 py-2.5 font-semibold">#{String(d["numero"])}</td>
-                        <td className="max-w-[380px] truncate px-4 py-2.5">
+                        <td data-label="Nº" className="px-4 py-2.5 font-semibold">
+                          #{String(d["numero"])}
+                        </td>
+                        <td
+                          data-label={config.partnerLabel}
+                          className="sm:max-w-[380px] px-4 py-2.5"
+                        >
                           <ReferenciaRegistro
                             tipo={config.table === "pedidos" ? "cliente" : "fornecedor"}
                             id={d[config.partnerKey]}
@@ -1735,14 +1693,20 @@ export function DocumentoPage({
                           </ReferenciaRegistro>
                         </td>
                         {config.table === "pedidos" ? (
-                          <td className="max-w-[220px] truncate px-4 py-2.5 text-muted-foreground">
+                          <td
+                            data-label="Representante"
+                            className="sm:max-w-[220px] px-4 py-2.5 text-muted-foreground"
+                          >
                             {representanteNome(d["representante_id"])}
                           </td>
                         ) : null}
-                        <td className="px-4 py-2.5 text-muted-foreground">
+                        <td
+                          data-label={config.dateLabel}
+                          className="px-4 py-2.5 text-muted-foreground"
+                        >
                           {fmtDate(d[config.dateField])}
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td data-label="Status" className="px-4 py-2.5">
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusTone(
                               String(d["status"]),
@@ -1753,14 +1717,14 @@ export function DocumentoPage({
                               : String(d["status"]).replace(/_/g, " ")}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-right font-semibold">
+                        <td data-label="Total" className="px-4 py-2.5 text-right font-semibold">
                           {brl(d["total_liquido"])}
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
+              </Table>
             </>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -342,7 +343,7 @@ export function FreteVolumeLoja({
           </span>
         </div>
         <div className="max-h-[32rem] overflow-auto rounded-lg border">
-          <table className="w-full text-sm">
+          <Table className="w-full text-sm">
             <thead className="sticky top-0 bg-muted">
               <tr className="text-left">
                 <th className="p-3">Cidade / UF</th>
@@ -404,7 +405,7 @@ export function FreteVolumeLoja({
                 );
               })}
             </tbody>
-          </table>
+          </Table>
           {!visiveis.length && (
             <p className="p-3 text-sm text-muted-foreground">
               {carregando

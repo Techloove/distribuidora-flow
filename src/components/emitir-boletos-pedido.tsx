@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Barcode, Download, Loader2, Printer } from "lucide-react";
+import { Barcode, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +14,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSupabase } from "@/lib/supabase-provider";
-import { sicrediEmitirBoleto, sicrediPdfBoleto } from "@/lib/sicredi.functions";
+import { sicrediEmitirBoleto } from "@/lib/sicredi.functions";
 import {
   boletoAtual,
-  boletoImprimivel,
-  unirPdfsBoletos,
   saldoTituloBoleto,
   type TituloBoleto,
   type BoletoDocumento,
@@ -35,7 +34,13 @@ const estados: Record<string, string> = {
   baixado: "Boleto baixado",
   cancelado: "Boleto cancelado",
 };
-type Props = { pedidoId?: string; contaId?: string; centroId: string; compact?: boolean };
+type Props = {
+  pedidoId?: string;
+  contaId?: string;
+  centroId: string;
+  compact?: boolean;
+  statusBoleto?: string | null;
+};
 export function EmitirBoletosPedido(props: {
   pedidoId: string;
   centroId: string;
@@ -43,7 +48,23 @@ export function EmitirBoletosPedido(props: {
 }) {
   return <BoletosDocumento {...props} />;
 }
-export function EmitirBoletoTitulo(props: { contaId: string; centroId: string }) {
+export function EmitirBoletoTitulo(props: {
+  contaId: string;
+  centroId: string;
+  statusBoleto?: string | null;
+  consultando?: boolean;
+  falhaConsulta?: boolean;
+}) {
+  const { roles } = useSupabase();
+  if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
+  if (props.consultando || props.falhaConsulta)
+    return (
+      <Button size="sm" variant="outline" disabled>
+        {props.falhaConsulta ? "Consulta de boleto indisponível" : "Consultando boleto…"}
+      </Button>
+    );
+  if (["registrado", "liquidado"].includes(props.statusBoleto ?? ""))
+    return <ImprimirBoletos contaId={props.contaId} />;
   return <BoletosDocumento {...props} compact />;
 }
 function BoletosDocumento(props: Props) {
@@ -51,28 +72,17 @@ function BoletosDocumento(props: Props) {
   if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
   return <JanelaBoletos key={props.pedidoId ?? props.contaId} {...props} />;
 }
-function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) {
+function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBoleto }: Props) {
   const { client, session, user } = useSupabase();
   const qc = useQueryClient();
-  const emitirApi = useServerFn(sicrediEmitirBoleto),
-    pdfApi = useServerFn(sicrediPdfBoleto);
+  const emitirApi = useServerFn(sicrediEmitirBoleto);
   const [open, setOpen] = useState(false),
     [modo, setModo] = useState<"emitir" | "imprimir">("emitir");
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
   const [erro, setErro] = useState<string | null>(null),
     [progresso, setProgresso] = useState("");
-  const [pdf, setPdf] = useState<string | null>(null),
-    [mock, setMock] = useState(false),
-    [ready, setReady] = useState(false);
-  const frame = useRef<HTMLIFrameElement>(null);
   const trabalhando = useRef(false);
-  useEffect(
-    () => () => {
-      if (pdf) URL.revokeObjectURL(pdf);
-    },
-    [pdf],
-  );
   const chave = ["emissao-boletos", user?.id, pedidoId, contaId];
   const cobranca = useQuery({
     queryKey: ["cobranca-emissao", user?.id, centroId],
@@ -158,11 +168,9 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
     boleto: boletoAtual(consulta.data?.boletos ?? [], t.id),
     emitir: habilitado && pedidoLiberado && (consulta.data?.pendentes.includes(t.id) ?? false),
   }));
-  const elegiveis = linhas.filter((l) =>
-    modo === "emitir" ? l.emitir : boletoImprimivel(l.boleto),
-  );
+  const elegiveis = linhas.filter((l) => l.emitir);
   const escolhidas = elegiveis.filter((l) => selected.includes(l.titulo.id));
-  const limite = modo === "emitir" ? 10 : 20;
+  const limite = 10;
   const atualizar = async () => {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["emissao-boletos"] }),
@@ -187,28 +195,13 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
     setProgresso("");
     let emitidos = 0;
     try {
-      if (modo === "emitir") {
-        for (const [i, l] of escolhidas.entries()) {
-          setProgresso(`Emitindo ${i + 1} de ${escolhidas.length}…`);
-          await emitirApi({ data: { contaId: l.titulo.id, accessToken: session.access_token } });
-          emitidos++;
-        }
-        toast.success(`${emitidos} boleto(s) emitido(s). Abra a reimpressão para obter o PDF.`);
-        setModo("imprimir");
-      } else {
-        const arquivos: string[] = [];
-        for (const [i, l] of escolhidas.entries()) {
-          setProgresso(`Obtendo PDF ${i + 1} de ${escolhidas.length}…`);
-          const result = await pdfApi({
-            data: { boletoId: l.boleto!.id, accessToken: session.access_token },
-          });
-          arquivos.push(result.base64);
-        }
-        const bytes = await unirPdfsBoletos(arquivos);
-        setReady(false);
-        setMock(escolhidas.some((l) => l.boleto?.ambiente === "homologacao"));
-        setPdf(URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" })));
+      for (const [i, l] of escolhidas.entries()) {
+        setProgresso(`Emitindo ${i + 1} de ${escolhidas.length}…`);
+        await emitirApi({ data: { contaId: l.titulo.id, accessToken: session.access_token } });
+        emitidos++;
       }
+      toast.success(`${emitidos} boleto(s) emitido(s). Selecione os boletos para obter o PDF.`);
+      setModo("imprimir");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Não foi possível concluir a operação.";
       setErro(
@@ -236,85 +229,42 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
           setOpen(true);
           setSelected([]);
           setErro(null);
-          setPdf(null);
           setModo("emitir");
         }}
       >
         <Barcode className="size-4" />
-        Boletos{contaId ? " da parcela" : " do pedido"}
+        {contaId
+          ? ["pendente", "em_processamento"].includes(statusBoleto ?? "")
+            ? "Consultar boleto"
+            : "Emitir boleto"
+          : "Boletos do pedido"}
       </Button>
       <Dialog
         open={open}
         onOpenChange={(v) => {
           if (!busy) {
             setOpen(v);
-            if (!v) setPdf(null);
           }
         }}
       >
         <DialogContent
-          className={
-            pdf
-              ? "flex max-h-[95dvh] flex-col sm:max-w-5xl"
-              : "max-h-[95dvh] overflow-y-auto sm:max-w-2xl"
-          }
+          className="max-h-[95dvh] overflow-y-auto sm:max-w-4xl"
           onClick={(e) => e.stopPropagation()}
         >
           <DialogHeader>
-            <DialogTitle>
-              {pdf
-                ? "Impressão dos boletos selecionados"
-                : contaId
-                  ? "Boletos da parcela"
-                  : "Boletos do pedido"}
-            </DialogTitle>
+            <DialogTitle>{contaId ? "Boletos da parcela" : "Boletos do pedido"}</DialogTitle>
             <DialogDescription>
-              {pdf
-                ? "PDFs originais do banco reunidos na ordem das parcelas. Baixar ou imprimir não gera uma nova cobrança."
-                : "Emita as parcelas disponíveis ou reimprima os boletos já registrados. Selecione um, vários ou todos deste documento."}
+              Emita parcelas disponíveis ou selecione boletos do pedido ou do cliente para
+              reimpressão.
             </DialogDescription>
           </DialogHeader>
-          {pdf ? (
-            <>
-              {mock && (
-                <p role="alert" className="rounded-md border border-amber-500 p-3 text-sm">
-                  HOMOLOGAÇÃO: o Sicredi pode retornar PDFs MOCK com dados fictícios. Não encaminhe
-                  para pagamento.
-                </p>
-              )}
-              <iframe
-                ref={frame}
-                src={pdf}
-                title="Prévia dos boletos selecionados"
-                className="h-[60dvh] min-h-60 w-full rounded border"
-                onLoad={() => setReady(true)}
-              />
-              <DialogFooter className="flex-wrap">
-                <Button variant="outline" onClick={() => setPdf(null)}>
-                  Voltar às parcelas
-                </Button>
-                <Button asChild variant="secondary">
-                  <a href={pdf} download={`boletos-${pedidoId ?? contaId}.pdf`}>
-                    <Download className="size-4" />
-                    Baixar PDF
-                  </a>
-                </Button>
-                <Button
-                  disabled={!ready}
-                  onClick={() => {
-                    try {
-                      frame.current?.contentWindow?.focus();
-                      frame.current?.contentWindow?.print();
-                    } catch {
-                      toast.error("Baixe o PDF para imprimir pelo leitor do seu dispositivo.");
-                    }
-                  }}
-                >
-                  <Printer className="size-4" />
-                  Imprimir PDF
-                </Button>
-              </DialogFooter>
-            </>
+          {modo === "imprimir" ? (
+            <PainelImpressaoBoletos
+              contaId={contaId}
+              pedidoId={pedidoId}
+              onBusy={setBusy}
+              onVoltar={() => setModo("emitir")}
+            />
           ) : (
             <>
               <div className="flex flex-wrap gap-2" aria-label="Operação com boletos">
@@ -330,7 +280,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
                   Emitir pendentes
                 </Button>
                 <Button
-                  variant={modo === "imprimir" ? "default" : "outline"}
+                  variant="outline"
                   disabled={busy}
                   onClick={() => {
                     setModo("imprimir");
@@ -392,7 +342,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
                   </div>
                   <div className="max-h-72 overflow-auto rounded-lg border">
                     {linhas.map((l) => {
-                      const disponivel = modo === "emitir" ? l.emitir : boletoImprimivel(l.boleto);
+                      const disponivel = l.emitir;
                       return (
                         <label
                           key={l.titulo.id}
@@ -416,11 +366,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false }: Props) 
                             <span className="block font-medium">
                               Parcela {l.titulo.parcela} ·{" "}
                               {l.titulo.vencimento.split("-").reverse().join("/")} ·{" "}
-                              {money(
-                                modo === "imprimir" && l.boleto
-                                  ? l.boleto.valor
-                                  : saldoTituloBoleto(l.titulo),
-                              )}
+                              {money(saldoTituloBoleto(l.titulo))}
                             </span>
                             <span className="block text-xs text-muted-foreground">
                               {l.boleto

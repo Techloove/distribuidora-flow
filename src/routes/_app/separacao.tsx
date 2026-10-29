@@ -508,7 +508,7 @@ function SeparacaoPage() {
             </div>
           ) : modo === "onda" ? (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="mobile-cards w-full min-w-[720px] text-sm">
+              <Table className="mobile-cards w-full min-w-[720px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Código</th>
@@ -538,11 +538,11 @@ function SeparacaoPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="mobile-cards w-full min-w-[860px] text-sm">
+              <Table className="mobile-cards w-full min-w-[860px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="no-print px-3 py-2">
@@ -807,7 +807,7 @@ function SeparacaoPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </div>

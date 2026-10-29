@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.16.0 · 2026-10-29
+Versão 1.17.0 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -16,13 +16,15 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 6. A Central de pendências tem contadores separados para Clientes sem loja, Clientes sem rota, Clientes sem representante e Clientes sem limite de crédito. Um cliente pode aparecer em mais de uma categoria. Clique no contador e use Revisar para abrir seu cadastro ou Ver clientes no Cadastro unificado para abrir a lista já filtrada.
 7. No telefone, as listas principais de cadastros, boletos, contas, separação, cargas e relatórios usam cartões com o nome de cada informação. Botões longos podem ocupar mais de uma linha. Demonstrativos que dependem de colunas alinhadas, como a DRE, permitem deslizar a tabela para os lados sem arrastar a página toda.
 8. Use Mostrar filtros para abrir os campos no telefone e Recolher filtros para voltar aos dados. Recolher não limpa os valores; use Limpar para remover os filtros. No tablet e computador, os filtros continuam visíveis. O resumo do pedido acompanha a rolagem normal no telefone para não cobrir os itens.
-9. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
-10. No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.
-11. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
-12. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
-13. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
-14. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
-15. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+9. Nas listas, use Colunas para marcar quais informações deseja exibir. A escolha é salva na sua conta para aquela lista e acompanha seu acesso em outros computadores. Ações e caixas de seleção permanecem disponíveis. Use Restaurar colunas para mostrar todas novamente. É preciso conexão para carregar e salvar a preferência; se houver falha, use Tentar novamente.
+10. Nas listagens do computador, nomes de clientes, produtos, marcas, representantes e rotas ocupam espaço de leitura e quebram entre palavras, enquanto números, valores, datas e status ficam juntos. Se não couber tudo, deslize a tabela para os lados ou escolha menos colunas. No telefone, os cartões mantêm os nomes completos e respeitam as colunas escolhidas.
+11. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
+12. No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.
+13. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
+14. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
+15. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
+16. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+17. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 
 Cuidados:
 
@@ -229,7 +231,7 @@ Cuidados:
 Acompanhe títulos, registre baixas e confira o caixa da loja.
 
 1. Escolha a loja e consulte Contas a receber ou Contas a pagar.
-2. A lista de títulos exibe Emissão e Vencimento em dia/mês/ano, documentos e valores sem partir os números. Receber ou Pagar continua visível em cada linha. Em Contas a receber, use Opções para Histórico, Pix, Renegociar, Boletos da parcela e Alterar vencimento, conforme as permissões e o estado do título. No telefone, os dados continuam em cartões; tabelas largas permitem rolagem interna.
+2. A lista de títulos exibe Emissão e Vencimento em dia/mês/ano, documentos e valores sem partir os números. Receber ou Pagar continua visível em cada linha. Em Contas a receber, use Opções para Histórico, Pix, Renegociar, Emitir boleto ou Reimprimir boleto e Alterar vencimento, conforme as permissões e o estado do título. No telefone, os dados continuam em cartões; tabelas largas permitem rolagem interna.
 3. Localize o título e confira cliente/fornecedor, vencimento, valor e o que já foi pago.
 4. Para registrar uma baixa, informe os dados exigidos, incluindo conta, valor e data, e confira o resultado.
 5. Acompanhe saldos em Caixa e bancos e concilie os movimentos com os documentos existentes.
@@ -248,20 +250,23 @@ Entenda os cuidados com documentos bancários e fiscais.
 
 1. Para boletos, localize o título elegível e confira loja, cliente, valor, vencimento e a configuração bancária correspondente.
 2. Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.
-3. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
-4. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
-5. A lista começa pelo primeiro vencimento, em ordem crescente de cima para baixo, inclusive ao limpar os filtros. Em Ordenar por, escolha outra ordem de emissão ou vencimento se necessário. A ordenação respeita os filtros e mantém datas ausentes no final.
-6. Após confirmação da alteração de vencimento pelo Sicredi, a data aparece destacada em azul com Vencimento alterado na listagem. Em Opções, as tags mostram a data anterior e a nova, com a alteração mais recente primeiro. Solicitações pendentes, inconclusivas e recusadas não recebem essa marcação; o histórico respeita as permissões financeiras e de loja.
-7. Para mudar a data de um boleto registrado, abra Opções e use Alterar vencimento. O boleto e a parcela só mudam após confirmação do Sicredi. Uma recusa mostra o motivo de validação reconhecido, quando fornecido pelo banco. Se houver alteração pendente ou resposta inconclusiva, consulte antes de reenviar.
-8. Somente o administrador pode solicitar baixa no Sicredi: abra Opções e use Cancelar boleto em um boleto API registrado. Confira cliente, nosso número e valor e descreva o motivo com 10 a 2000 caracteres. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta confirmar a baixa bancária.
-9. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
-10. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
-11. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
-12. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
-13. Quando a tarifa já chegou pela API, valor, data e descrição aparecem preenchidos em Liquidação e tarifa ou Tarifas e financeiro. Escolha a conta financeira e a categoria de Despesas Financeiras da loja. A categoria sugerida é Tarifas de emissão de boletos.
-14. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
-15. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
-16. Na linha do boleto, use Reimprimir boleto para abrir o PDF original do Sicredi e imprimir ou baixar apenas aquele documento. A reimpressão não gera uma nova cobrança. O cancelamento fica separado, dentro de Opções, à direita, e exige confirmação.
+3. Em Contas a receber, abra Opções: Emitir boleto aparece quando a parcela não tem boleto registrado; Reimprimir boleto abre a impressão dos boletos já registrados ou liquidados. Registros pendentes ou em processamento mostram Consultar boleto para evitar emissão duplicada.
+4. Na reimpressão disponível em Contas a receber, Boletos, Pedidos e Separação, escolha Esta parcela, Mesmo pedido ou Mesmo cliente. Marque os boletos individualmente ou use Selecionar todos do grupo. Abra PDF selecionados para reunir os PDFs originais em um arquivo, baixar no celular/tablet ou imprimir. A seleção é limpa ao trocar o grupo. São respeitados a loja selecionada e seus acessos; boletos de outro cliente não entram no grupo.
+5. Na impressão de muitos boletos, mantenha a janela aberta enquanto os PDFs são consultados. Lotes maiores aguardam automaticamente o limite de 20 consultas por minuto. Interromper impressão não emite nem cancela cobranças. Se o banco falhar, a lista mostra o erro; nenhum arquivo parcial é apresentado como completo.
+6. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
+7. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
+8. A lista começa pelo primeiro vencimento, em ordem crescente de cima para baixo, inclusive ao limpar os filtros. Em Ordenar por, escolha outra ordem de emissão ou vencimento se necessário. A ordenação respeita os filtros e mantém datas ausentes no final.
+9. Após confirmação da alteração de vencimento pelo Sicredi, a data aparece destacada em azul com Vencimento alterado na listagem. Em Opções, as tags mostram a data anterior e a nova, com a alteração mais recente primeiro. Solicitações pendentes, inconclusivas e recusadas não recebem essa marcação; o histórico respeita as permissões financeiras e de loja.
+10. Para mudar a data de um boleto registrado, abra Opções e use Alterar vencimento. O boleto e a parcela só mudam após confirmação do Sicredi. Uma recusa mostra o motivo de validação reconhecido, quando fornecido pelo banco. Se houver alteração pendente ou resposta inconclusiva, consulte antes de reenviar.
+11. Somente o administrador pode solicitar baixa no Sicredi: abra Opções e use Cancelar boleto em um boleto API registrado. Confira cliente, nosso número e valor e descreva o motivo com 10 a 2000 caracteres. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta confirmar a baixa bancária.
+12. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
+13. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
+14. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
+15. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
+16. Quando a tarifa já chegou pela API, valor, data e descrição aparecem preenchidos em Liquidação e tarifa ou Tarifas e financeiro. Escolha a conta financeira e a categoria de Despesas Financeiras da loja. A categoria sugerida é Tarifas de emissão de boletos.
+17. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
+18. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
+19. Na linha do boleto, use Reimprimir boleto para abrir o PDF original do Sicredi e imprimir ou baixar apenas aquele documento. A reimpressão não gera uma nova cobrança. O cancelamento fica separado, dentro de Opções, à direita, e exige confirmação.
 
 Cuidados:
 

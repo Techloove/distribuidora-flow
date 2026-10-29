@@ -1,14 +1,62 @@
 import * as React from "react";
 
+import { TablePreferences } from "./table-preferences";
+
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full min-w-0 max-w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement> & { columnPreferences?: boolean }
+>(({ className, columnPreferences = true, ...props }, ref) => {
+  const table = React.useRef<HTMLTableElement>(null);
+  React.useEffect(() => {
+    const el = table.current;
+    if (!el) return;
+    const annotate = () => {
+      const headers = Array.from(el.tHead?.rows[el.tHead.rows.length - 1]?.cells ?? []);
+      if (headers.some((h) => h.colSpan > 1 || h.rowSpan > 1)) return;
+      for (const section of Array.from(el.tBodies))
+        for (const row of Array.from(section.rows)) {
+          if (Array.from(row.cells).some((c) => c.colSpan > 1)) continue;
+          Array.from(row.cells).forEach((cell, index) => {
+            const label = headers[index]?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+            if (!cell.hasAttribute("data-label") && label) cell.setAttribute("data-label", label);
+            const number =
+              /valor|preço|preco|quantidade|estoque|peso|%|comprado|comissão|limite|^custo/i.test(
+                label,
+              );
+            const name =
+              !number &&
+              /cliente|fornecedor|produto|descri|razão|fantasia|marca|categoria|grupo|representante|rota|nome|endereço|observa|histórico|responsável|referência/i.test(
+                label,
+              );
+            cell.setAttribute("data-column-kind", name ? "name" : "value");
+          });
+        }
+    };
+    annotate();
+    const observer = new MutationObserver(annotate);
+    observer.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div className="min-w-0 max-w-full">
+      {columnPreferences && <TablePreferences table={table} />}
+      <div className="relative w-full min-w-0 max-w-full overflow-auto">
+        <table
+          ref={(el) => {
+            table.current = el;
+            if (typeof ref === "function") ref(el);
+            else if (ref) ref.current = el;
+          }}
+          data-readable-table="true"
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
     </div>
-  ),
-);
+  );
+});
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<

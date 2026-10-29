@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -185,7 +186,7 @@ function CentroCnab({ centro }: { centro: string }) {
             {result && (
               <>
                 <div className="mt-3 max-h-72 overflow-auto rounded-md border">
-                  <table className="w-full text-left text-sm">
+                  <Table className="w-full text-left text-sm">
                     <thead>
                       <tr>
                         <th className="p-2">Nosso número</th>
@@ -215,7 +216,7 @@ function CentroCnab({ centro }: { centro: string }) {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
                 <label className="my-3 flex items-center gap-2 text-sm">
                   <input

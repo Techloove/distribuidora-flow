@@ -73,3 +73,45 @@ test("PDF conjunto conserva as páginas dos boletos bancários na ordem selecion
     unirPdfsBoletos([await um.saveAsBase64(), btoa("resposta inválida")]),
   ).rejects.toThrow();
 });
+
+test("lote do cliente conserva pedidos diferentes e exclui outros clientes e ciclos superados", async () => {
+  const { boletosParaImpressao } = await import("../src/lib/boletos-documento");
+  const rows = [
+    { ...b("antigo", "registrado", "2026-10-01"), cliente_id: "A", pedido_id: "1" },
+    { ...b("atual", "registrado", "2026-10-02"), cliente_id: "A", pedido_id: "1" },
+    {
+      ...b("segundo", "registrado", "2026-10-03"),
+      conta_receber_id: "conta2",
+      cliente_id: "A",
+      pedido_id: "2",
+    },
+    {
+      ...b("outro-cliente", "registrado", "2026-10-03"),
+      conta_receber_id: "conta3",
+      cliente_id: "B",
+      pedido_id: "3",
+    },
+    {
+      ...b("cancelado", "cancelado", "2026-10-03"),
+      conta_receber_id: "conta4",
+      cliente_id: "A",
+      pedido_id: "2",
+    },
+  ];
+  expect(boletosParaImpressao(rows, "A").map((v) => v.id)).toEqual(["atual", "segundo"]);
+  expect(
+    boletosParaImpressao(
+      rows.filter((v) => v.pedido_id === "1"),
+      "A",
+    ).map((v) => v.id),
+  ).toEqual(["atual"]);
+  expect(
+    boletosParaImpressao(
+      [
+        ...rows,
+        { ...b("emissao-nova", "pendente", "2026-11-01"), cliente_id: "A", pedido_id: "1" },
+      ],
+      "A",
+    ).map((v) => v.id),
+  ).toEqual(["segundo"]);
+});

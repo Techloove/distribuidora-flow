@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { BarChart3, ChevronDown, ChevronRight, Loader2, Printer } from "lucide-react";
@@ -197,7 +198,7 @@ function DrePage() {
           ) : dre.isError ? (
             <p className="p-6 text-sm text-destructive">{(dre.error as Error).message}</p>
           ) : (
-            <table className="w-full min-w-[540px] text-sm">
+            <Table className="w-full min-w-[540px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="px-4 py-3 text-left font-normal">Descrição</th>
@@ -240,7 +241,7 @@ function DrePage() {
                   </Fragment>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
       </div>

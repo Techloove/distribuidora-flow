@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { CategoriaLoja } from "@/components/categoria-loja";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,7 +109,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="mobile-cards w-full text-sm">
+          <Table className="mobile-cards w-full text-sm">
             <thead>
               <tr className="border-b text-left">
                 <th className="p-2">Código / produto</th>
@@ -154,7 +155,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
       <div className="flex items-center gap-3">

@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -305,7 +306,7 @@ export function RomaneiosEntrega() {
               Nenhuma expedição neste filtro. Confirme um pedido para gerar o romaneio.
             </p>
           ) : (
-            <table className="mobile-cards w-full min-w-[900px] text-sm">
+            <Table className="mobile-cards w-full min-w-[900px] text-sm">
               <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 text-left font-medium">Romaneio</th>
@@ -383,7 +384,7 @@ export function RomaneiosEntrega() {
                   );
                 })}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
 
