@@ -22,6 +22,7 @@ import { ErpLayout } from "@/components/erp-layout";
 import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -40,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  alteracoesVencimentoConfirmadas,
   filtrarBoletos,
   dataBoleto,
   periodoBoletosInvalido,
@@ -107,7 +109,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
       for (let offset = 0; ; offset += 500) {
         let query = client!
           .from("boletos")
-          .select("*,pedidos(status)")
+          .select(
+            "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at)",
+          )
+          .eq("alteracoes_vencimento.estado", "confirmado")
           .order("vencimento", { ascending: false })
           .order("id");
         if (centro) query = query.eq("centro_id", centro);
@@ -563,6 +568,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                   {boletosFiltrados.map((b) => {
                     const st = String(b["status"]);
                     const id = String(b["id"]);
+                    const alteracoes = alteracoesVencimentoConfirmadas(b);
+                    const alteracao = alteracoes[0];
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
                     const financeiro = financeiroTarifas.data?.get(id);
@@ -596,9 +603,27 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               <span className="text-muted-foreground">Emissão:</span>{" "}
                               {dataBr(b["data_emissao"])}
                             </p>
-                            <p>
-                              <span className="text-muted-foreground">Vencimento:</span>{" "}
+                            <p
+                              className={
+                                alteracao
+                                  ? "my-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary"
+                                  : undefined
+                              }
+                              title={
+                                alteracao
+                                  ? `Alterado de ${dataBr(alteracao.anterior)} para ${dataBr(alteracao.novo)}`
+                                  : undefined
+                              }
+                            >
+                              <span className={alteracao ? undefined : "text-muted-foreground"}>
+                                Vencimento:
+                              </span>{" "}
                               {dataBr(b["vencimento"])}
+                              {alteracao && (
+                                <span className="block text-[11px] font-medium">
+                                  Vencimento alterado · ver Opções
+                                </span>
+                              )}
                             </p>
                             <p>
                               <span className="text-muted-foreground">Liquidação:</span>{" "}
@@ -731,6 +756,27 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                         {expandido === id && (
                           <TableRow className="no-print bg-muted/20" id={`boleto-opcoes-${id}`}>
                             <TableCell colSpan={7}>
+                              {alteracoes.length > 0 && (
+                                <div
+                                  className="mb-3 space-y-2"
+                                  aria-label="Histórico de alterações de vencimento confirmadas"
+                                >
+                                  <p className="text-xs font-medium text-muted-foreground">
+                                    Alterações confirmadas pelo Sicredi · mais recente primeiro
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {alteracoes.map((a) => (
+                                      <Badge
+                                        key={a.id}
+                                        variant="outline"
+                                        className="max-w-full whitespace-normal border-primary/20 bg-primary/10 text-primary"
+                                      >
+                                        Vencimento alterado: {dataBr(a.anterior)} → {dataBr(a.novo)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               <p className="mb-3 break-all text-xs">
                                 <span className="font-medium">Linha digitável:</span>{" "}
                                 {String(b["linha_digitavel"] ?? "Não disponível")}

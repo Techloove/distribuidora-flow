@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.5",
+    "data": "2026-10-29",
+    "titulo": "Destacar vencimentos alterados e exibir histórico nas opções do boleto",
+    "novidades": [
+      "Destacar vencimentos alterados e exibir histórico nas opções do boleto"
+    ]
+  },
+  {
     "versao": "1.14.4",
     "data": "2026-10-29",
     "titulo": "Corrigir identificação do beneficiário na alteração e baixa Sicredi",

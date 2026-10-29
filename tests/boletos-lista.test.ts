@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  alteracoesVencimentoConfirmadas,
   dataBoleto,
   filtrarBoletos,
   periodoBoletosInvalido,
@@ -92,7 +93,10 @@ test("ordena emissão e vencimento em ambos os sentidos, sem alterar a coleção
 });
 test("datas ausentes ficam no fim nos dois sentidos e ordenar mantém os filtros", () => {
   for (const ordem of ["emissao_asc", "emissao_desc", "vencimento_asc", "vencimento_desc", ""])
-    expect(ordenarBoletos([...rows, { id: "0", data_emissao: null, vencimento: null }], ordem).at(-1)?.id).toBe("0");
+    expect(
+      ordenarBoletos([...rows, { id: "0", data_emissao: null, vencimento: null }], ordem).at(-1)
+        ?.id,
+    ).toBe("0");
   expect(
     ordenarBoletos(filtrarBoletos(rows, { cliente: "a" }, nome), "emissao_asc").map((r) => r.id),
   ).toEqual(["3", "1"]);
@@ -108,4 +112,38 @@ test("cancelamento pendente não é confundido com baixa ou liquidação", () =>
     expect(
       cancelamentoBoletoPendente({ status, retorno: { cancelamento_sicredi_pendente: true } }),
     ).toBe(false);
+});
+
+test("tags mostram apenas vencimentos confirmados, em ordem e sem confundir solicitação pendente", () => {
+  const base = {
+    id: "a",
+    vencimento_anterior: "2026-11-28",
+    vencimento_novo: "2026-12-01",
+    updated_at: "2026-10-29T12:00:00Z",
+  };
+  const alteracoes_vencimento = [
+    ...["pendente", "enviado", "incerto", "rejeitado"].map((estado) => ({ ...base, estado })),
+    { ...base, estado: "confirmado" },
+    {
+      ...base,
+      id: "b",
+      estado: "confirmado",
+      vencimento_anterior: "2026-12-01",
+      vencimento_novo: "2026-12-05",
+      updated_at: "2026-10-30T12:00:00Z",
+    },
+    null,
+    { ...base, id: "invalida", estado: "confirmado", vencimento_novo: "2026-02-30" },
+    { ...base, id: "igual", estado: "confirmado", vencimento_novo: base.vencimento_anterior },
+  ];
+  const result = alteracoesVencimentoConfirmadas({
+    alteracoes_vencimento,
+    vencimento_solicitado: "2026-12-10",
+  });
+  expect(result.map((r) => r.id)).toEqual(["b", "a"]);
+  expect(result[1]).toMatchObject({ anterior: "2026-11-28", novo: "2026-12-01" });
+  expect(alteracoesVencimentoConfirmadas({})).toEqual([]);
+  expect(
+    alteracoesVencimentoConfirmadas({ alteracoes_vencimento: { estado: "confirmado" } }),
+  ).toEqual([]);
 });

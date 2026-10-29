@@ -105,3 +105,24 @@ export function cancelamentoBoletoPendente(b: Row): boolean {
     (retorno as Row)["cancelamento_sicredi_pendente"] === true
   );
 }
+
+/** Apenas confirmações bancárias: solicitações enviadas, incertas ou recusadas não são alterações. */
+export function alteracoesVencimentoConfirmadas(boleto: Row) {
+  const historico = boleto["alteracoes_vencimento"];
+  if (!Array.isArray(historico)) return [];
+  return historico
+    .filter((r): r is Row => !!r && typeof r === "object" && !Array.isArray(r))
+    .filter((r) => r["estado"] === "confirmado")
+    .map((r) => ({
+      id: String(r["id"] ?? ""),
+      anterior: dataBoleto(r["vencimento_anterior"]),
+      novo: dataBoleto(r["vencimento_novo"]),
+      confirmadoEm: String(r["updated_at"] ?? r["created_at"] ?? ""),
+    }))
+    .filter((r) => r.id && r.anterior && r.novo && r.anterior !== r.novo)
+    .sort(
+      (a, b) =>
+        (Date.parse(b.confirmadoEm) || 0) - (Date.parse(a.confirmadoEm) || 0) ||
+        b.id.localeCompare(a.id),
+    );
+}
