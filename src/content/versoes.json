@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.4",
+    "data": "2026-10-29",
+    "titulo": "Corrigir identificação do beneficiário na alteração e baixa Sicredi",
+    "novidades": [
+      "Corrigir identificação do beneficiário na alteração e baixa Sicredi"
+    ]
+  },
+  {
     "versao": "1.14.3",
     "data": "2026-10-29",
     "titulo": "Melhorar leitura e navegação no celular, cartões, filtros e formulários",

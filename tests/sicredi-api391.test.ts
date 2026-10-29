@@ -506,6 +506,9 @@ test("cancelamento envia pedido de baixa e preserva registrado até confirmaçã
   ).toEqual({ ok: true, solicitado: true });
   expect(calls.filter((c) => c.path.endsWith("/baixa"))).toHaveLength(1);
   expect(calls.find((c) => c.path.endsWith("/baixa"))?.method).toBe("PATCH");
+  expect(calls.find((c) => c.path.endsWith("/baixa"))?.headers.get("codigoBeneficiario")).toBe(
+    "00623",
+  );
   const sync = calls.find((c) => c.path.endsWith("/sicredi_registrar_pedido_baixa_281"));
   expect(sync?.body["_status"]).toBeUndefined();
   expect(sync?.body["_retorno"]).toMatchObject({

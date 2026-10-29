@@ -46,13 +46,15 @@ const boleto = {
 function backend(
   options: {
     status?: number;
+    errorBody?: string;
     timeout?: boolean;
     bankDue?: string;
     wrongContract?: boolean;
     pending?: boolean;
   } = {},
 ) {
-  const calls: { path: string; method: string; body: Record<string, unknown> }[] = [];
+  const calls: { path: string; method: string; body: Record<string, unknown>; headers: Headers }[] =
+    [];
   globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const path = url.pathname;
@@ -61,7 +63,7 @@ function backend(
         ? Object.fromEntries(init.body)
         : JSON.parse(String(init.body))
       : {};
-    calls.push({ path, method: init?.method ?? "GET", body });
+    calls.push({ path, method: init?.method ?? "GET", body, headers: new Headers(init?.headers) });
     let out: unknown = [];
     if (path === "/auth/v1/user") out = { id: "00000000-0000-4000-8000-000000000001" };
     else if (path.endsWith("/profiles")) out = [{ ativo: true }];
@@ -95,7 +97,7 @@ function backend(
     else if (path.endsWith("/sicredi_solicitar_vencimento")) out = "request-fixture";
     else if (path.endsWith("/data-vencimento")) {
       if (options.timeout) throw new Error("fixture timeout");
-      return new Response("{}", { status: options.status ?? 200 });
+      return new Response(options.errorBody ?? "{}", { status: options.status ?? 200 });
     } else if (url.hostname === "api-parceiro.sicredi.com.br" && path.endsWith("/boletos"))
       out = { situacao: "REGISTRADO", dataVencimento: options.bankDue };
     else if (path.startsWith("/rest/v1/rpc/")) out = null;
@@ -112,6 +114,9 @@ test("API envia PATCH com data ISO e conserva solicitação pendente até consul
   expect(result.pendente).toBe(true);
   const patch = calls.find((c) => c.path.endsWith("/data-vencimento"))!;
   expect(patch.method).toBe("PATCH");
+  expect(patch.headers.get("codigoBeneficiario")).toBe("00623");
+  expect(patch.headers.get("cooperativa")).toBe("0165");
+  expect(patch.headers.get("posto")).toBe("02");
   expect(patch.body).toEqual({ dataVencimento: "2026-11-20" });
   expect(calls.findIndex((c) => c.path.endsWith("/sicredi_solicitar_vencimento"))).toBeLessThan(
     calls.indexOf(patch),
@@ -153,4 +158,37 @@ test("consulta confirma somente quando banco devolve o vencimento solicitado", a
   expect(calls.find((c) => c.body._estado === "confirmado")?.body._vencimento_banco).toBe(
     "2026-11-20",
   );
+});
+
+test("recusa de vencimento mostra motivo seguro sem expor credenciais ou reenviar", async () => {
+  const calls = backend({
+    status: 400,
+    errorBody: JSON.stringify({
+      mensagem:
+        "codigoBeneficiario é obrigatório. fixture-key fixture-password fixture-bank-token fixture-jwt",
+    }),
+  });
+  let message = "";
+  try {
+    await sicrediAlterarVencimento({
+      data: { boletoId: boleto.id, vencimento: "2026-11-20", accessToken: "fixture-jwt" },
+    });
+  } catch (e) {
+    message = (e as Error).message;
+  }
+  expect(message).toContain("codigoBeneficiario é obrigatório");
+  for (const secret of ["fixture-key", "fixture-password", "fixture-bank-token", "fixture-jwt"])
+    expect(message).not.toContain(secret);
+  expect(calls.filter((c) => c.path.endsWith("/data-vencimento"))).toHaveLength(1);
+  expect(calls.some((c) => c.body._estado === "rejeitado")).toBe(true);
+  expect(calls.some((c) => c.body._estado === "confirmado")).toBe(false);
+});
+
+test("corpo não reconhecido não é exibido como motivo da recusa", async () => {
+  backend({ status: 400, errorBody: "<html>conteúdo interno do gateway</html>" });
+  await expect(
+    sicrediAlterarVencimento({
+      data: { boletoId: boleto.id, vencimento: "2026-11-20", accessToken: "fixture-jwt" },
+    }),
+  ).rejects.toThrow("não retornou um motivo de validação reconhecido");
 });

@@ -294,6 +294,11 @@ function headers(c: Conf, tk: string) {
   };
 }
 
+/** As instruções identificam o convênio também pelo código do beneficiário. */
+function headersInstrucao(c: Conf, tk: string) {
+  return { ...headers(c, tk), codigoBeneficiario: c.beneficiario };
+}
+
 /** Status da configuracao — usado pela tela para avisar o usuario. */
 export const sicrediStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken?: string; centro_id?: string }) => data)
@@ -720,7 +725,7 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
     const tk = await token(c);
     const res = await fetchWithTimeout(
       `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(nossoNumero)}/baixa`,
-      { method: "PATCH", headers: headers(c, tk), body: JSON.stringify({}) },
+      { method: "PATCH", headers: headersInstrucao(c, tk), body: JSON.stringify({}) },
     );
     const txt = await res.text();
     if (!res.ok)
@@ -837,7 +842,7 @@ export const sicrediAlterarVencimento = createServerFn({ method: "POST" })
         `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(String(b["nosso_numero"]))}/data-vencimento`,
         {
           method: "PATCH",
-          headers: headers(c, tk),
+          headers: headersInstrucao(c, tk),
           body: JSON.stringify({ dataVencimento: data.vencimento }),
         },
       );
@@ -867,7 +872,11 @@ export const sicrediAlterarVencimento = createServerFn({ method: "POST" })
           pendente: true,
           mensagem: "Resposta do banco inconclusiva. Confira a alteração pela consulta.",
         };
-      throw new Error(`Sicredi rejeitou a alteração de vencimento (HTTP ${response.status}).`);
+      const body = await response.text().catch(() => "");
+      const motivo = motivoRecusaSicredi(body, [c.apiKey, c.password, tk, accessToken]);
+      throw new Error(
+        `Sicredi rejeitou a alteração de vencimento (HTTP ${response.status}).${motivo ? ` Motivo: ${motivo}` : " O banco não retornou um motivo de validação reconhecido."}`,
+      );
     }
     await serviceRpc("sicredi_finalizar_vencimento", {
       _actor: user.id,

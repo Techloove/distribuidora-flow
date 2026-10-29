@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.14.3 · 2026-10-29
+Versão 1.14.4 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -246,15 +246,16 @@ Entenda os cuidados com documentos bancários e fiscais.
 3. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
 4. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
 5. A lista começa pelo primeiro vencimento, em ordem crescente de cima para baixo, inclusive ao limpar os filtros. Em Ordenar por, escolha outra ordem de emissão ou vencimento se necessário. A ordenação respeita os filtros e mantém datas ausentes no final.
-6. Somente o administrador pode solicitar baixa no Sicredi: abra Opções e use Cancelar boleto em um boleto API registrado. Confira cliente, nosso número e valor e descreva o motivo com 10 a 2000 caracteres. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta confirmar a baixa bancária.
-7. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
-8. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
-9. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
-10. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
-11. Quando a tarifa já chegou pela API, valor, data e descrição aparecem preenchidos em Liquidação e tarifa ou Tarifas e financeiro. Escolha a conta financeira e a categoria de Despesas Financeiras da loja. A categoria sugerida é Tarifas de emissão de boletos.
-12. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
-13. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
-14. Na linha do boleto, use Reimprimir boleto para abrir o PDF original do Sicredi e imprimir ou baixar apenas aquele documento. A reimpressão não gera uma nova cobrança. O cancelamento fica separado, dentro de Opções, à direita, e exige confirmação.
+6. Para mudar a data de um boleto registrado, abra Opções e use Alterar vencimento. O boleto e a parcela só mudam após confirmação do Sicredi. Uma recusa mostra o motivo de validação reconhecido, quando fornecido pelo banco. Se houver alteração pendente ou resposta inconclusiva, consulte antes de reenviar.
+7. Somente o administrador pode solicitar baixa no Sicredi: abra Opções e use Cancelar boleto em um boleto API registrado. Confira cliente, nosso número e valor e descreva o motivo com 10 a 2000 caracteres. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta confirmar a baixa bancária.
+8. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
+9. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
+10. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
+11. Em Boletos, use Liquidação e tarifa nos boletos API Sicredi liquidados para conferir o valor do boleto, juros, multa, descontos, abatimentos e total recebido retornados pelo banco.
+12. Quando a tarifa já chegou pela API, valor, data e descrição aparecem preenchidos em Liquidação e tarifa ou Tarifas e financeiro. Escolha a conta financeira e a categoria de Despesas Financeiras da loja. A categoria sugerida é Tarifas de emissão de boletos.
+13. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
+14. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
+15. Na linha do boleto, use Reimprimir boleto para abrir o PDF original do Sicredi e imprimir ou baixar apenas aquele documento. A reimpressão não gera uma nova cobrança. O cancelamento fica separado, dentro de Opções, à direita, e exige confirmação.
 
 Cuidados:
 
