@@ -13,3 +13,10 @@ O status interno rascunho é mostrado como Digitação. A forma anterior é pres
 A instalação não reabre nenhum pedido, cancela boleto, gera título ou movimenta estoque. O backup externo inclui automaticamente os novos campos/tabela do schema. Não foram feitos comandos bancários reais nos testes.
 
 Validação em PGlite: migração repetível, administrador/inativo/outro papel/loja, boleto registrado/liquidado, recebimento, saída e fiscal, cancelado/Conferido, retorno repetido, tentativa direta de status, troca de condição 1x para 3x com prazos e arredondamento, confirmação repetida, novos boletos simulados e dois ciclos financeiros/logísticos. Frontend testado com sessão/RPCs fictícias.
+
+
+## Correção de sincronização — fase290 / versão1.18.1
+
+A expedição possui um gatilho real que sincroniza seu cancelamento com o pedido. O motor de cancelamento definia o contexto autorizado depois de atualizar a expedição; esse gatilho chegava ao bloqueio do pedido antes do contexto e gerava “Use o cancelamento administrativo com motivo”. A fase290 move o marcador para imediatamente antes da atualização da expedição, depois das validações e bloqueios existentes, nos motores administrativo e do representante. Não altera o gatilho de proteção nem concede novas permissões.
+
+A regressão local passou a carregar os dois gatilhos reais de sincronização da fase42. Reproduz a falha sem a correção, comprova o rollback de pedido/título/estoque/histórico, aplica a fase290 duas vezes e conclui o retorno e a nova geração de parcelas/boletos simulados. Também verifica o cancelamento do representante aprovado e que alterações diretas de status continuam bloqueadas.

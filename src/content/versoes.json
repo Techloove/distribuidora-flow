@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.18.1",
+    "data": "2026-10-29",
+    "titulo": "Corrigir retorno para digitação ao sincronizar o cancelamento da expedição",
+    "novidades": ["Corrigir retorno para digitação ao sincronizar o cancelamento da expedição"]
+  },
+  {
     "versao": "1.18.0",
     "data": "2026-10-29",
     "titulo": "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas",

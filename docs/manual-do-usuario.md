@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.18.0 · 2026-10-29
+Versão 1.18.1 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -105,9 +105,10 @@ Da escolha do cliente à confirmação da venda.
 10. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
 11. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
 12. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
-13. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
-14. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
-15. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
+13. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
+14. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
+15. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
+16. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
 
 Cuidados:
 

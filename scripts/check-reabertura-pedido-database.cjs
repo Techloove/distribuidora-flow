@@ -83,7 +83,7 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
     await db.exec(`
       alter table pedidos add column numero int default 43,add column forma_pagamento_id uuid,add column parcelas int default 1,add column data_pedido date default '2026-10-29',add column total_itens numeric default 100,add column desconto_valor numeric default 0,add column frete_valor numeric default 0,add column comissao_percentual numeric default 0,add column comissao_valor numeric default 0,add column faturado_em timestamptz;
-      alter table expedicoes add column created_by uuid;
+      alter table expedicoes add column created_by uuid,add column data_entrega date;
       alter table pedido_itens add column quantidade_separada numeric,add column conferido boolean default false,add column divergencia_acao text,add column divergencia_obs text;
       alter table creditos_clientes_aplicacoes add column id uuid default gen_random_uuid(),add column credito_id uuid,add column aplicado_em timestamptz;
       alter table comissoes add column representante_id uuid,add column base_calculo numeric,add column percentual numeric,add column valor numeric,add column centro_id uuid;
@@ -112,6 +112,15 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     const migration = readFileSync("db/fase289_reabertura_pedido_digitacao.sql", "utf8");
     await db.exec(migration);
     await db.exec(migration);
+    await load("fase19_sincronizacao_status.sql", "sync_status_ativo");
+    await load("fase42_fluxo_operacional.sql", "sync_pedido_da_expedicao");
+    await load("fase42_fluxo_operacional.sql", "sync_expedicao_do_pedido");
+    await db.exec(
+      "create trigger trg_sync_expedicao_do_pedido after update of status on pedidos for each row execute function sync_expedicao_do_pedido()",
+    );
+    await db.exec(
+      "create trigger trg_sync_pedido_da_expedicao after update of status on expedicoes for each row execute function sync_pedido_da_expedicao()",
+    );
     const query = async (sql, args = []) => (await db.query(sql, args)).rows;
     const scalar = async (sql, args = []) => Object.values((await query(sql, args))[0])[0];
     async function seed(n, status = "conferido", boleto = "baixado") {
@@ -156,6 +165,53 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     const reason = "Troca administrativa da condição de pagamento";
     const reopen = (p, key = id(800), expected = "conferido") =>
       db.query("select reabrir_pedido_digitacao_289($1,$2,$3,$4)", [p, reason, key, expected]);
+    // Reproduz o erro real: cancelar expedição sincroniza pedido antes do contexto.
+    const broken = await seed(99);
+    await db.exec("set role authenticated");
+    await assert.rejects(
+      () => reopen(broken, id(799)),
+      /Use o cancelamento administrativo com motivo/,
+    );
+    assert.equal(await scalar("select status from pedidos where id=$1", [broken]), "conferido");
+    assert.equal(
+      await scalar("select status from contas_receber where pedido_id=$1", [broken]),
+      "aberto",
+    );
+    assert.equal(
+      Number(
+        await scalar("select count(*) from pedido_reaberturas_289 where pedido_id=$1", [broken]),
+      ),
+      0,
+    );
+    assert.equal(
+      await scalar("select status from expedicoes where pedido_id=$1", [broken]),
+      "separado",
+    );
+    assert.equal(
+      Number(
+        await scalar("select count(*) from estoque_movimentos where documento_id=$1", [broken]),
+      ),
+      1,
+      "Falha deve reverter a entrada de estoque",
+    );
+    await db.exec("reset role");
+    const syncFix = readFileSync("db/fase290_contexto_cancelamento_expedicao.sql", "utf8");
+    await db.exec(syncFix);
+    await db.exec(syncFix);
+    await db.exec("set role authenticated");
+    await reopen(broken, id(799));
+    assert.equal(await scalar("select status from pedidos where id=$1", [broken]), "rascunho");
+    assert.equal(
+      await scalar("select status from expedicoes where pedido_id=$1", [broken]),
+      "cancelada",
+    );
+    assert.equal(
+      Number(
+        await scalar("select count(*) from pedido_reaberturas_289 where pedido_id=$1", [broken]),
+      ),
+      1,
+    );
+    await db.exec("reset role");
     const p = await seed(100);
     await db.exec("set role authenticated");
     await db.exec("set test.admin='false'");
@@ -311,7 +367,6 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     await assert.rejects(() => reopen(p7, id(806)), /indisponível/);
     // Segundo ciclo completo: os dois cancelamentos continuam no histórico, sem colisão de idempotência.
     await db.exec("reset role");
-    await db.query("update expedicoes set status='cancelada' where pedido_id=$1", [p]);
     await db.exec("set role authenticated");
     await reopen(p, id(807), "conferido");
     await db.query("select confirmar_pedido($1)", [p]);
@@ -352,6 +407,18 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
       ),
       false,
     );
+    await assert.rejects(
+      () => db.query("update pedidos set status='cancelado' where id=$1", [p]),
+      /Use o cancelamento administrativo com motivo/,
+    );
+    await assert.rejects(
+      () =>
+        db.query(
+          "update expedicoes set status='cancelada' where pedido_id=$1 and status<>'cancelada'",
+          [p],
+        ),
+      /Use o cancelamento administrativo com motivo/,
+    );
     await db.exec("reset role; drop table faznotas_emissoes_259");
     const withoutFiscal = await seed(110);
     await db.exec("set role authenticated");
@@ -361,8 +428,25 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
       "rascunho",
       "Fase fiscal opcional ausente não bloqueia reabertura",
     );
+    await db.exec("reset role");
+    const repOrder = await seed(111, "aprovado");
+    await db.query("update pedidos set created_by=$2,representante_id=$3 where id=$1", [
+      repOrder,
+      id(1),
+      id(900),
+    ]);
+    await db.exec("set test.admin='false';set test.rep='true';set role authenticated");
+    await db.query("select cancelar_pedido_representante_286($1,$2)", [
+      repOrder,
+      "Representante cancelou seu próprio pedido aprovado",
+    ]);
+    assert.equal(await scalar("select status from pedidos where id=$1", [repOrder]), "cancelado");
+    assert.equal(
+      await scalar("select status from expedicoes where pedido_id=$1", [repOrder]),
+      "cancelada",
+    );
     console.log(
-      "OK: fase289 repetível; admin/loja/status/boletos/recebimentos/fiscal/saída; nova condição 3x com prazos e centavos; idempotência e dois ciclos sem excluir históricos.",
+      "OK: fases289/290 repetíveis, falha real de sincronização reproduzida e corrigida; admin/loja/status/boletos/recebimentos/fiscal/saída; nova condição 3x com prazos e centavos; idempotência e dois ciclos sem excluir históricos.",
     );
   } finally {
     await db.close();
