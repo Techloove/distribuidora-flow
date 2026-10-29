@@ -59,7 +59,7 @@ const nav = [
     group: "Visão geral",
     items: [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/pendencias", label: "Central de pendências", icon: Bell },
+      { to: "/pendencias", label: "Central de Pendências", icon: Bell },
     ],
   },
   {
@@ -67,19 +67,19 @@ const nav = [
     items: [
       { to: "/pessoas", label: "Cadastro Unificado", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
-      { to: "/cadastros-padrao", label: "Categorias, marcas e cidades", icon: Tags },
+      { to: "/cadastros-padrao", label: "Categorias, Marcas e cCdades", icon: Tags },
       { to: "/tabelas-preco", label: "Promoção", icon: Tags },
       { to: "/centros", label: "Lojas", icon: Building2 },
-      { to: "/rotas", label: "Rotas de entrega", icon: Route },
-      { to: "/formas-pagamento", label: "Formas de pagamento", icon: CreditCard },
-      { to: "/descontos-peso", label: "Descontos por peso (kg)", icon: Percent },
+      { to: "/rotas", label: "Rotas de Entregas", icon: Route },
+      { to: "/formas-pagamento", label: "Formas de Pagamentos", icon: CreditCard },
+      { to: "/descontos-peso", label: "Descontos por Peso (kg)", icon: Percent },
     ],
   },
   {
     group: "Comercial",
     items: [
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-      { to: "/agenda-comercial", label: "Agenda comercial", icon: CalendarClock },
+      { to: "/agenda-comercial", label: "Agenda Comercial", icon: CalendarClock },
       { to: "/metas", label: "Metas", icon: Target },
       { to: "/comissoes", label: "Comissões", icon: Coins },
     ],
@@ -88,26 +88,26 @@ const nav = [
     group: "Operação",
     items: [
       { to: "/separacao", label: "Separação", icon: PackageCheck },
-      { to: "/cargas", label: "Cargas de entrega", icon: Truck },
+      { to: "/cargas", label: "Cargas de Entregas", icon: Truck },
       { to: "/entregas", label: "Entregas", icon: PackageCheck },
       { to: "/devolucoes", label: "Devoluções", icon: Undo2 },
-      { to: "/notas", label: "Faturamento / nota fiscal", icon: FileText },
+      { to: "/notas", label: "Faturamento / Nota Fiscal", icon: FileText },
       { to: "/compras", label: "Compras", icon: ShoppingCart },
     ],
   },
   {
     group: "Financeiro",
     items: [
-      { to: "/financeiro", label: "Dashboard financeiro", icon: PiggyBank },
-      { to: "/dre", label: "DRE gerencial", icon: BarChart3 },
-      { to: "/relatorios-financeiros", label: "Relatórios financeiros", icon: FileText },
-      { to: "/receber", label: "Contas a receber", icon: Wallet },
-      { to: "/pagar", label: "Contas a pagar", icon: Coins },
+      { to: "/financeiro", label: "Dashboard Financeiro", icon: PiggyBank },
+      { to: "/dre", label: "DRE Gerencial", icon: BarChart3 },
+      { to: "/relatorios-financeiros", label: "Relatórios Financeiros", icon: FileText },
+      { to: "/receber", label: "Contas a Receber", icon: Wallet },
+      { to: "/pagar", label: "Contas a Pagar", icon: Coins },
       { to: "/boletos", label: "Boletos", icon: Barcode },
-      { to: "/rota-despesas", label: "Custos de rota", icon: Route },
-      { to: "/contas", label: "Caixa e bancos", icon: Landmark },
-      { to: "/categorias-financeiras", label: "Categorias de despesas", icon: Tags },
-      { to: "/fluxo-caixa", label: "Fluxo de caixa", icon: LineChart },
+      { to: "/rota-despesas", label: "Custos de Rotas", icon: Route },
+      { to: "/contas", label: "Caixa e Bancos", icon: Landmark },
+      { to: "/categorias-financeiras", label: "Categorias de Despesas", icon: Tags },
+      { to: "/fluxo-caixa", label: "Fluxo de Caixa", icon: LineChart },
     ],
   },
   {
@@ -115,9 +115,9 @@ const nav = [
     items: [
       { to: "/relatorio-vendas", label: "Relatórios de Vendas", icon: BarChart3 },
       { to: "/notificacoes", label: "Notificações", icon: Bell },
-      { to: "/usuarios", label: "Usuários e papéis", icon: ShieldCheck },
+      { to: "/usuarios", label: "Usuários e Papéis", icon: ShieldCheck },
       { to: "/auditoria", label: "Auditoria", icon: ScrollText },
-      { to: "/configuracoes", label: "Manutenção do sistema", icon: Settings },
+      { to: "/configuracoes", label: "Manutenção Sistema", icon: Settings },
     ],
   },
 ] as const;
@@ -275,12 +275,12 @@ function SidebarContent({
           <Link
             to="/ajuda"
             onClick={onNavigate}
-            title={`Manual do usuário · Versão ${VERSAO_SISTEMA}`}
-            aria-label={`Manual do usuário, versão ${VERSAO_SISTEMA}`}
+            title={`Manual do Usuário · Versão ${VERSAO_SISTEMA}`}
+            aria-label={`Manual do Usuário, versão ${VERSAO_SISTEMA}`}
             className={`mb-3 flex rounded-md border border-sidebar-border p-2 text-sidebar-foreground hover:bg-sidebar-accent ${compact ? "flex-col items-center gap-1" : "items-center gap-2"}`}
           >
             <BookOpen className="size-4 shrink-0" />
-            {!compact && <span className="flex-1">Manual do usuário</span>}
+            {!compact && <span className="flex-1">Manual do Usuário</span>}
             <span className="text-[10px] text-sidebar-foreground/70">v{VERSAO_SISTEMA}</span>
           </Link>
         )}
