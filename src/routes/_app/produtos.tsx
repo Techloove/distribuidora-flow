@@ -116,7 +116,7 @@ const fields: CrudField[] = [
   { name: "comprado_qtd", label: "Comprado", inTable: true, auto: true, virtual: true },
   {
     name: "permite_estoque_negativo",
-    label: "Permitir venda com estoque negativo",
+    label: "Estoque Negativo",
     type: "checkbox",
     inTable: true,
   },
