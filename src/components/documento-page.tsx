@@ -1,4 +1,5 @@
 import { ReferenciaRegistro } from "@/components/referencia-registro";
+import { AcoesCancelamentoPedido } from "@/components/acoes-cancelamento-pedido";
 import { ObservacoesPedido } from "@/components/observacoes-pedido";
 import { Textarea } from "@/components/ui/textarea";
 import { RegularizarStatusPedido } from "@/components/regularizar-status-pedido";
@@ -905,8 +906,7 @@ export function DocumentoPage({
   const cancelar = useMutation({
     mutationFn: async () => {
       if (config.table === "pedidos") {
-        const { error } = await client!.rpc("cancelar_pedido", { _pedido_id: selected });
-        if (error) throw new Error(error.message);
+        throw new Error("Use a ação de cancelamento administrativo com motivo.");
       } else {
         const { error } = await client!.rpc("cancelar_compra", { _compra_id: selected });
         if (error) throw new Error(error.message);
@@ -1301,13 +1301,22 @@ export function DocumentoPage({
         ) : null}
         {config.table === "pedidos" &&
         !ehOrcamento &&
-        !["rascunho", "digitacao", "aprovado", "cancelado"].includes(String(doc["status"])) ? (
+        !["rascunho", "digitacao", "aprovado", "cancelado", "devolvido"].includes(
+          String(doc["status"]),
+        ) ? (
           <EmitirBoletosPedido
             key={String(doc["id"])}
             pedidoId={String(doc["id"])}
             centroId={String(doc["centro_id"] ?? "")}
           />
         ) : null}
+        {config.table === "pedidos" && !ehOrcamento && (
+          <AcoesCancelamentoPedido
+            key={String(doc["id"])}
+            pedido={String(doc["id"])}
+            status={String(doc["status"])}
+          />
+        )}
         {!ehOrcamento && (
           <Button
             onClick={() => efetivar.mutate()}
@@ -1369,7 +1378,7 @@ export function DocumentoPage({
                 </Button>
               ))
           : null}
-        {!ehOrcamento && (
+        {config.table !== "pedidos" && !ehOrcamento && (
           <Button
             variant="outline"
             onClick={() => cancelar.mutate()}

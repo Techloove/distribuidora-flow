@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.13.0 · 2026-10-28
+Versão 1.14.0 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -95,6 +95,8 @@ Da escolha do cliente à confirmação da venda.
 Cuidados:
 
 - Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.
+- O administrador pode usar Cancelar pedido · administrador até a montagem da carga, antes da saída, descrevendo um motivo com pelo menos 10 caracteres. Reservas são liberadas e somente saídas de estoque já registradas são revertidas. Em etapas iniciais, títulos não recebidos e sem vínculos são excluídos com auditoria; títulos ligados a boletos e históricos financeiros são preservados como cancelados.
+- Depois da saída, use Devolver itens e ajustar financeiro. Informe as quantidades integral ou parcialmente devolvidas, a condição de cada produto e o motivo; confirme o recebimento físico. Avarias não voltam ao saldo disponível. Na devolução parcial, os títulos afetados ficam cancelados no histórico e um novo título representa o saldo restante. Na integral, o pedido fica Devolvido.
 - Orçamento não é uma venda confirmada. Não gere movimentação manual para simular sua confirmação.
 - Os produtos e suas reservas pertencem à loja do pedido. A venda não usa o estoque de outra loja.
 - Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.
@@ -202,13 +204,15 @@ Cuidados:
 Trate o retorno da mercadoria e seus efeitos financeiros pelo fluxo correto.
 
 1. Localize o pedido de origem e registre os produtos, quantidades e motivo da devolução.
-2. Confira a loja e o vínculo com a entrega ou ocorrência correspondente.
-3. Siga a conferência e confirmação previstas pela tela, verificando o retorno físico e os valores.
-4. Confira os créditos gerados e sua utilização na conciliação de créditos, quando aplicável.
+2. A ação Devolver itens e ajustar financeiro, dentro do pedido, calcula o valor proporcional incluindo descontos e frete, sem duplicar crédito do cliente e abatimento de dívida. Um eventual crédito residual representa somente o valor que não foi compensado nos títulos. Devoluções com esse acerto não podem ser canceladas isoladamente; precisam de estorno específico.
+3. Confira a loja e o vínculo com a entrega ou ocorrência correspondente.
+4. Siga a conferência e confirmação previstas pela tela, verificando o retorno físico e os valores.
+5. Confira os créditos gerados e sua utilização na conciliação de créditos, quando aplicável.
 
 Cuidados:
 
 - Não faça entrada manual nem desconto financeiro duplicado para uma devolução já tratada pelo fluxo.
+- Pedidos com recebimentos, boletos liquidados, renegociações, encargos ou devoluções antigas com crédito separado exigem a devolução com crédito e conciliação financeira específica. Não são apagados pagamentos. Nota fiscal autorizada exige tratamento fiscal próprio; cancelar pedido ou registrar devolução não cancela NF-e automaticamente.
 - Comissões e créditos dependem do tratamento da devolução e dos recebimentos existentes. Confira os registros antes de repetir operações.
 
 ## Receber, pagar, caixa e conciliação
@@ -237,7 +241,7 @@ Entenda os cuidados com documentos bancários e fiscais.
 3. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
 4. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
 5. A lista começa pelo primeiro vencimento, em ordem crescente de cima para baixo, inclusive ao limpar os filtros. Em Ordenar por, escolha outra ordem de emissão ou vencimento se necessário. A ordenação respeita os filtros e mantém datas ausentes no final.
-6. Para solicitar baixa no Sicredi, abra Opções e use Cancelar boleto, à direita, em um boleto API registrado. Na pergunta “Deseja realmente cancelar este boleto?”, confira cliente, nosso número e valor. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar a solicitação, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta bancária confirmar a baixa.
+6. Somente o administrador pode solicitar baixa no Sicredi: abra Opções e use Cancelar boleto em um boleto API registrado. Confira cliente, nosso número e valor e descreva o motivo com 10 a 2000 caracteres. Use Voltar para desistir ou Sim, solicitar cancelamento para enviar, sem digitar senha. A linha fica como Cancelamento solicitado até a consulta confirmar a baixa bancária.
 7. Para notas, confira o pedido, o CNPJ da loja e os dados fiscais com o responsável da empresa.
 8. A integração Forecast Fiscal disponível nesta versão está em homologação. A emissão em produção permanece bloqueada.
 9. XML e DANFE de homologação ficam identificados como sem valor fiscal e separados da nota operacional.
@@ -260,6 +264,8 @@ Cuidados:
 - A contabilização automática só começa depois de configurar e autorizar a loja. Ela gera saídas na conta escolhida, em Despesas Financeiras no DRE, sem reduzir o valor recebido do cliente. A instalação da fase282 não cria despesas. Confira os lançamentos anteriores antes de ativar o período retroativo.
 - O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha.
 - Cancelar boleto envia um pedido de baixa ao Sicredi; não cancela a venda nem quita a conta a receber. Boletos liquidados, já baixados ou com solicitação pendente não permitem novo cancelamento. Se o banco ainda não confirmar a baixa, consulte a situação e confira com o Sicredi antes de qualquer nova cobrança.
+- Boletos de pedidos cancelados ou com títulos ajustados por devolução mostram aviso e motivo. Solicite a baixa dos boletos anteriores e aguarde a confirmação antes de emitir outra cobrança do saldo. O sistema também verifica boletos de títulos anteriores quando há mais de uma devolução parcial. Boleto CNAB exige a rotina de baixa do banco/remessa; não é baixado pela ação da API.
+- Se o banco informar pagamento depois do ajuste do pedido, o boleto mostra o recebimento bancário e um aviso para conciliação. O título cancelado não é reaberto automaticamente nem se cria uma entrada de caixa sem tratamento financeiro.
 - Reconsultar a API não duplica despesas. Tarifas manuais conhecidas com data, valor, conta e categoria correspondentes podem ser vinculadas sem novo lançamento. Uma saída avulsa semelhante, divergência no retorno, conta/categoria inativa, responsável sem acesso ou estorno exige conferência. Não há correção ou relançamento automático de movimentos estornados.
 - A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
 

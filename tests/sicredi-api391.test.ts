@@ -42,6 +42,8 @@ const id = "00000000-0000-4000-8000-000000000007",
   barcode = "748" + "1".repeat(41),
   date = "2026-11-30";
 type Options = {
+  papel?: string;
+  negarBaixa?: boolean;
   sandbox?: boolean;
   legacyCounter?: boolean;
   markerFailed?: boolean;
@@ -97,7 +99,9 @@ function backend(o: Options = {}) {
     let out: unknown = [];
     if (p === "/auth/v1/user") out = { id };
     else if (p.endsWith("/profiles")) out = [{ ativo: true }];
-    else if (p.endsWith("/user_roles")) out = [{ role: "financeiro" }];
+    else if (p.endsWith("/user_roles")) out = [{ role: o.papel ?? "financeiro" }];
+    else if (p.endsWith("/autorizar_baixa_boleto_285") && o.negarBaixa)
+      return new Response("{}", { status: 403 });
     else if (p.endsWith("/consumir_rate_limit")) out = true;
     else if (p.endsWith("/cobranca_centros"))
       out = [
@@ -145,6 +149,7 @@ function backend(o: Options = {}) {
         {
           id,
           banco: "sicredi",
+          centro_id: id,
           nosso_numero: o.missingNosso ? null : "262000020",
           linha_digitavel: o.invalidLine ? "" : line,
           valor: 100,
@@ -489,9 +494,15 @@ test("registro limita nome do pagador a40 caracteres sem alterar a razão social
 });
 
 test("cancelamento envia pedido de baixa e preserva registrado até confirmação bancária", async () => {
-  const calls = backend();
+  const calls = backend({ papel: "admin" });
   expect(
-    await sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+    await sicrediBaixarBoleto({
+      data: {
+        boletoId: id,
+        accessToken: "fixture-user",
+        motivo: "Pedido cancelado pelo administrador",
+      },
+    }),
   ).toEqual({ ok: true, solicitado: true });
   expect(calls.filter((c) => c.path.endsWith("/baixa"))).toHaveLength(1);
   expect(calls.find((c) => c.path.endsWith("/baixa"))?.method).toBe("PATCH");
@@ -512,19 +523,55 @@ test("cancelamento bloqueia boleto liquidado, baixado, pendente ou com solicita�
     { statusLocal: "pendente" },
     { cancelamentoPendente: true },
   ]) {
-    const calls = backend(option);
+    const calls = backend({ ...option, papel: "admin" });
     await expect(
-      sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+      sicrediBaixarBoleto({
+        data: {
+          boletoId: id,
+          accessToken: "fixture-user",
+          motivo: "Pedido cancelado pelo administrador",
+        },
+      }),
     ).rejects.toThrow();
     expect(calls.some((c) => c.path.endsWith("/baixa"))).toBe(false);
   }
 });
 test("recusa do banco não marca cancelamento ou baixa local", async () => {
-  const calls = backend({ cancelStatus: 422 });
+  const calls = backend({ cancelStatus: 422, papel: "admin" });
   await expect(
-    sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user" } }),
+    sicrediBaixarBoleto({
+      data: {
+        boletoId: id,
+        accessToken: "fixture-user",
+        motivo: "Pedido cancelado pelo administrador",
+      },
+    }),
   ).rejects.toThrow("recusado");
   expect(calls.some((c) => c.path.endsWith("/sicredi_registrar_pedido_baixa_281"))).toBe(false);
+});
+test("baixa exige administrador, motivo e autorização antes de enviar ao banco", async () => {
+  for (const option of [
+    { papel: "financeiro" },
+    { papel: "gestor" },
+    { papel: "admin", negarBaixa: true },
+  ]) {
+    const calls = backend(option);
+    await expect(
+      sicrediBaixarBoleto({
+        data: {
+          boletoId: id,
+          accessToken: "fixture-user",
+          motivo: "Pedido cancelado pelo administrador",
+        },
+      }),
+    ).rejects.toThrow();
+    expect(calls.some((c) => c.path.endsWith("/baixa"))).toBe(false);
+  }
+  const calls = backend({ papel: "admin" });
+  await expect(
+    sicrediBaixarBoleto({ data: { boletoId: id, accessToken: "fixture-user", motivo: "curto" } }),
+  ).rejects.toThrow("motivo");
+  expect(calls.some((c) => c.path.endsWith("/baixa"))).toBe(false);
 });
 test("consulta preserva pedido em andamento e só registra baixado quando o banco confirmar", async () => {
   for (const confirmado of [false, true]) {

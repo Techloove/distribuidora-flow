@@ -8,6 +8,8 @@ import { EmitirBoletosPedido, EmitirBoletoTitulo } from "@/components/emitir-bol
 import { ConfirmarNossoNumero } from "@/components/confirmar-nosso-numero";
 import { AlterarVencimentoBoleto } from "@/components/alterar-vencimento-boleto";
 import { BoletoPix } from "@/components/boleto-pix";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -78,6 +80,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [cancelarBoleto, setCancelarBoleto] = useState<Row | null>(null);
+  const [motivoBaixa, setMotivoBaixa] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
@@ -104,7 +107,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
       for (let offset = 0; ; offset += 500) {
         let query = client!
           .from("boletos")
-          .select("*")
+          .select("*,pedidos(status)")
           .order("vencimento", { ascending: false })
           .order("id");
         if (centro) query = query.eq("centro_id", centro);
@@ -281,6 +284,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
       await baixarFn({
         data: {
           boletoId: String(b["id"]),
+          motivo: motivoBaixa,
           ...(session?.access_token ? { accessToken: session.access_token } : {}),
         },
       });
@@ -288,6 +292,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     onSuccess: () => {
       toast.success("Cancelamento solicitado ao Sicredi. A consulta confirmará a baixa.");
       setCancelarBoleto(null);
+      setMotivoBaixa("");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -335,11 +340,26 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
               conta a receber.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Label htmlFor="motivo-baixa-boleto">Motivo obrigatório · administrador</Label>
+          <Textarea
+            id="motivo-baixa-boleto"
+            minLength={10}
+            maxLength={2000}
+            value={motivoBaixa}
+            disabled={baixar.isPending}
+            onChange={(e) => setMotivoBaixa(e.target.value)}
+            placeholder="Descreva o motivo da solicitação de baixa"
+          />
           <AlertDialogFooter>
             <AlertDialogCancel disabled={baixar.isPending}>Voltar</AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={baixar.isPending || !cancelarBoleto || !canFinance}
+              disabled={
+                baixar.isPending ||
+                !cancelarBoleto ||
+                !roles.includes("admin") ||
+                motivoBaixa.trim().length < 10
+              }
               onClick={() => {
                 if (cancelarBoleto) baixar.mutate(cancelarBoleto);
               }}
@@ -652,6 +672,30 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                             )}
                           </TableCell>
                           <TableCell>
+                            {!!b["pagamento_apos_ajuste_285"] && (
+                              <p
+                                role="alert"
+                                className="mb-2 rounded-md bg-destructive/10 p-2 text-xs text-destructive"
+                              >
+                                Pagamento recebido após o ajuste do pedido. Confira a conciliação
+                                financeira; o título cancelado não foi reaberto automaticamente.
+                              </p>
+                            )}
+                            {(b["ajuste_pedido_motivo_285"] ||
+                              (b["pedidos"] as Row | null)?.["status"] === "cancelado") && (
+                              <p className="mb-2 rounded-md bg-amber-50 p-2 text-xs text-amber-950">
+                                {b["ajuste_pedido_tipo_285"] === "cancelamento_pedido" ||
+                                (b["pedidos"] as Row | null)?.["status"] === "cancelado"
+                                  ? "Pedido cancelado."
+                                  : "Pedido com devolução e título ajustado."}{" "}
+                                {String(
+                                  b["ajuste_pedido_motivo_285"] ?? "Confira o histórico do pedido.",
+                                )}{" "}
+                                {st === "registrado"
+                                  ? "Administrador: solicitar baixa com motivo e aguardar confirmação bancária."
+                                  : "Confira a situação bancária abaixo."}
+                              </p>
+                            )}
                             <span className="inline-block rounded-full bg-muted px-2 py-1 text-xs font-medium">
                               {cancelamentoBoletoPendente(b)
                                 ? "Cancelamento solicitado"
@@ -764,7 +808,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   {canFinance &&
                                     b["banco"] === "sicredi" &&
                                     b["canal"] === "api" &&
-                                    st === "registrado" && (
+                                    st === "registrado" &&
+                                    roles.includes("admin") && (
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -774,7 +819,12 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                           baixar.isPending ||
                                           cancelamentoBoletoPendente(b)
                                         }
-                                        onClick={() => setCancelarBoleto(b)}
+                                        onClick={() => {
+                                          setMotivoBaixa(
+                                            String(b["ajuste_pedido_motivo_285"] ?? ""),
+                                          );
+                                          setCancelarBoleto(b);
+                                        }}
                                       >
                                         Cancelar boleto
                                       </Button>

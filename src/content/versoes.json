@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.0",
+    "data": "2026-10-29",
+    "titulo": "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo",
+    "novidades": [
+      "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo"
+    ]
+  },
+  {
     "versao": "1.13.0",
     "data": "2026-10-28",
     "titulo": "Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial",

@@ -11,13 +11,23 @@ import { documentoFiscal } from "./sicredi-cnab";
 import { validarNovoVencimento, vencimentoDoBanco } from "./sicredi-vencimento";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchWithTimeout } from "./fetch-timeout";
-import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+import {
+  enforceRateLimit,
+  requestAccessToken,
+  requireServerAuth,
+  type ServerRole,
+} from "./server-auth";
 
 const SICREDI_ROLES = ["admin", "gestor", "financeiro"] as const;
 
-async function requireSicrediAccess(action: string, limit: number, explicitAccessToken?: string) {
+async function requireSicrediAccess(
+  action: string,
+  limit: number,
+  explicitAccessToken?: string,
+  allowedRoles: readonly ServerRole[] = SICREDI_ROLES,
+) {
   const accessToken = String(explicitAccessToken ?? "").trim() || requestAccessToken();
-  const user = await requireServerAuth(accessToken, SICREDI_ROLES);
+  const user = await requireServerAuth(accessToken, allowedRoles);
   await enforceRateLimit(accessToken, action, limit, 60);
   if (!accessToken) throw new Error("Sessão não informada. Entre novamente.");
   return { user, accessToken };
@@ -667,13 +677,17 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
 
 /** Solicita a baixa (cancelamento) do boleto. */
 export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .inputValidator((data: { boletoId: string; accessToken?: string; motivo: string }) => data)
   .handler(async ({ data }) => {
     const { user, accessToken } = await requireSicrediAccess(
       "sicredi_baixar_boleto",
       10,
       data.accessToken,
+      ["admin"],
     );
+    const motivo = typeof data.motivo === "string" ? data.motivo.trim() : "";
+    if (motivo.length < 10 || motivo.length > 2000)
+      throw new Error("Descreva o motivo da baixa com 10 a 2000 caracteres.");
     const boleto = await carregarBoleto(accessToken, data.boletoId);
     if (boleto["canal"] !== "api" || boleto["status"] !== "registrado")
       throw new Error(
@@ -684,7 +698,24 @@ export const sicrediBaixarBoleto = createServerFn({ method: "POST" })
         "Cancelamento já solicitado. Consulte a situação no Sicredi antes de tentar novamente.",
       );
     const nossoNumero = String(boleto["nosso_numero"]);
-    const c = await conf();
+    const url = process.env["EXT_SUPABASE_URL"]?.replace(/\/$/, "");
+    const anon = process.env["EXT_SUPABASE_ANON_KEY"];
+    if (!url || !anon) throw new Error("Configuração do Supabase indisponível.");
+    const autorizacao = await fetchWithTimeout(`${url}/rest/v1/rpc/autorizar_baixa_boleto_285`, {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        apikey: anon,
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ _boleto: data.boletoId, _motivo: motivo }),
+    });
+    if (!autorizacao.ok)
+      throw new Error(
+        "Baixa não autorizada. Confira administrador, motivo e situação atual do boleto.",
+      );
+    const c = await conf(String(boleto["centro_id"]));
     conferirConvenio(boleto, c);
     const tk = await token(c);
     const res = await fetchWithTimeout(

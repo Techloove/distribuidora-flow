@@ -1,10 +1,11 @@
 import { ReferenciaRegistro } from "@/components/referencia-registro";
+import { idReferencia } from "@/lib/referencias-registros";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { TrocaDevolucao } from "@/components/rotinas-distribuidora";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -24,6 +25,9 @@ import {
 import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/devolucoes")({
+  validateSearch: (search: Record<string, unknown>): { pedido?: string | undefined } => ({
+    pedido: idReferencia(search["pedido"]),
+  }),
   head: () => ({
     meta: [
       { title: "Devoluções de venda — ERP Distribuidora" },
@@ -47,6 +51,7 @@ export const Route = createFileRoute("/_app/devolucoes")({
 type Row = Record<string, unknown>;
 
 function DevolucoesPage() {
+  const { pedido: pedidoReferencia } = Route.useSearch();
   const { client, canManage: gestao } = useSupabase();
   const permissoes = usePermissoesRotinas();
   const canManage = gestao && permissoes.pode("devolucao_operar");
@@ -59,6 +64,31 @@ function DevolucoesPage() {
     data_devolucao: new Date().toISOString().slice(0, 10),
     motivo: "",
   });
+  const referenciaAplicada = useRef("");
+  const origem = useQuery({
+    queryKey: ["devolucao-origem", pedidoReferencia],
+    enabled: !!client && !!pedidoReferencia,
+    queryFn: async () => {
+      const r = await client!
+        .from("pedidos")
+        .select("id,cliente_id,centro_id")
+        .eq("id", pedidoReferencia!)
+        .single();
+      if (r.error) throw new Error("Pedido indisponível para devolução.");
+      return r.data;
+    },
+  });
+  useEffect(() => {
+    if (origem.data && pedidoReferencia && referenciaAplicada.current !== pedidoReferencia) {
+      referenciaAplicada.current = pedidoReferencia;
+      setHead((f) => ({
+        ...f,
+        pedido_id: pedidoReferencia,
+        cliente_id: String(origem.data.cliente_id),
+        centro_id: String(origem.data.centro_id ?? ""),
+      }));
+    }
+  }, [origem.data, pedidoReferencia]);
   const [item, setItem] = useState({
     produto_id: "",
     quantidade: "1",
@@ -112,7 +142,20 @@ function DevolucoesPage() {
         .from("pedidos")
         .select("id, numero, total_liquido")
         .eq("cliente_id", head.cliente_id)
-        .in("status", ["confirmado", "faturado"])
+        .in("status", [
+          "confirmado",
+          "separacao",
+          "separado",
+          "conferido",
+          "faturado",
+          "nf_emitida",
+          "em_carga",
+          "em_rota",
+          "entregue",
+          "parcial",
+          "nao_entregue",
+          "devolvido",
+        ])
         .order("numero", { ascending: false });
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
