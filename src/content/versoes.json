@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.18.0",
+    "data": "2026-10-29",
+    "titulo": "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas",
+    "novidades": [
+      "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas"
+    ]
+  },
+  {
     "versao": "1.17.3",
     "data": "2026-10-29",
     "titulo": "Restaurar clientes e Cadastro unificado em lista com colunas",

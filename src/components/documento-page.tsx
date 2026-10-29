@@ -1,3 +1,4 @@
+import { ReabrirPedidoDigitacao } from "@/components/reabrir-pedido-digitacao";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesCancelamentoPedido } from "@/components/acoes-cancelamento-pedido";
 import { ObservacoesPedido } from "@/components/observacoes-pedido";
@@ -429,11 +430,16 @@ export function DocumentoPage({
     config.table === "pedidos" ? (catalogoPedido.data ?? []) : (produtos.data ?? []);
 
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
+  const reabertoSomenteAdmin =
+    config.table === "pedidos" &&
+    Number(doc?.["ciclo_reabertura_289"] ?? 0) > 0 &&
+    !roles.includes("admin");
   const propostaEditavel =
-    !ehOrcamento ||
-    (doc != null &&
-      statusVisivelPedido(doc) === "orcamento" &&
-      permissoes.pode("pedidos_orcamentos"));
+    !reabertoSomenteAdmin &&
+    (!ehOrcamento ||
+      (doc != null &&
+        statusVisivelPedido(doc) === "orcamento" &&
+        permissoes.pode("pedidos_orcamentos")));
 
   /** Cliente em foco: o do diálogo de novo pedido ou o do documento aberto. */
   const clienteFoco =
@@ -1310,6 +1316,13 @@ export function DocumentoPage({
             centroId={String(doc["centro_id"] ?? "")}
           />
         ) : null}
+        {config.table === "pedidos" && !ehOrcamento && (
+          <ReabrirPedidoDigitacao
+            key={`reabrir-${String(doc["id"])}`}
+            pedido={String(doc["id"])}
+            status={String(doc["status"])}
+          />
+        )}
         {config.table === "pedidos" && !ehOrcamento && (
           <AcoesCancelamentoPedido
             key={String(doc["id"])}
@@ -2244,6 +2257,13 @@ export function DocumentoPage({
 
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Forma de pagamento</h3>
+              {Number(doc["ciclo_reabertura_289"] ?? 0) > 0 && (
+                <p className="mt-2 rounded border p-2 text-sm">
+                  Pedido reaberto: somente administrador altera a forma de pagamento. Salve a forma
+                  de pagamento e confirme novamente para gerar as novas parcelas; os títulos e
+                  boletos antigos permanecem encerrados.
+                </p>
+              )}
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Define as parcelas, os vencimentos e o acréscimo ou desconto aplicado no total.
               </p>
