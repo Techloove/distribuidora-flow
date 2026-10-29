@@ -399,3 +399,66 @@ body {
     text-overflow: clip;
   }
 }
+
+/* Cadastro unificado e Produtos: os campos escolhidos cabem no próprio registro,
+   mesmo quando há muitas colunas, sem exigir rolagem horizontal. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].fluid-cards,
+  table[data-readable-table].fluid-cards tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  table[data-readable-table].fluid-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  table[data-readable-table].fluid-cards tbody tr {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 16px 24px;
+    margin: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  table[data-readable-table].fluid-cards tbody td,
+  table[data-readable-table].fluid-cards tbody td[data-column-kind="name"] {
+    display: block;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: break-word;
+    overflow: visible;
+  }
+  table[data-readable-table].fluid-cards tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted-foreground);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  table[data-readable-table].fluid-cards tbody td > * {
+    max-width: 100%;
+  }
+  table[data-readable-table].fluid-cards tbody td input[type="number"] {
+    width: 100%;
+    min-width: 0;
+  }
+  table[data-readable-table].fluid-cards tbody td[data-label="Ações"] {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+  table[data-readable-table].fluid-cards tbody td[data-label="Ações"]::before {
+    display: none;
+  }
+}

@@ -1663,6 +1663,9 @@ export function DocumentoPage({
                     <th className="px-4 py-2 text-left font-medium">{config.dateLabel}</th>
                     <th className="px-4 py-2 text-left font-medium">Status</th>
                     <th className="px-4 py-2 text-right font-medium">Total</th>
+                    {config.table === "pedidos" && (
+                      <th className="no-print px-4 py-2 text-right font-medium">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -1720,6 +1723,15 @@ export function DocumentoPage({
                         <td data-label="Total" className="px-4 py-2.5 text-right font-semibold">
                           {brl(d["total_liquido"])}
                         </td>
+                        {config.table === "pedidos" && (
+                          <td
+                            data-label="Ações"
+                            className="no-print px-4 py-2.5 text-right"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <ImprimirPedidos pedidoIds={[String(d["id"])]} compact />
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

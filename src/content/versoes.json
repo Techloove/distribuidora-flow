@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.17.1",
+    "data": "2026-10-29",
+    "titulo": "Impressão direta dos pedidos e cadastros sem rolagem lateral",
+    "novidades": [
+      "Imprimir pedido ao lado do total, sem abrir seus detalhes.",
+      "Campos selecionados em Produtos e Cadastro unificado se reorganizam em blocos, sem rolagem lateral."
+    ]
+  },
+  {
     "versao": "1.17.0",
     "data": "2026-10-29",
     "titulo": "Colunas por usuário, leitura de produtos e impressão de boletos por cliente ou pedido",

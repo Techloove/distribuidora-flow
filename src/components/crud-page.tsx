@@ -756,11 +756,7 @@ export function CrudPage({
         ) : (
           <Table
             columnPreferences={false}
-            className={cn(
-              "mobile-cards",
-              table === "produtos" &&
-                "sm:w-max sm:min-w-full [&_th]:whitespace-nowrap sm:[&_td]:whitespace-nowrap sm:[&_td[data-label=Descrição]]:min-w-72 sm:[&_td[data-label=Descrição]]:max-w-96 sm:[&_td[data-label=Descrição]]:whitespace-normal sm:[&_td[data-label=Marca]]:min-w-36",
-            )}
+            className={cn("mobile-cards", ["produtos", "pessoas"].includes(table) && "fluid-cards")}
           >
             <TableHeader>
               <TableRow>
