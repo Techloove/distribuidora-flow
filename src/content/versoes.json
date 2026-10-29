@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.16.0",
+    "data": "2026-10-29",
+    "titulo": "Vínculos de loja dos clientes e leitura dos títulos financeiros",
+    "novidades": [
+      "Cadastro de clientes separa Sem loja, Uma loja e Compartilhado entre lojas, preservando os vínculos existentes.",
+      "Nova pendência e filtro de clientes sem loja; escolha do vínculo em Dados gerais no Cadastro unificado.",
+      "Clientes sem loja precisam ser regularizados para iniciar novas vendas, preservando pedidos e financeiros anteriores.",
+      "Títulos financeiros exibem valores e documentos inteiros, datas DD/MM/AAAA e ações secundárias em Opções."
+    ]
+  },
+  {
     "versao": "1.15.0",
     "data": "2026-10-29",
     "titulo": "Pendências de clientes e filtros por rota, representante, limite e loja",

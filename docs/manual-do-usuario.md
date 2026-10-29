@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.15.0 · 2026-10-29
+Versão 1.16.0 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -13,7 +13,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 3. Se esqueceu sua senha, preencha o e-mail na tela de entrada e clique Esqueci minha senha. Abra o link recebido no e-mail, defina uma nova senha e entre novamente. O link expira e deve ser solicitado novamente se já foi usado. Redefinir a senha não aprova um cadastro pendente.
 4. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
 5. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
-6. A Central de pendências tem contadores separados para Clientes sem rota, Clientes sem representante e Clientes sem limite de crédito. Um cliente pode aparecer em mais de uma categoria. Clique no contador e use Revisar para abrir seu cadastro ou Ver clientes no Cadastro unificado para abrir a lista já filtrada.
+6. A Central de pendências tem contadores separados para Clientes sem loja, Clientes sem rota, Clientes sem representante e Clientes sem limite de crédito. Um cliente pode aparecer em mais de uma categoria. Clique no contador e use Revisar para abrir seu cadastro ou Ver clientes no Cadastro unificado para abrir a lista já filtrada.
 7. No telefone, as listas principais de cadastros, boletos, contas, separação, cargas e relatórios usam cartões com o nome de cada informação. Botões longos podem ocupar mais de uma linha. Demonstrativos que dependem de colunas alinhadas, como a DRE, permitem deslizar a tabela para os lados sem arrastar a página toda.
 8. Use Mostrar filtros para abrir os campos no telefone e Recolher filtros para voltar aos dados. Recolher não limpa os valores; use Limpar para remover os filtros. No tablet e computador, os filtros continuam visíveis. O resumo do pedido acompanha a rolagem normal no telefone para não cobrir os itens.
 9. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
@@ -37,14 +37,15 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 
 1. Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.
 2. Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.
-3. Para consultar a distribuição dos clientes por loja, use Vínculo de loja do cliente: Com loja específica ou Compartilhado entre lojas (todos os centros). Use Loja específica do cliente para selecionar a loja pelo nome. Para comparar as lojas, selecione Todas as lojas no topo. No modelo atual, Centro de custo vazio significa Todos os centros; esse registro não é considerado automaticamente sem loja.
+3. Para consultar a distribuição dos clientes por loja, use Vínculo de loja do cliente: Sem loja, Com loja específica ou Compartilhado entre lojas. Use Loja específica do cliente para selecionar a loja pelo nome. Para comparar as lojas, selecione Todas as lojas no topo. Os clientes antigos de Todos os centros continuam compartilhados; somente a marcação explícita Sem loja gera a nova pendência.
 4. No Cadastro unificado, os filtros Rota do cliente, Representante do cliente e Limite de crédito do cliente permitem selecionar Sem ou Com cadastro. Combine os filtros para encontrar clientes com mais de uma pendência. Esses filtros excluem pessoas que não têm a função Cliente e respeitam a loja e a carteira permitidas. Sem limite considera valor não informado ou zero; não significa que um limite cadastrado foi consumido pelas compras. Apenas o administrador pode conceder ou alterar o limite.
-5. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
-6. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
-7. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
-8. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
-9. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
-10. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
+5. No Cadastro unificado, abra o cliente e a aba Dados gerais para escolher o Vínculo de loja do cliente. Escolha Sem loja para um cadastro ainda pendente, uma loja pelo nome, ou Compartilhado entre lojas para atender pelas duas lojas atuais. Salve a alteração. Cliente Sem loja precisa ter esse vínculo definido antes de iniciar ou confirmar novos pedidos; pedidos e financeiros anteriores não são apagados nem recategorizados. Administrador e gestor podem revisar o vínculo, conforme suas permissões. O representante continua cadastrando na loja permitida e não ganha acesso para mudar esse vínculo.
+6. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
+7. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
+8. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
+9. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
+10. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
+11. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
 
 Cuidados:
 
@@ -228,11 +229,12 @@ Cuidados:
 Acompanhe títulos, registre baixas e confira o caixa da loja.
 
 1. Escolha a loja e consulte Contas a receber ou Contas a pagar.
-2. Localize o título e confira cliente/fornecedor, vencimento, valor e o que já foi pago.
-3. Para registrar uma baixa, informe os dados exigidos, incluindo conta, valor e data, e confira o resultado.
-4. Acompanhe saldos em Caixa e bancos e concilie os movimentos com os documentos existentes.
-5. Use Dashboard financeiro, Fluxo de caixa, DRE e relatórios para acompanhar resultados e pendências.
-6. Registre os custos de rota no módulo correspondente para acompanhar a operação.
+2. A lista de títulos exibe Emissão e Vencimento em dia/mês/ano, documentos e valores sem partir os números. Receber ou Pagar continua visível em cada linha. Em Contas a receber, use Opções para Histórico, Pix, Renegociar, Boletos da parcela e Alterar vencimento, conforme as permissões e o estado do título. No telefone, os dados continuam em cartões; tabelas largas permitem rolagem interna.
+3. Localize o título e confira cliente/fornecedor, vencimento, valor e o que já foi pago.
+4. Para registrar uma baixa, informe os dados exigidos, incluindo conta, valor e data, e confira o resultado.
+5. Acompanhe saldos em Caixa e bancos e concilie os movimentos com os documentos existentes.
+6. Use Dashboard financeiro, Fluxo de caixa, DRE e relatórios para acompanhar resultados e pendências.
+7. Registre os custos de rota no módulo correspondente para acompanhar a operação.
 
 Cuidados:
 

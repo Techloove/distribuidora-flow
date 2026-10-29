@@ -22,7 +22,7 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
    create function usuario_ativo() returns boolean language sql security definer set search_path=public as $$select exists(select 1 from profiles where id=auth.uid() and ativo)$$;
    create function escopo_representante() returns boolean language sql security definer set search_path=public as $$select has_role(auth.uid(),'representante') and not has_role(auth.uid(),'admin')$$;
    create function meu_representante_id() returns uuid language sql security definer set search_path=public as $$select id from representantes where profile_id=auth.uid() limit 1$$;
-   create function usuario_pode_acessar_centro(c uuid) returns boolean language sql security definer set search_path=public as $$select usuario_ativo() and exists(select 1 from usuario_centros where user_id=auth.uid() and centro_id=c)$$;
+   create function usuario_pode_acessar_centro(c uuid) returns boolean language sql security definer set search_path=public as $$select usuario_ativo() and (c is null or exists(select 1 from usuario_centros where user_id=auth.uid() and centro_id=c))$$;
    create table pessoas(id uuid primary key default gen_random_uuid(),razao_social text not null,nome_fantasia text,tipo_pessoa text default 'PJ',cnpj_cpf text unique,inscricao_estadual text,email text,telefone text,
     logradouro text,numero text,complemento text,bairro text,cidade text,uf text,cep text,codigo_ibge text,observacoes text,centro_id uuid,rota_id uuid,
     is_cliente boolean default false,is_fornecedor boolean default false,is_representante boolean default false,is_usuario boolean default false,is_transportadora boolean default false,profile_id uuid,
@@ -60,6 +60,18 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     await db.exec(readFileSync("db/fase206_carteira_representante.sql", "utf8"));
     await db.exec(
       "create policy operacao_pedidos on pedidos for all to authenticated using(true) with check(true)",
+    );
+    await db.exec(readFileSync("db/fase200_cliente_todos_centros.sql", "utf8"));
+    await db.exec(
+      `insert into pessoas(id,razao_social,is_cliente,limite_credito) values('${id(103)}','Compartilhado legado',true,500)`,
+    );
+    const lojasMigration = readFileSync("db/fase287_cliente_vinculo_loja.sql", "utf8");
+    await db.exec(lojasMigration);
+    await db.exec(lojasMigration);
+    assert.equal(
+      (await db.query("select loja_pendente from pessoas where id=$1", [id(103)])).rows[0]
+        .loja_pendente,
+      false,
     );
     const migration = readFileSync("db/fase284_clientes_representante_credito_painel.sql", "utf8");
     await db.exec(migration);
@@ -241,6 +253,72 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     await assert.rejects(painel(), /não liberado/);
     await db.exec("reset role;set role anon");
     await assert.rejects(cadastrar(), /permission denied/);
+
+    await login(3);
+    await db.query("update pessoas set loja_pendente=true,centro_id=null where id=$1", [id(103)]);
+    const novoSemLoja = (await db.query("select * from clientes where pessoa_id=$1", [id(103)]))
+      .rows[0];
+    assert.equal(novoSemLoja.loja_pendente, true);
+    assert.equal(novoSemLoja.centro_id, null);
+    await assert.rejects(
+      db.query("insert into pedidos(cliente_id,centro_id,status) values($1,$2,'rascunho')", [
+        novoSemLoja.id,
+        id(10),
+      ]),
+      /Cliente sem loja/,
+    );
+    await assert.rejects(
+      db.query("update clientes set loja_pendente=false where id=$1", [novoSemLoja.id]),
+      /Cadastro unificado/,
+    );
+    await assert.rejects(
+      db.query("update pessoas set centro_id=$1 where id=$2", [id(10), id(103)]),
+      /sem loja/,
+    );
+    await db.query("update pessoas set loja_pendente=false,centro_id=$1 where id=$2", [
+      id(10),
+      id(103),
+    ]);
+    assert.equal(
+      (await db.query("select loja_pendente from clientes where id=$1", [novoSemLoja.id])).rows[0]
+        .loja_pendente,
+      false,
+    );
+    const pedidoTeste = (
+      await db.query(
+        "insert into pedidos(cliente_id,centro_id,status) values($1,$2,'rascunho') returning id",
+        [novoSemLoja.id, id(10)],
+      )
+    ).rows[0].id;
+    await db.query("update pessoas set loja_pendente=false,centro_id=null where id=$1", [id(103)]);
+    assert.equal(
+      (await db.query("select centro_id from clientes where id=$1", [novoSemLoja.id])).rows[0]
+        .centro_id,
+      null,
+    );
+    await db.query("update pessoas set loja_pendente=true where id=$1", [id(103)]);
+    await assert.rejects(
+      db.query("update pedidos set status='aprovado' where id=$1", [pedidoTeste]),
+      /Cliente sem loja/,
+    );
+    await db.query("update pedidos set status='cancelado' where id=$1", [pedidoTeste]);
+    await db.exec("reset role");
+    const entregue = (
+      await db.query(
+        "insert into pedidos(cliente_id,centro_id,status,tipo_documento) values($1,$2,'em_rota','orcamento') returning id",
+        [novoSemLoja.id, id(10)],
+      )
+    ).rows[0].id;
+    await db.query("update pedidos set tipo_documento='pedido',status='entregue' where id=$1", [
+      entregue,
+    ]);
+    await login(4);
+    await db.query("update pessoas set loja_pendente=false,centro_id=null where id=$1", [id(103)]);
+    await login(1);
+    await assert.rejects(
+      db.query("update pessoas set loja_pendente=true,centro_id=null where id=$1", [id(101)]),
+      /permissão/,
+    );
     console.log(
       "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, bloqueio transacional de pedidos, vendas mensais isoladas, revogações e reexecução preservadas.",
     );

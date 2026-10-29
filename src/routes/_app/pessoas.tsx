@@ -88,6 +88,13 @@ const fields: CrudField[] = [
     ],
   },
   { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true, hiddenInForm: true },
+  {
+    name: "loja_pendente",
+    label: "Cliente sem loja",
+    type: "checkbox",
+    hiddenInForm: true,
+    filter: false,
+  },
   { name: "email", label: "E-mail", type: "email", inTable: true },
   { name: "telefone", label: "Telefone" },
   { name: "whatsapp", label: "WhatsApp" },
@@ -97,6 +104,7 @@ const fields: CrudField[] = [
     type: "ref",
     inTable: true,
     ref: { table: "centros", labelField: "nome", emptyLabel: "Todos os centros" },
+    showWhen: (form) => !form["is_cliente"],
   },
   {
     name: "status",
@@ -289,6 +297,16 @@ function PessoasPage() {
   });
 
   const camposComFormas: CrudField[] = fields.map((f) => {
+    if (f.name === "centro_id")
+      return {
+        ...f,
+        renderValue: (r) =>
+          r["loja_pendente"] === true
+            ? "Sem loja"
+            : r["centro_id"]
+              ? (lojas.lista.find((l) => l.id === r["centro_id"])?.nome ?? "Loja específica")
+              : "Compartilhado entre lojas",
+      };
     if (f.name === "limite_credito" && !roles.includes("admin")) return { ...f, auto: true };
     if (f.name === "condicao_pagamento")
       return {
@@ -326,6 +344,7 @@ function PessoasPage() {
         <CrudPage
           key={pendencia ?? "todos"}
           readAll
+          defaultValues={{ loja_pendente: true }}
           decorate={decorarPendenciasClientes}
           initialFilters={filtroComercial ? { [filtroComercial.campo]: "sem" } : undefined}
           uppercase
@@ -341,6 +360,7 @@ function PessoasPage() {
               virtual: true,
               hiddenInForm: true,
               options: [
+                { value: "sem", label: "Sem loja" },
                 { value: "especifica", label: "Com loja específica" },
                 { value: "compartilhado", label: "Compartilhado entre lojas (todos os centros)" },
               ],
@@ -353,7 +373,7 @@ function PessoasPage() {
               hiddenInForm: true,
               options: lojas.lista.map((l) => ({ value: l.id, label: l.nome })),
             },
-            ...PENDENCIAS_COMERCIAIS_CLIENTE.map((p) => ({
+            ...PENDENCIAS_COMERCIAIS_CLIENTE.filter((p) => p.filtro !== "sem_loja").map((p) => ({
               name: p.campo,
               label: p.filtroLabel,
               type: "select" as const,
@@ -382,6 +402,7 @@ function PessoasPage() {
             {
               id: "geral",
               label: "Dados gerais",
+              extra: true,
               fields: [
                 "razao_social",
                 "nome_fantasia",
@@ -447,6 +468,46 @@ function PessoasPage() {
           extraFormTop
           extraForm={({ form, editing, patch, openRow, sectionId }) => (
             <div className="space-y-4">
+              {sectionId === "geral" && form["is_cliente"] && (
+                <div className="space-y-2 rounded-lg border p-3">
+                  <label htmlFor="vinculo-loja-cliente" className="text-sm font-medium">
+                    Vínculo de loja do cliente
+                  </label>
+                  <select
+                    id="vinculo-loja-cliente"
+                    className="h-11 w-full rounded-md border bg-background px-3 text-sm"
+                    disabled={representante || lojas.isLoading || !!lojas.error}
+                    value={
+                      form["loja_pendente"] === true ? "sem" : String(form["centro_id"] || "todas")
+                    }
+                    onChange={(e) =>
+                      patch({
+                        loja_pendente: e.target.value === "sem",
+                        centro_id: ["sem", "todas"].includes(e.target.value) ? "" : e.target.value,
+                      })
+                    }
+                  >
+                    <option value="sem">Sem loja</option>
+                    <option value="todas">Compartilhado entre lojas (todas as lojas)</option>
+                    <optgroup label="Uma loja">
+                      {lojas.lista.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.nome}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Sem loja indica cadastro pendente. Defina uma loja ou o compartilhamento antes
+                    de iniciar novos pedidos. O histórico existente é preservado.
+                  </p>
+                  {lojas.error && (
+                    <p role="alert" className="text-sm text-destructive">
+                      Não foi possível carregar as lojas permitidas.
+                    </p>
+                  )}
+                </div>
+              )}
               {sectionId === "identificacao" && (
                 <ConsultaCadastral
                   form={form}

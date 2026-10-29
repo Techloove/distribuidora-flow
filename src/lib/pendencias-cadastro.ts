@@ -20,6 +20,7 @@ export function camposFaltantesCliente(r: Cadastro): string[] {
     icms.includes("NAO CONTRIBUINTE") ||
     ["ISENTO", "ISENTA"].includes(normal(fiscal["situacao_inscricao_estadual"]));
   if (!pf && !isento && !texto(r["inscricao_estadual"])) faltas.push("Inscrição estadual");
+  if (r["loja_pendente"] === true) faltas.push("Loja");
   if (!texto(r["rota_id"])) faltas.push("Rota");
   if (!texto(r["representante_id"])) faltas.push("Representante");
   const endereco = [
@@ -35,6 +36,16 @@ export function camposFaltantesCliente(r: Cadastro): string[] {
 }
 
 export const PENDENCIAS_COMERCIAIS_CLIENTE = [
+  {
+    id: "cliente-sem-loja",
+    filtro: "sem_loja",
+    campo: "_cadastro_loja",
+    label: "Clientes sem loja",
+    filtroLabel: "Loja do cliente",
+    sem: "Sem loja",
+    com: "Com loja",
+    detalhe: "Defina uma loja ou o compartilhamento entre lojas no Cadastro unificado.",
+  },
   {
     id: "cliente-sem-rota",
     filtro: "sem_rota",
@@ -75,6 +86,7 @@ export function filtroPendenciaCliente(value: unknown): FiltroPendenciaCliente |
 export function pendenciasComerciaisCliente(r: Cadastro) {
   const limite = Number(r["limite_credito"]);
   return {
+    sem_loja: r["loja_pendente"] === true,
     sem_rota: !texto(r["rota_id"]),
     sem_representante: !texto(r["representante_id"]),
     sem_limite: !Number.isFinite(limite) || limite <= 0,
@@ -86,15 +98,21 @@ export function decorarPendenciasClientes(rows: Cadastro[]) {
     const faltas = pendenciasComerciaisCliente(r);
     return {
       ...r,
-      _cadastro_loja:
-        r["is_cliente"] === true ? (texto(r["centro_id"]) ? "especifica" : "compartilhado") : "",
-      _cadastro_loja_id: r["is_cliente"] === true ? texto(r["centro_id"]) : "",
       ...Object.fromEntries(
         PENDENCIAS_COMERCIAIS_CLIENTE.map((p) => [
           p.campo,
           r["is_cliente"] === true ? (faltas[p.filtro] ? "sem" : "com") : "",
         ]),
       ),
+      _cadastro_loja:
+        r["is_cliente"] === true
+          ? r["loja_pendente"] === true
+            ? "sem"
+            : texto(r["centro_id"])
+              ? "especifica"
+              : "compartilhado"
+          : "",
+      _cadastro_loja_id: r["is_cliente"] === true ? texto(r["centro_id"]) : "",
     };
   });
 }

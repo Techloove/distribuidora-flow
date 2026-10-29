@@ -82,6 +82,7 @@ test("situação fiscal atual do cadastro unificado prevalece sobre a cópia ant
 test("pendências comerciais usam cadastro, incluindo limite vazio/zero, e não saldo utilizado", () => {
   for (const limite_credito of [null, undefined, "", 0, "0", "0.00"])
     expect(pendenciasComerciaisCliente({ ...completo, limite_credito })).toEqual({
+      sem_loja: false,
       sem_rota: false,
       sem_representante: false,
       sem_limite: true,
@@ -94,7 +95,7 @@ test("pendências comerciais usam cadastro, incluindo limite vazio/zero, e não 
       limite_credito: 500,
       saldo_disponivel: 0,
     }),
-  ).toEqual({ sem_rota: true, sem_representante: true, sem_limite: false });
+  ).toEqual({ sem_loja: false, sem_rota: true, sem_representante: true, sem_limite: false });
   expect(pendenciasComerciaisCliente({ ...completo, limite_credito: "0.01" }).sem_limite).toBe(
     false,
   );
@@ -132,4 +133,16 @@ test("filtros por loja distinguem loja específica de cadastro compartilhado", (
   expect(rows[0]).toMatchObject({ _cadastro_loja: "especifica", _cadastro_loja_id: "loja-a" });
   expect(rows[1]).toMatchObject({ _cadastro_loja: "compartilhado", _cadastro_loja_id: "" });
   expect(rows[2]).toMatchObject({ _cadastro_loja: "", _cadastro_loja_id: "" });
+});
+
+test("sem loja é explícito e não confunde clientes legados compartilhados", () => {
+  const rows = decorarPendenciasClientes([
+    { is_cliente: true, centro_id: null, loja_pendente: true },
+    { is_cliente: true, centro_id: null },
+    { is_cliente: true, centro_id: "loja-a", loja_pendente: false },
+  ]);
+  expect(rows.map((r) => r._cadastro_loja)).toEqual(["sem", "compartilhado", "especifica"]);
+  expect(pendenciasComerciaisCliente({ centro_id: null }).sem_loja).toBe(false);
+  expect(pendenciasComerciaisCliente({ centro_id: null, loja_pendente: true }).sem_loja).toBe(true);
+  expect(filtroPendenciaCliente("sem_loja")).toBe("sem_loja");
 });

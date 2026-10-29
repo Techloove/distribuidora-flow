@@ -172,7 +172,7 @@ export function usePendencias() {
           let consulta = client!
             .from("clientes")
             .select(
-              "id,pessoa_id,codigo,razao_social,tipo_pessoa,cnpj_cpf,inscricao_estadual,indicador_contribuinte_icms,situacao_inscricao_estadual,rota_id,representante_id,limite_credito,logradouro,numero,bairro,cidade,uf,cep,centro_id,pessoa_fiscal:pessoas(indicador_contribuinte_icms,situacao_inscricao_estadual)",
+              "id,pessoa_id,codigo,razao_social,tipo_pessoa,cnpj_cpf,inscricao_estadual,indicador_contribuinte_icms,situacao_inscricao_estadual,rota_id,representante_id,limite_credito,loja_pendente,logradouro,numero,bairro,cidade,uf,cep,centro_id,pessoa_fiscal:pessoas(indicador_contribuinte_icms,situacao_inscricao_estadual)",
             );
           if (centro) consulta = consulta.or(`centro_id.eq.${centro},centro_id.is.null`);
           return consulta.order("razao_social").order("id").range(inicio, fim);

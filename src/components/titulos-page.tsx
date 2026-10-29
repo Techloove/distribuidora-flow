@@ -1,3 +1,5 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { dataBr } from "@/lib/formatacao";
 import { ContextoReferencia } from "@/components/contexto-referencia";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { correspondeReferencia, type BuscaReferencias } from "@/lib/referencias-registros";
@@ -578,19 +580,20 @@ export function TitulosPage({
             Nenhum título neste filtro.
           </p>
         ) : (
-          <Table className="mobile-cards">
+          <Table className="mobile-cards sm:min-w-[1100px] print:min-w-0 print:text-[10px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="no-print w-8" />
-                <TableHead>Documento</TableHead>
-                <TableHead>{config.partnerLabel}</TableHead>
-                <TableHead>Parc.</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Pago</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead>Status</TableHead>
-                {isReceber ? <TableHead>Boleto</TableHead> : null}
+                <TableHead className="whitespace-nowrap">Documento</TableHead>
+                <TableHead className="whitespace-nowrap">{config.partnerLabel}</TableHead>
+                <TableHead className="whitespace-nowrap">Parc.</TableHead>
+                <TableHead className="whitespace-nowrap">Emissão</TableHead>
+                <TableHead className="whitespace-nowrap">Vencimento</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Valor</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Pago</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Saldo</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                {isReceber ? <TableHead className="whitespace-nowrap">Boleto</TableHead> : null}
                 <TableHead className="no-print text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
@@ -615,12 +618,15 @@ export function TitulosPage({
                       }
                     />
                   </TableCell>
-                  <TableCell data-label="Documento">
+                  <TableCell data-label="Documento" className="whitespace-nowrap font-medium">
                     <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
                       {String(r["documento"] ?? "—")}
                     </ReferenciaRegistro>
                   </TableCell>
-                  <TableCell data-label="Cliente / fornecedor">
+                  <TableCell
+                    data-label="Cliente / fornecedor"
+                    className="min-w-48 max-w-xs break-words"
+                  >
                     <ReferenciaRegistro
                       tipo={isReceber ? "cliente" : "fornecedor"}
                       id={r[config.partnerKey]}
@@ -628,22 +634,41 @@ export function TitulosPage({
                       {partnerName(r[config.partnerKey])}
                     </ReferenciaRegistro>
                   </TableCell>
-                  <TableCell data-label="Parcela">{String(r["parcela"])}</TableCell>
-                  <TableCell data-label="Vencimento">{String(r["vencimento"])}</TableCell>
-                  <TableCell data-label="Valor" className="text-right">
+                  <TableCell data-label="Parcela" className="whitespace-nowrap">
+                    {String(r["parcela"])}
+                  </TableCell>
+                  <TableCell data-label="Emissão" className="whitespace-nowrap tabular-nums">
+                    {dataBr(r["data_emissao"])}
+                  </TableCell>
+                  <TableCell data-label="Vencimento" className="whitespace-nowrap tabular-nums">
+                    {dataBr(r["vencimento"])}
+                  </TableCell>
+                  <TableCell
+                    data-label="Valor"
+                    className="whitespace-nowrap text-right tabular-nums sm:min-w-24 print:min-w-0"
+                  >
                     {brl(r["valor"])}
                   </TableCell>
-                  <TableCell data-label="Pago" className="text-right">
+                  <TableCell
+                    data-label="Pago"
+                    className="whitespace-nowrap text-right tabular-nums sm:min-w-24 print:min-w-0"
+                  >
                     {brl(r["valor_pago"])}
                   </TableCell>
-                  <TableCell data-label="Saldo" className="text-right">
+                  <TableCell
+                    data-label="Saldo"
+                    className="whitespace-nowrap text-right tabular-nums sm:min-w-24 print:min-w-0"
+                  >
                     {brl(r["saldo"])}
                   </TableCell>
-                  <TableCell data-label="Situação">
+                  <TableCell
+                    data-label="Situação"
+                    className="whitespace-nowrap [&_span]:whitespace-nowrap"
+                  >
                     <StatusBadge value={r["status_efetivo"] ?? r["status"]} />
                   </TableCell>
                   {isReceber ? (
-                    <TableCell data-label="Boleto">
+                    <TableCell data-label="Boleto" className="min-w-28 whitespace-nowrap">
                       <span
                         className={
                           boletoLabel(r) === "Sem boleto"
@@ -661,49 +686,72 @@ export function TitulosPage({
                         </ReferenciaRegistro>
                       </span>
                       {boletoPorConta.get(String(r["id"]))?.["vencimento_solicitado"] ? (
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block max-w-40 whitespace-normal text-xs text-muted-foreground">
                           Vencimento solicitado:{" "}
-                          {String(boletoPorConta.get(String(r["id"]))!["vencimento_solicitado"])} ·
+                          {dataBr(boletoPorConta.get(String(r["id"]))!["vencimento_solicitado"])} ·
                           aguardando Sicredi
                         </span>
                       ) : null}
                       {boletoPorConta.get(String(r["id"]))?.["nosso_numero"] ? (
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block whitespace-nowrap text-xs text-muted-foreground">
                           {String(boletoPorConta.get(String(r["id"]))!["nosso_numero"])}
                         </span>
                       ) : null}
                     </TableCell>
                   ) : null}
                   <TableCell data-label="Ações" className="no-print text-right">
-                    {isReceber && <HistoricoTitulo titulo={r} />}
-                    {isReceber && <AcoesFinanceirasTitulo titulo={r} />}
-                    {isReceber && canFinance ? (
-                      <EmitirBoletoTitulo
-                        contaId={String(r["id"])}
-                        centroId={String(r["centro_id"] ?? "")}
-                      />
-                    ) : null}
-                    {isReceber &&
-                    canFinance &&
-                    boletoPorConta.get(String(r["id"]))?.["status"] === "registrado" ? (
-                      <AlterarVencimentoBoleto boleto={boletoPorConta.get(String(r["id"]))!} />
-                    ) : null}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        !canFinance || r["status"] === "pago" || r["status"] === "cancelado"
-                      }
-                      onClick={() => {
-                        setTarget(r);
-                        setValor(String(Number(r["saldo"] ?? 0)));
-                        setJuros("");
-                        setMulta("");
-                        setDescontoBaixa("");
-                      }}
-                    >
-                      {config.baixaLabel}
-                    </Button>
+                    <div className="ml-auto flex w-28 max-w-full flex-col gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        disabled={
+                          !canFinance || r["status"] === "pago" || r["status"] === "cancelado"
+                        }
+                        onClick={() => {
+                          setTarget(r);
+                          setValor(String(Number(r["saldo"] ?? 0)));
+                          setJuros("");
+                          setMulta("");
+                          setDescontoBaixa("");
+                        }}
+                      >
+                        {config.baixaLabel}
+                      </Button>
+                      {isReceber && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button size="sm" variant="outline" className="w-full">
+                              Opções
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            forceMount
+                            align="end"
+                            aria-label="Opções do título"
+                            className="no-print w-64 p-3 data-[state=closed]:hidden"
+                          >
+                            <div className="flex flex-col gap-2 [&_button]:h-auto [&_button]:min-h-9 [&_button]:w-full [&_button]:whitespace-normal">
+                              {isReceber && <HistoricoTitulo titulo={r} />}
+                              {isReceber && <AcoesFinanceirasTitulo titulo={r} />}
+                              {isReceber && canFinance ? (
+                                <EmitirBoletoTitulo
+                                  contaId={String(r["id"])}
+                                  centroId={String(r["centro_id"] ?? "")}
+                                />
+                              ) : null}
+                              {isReceber &&
+                              canFinance &&
+                              boletoPorConta.get(String(r["id"]))?.["status"] === "registrado" ? (
+                                <AlterarVencimentoBoleto
+                                  boleto={boletoPorConta.get(String(r["id"]))!}
+                                />
+                              ) : null}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

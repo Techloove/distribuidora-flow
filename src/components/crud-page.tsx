@@ -63,13 +63,14 @@ export type CrudField = {
   after?: (ctx: {
     form: Record<string, string | boolean>;
     editing: Record<string, unknown> | null;
-    patch: (values: Record<string, string>) => void;
+    patch: (values: Record<string, string | boolean>) => void;
     openRow: (row: Record<string, unknown>) => void;
   }) => React.ReactNode;
   /** Sugestões vindas de um cadastro padrão, sem trocar o valor textual salvo. */
   lookup?: string;
   /** Gera filtro de seleção com os valores existentes na lista. */
   filter?: boolean;
+  renderValue?: (row: Row) => React.ReactNode;
 };
 
 /** Sugestões textuais vindas de um cadastro padrão. */
@@ -234,7 +235,7 @@ export function CrudPage({
     form: Record<string, string | boolean>;
     editing: Row | null;
     /** Preenche campos do formulário sem gravar (ex.: consulta cadastral). */
-    patch: (values: Record<string, string>) => void;
+    patch: (values: Record<string, string | boolean>) => void;
     /** Abre o formulário de um registro já existente. */
     openRow: (row: Row) => void;
   }) => React.ReactNode;
@@ -244,7 +245,7 @@ export function CrudPage({
   extraFormEnd?: (ctx: {
     form: Record<string, string | boolean>;
     editing: Row | null;
-    patch: (values: Record<string, string>) => void;
+    patch: (values: Record<string, string | boolean>) => void;
     openRow: (row: Row) => void;
   }) => React.ReactNode;
   /** Modo somente leitura: impede criar, editar, excluir e salvar. */
@@ -303,11 +304,12 @@ export function CrudPage({
     () =>
       fields.filter(
         (f) =>
-          (f.type === "select" && (f.options ?? []).length > 0) ||
-          f.type === "checkbox" ||
-          f.type === "date" ||
-          f.filter ||
-          (f.type === "multicheck" && (f.checks ?? []).length > 0),
+          f.filter !== false &&
+          ((f.type === "select" && (f.options ?? []).length > 0) ||
+            f.type === "checkbox" ||
+            f.type === "date" ||
+            f.filter ||
+            (f.type === "multicheck" && (f.checks ?? []).length > 0)),
       ),
     [fields],
   );
@@ -752,7 +754,9 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name} data-label={f.label}>
-                      {f.name === "status" ? (
+                      {f.renderValue ? (
+                        f.renderValue(row)
+                      ) : f.name === "status" ? (
                         <StatusBadge value={row[f.name]} />
                       ) : inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
                         <Input
