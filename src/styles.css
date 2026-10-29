@@ -400,7 +400,7 @@ body {
   }
 }
 
-/* Cadastro unificado e Produtos: os campos escolhidos cabem no próprio registro,
+/* Cadastro unificado: os campos escolhidos cabem no próprio registro,
    mesmo quando há muitas colunas, sem exigir rolagem horizontal. */
 @media screen and (min-width: 640px) {
   table[data-readable-table].fluid-cards,
@@ -460,5 +460,33 @@ body {
   }
   table[data-readable-table].fluid-cards tbody td[data-label="Ações"]::before {
     display: none;
+  }
+}
+
+/* Produtos em linhas: cabeçalhos quebram entre palavras e nomes têm largura própria. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].product-list {
+    width: 100%;
+    table-layout: auto;
+  }
+  table[data-readable-table].product-list th {
+    max-width: 150px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+  table[data-readable-table].product-list th,
+  table[data-readable-table].product-list td {
+    padding: 10px 8px;
+  }
+  table[data-readable-table].product-list td[data-column-kind="name"] {
+    min-width: 100px;
+    max-width: 180px;
+  }
+  table[data-readable-table].product-list td[data-label="Descrição"] {
+    min-width: 220px;
+    max-width: 340px;
+  }
+  table[data-readable-table].product-list td input[type="number"] {
+    width: 112px;
   }
 }

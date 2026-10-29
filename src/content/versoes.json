@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.17.2",
+    "data": "2026-10-29",
+    "titulo": "Restaurar exibição de Produtos em lista com colunas",
+    "novidades": ["Restaurar exibição de Produtos em lista com colunas"]
+  },
+  {
     "versao": "1.17.1",
     "data": "2026-10-29",
     "titulo": "Impressão direta dos pedidos e cadastros sem rolagem lateral",

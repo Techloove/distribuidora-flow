@@ -756,7 +756,11 @@ export function CrudPage({
         ) : (
           <Table
             columnPreferences={false}
-            className={cn("mobile-cards", ["produtos", "pessoas"].includes(table) && "fluid-cards")}
+            className={cn(
+              "mobile-cards",
+              table === "pessoas" && "fluid-cards",
+              table === "produtos" && "product-list",
+            )}
           >
             <TableHeader>
               <TableRow>
