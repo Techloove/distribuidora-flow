@@ -427,7 +427,7 @@ function ComissoesPage() {
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="mobile-cards">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="no-print w-10"></TableHead>
@@ -448,34 +448,43 @@ function ComissoesPage() {
                         const elegivel = ["prevista", "liberada"].includes(String(r["status"]));
                         return (
                           <TableRow key={id}>
-                            <TableCell className="no-print">
+                            <TableCell data-label="Selecionar" className="no-print">
                               <Checkbox
                                 checked={selecionadas.has(id)}
                                 disabled={!elegivel}
                                 onCheckedChange={() => alternar(id)}
                               />
                             </TableCell>
-                            <TableCell className="font-medium">
+                            <TableCell data-label="Pedido" className="font-medium">
                               <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
                                 {String(r["pedido_numero"] ?? "—")}
                               </ReferenciaRegistro>
                             </TableCell>
-                            <TableCell>{fmtDate(r["data_pedido"])}</TableCell>
-                            <TableCell className="max-w-[12rem] truncate">
+                            <TableCell data-label="Data">{fmtDate(r["data_pedido"])}</TableCell>
+                            <TableCell
+                              data-label="Representante"
+                              className="max-w-[12rem] truncate"
+                            >
                               {String(r["representante"] ?? "—")}
                             </TableCell>
-                            <TableCell className="max-w-[14rem] truncate">
+                            <TableCell data-label="Cliente" className="max-w-[14rem] truncate">
                               <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
                                 {String(r["cliente"] ?? "—")}
                               </ReferenciaRegistro>
                             </TableCell>
-                            <TableCell>{String(r["centro"] ?? "—")}</TableCell>
-                            <TableCell className="text-right">{brl(r["base_calculo"])}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell data-label="Centro">{String(r["centro"] ?? "—")}</TableCell>
+                            <TableCell data-label="Base" className="text-right">
+                              {brl(r["base_calculo"])}
+                            </TableCell>
+                            <TableCell data-label="%" className="text-right">
                               {num(r["percentual"]).toFixed(2)}
                             </TableCell>
-                            <TableCell className="text-right">{brl(r["valor"])}</TableCell>
-                            <TableCell className="capitalize">{String(r["status"])}</TableCell>
+                            <TableCell data-label="Comissão" className="text-right">
+                              {brl(r["valor"])}
+                            </TableCell>
+                            <TableCell data-label="Situação" className="capitalize">
+                              {String(r["status"])}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -503,7 +512,7 @@ function ComissoesPage() {
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="mobile-cards">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Representante</TableHead>
@@ -519,18 +528,28 @@ function ComissoesPage() {
                     <TableBody>
                       {(resumo.data ?? []).map((r) => (
                         <TableRow key={`${String(r["representante_id"])}-${String(r["mes"])}`}>
-                          <TableCell className="max-w-[14rem] truncate">
+                          <TableCell data-label="Representante" className="max-w-[14rem] truncate">
                             {String(r["representante"] ?? "—")}
                           </TableCell>
-                          <TableCell>{String(r["mes"])}</TableCell>
-                          <TableCell className="text-right">{num(r["pedidos"])}</TableCell>
-                          <TableCell className="text-right">{brl(r["valor_meta"])}</TableCell>
-                          <TableCell className="text-right">{brl(r["realizado"])}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell data-label="Mês">{String(r["mes"])}</TableCell>
+                          <TableCell data-label="Pedidos" className="text-right">
+                            {num(r["pedidos"])}
+                          </TableCell>
+                          <TableCell data-label="Meta" className="text-right">
+                            {brl(r["valor_meta"])}
+                          </TableCell>
+                          <TableCell data-label="Realizado" className="text-right">
+                            {brl(r["realizado"])}
+                          </TableCell>
+                          <TableCell data-label="Atingimento" className="text-right">
                             {num(r["atingimento_percentual"]).toFixed(2)}%
                           </TableCell>
-                          <TableCell className="text-right">{brl(r["a_pagar"])}</TableCell>
-                          <TableCell className="text-right">{brl(r["paga"])}</TableCell>
+                          <TableCell data-label="A pagar" className="text-right">
+                            {brl(r["a_pagar"])}
+                          </TableCell>
+                          <TableCell data-label="Pago" className="text-right">
+                            {brl(r["paga"])}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -557,7 +576,7 @@ function ComissoesPage() {
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="mobile-cards">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Representante</TableHead>
@@ -573,18 +592,26 @@ function ComissoesPage() {
                     <TableBody>
                       {(lotes.data ?? []).map((l) => (
                         <TableRow key={String(l["id"])}>
-                          <TableCell className="max-w-[14rem] truncate">
+                          <TableCell data-label="Representante" className="max-w-[14rem] truncate">
                             {repNome(l["representante_id"])}
                           </TableCell>
-                          <TableCell>{String(l["competencia"] ?? "—")}</TableCell>
-                          <TableCell>
+                          <TableCell data-label="Competência">
+                            {String(l["competencia"] ?? "—")}
+                          </TableCell>
+                          <TableCell data-label="Período">
                             {fmtDate(l["periodo_inicio"])} a {fmtDate(l["periodo_fim"])}
                           </TableCell>
-                          <TableCell className="text-right">{num(l["quantidade"])}</TableCell>
-                          <TableCell className="text-right">{brl(l["valor_total"])}</TableCell>
-                          <TableCell>{fmtDate(l["vencimento"])}</TableCell>
-                          <TableCell className="capitalize">{String(l["status"])}</TableCell>
-                          <TableCell className="no-print text-right">
+                          <TableCell data-label="Comissões" className="text-right">
+                            {num(l["quantidade"])}
+                          </TableCell>
+                          <TableCell data-label="Valor" className="text-right">
+                            {brl(l["valor_total"])}
+                          </TableCell>
+                          <TableCell data-label="Vencimento">{fmtDate(l["vencimento"])}</TableCell>
+                          <TableCell data-label="Situação" className="capitalize">
+                            {String(l["status"])}
+                          </TableCell>
+                          <TableCell data-label="Ações" className="no-print text-right">
                             <Button
                               size="sm"
                               variant="outline"

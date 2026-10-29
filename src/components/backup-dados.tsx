@@ -98,7 +98,7 @@ export function BackupDados() {
       )}
       {!!q.data?.length && (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="mobile-cards w-full text-left text-sm">
             <thead>
               <tr>
                 <th className="p-2">Solicitado (Brasília)</th>
@@ -109,9 +109,13 @@ export function BackupDados() {
             <tbody>
               {q.data.map((b) => (
                 <tr key={b.id} className="border-t">
-                  <td className="p-2">{data(b.solicitado_em)}</td>
-                  <td className="p-2">{b.origem === "manual" ? "Manual" : "Diário"}</td>
-                  <td className="p-2">
+                  <td data-label="Solicitado (Brasília)" className="p-2">
+                    {data(b.solicitado_em)}
+                  </td>
+                  <td data-label="Origem" className="p-2">
+                    {b.origem === "manual" ? "Manual" : "Diário"}
+                  </td>
+                  <td data-label="Resultado" className="p-2">
                     <p>{estados[b.estado]}</p>
                     {b.estado === "sucesso" && b.download_disponivel && (
                       <Button

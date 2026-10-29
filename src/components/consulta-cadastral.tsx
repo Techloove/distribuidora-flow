@@ -52,8 +52,7 @@ const digitos = (v: string) => (v ?? "").replace(/\D+/g, "");
 
 const formatarDoc = (v: string) => {
   const d = digitos(v);
-  if (d.length === 14)
-    return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+  if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
   if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
   return v;
 };
@@ -79,16 +78,13 @@ export function ConsultaCadastral({
   const { client, session, canManage } = useSupabase();
   const queryClient = useQueryClient();
   const consultar = useServerFn(consultarDocumento);
-  const [resultado, setResultado] = useState<
-    | null
-    | {
-        dados: DadosCadastrais;
-        provedor: string;
-        tipo: "PJ" | "PF";
-        doCache: boolean;
-        consultadoEm: string;
-      }
-  >(null);
+  const [resultado, setResultado] = useState<null | {
+    dados: DadosCadastrais;
+    provedor: string;
+    tipo: "PJ" | "PF";
+    doCache: boolean;
+    consultadoEm: string;
+  }>(null);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
 
   const documento = String(form["cnpj_cpf"] ?? "");
@@ -172,7 +168,12 @@ export function ConsultaCadastral({
       }
 
       // 2) provedor externo, sempre pelo servidor
-      const res = (await consultar({ data: { documento: doc, ...(session?.access_token ? { accessToken: session.access_token } : {}) } })) as ConsultaResultado;
+      const res = (await consultar({
+        data: {
+          documento: doc,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      })) as ConsultaResultado;
       if (!res.ok) {
         await registrar(res.codigo, null, res.tipo, res.mensagem, false);
         throw new Error(res.mensagem);
@@ -300,7 +301,7 @@ export function ConsultaCadastral({
 
       {tipo ? (
         <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-56 flex-1 space-y-1.5">
+          <div className="min-w-0 w-full flex-1 space-y-1.5 sm:min-w-56">
             <Label htmlFor="documento-consulta">{tipo === "PF" ? "CPF" : "CNPJ"}</Label>
             <Input
               id="documento-consulta"
@@ -339,7 +340,6 @@ export function ConsultaCadastral({
           Selecione CNPJ ou CPF para liberar o campo do documento.
         </p>
       )}
-
 
       {(duplicado.data ?? []).length > 0 ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">

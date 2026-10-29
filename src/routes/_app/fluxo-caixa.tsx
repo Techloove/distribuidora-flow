@@ -134,7 +134,7 @@ function FluxoCaixaPage() {
               Nenhum título lançado — o fluxo aparece após pedidos ou compras.
             </p>
           ) : (
-            <Table>
+            <Table className="mobile-cards">
               <TableHeader>
                 <TableRow>
                   <TableHead>Período</TableHead>
@@ -149,13 +149,25 @@ function FluxoCaixaPage() {
               <TableBody>
                 {linhas.map((l) => (
                   <TableRow key={l.periodo}>
-                    <TableCell>{l.periodo}</TableCell>
-                    <TableCell className="text-right">{brl(l.previstoEntrada)}</TableCell>
-                    <TableCell className="text-right">{brl(l.realizadoEntrada)}</TableCell>
-                    <TableCell className="text-right">{brl(l.previstoSaida)}</TableCell>
-                    <TableCell className="text-right">{brl(l.realizadoSaida)}</TableCell>
-                    <TableCell className="text-right">{brl(l.saldo)}</TableCell>
-                    <TableCell className="text-right font-medium">{brl(l.acumulado)}</TableCell>
+                    <TableCell data-label="Período">{l.periodo}</TableCell>
+                    <TableCell data-label="Entradas previstas" className="text-right">
+                      {brl(l.previstoEntrada)}
+                    </TableCell>
+                    <TableCell data-label="Entradas realizadas" className="text-right">
+                      {brl(l.realizadoEntrada)}
+                    </TableCell>
+                    <TableCell data-label="Saídas previstas" className="text-right">
+                      {brl(l.previstoSaida)}
+                    </TableCell>
+                    <TableCell data-label="Saídas realizadas" className="text-right">
+                      {brl(l.realizadoSaida)}
+                    </TableCell>
+                    <TableCell data-label="Saldo" className="text-right">
+                      {brl(l.saldo)}
+                    </TableCell>
+                    <TableCell data-label="Acumulado" className="text-right font-medium">
+                      {brl(l.acumulado)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

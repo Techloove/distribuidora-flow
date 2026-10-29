@@ -151,7 +151,7 @@ function ConciliacaoCreditosPage() {
             <p className="p-6 text-sm text-destructive">{(dados.error as Error).message}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1050px] text-sm">
+              <table className="mobile-cards w-full min-w-[1050px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="p-3">Documento</th>
@@ -178,17 +178,24 @@ function ConciliacaoCreditosPage() {
                           key={String(r["conta_receber_id"])}
                           className="border-b border-border/60"
                         >
-                          <td className="p-3 font-medium">{String(r["documento"] ?? "—")}</td>
-                          <td className="p-3">
+                          <td data-label="Documento" className="p-3 font-medium">
+                            {String(r["documento"] ?? "—")}
+                          </td>
+                          <td data-label="Devolução" className="p-3">
                             {r["devolucao_numero"] ? "#" + String(r["devolucao_numero"]) : "—"}
                           </td>
-                          <td className="p-3">{brl(Math.abs(Number(r["valor"] ?? 0)))}</td>
-                          <td className="max-w-[260px] truncate p-3 text-xs text-muted-foreground">
+                          <td data-label="Valor" className="p-3">
+                            {brl(Math.abs(Number(r["valor"] ?? 0)))}
+                          </td>
+                          <td
+                            data-label="Cliente"
+                            className="max-w-[260px] truncate p-3 text-xs text-muted-foreground"
+                          >
                             <ReferenciaRegistro tipo="cliente" id={r["cliente_id"]}>
                               {String(r["cliente_id"] ?? "—")}
                             </ReferenciaRegistro>
                           </td>
-                          <td className="p-3">
+                          <td data-label="Situação" className="p-3">
                             <span
                               className={
                                 apto
@@ -200,7 +207,7 @@ function ConciliacaoCreditosPage() {
                               {situacoes[situacao] ?? situacao}
                             </span>
                           </td>
-                          <td className="p-3 text-right">
+                          <td data-label="Ação" className="p-3 text-right">
                             {apto ? (
                               <Button
                                 size="sm"

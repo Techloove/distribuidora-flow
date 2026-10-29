@@ -824,7 +824,7 @@ function Tabela({
       </div>
       {linhas.length ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="mobile-cards w-full text-left text-sm">
             <caption className="sr-only">{titulo}</caption>
             <thead>
               <tr className="border-b bg-muted/30">
@@ -850,6 +850,7 @@ function Tabela({
                 >
                   {colunas.map((c) => (
                     <td
+                      data-label={c.label}
                       key={c.key}
                       className={`p-3 ${dinheiro.has(c.key) ? "whitespace-nowrap tabular-nums" : ""}`}
                     >

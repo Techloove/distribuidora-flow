@@ -217,7 +217,7 @@ function ContasPage() {
           ) : saldos.isError ? (
             <p className="p-6 text-sm text-destructive">{(saldos.error as Error).message}</p>
           ) : (
-            <Table>
+            <Table className="mobile-cards">
               <TableHeader>
                 <TableRow>
                   <TableHead>Conta</TableHead>
@@ -233,16 +233,24 @@ function ContasPage() {
               <TableBody>
                 {(saldos.data ?? []).map((r) => (
                   <TableRow key={String(r["conta_id"])}>
-                    <TableCell>{String(r["nome"])}</TableCell>
-                    <TableCell>{String(r["tipo"])}</TableCell>
-                    <TableCell className="text-right">{brl(r["saldo_inicial"])}</TableCell>
-                    <TableCell className="text-right">{brl(r["entradas"])}</TableCell>
-                    <TableCell className="text-right">{brl(r["saidas"])}</TableCell>
-                    <TableCell className="text-right">{brl(r["transferencias"])}</TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell data-label="Conta">{String(r["nome"])}</TableCell>
+                    <TableCell data-label="Tipo">{String(r["tipo"])}</TableCell>
+                    <TableCell data-label="Saldo inicial" className="text-right">
+                      {brl(r["saldo_inicial"])}
+                    </TableCell>
+                    <TableCell data-label="Entradas" className="text-right">
+                      {brl(r["entradas"])}
+                    </TableCell>
+                    <TableCell data-label="Saídas" className="text-right">
+                      {brl(r["saidas"])}
+                    </TableCell>
+                    <TableCell data-label="Transferências" className="text-right">
+                      {brl(r["transferencias"])}
+                    </TableCell>
+                    <TableCell data-label="Saldo atual" className="text-right font-medium">
                       {brl(r["saldo_atual"])}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell data-label="Extrato" className="text-right">
                       <Button size="sm" variant="outline" onClick={() => setExtrato(r)}>
                         <ScrollText className="size-3.5" /> Ver
                       </Button>
@@ -365,7 +373,7 @@ function ContasPage() {
               Nenhuma movimentação nesta conta.
             </p>
           ) : (
-            <Table>
+            <Table className="mobile-cards">
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
@@ -378,17 +386,20 @@ function ContasPage() {
               <TableBody>
                 {(lancamentos.data ?? []).map((m) => (
                   <TableRow key={String(m["id"])}>
-                    <TableCell>{String(m["data"])}</TableCell>
-                    <TableCell>{String(m["descricao"] ?? "—")}</TableCell>
-                    <TableCell>{String(m["origem"])}</TableCell>
+                    <TableCell data-label="Data">{String(m["data"])}</TableCell>
+                    <TableCell data-label="Histórico">{String(m["descricao"] ?? "—")}</TableCell>
+                    <TableCell data-label="Origem">{String(m["origem"])}</TableCell>
                     <TableCell
+                      data-label="Valor"
                       className={`text-right ${
                         Number(m["valor_assinado"]) < 0 ? "text-destructive" : ""
                       }`}
                     >
                       {brl(m["valor_assinado"])}
                     </TableCell>
-                    <TableCell className="text-right">{brl(m["saldo_acumulado"])}</TableCell>
+                    <TableCell data-label="Saldo" className="text-right">
+                      {brl(m["saldo_acumulado"])}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

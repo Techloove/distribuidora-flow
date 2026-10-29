@@ -146,7 +146,7 @@ function NotasPage() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="w-full min-w-[680px] text-sm">
+              <table className="mobile-cards w-full min-w-[680px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Pedido</th>
@@ -159,25 +159,27 @@ function NotasPage() {
                 <tbody className="divide-y divide-border">
                   {listaPedidos.map((p) => (
                     <tr key={String(p["id"])} className="hover:bg-accent/50">
-                      <td className="px-4 py-2.5 font-semibold">
+                      <td data-label="Pedido" className="px-4 py-2.5 font-semibold">
                         <ReferenciaRegistro tipo="pedido" id={p["id"]}>
                           #{String(p["numero"])}
                         </ReferenciaRegistro>
                       </td>
-                      <td className="max-w-[320px] truncate px-4 py-2.5">
+                      <td data-label="Cliente" className="max-w-[320px] truncate px-4 py-2.5">
                         <ReferenciaRegistro tipo="cliente" id={p["cliente_id"]}>
                           {String((p["clientes"] as Row | null)?.["razao_social"] ?? "—")}
                         </ReferenciaRegistro>
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td data-label="Data" className="px-4 py-2.5">
                         {p["data_pedido"]
                           ? new Date(`${String(p["data_pedido"])}T00:00:00`).toLocaleDateString(
                               "pt-BR",
                             )
                           : "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-right">{moeda(p["total_liquido"])}</td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td data-label="Total" className="px-4 py-2.5 text-right">
+                        {moeda(p["total_liquido"])}
+                      </td>
+                      <td data-label="Ações" className="px-4 py-2.5 text-right">
                         <Button
                           size="sm"
                           disabled={!podeFaturar || rpc.isPending}
@@ -214,7 +216,7 @@ function NotasPage() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="mobile-cards w-full min-w-[900px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Nº interno</th>
@@ -231,25 +233,27 @@ function NotasPage() {
                     const status = String(n["status"]);
                     return (
                       <tr key={String(n["id"])} className="hover:bg-accent/50">
-                        <td className="px-4 py-2.5 font-semibold">#{String(n["numero"])}</td>
-                        <td className="px-4 py-2.5">
+                        <td data-label="Nº interno" className="px-4 py-2.5 font-semibold">
+                          #{String(n["numero"])}
+                        </td>
+                        <td data-label="Pedido" className="px-4 py-2.5">
                           <ReferenciaRegistro tipo="pedido" id={n["pedido_id"]}>
                             {(n["pedidos"] as Row | null)?.["numero"]
                               ? `#${String((n["pedidos"] as Row)["numero"])}`
                               : "—"}
                           </ReferenciaRegistro>
                         </td>
-                        <td className="max-w-[260px] truncate px-4 py-2.5">
+                        <td data-label="Cliente" className="max-w-[260px] truncate px-4 py-2.5">
                           <ReferenciaRegistro tipo="cliente" id={n["cliente_id"]}>
                             {String((n["clientes"] as Row | null)?.["razao_social"] ?? "—")}
                           </ReferenciaRegistro>
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td data-label="NF / série" className="px-4 py-2.5">
                           {n["nf_numero"]
                             ? `${String(n["nf_numero"])} / ${String(n["serie"])}`
                             : "—"}
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td data-label="Situação" className="px-4 py-2.5">
                           <span
                             className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${tomNota(status)}`}
                           >
@@ -261,8 +265,10 @@ function NotasPage() {
                             </span>
                           ) : null}
                         </td>
-                        <td className="px-4 py-2.5 text-right">{moeda(n["valor_total"])}</td>
-                        <td className="space-x-2 px-4 py-2.5 text-right">
+                        <td data-label="Total" className="px-4 py-2.5 text-right">
+                          {moeda(n["valor_total"])}
+                        </td>
+                        <td data-label="Ações" className="space-x-2 px-4 py-2.5 text-right">
                           {
                             <Button
                               size="sm"

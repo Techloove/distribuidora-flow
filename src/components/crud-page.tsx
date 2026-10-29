@@ -588,7 +588,7 @@ export function CrudPage({
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs bg-card"
         />
-        <div className="flex gap-2">
+        <div className="flex min-w-0 max-w-full flex-wrap gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="secondary" className="no-print">

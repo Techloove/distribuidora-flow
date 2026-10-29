@@ -1416,7 +1416,7 @@ export function DocumentoPage({
   return (
     <div className="space-y-6">
       <section className={`space-y-3 ${listaVisivel ? "" : "hidden"}`}>
-        <div className="flex justify-end">
+        <div className="flex min-w-0 flex-wrap justify-end gap-2">
           {config.table === "pedidos" ? (
             <ImprimirPedidos
               pedidoIds={docsFiltrados.map((d) => String(d["id"]))}
@@ -1576,7 +1576,7 @@ export function DocumentoPage({
           />
         </FilterBar>
 
-        <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
+        <div className="grid gap-2 sm:grid-cols-3 sm:max-w-xl">
           {[
             { label: "Documentos", value: String(docsFiltrados.length) },
             { label: "Total", value: brl(totalFiltrado) },
@@ -1584,7 +1584,7 @@ export function DocumentoPage({
           ].map((k) => (
             <div key={k.label} className="rounded-lg border border-border bg-card px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
-              <p className="truncate text-sm font-semibold">{k.value}</p>
+              <p className="break-words text-sm font-semibold">{k.value}</p>
             </div>
           ))}
         </div>
@@ -1947,7 +1947,7 @@ export function DocumentoPage({
                 ) : null}
                 {creditoDisponivelDevolucao > 0 ? (
                   <div className="mt-3 flex flex-wrap items-end gap-2">
-                    <div className="min-w-48 flex-1 space-y-1.5">
+                    <div className="min-w-0 w-full flex-1 space-y-1.5 sm:min-w-48">
                       <Label>Valor do crédito</Label>
                       <Input
                         type="number"
@@ -1978,7 +1978,7 @@ export function DocumentoPage({
             ) : null}
 
             {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[minmax(320px,4fr)_1fr_1fr_1fr_auto]">
+              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,4fr)_1fr_1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label>Produto</Label>
                   {config.table === "pedidos" && catalogoPedido.isError && (

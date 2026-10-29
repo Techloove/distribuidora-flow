@@ -261,7 +261,7 @@ body {
   outline-offset: 3px;
 }
 @media screen and (max-width: 639px) {
-  .erp-shell button,
+  .erp-shell button:not([role="checkbox"]):not([role="switch"]),
   [role="dialog"] button,
   [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
   [role="dialog"] select,
@@ -269,7 +269,9 @@ body {
   .erp-shell select {
     min-height: 44px;
   }
-  .erp-shell nav a {
+  .erp-shell nav a,
+  .erp-mobile-menu nav a,
+  .erp-mobile-menu button {
     min-height: 44px;
   }
   .mobile-cards,
@@ -311,5 +313,52 @@ body {
   }
   .mobile-cards tbody td:empty {
     display: none;
+  }
+}
+
+/* Mantém os dados legíveis sem alargar a página em telas pequenas. */
+@media screen and (max-width: 639px) {
+  .erp-mobile-menu input,
+  .erp-shell main input:not([type="checkbox"]):not([type="radio"]),
+  .erp-shell main select,
+  .erp-shell main textarea,
+  [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
+  [role="dialog"] select,
+  [role="dialog"] textarea {
+    font-size: 16px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .mobile-cards {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .mobile-cards tbody td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    overflow-wrap: anywhere;
+    overflow: visible;
+  }
+  .mobile-cards tbody td::before {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .mobile-cards tbody td > * {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+  }
+  .mobile-cards tbody td[data-label="Ações"],
+  .mobile-cards tbody td[colspan] {
+    display: block;
+  }
+  .mobile-cards tbody td[data-label="Ações"]::before,
+  .mobile-cards tbody td[colspan]::before {
+    display: none;
+  }
+  .mobile-cards tbody td[data-label="Ações"] > div {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }

@@ -183,7 +183,7 @@ function DrePage() {
           <FilterText label="Até" type="date" value={ate} onChange={setAte} />
         </FilterBar>
 
-        <div className="print-area rounded-xl border border-border bg-card shadow-sm">
+        <div className="print-area overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <h2 className="flex items-center gap-2 px-6 pb-2 pt-6 text-lg font-semibold">
             <BarChart3 className="size-5" /> Demonstração do Resultado (DRE)
           </h2>
@@ -197,7 +197,7 @@ function DrePage() {
           ) : dre.isError ? (
             <p className="p-6 text-sm text-destructive">{(dre.error as Error).message}</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[540px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="px-4 py-3 text-left font-normal">Descrição</th>

@@ -26,14 +26,14 @@ export function ResumoPedido({
   return (
     <aside
       aria-label="Resumo do pedido"
-      className="no-print sticky top-0 z-20 rounded-xl border bg-card/95 p-3 shadow-sm backdrop-blur"
+      className="no-print sm:sticky sm:top-0 sm:z-20 rounded-xl border bg-card/95 p-3 shadow-sm backdrop-blur"
     >
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {valores.map(([label, value]) => (
           <div key={label}>
             <p className="text-[11px] text-muted-foreground">{label}</p>
             <p
-              className={`truncate text-sm font-semibold ${label === "Total" ? "text-primary" : ""}`}
+              className={`break-words text-sm font-semibold ${label === "Total" ? "text-primary" : ""}`}
             >
               {carregando && label === "Peso" ? "…" : value}
             </p>

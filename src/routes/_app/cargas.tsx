@@ -192,7 +192,7 @@ function CargasPage() {
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="mobile-cards w-full min-w-[900px] text-sm">
               <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 text-left font-medium">Carga</th>
@@ -221,30 +221,43 @@ function CargasPage() {
                           : "border-l-transparent hover:bg-accent/50"
                       }`}
                     >
-                      <td className="px-4 py-2.5 font-semibold">#{String(c["numero"])}</td>
-                      <td className="px-4 py-2.5">
+                      <td data-label="Carga" className="px-4 py-2.5 font-semibold">
+                        #{String(c["numero"])}
+                      </td>
+                      <td data-label="Data" className="px-4 py-2.5">
                         {c["data"]
                           ? new Date(`${String(c["data"])}T00:00:00`).toLocaleDateString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-4 py-2.5">{String(c["rota"] ?? "—")}</td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      <td data-label="Rota" className="px-4 py-2.5">
+                        {String(c["rota"] ?? "—")}
+                      </td>
+                      <td
+                        data-label="Motorista / veículo"
+                        className="px-4 py-2.5 text-xs text-muted-foreground"
+                      >
                         {[c["motorista"], c["placa"]].filter(Boolean).join(" · ") || "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-right">{String(c["pedidos"] ?? 0)}</td>
-                      <td className="px-4 py-2.5 text-right">{String(c["clientes"] ?? 0)}</td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td data-label="Pedidos" className="px-4 py-2.5 text-right">
+                        {String(c["pedidos"] ?? 0)}
+                      </td>
+                      <td data-label="Clientes" className="px-4 py-2.5 text-right">
+                        {String(c["clientes"] ?? 0)}
+                      </td>
+                      <td data-label="Peso (kg)" className="px-4 py-2.5 text-right">
                         {Number(c["peso_kg"] ?? 0).toLocaleString("pt-BR")}
                       </td>
-                      <td className="px-4 py-2.5 text-right">{moeda(c["valor_total"])}</td>
-                      <td className="px-4 py-2.5">
+                      <td data-label="Valor" className="px-4 py-2.5 text-right">
+                        {moeda(c["valor_total"])}
+                      </td>
+                      <td data-label="Situação" className="px-4 py-2.5">
                         <span
                           className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${tom(status)}`}
                         >
                           {status.replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td className="space-x-2 px-4 py-2.5 text-right">
+                      <td data-label="Ações" className="space-x-2 px-4 py-2.5 text-right">
                         {(PROXIMOS[status] ?? []).map((s) =>
                           s === "em_rota" ? (
                             <DespacharCarga

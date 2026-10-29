@@ -305,7 +305,7 @@ export function RomaneiosEntrega() {
               Nenhuma expedição neste filtro. Confirme um pedido para gerar o romaneio.
             </p>
           ) : (
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="mobile-cards w-full min-w-[900px] text-sm">
               <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 text-left font-medium">Romaneio</th>
@@ -329,8 +329,10 @@ export function RomaneiosEntrega() {
                           : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
                       }`}
                     >
-                      <td className="px-4 py-2.5 font-semibold">#{String(r["numero"])}</td>
-                      <td className="max-w-[320px] truncate px-4 py-2.5">
+                      <td data-label="Romaneio" className="px-4 py-2.5 font-semibold">
+                        #{String(r["numero"])}
+                      </td>
+                      <td data-label="Pedido" className="max-w-[320px] truncate px-4 py-2.5">
                         <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
                           #
                           {String(
@@ -343,22 +345,24 @@ export function RomaneiosEntrega() {
                           {pedidoLabel(r["pedido_id"]).split(" · ").slice(1).join(" · ") || "—"}
                         </ReferenciaRegistro>
                       </td>
-                      <td className="px-4 py-2.5">{transportadoraLabel(r["transportadora_id"])}</td>
-                      <td className="px-4 py-2.5">
+                      <td data-label="Transportadora" className="px-4 py-2.5">
+                        {transportadoraLabel(r["transportadora_id"])}
+                      </td>
+                      <td data-label="Previsão" className="px-4 py-2.5">
                         {r["previsao_entrega"]
                           ? new Date(
                               `${String(r["previsao_entrega"]).slice(0, 10)}T00:00:00`,
                             ).toLocaleDateString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td data-label="Status" className="px-4 py-2.5">
                         <span
                           className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${statusTone(String(r["status"]))}`}
                         >
                           {String(r["status"]).replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                      <td data-label="Ações" className="no-print space-x-2 px-4 py-2.5 text-right">
                         <ImprimirPedidos pedidoIds={[String(r["pedido_id"])]} compact />
                         <Button
                           size="sm"

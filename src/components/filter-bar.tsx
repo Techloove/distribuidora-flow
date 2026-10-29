@@ -1,4 +1,5 @@
-import { Filter, X } from "lucide-react";
+import { useId, useState } from "react";
+import { ChevronDown, Filter, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,25 @@ export function FilterBar({
   onClear?: () => void;
   extra?: React.ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const id = useId();
   return (
     <div className="no-print rounded-lg border border-border bg-card p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="sm:hidden"
+          aria-expanded={expanded}
+          aria-controls={id}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <Filter className="size-3.5" />
+          {expanded ? "Recolher filtros" : "Mostrar filtros"}
+          <ChevronDown className={expanded ? "size-3.5 rotate-180" : "size-3.5"} />
+        </Button>
+        <p className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Filter className="size-3.5" /> Filtros
         </p>
         <div className="flex max-w-full flex-wrap items-center gap-2 [&>div]:flex-wrap">
@@ -28,14 +44,19 @@ export function FilterBar({
           ) : null}
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+      <div
+        id={id}
+        className={`${expanded ? "grid" : "hidden sm:grid"} min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0`}
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
 export function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="space-y-1 text-xs text-muted-foreground">
+    <label className="min-w-0 space-y-1 text-xs text-muted-foreground">
       <span>{label}</span>
       {children}
     </label>

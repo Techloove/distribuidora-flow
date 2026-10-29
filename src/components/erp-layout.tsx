@@ -391,7 +391,7 @@ export function ErpLayout({
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent
           side="left"
-          className="flex w-80 max-w-[90vw] flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground md:hidden"
+          className="erp-mobile-menu flex h-dvh max-h-dvh w-80 max-w-[90vw] flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground md:hidden"
         >
           <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
           <SheetDescription className="sr-only">
@@ -436,7 +436,7 @@ export function ErpLayout({
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-[.18em] text-primary">
                 Área de trabalho
               </p>
-              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              <h1 className="break-words text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {title}
               </h1>
               {description ? (
@@ -444,7 +444,7 @@ export function ErpLayout({
               ) : null}
             </div>
           </div>
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
+          <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             <span
               className="inline-flex max-w-full items-center gap-1.5 rounded-full border bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
               aria-label="Loja em uso"

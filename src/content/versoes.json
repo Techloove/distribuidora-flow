@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.3",
+    "data": "2026-10-29",
+    "titulo": "Melhorar leitura e navegação no celular, cartões, filtros e formulários",
+    "novidades": [
+      "Melhorar leitura e navegação no celular, cartões, filtros e formulários"
+    ]
+  },
+  {
     "versao": "1.14.2",
     "data": "2026-10-29",
     "titulo": "Mostrar representante e rota na impressão e orientar PDF no celular",

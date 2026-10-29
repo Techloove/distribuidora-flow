@@ -108,7 +108,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="mobile-cards w-full text-sm">
             <thead>
               <tr className="border-b text-left">
                 <th className="p-2">Código / produto</th>
@@ -121,15 +121,19 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
             <tbody>
               {q.data.map((p) => (
                 <tr key={p.id} className="border-b">
-                  <td className="p-2">
+                  <td data-label="Código / produto" className="p-2">
                     {p.codigo} · {p.descricao}
                   </td>
-                  <td className="p-2">{p.disponivel ? "Disponível" : "Indisponível"}</td>
-                  <td className="p-2">{moeda(p.preco_venda)}</td>
-                  <td className="p-2">
+                  <td data-label="Venda na loja" className="p-2">
+                    {p.disponivel ? "Disponível" : "Indisponível"}
+                  </td>
+                  <td data-label="Preço-base" className="p-2">
+                    {moeda(p.preco_venda)}
+                  </td>
+                  <td data-label="Desconto máximo" className="p-2">
                     {p.desconto_maximo === null ? "Regra da loja" : `${p.desconto_maximo}%`}
                   </td>
-                  <td className="p-2">
+                  <td data-label="Ações" className="p-2">
                     <Button
                       variant="outline"
                       size="sm"

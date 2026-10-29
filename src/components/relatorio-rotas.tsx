@@ -167,7 +167,7 @@ function Bloco({
       ) : (query.data ?? []).length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Sem dados no período.</p>
       ) : (
-        <Table>
+        <Table className="mobile-cards">
           <TableHeader>
             <TableRow>
               <TableHead>Descrição</TableHead>
@@ -178,9 +178,15 @@ function Bloco({
           <TableBody>
             {(query.data ?? []).map((r) => (
               <TableRow key={r.chave}>
-                <TableCell className="max-w-[18rem] truncate">{r.chave}</TableCell>
-                <TableCell className="text-right">{qtd ? r.quantidade : r.pedidos}</TableCell>
-                <TableCell className="text-right">{brl(r.total)}</TableCell>
+                <TableCell data-label="Descrição" className="max-w-[18rem] truncate">
+                  {r.chave}
+                </TableCell>
+                <TableCell data-label={qtd ? "Qtd." : "Pedidos"} className="text-right">
+                  {qtd ? r.quantidade : r.pedidos}
+                </TableCell>
+                <TableCell data-label="Total" className="text-right">
+                  {brl(r.total)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

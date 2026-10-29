@@ -508,7 +508,7 @@ function SeparacaoPage() {
             </div>
           ) : modo === "onda" ? (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="mobile-cards w-full min-w-[720px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Código</th>
@@ -520,10 +520,19 @@ function SeparacaoPage() {
                 <tbody className="divide-y divide-border">
                   {porProduto.map((p) => (
                     <tr key={p.id} className="hover:bg-accent/50">
-                      <td className="px-4 py-2.5">{p.codigo}</td>
-                      <td className="px-4 py-2.5">{p.produto}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold">{p.quantidade}</td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      <td data-label="Código" className="px-4 py-2.5">
+                        {p.codigo}
+                      </td>
+                      <td data-label="Produto" className="px-4 py-2.5">
+                        {p.produto}
+                      </td>
+                      <td data-label="Qtd. total" className="px-4 py-2.5 text-right font-semibold">
+                        {p.quantidade}
+                      </td>
+                      <td
+                        data-label="Pedidos"
+                        className="px-4 py-2.5 text-xs text-muted-foreground"
+                      >
                         {p.pedidos.join(", ")}
                       </td>
                     </tr>
@@ -533,7 +542,7 @@ function SeparacaoPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              <table className="w-full min-w-[860px] text-sm">
+              <table className="mobile-cards w-full min-w-[860px] text-sm">
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="no-print px-3 py-2">
@@ -571,7 +580,11 @@ function SeparacaoPage() {
                               : "border-l-transparent hover:border-l-primary/40 hover:bg-accent/50"
                           }`}
                         >
-                          <td className="no-print px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                          <td
+                            data-label="Selecionar"
+                            className="no-print px-3 py-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <input
                               type="checkbox"
                               aria-label={`Selecionar pedido ${p.numero}`}
@@ -585,31 +598,39 @@ function SeparacaoPage() {
                               }
                             />
                           </td>
-                          <td className="px-4 py-2.5 font-semibold">
+                          <td data-label="Nº" className="px-4 py-2.5 font-semibold">
                             <ReferenciaRegistro tipo="pedido" id={id}>
                               #{p.numero}
                             </ReferenciaRegistro>
                           </td>
-                          <td className="max-w-[320px] truncate px-4 py-2.5">
+                          <td data-label="Cliente" className="max-w-[320px] truncate px-4 py-2.5">
                             <ReferenciaRegistro tipo="cliente" id={p.clienteId}>
                               {p.cliente}
                             </ReferenciaRegistro>
                           </td>
-                          <td className="px-4 py-2.5">{p.rota}</td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                          <td data-label="Rota" className="px-4 py-2.5">
+                            {p.rota}
+                          </td>
+                          <td
+                            data-label="Sequência"
+                            className="px-4 py-2.5 text-xs text-muted-foreground"
+                          >
                             {p.seq || "—"}
                           </td>
-                          <td className="px-4 py-2.5">
+                          <td data-label="Status" className="px-4 py-2.5">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${statusTone(p.status)}`}
                             >
                               {p.status.replace(/_/g, " ")}
                             </span>
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                          <td
+                            data-label="Expedição"
+                            className="px-4 py-2.5 text-xs text-muted-foreground"
+                          >
                             {p.romaneio}
                           </td>
-                          <td className="px-4 py-2.5 text-right">
+                          <td data-label="Itens" className="px-4 py-2.5 text-right">
                             {itens.length}
                             {falta ? (
                               <span className="ml-1 text-[11px] font-medium text-destructive">
@@ -617,7 +638,10 @@ function SeparacaoPage() {
                               </span>
                             ) : null}
                           </td>
-                          <td className="no-print space-x-2 px-4 py-2.5 text-right">
+                          <td
+                            data-label="Ações"
+                            className="no-print space-x-2 px-4 py-2.5 text-right"
+                          >
                             <ImprimirPedidos pedidoIds={[id]} compact />
                             <EmitirBoletosPedido pedidoId={id} centroId={p.centroId} compact />
                             {p.status === "confirmado" ? (
@@ -650,7 +674,7 @@ function SeparacaoPage() {
                         </tr>
                         <tr className={aberto ? "" : "hidden print:table-row"}>
                           <td colSpan={9} className="bg-muted/20 px-4 py-3">
-                            <Table>
+                            <Table className="mobile-cards">
                               <TableHeader>
                                 <TableRow>
                                   <TableHead>Código</TableHead>
@@ -676,10 +700,17 @@ function SeparacaoPage() {
                                   const editavel = p.status === "separacao";
                                   return (
                                     <TableRow key={itemId || String(r["produto_id"])}>
-                                      <TableCell>{String(r["produto_codigo"] ?? "—")}</TableCell>
-                                      <TableCell>{String(r["produto"])}</TableCell>
-                                      <TableCell className="text-right">{pedida}</TableCell>
+                                      <TableCell data-label="Código">
+                                        {String(r["produto_codigo"] ?? "—")}
+                                      </TableCell>
+                                      <TableCell data-label="Produto">
+                                        {String(r["produto"])}
+                                      </TableCell>
+                                      <TableCell data-label="Pedido" className="text-right">
+                                        {pedida}
+                                      </TableCell>
                                       <TableCell
+                                        data-label="Estoque"
                                         className={`text-right ${
                                           Number(r["estoque_atual"] ?? 0) < pedida
                                             ? "text-destructive"
@@ -688,7 +719,7 @@ function SeparacaoPage() {
                                       >
                                         {String(r["estoque_atual"])}
                                       </TableCell>
-                                      <TableCell className="text-right">
+                                      <TableCell data-label="Separado" className="text-right">
                                         {editavel ? (
                                           <input
                                             type="number"
@@ -713,11 +744,12 @@ function SeparacaoPage() {
                                         )}
                                       </TableCell>
                                       <TableCell
+                                        data-label="Falta"
                                         className={`text-right ${falta ? "text-destructive" : ""}`}
                                       >
                                         {falta === null ? "—" : falta}
                                       </TableCell>
-                                      <TableCell className="text-xs">
+                                      <TableCell data-label="Situação" className="text-xs">
                                         {separada === null ? (
                                           <span className="text-muted-foreground">pendente</span>
                                         ) : falta === 0 ? (
@@ -728,7 +760,10 @@ function SeparacaoPage() {
                                           </span>
                                         )}
                                       </TableCell>
-                                      <TableCell className="no-print">
+                                      <TableCell
+                                        data-label="Tratamento da divergência"
+                                        className="no-print"
+                                      >
                                         {editavel && separada !== null && falta !== 0 ? (
                                           <select
                                             className="h-8 w-40 rounded-md border border-input bg-background px-2 text-xs"

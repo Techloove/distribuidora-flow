@@ -547,7 +547,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                 Nenhum boleto encontrado para os filtros selecionados.
               </p>
             ) : (
-              <Table>
+              <Table className="mobile-cards">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Boleto / parcela</TableHead>
@@ -572,7 +572,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                     return (
                       <Fragment key={id}>
                         <TableRow>
-                          <TableCell className="whitespace-nowrap font-medium">
+                          <TableCell
+                            data-label="Boleto / parcela"
+                            className="whitespace-nowrap font-medium"
+                          >
                             <ReferenciaRegistro tipo="receber" id={b["conta_receber_id"]}>
                               {String(b["nosso_numero"] ?? "—")}
                             </ReferenciaRegistro>
@@ -583,12 +586,12 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               /{String(b["parcela"] ?? 1)}
                             </span>
                           </TableCell>
-                          <TableCell className="min-w-40 max-w-64 break-words">
+                          <TableCell data-label="Cliente" className="min-w-40 max-w-64 break-words">
                             <ReferenciaRegistro tipo="cliente" id={b["cliente_id"]}>
                               {cliName(b["cliente_id"])}
                             </ReferenciaRegistro>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">
+                          <TableCell data-label="Datas" className="whitespace-nowrap text-xs">
                             <p>
                               <span className="text-muted-foreground">Emissão:</span>{" "}
                               {dataBr(b["data_emissao"])}
@@ -602,7 +605,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               {dataBr(b["data_liquidacao"])}
                             </p>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap text-right tabular-nums">
+                          <TableCell
+                            data-label="Valores"
+                            className="whitespace-nowrap text-right tabular-nums"
+                          >
                             <p>{brl(b["valor"])}</p>
                             {st === "liquidado" && (
                               <p className="text-xs text-muted-foreground">
@@ -610,7 +616,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               </p>
                             )}
                           </TableCell>
-                          <TableCell className="text-right text-xs">
+                          <TableCell data-label="Tarifas do boleto" className="text-right text-xs">
                             {!canFinance ? (
                               "Acesso financeiro necessário"
                             ) : tarifaApi && tarifaApi.valor > 0 ? (
@@ -671,7 +677,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell data-label="Situação">
                             {!!b["pagamento_apos_ajuste_285"] && (
                               <p
                                 role="alert"
@@ -707,7 +713,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               </span>
                             ) : null}
                           </TableCell>
-                          <TableCell className="no-print text-right">
+                          <TableCell data-label="Ações" className="no-print text-right">
                             <div className="flex flex-wrap justify-end gap-2">
                               <ReimprimirBoleto boleto={b} />
                               <Button

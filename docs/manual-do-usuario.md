@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.14.2 · 2026-10-29
+Versão 1.14.3 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -13,13 +13,15 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 3. Se esqueceu sua senha, preencha o e-mail na tela de entrada e clique Esqueci minha senha. Abra o link recebido no e-mail, defina uma nova senha e entre novamente. O link expira e deve ser solicitado novamente se já foi usado. Redefinir a senha não aprova um cadastro pendente.
 4. Escolha a loja no seletor no topo da tela. Confira a loja antes de lançar pedidos, movimentações ou documentos.
 5. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
-6. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
-7. No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.
-8. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
-9. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
-10. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
-11. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
-12. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+6. No telefone, as listas principais de cadastros, boletos, contas, separação, cargas e relatórios usam cartões com o nome de cada informação. Botões longos podem ocupar mais de uma linha. Demonstrativos que dependem de colunas alinhadas, como a DRE, permitem deslizar a tabela para os lados sem arrastar a página toda.
+7. Use Mostrar filtros para abrir os campos no telefone e Recolher filtros para voltar aos dados. Recolher não limpa os valores; use Limpar para remover os filtros. No tablet e computador, os filtros continuam visíveis. O resumo do pedido acompanha a rolagem normal no telefone para não cobrir os itens.
+8. Ao entrar como representante, Meu painel comercial mostra suas vendas por mês, o total do ano selecionado, o total do mês, sua carteira e os limites pendentes. A loja selecionada e as permissões continuam valendo; clientes de outra carteira não aparecem, mesmo se estiverem na mesma rota.
+9. No painel do representante, os cartões de clientes sem comprar há 60 dias e de saldo em atraso usam as mesmas consultas da Agenda Comercial. Clique para abrir os detalhes na Agenda e filtre por rota, cidade ou período sem duplicar acompanhamentos. Os cartões aparecem conforme a liberação das rotinas de reativação e cobrança.
+10. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
+11. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
+12. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
+13. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+14. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 
 Cuidados:
 

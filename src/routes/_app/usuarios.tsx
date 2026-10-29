@@ -246,7 +246,7 @@ function UsuariosPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="mobile-cards">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Usuário</TableHead>
@@ -261,7 +261,7 @@ function UsuariosPage() {
                     const current = rolesOf(p["id"]);
                     return (
                       <TableRow key={String(p["id"])}>
-                        <TableCell>
+                        <TableCell data-label="Usuário">
                           {String(p["nome"] || "—")}
                           {p["ativo"] === false ? (
                             <span className="ml-2 text-xs text-muted-foreground">
@@ -273,8 +273,8 @@ function UsuariosPage() {
                             </span>
                           ) : null}
                         </TableCell>
-                        <TableCell>{String(p["email"] ?? "—")}</TableCell>
-                        <TableCell>
+                        <TableCell data-label="E-mail">{String(p["email"] ?? "—")}</TableCell>
+                        <TableCell data-label="Representante / vendedor">
                           <select
                             value={String(
                               representantes.data?.find((r) => r["profile_id"] === p["id"])?.[
@@ -301,7 +301,7 @@ function UsuariosPage() {
                               ))}
                           </select>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Papéis">
                           <div className="flex flex-wrap gap-1.5">
                             {papeis.map((papel) => {
                               const role = papel.codigo as AppRole;
@@ -330,7 +330,7 @@ function UsuariosPage() {
                             })}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Ações">
                           <div className="flex justify-end gap-1.5">
                             <Button
                               size="sm"

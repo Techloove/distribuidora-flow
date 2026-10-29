@@ -248,7 +248,7 @@ function RelatoriosFinanceirosPage() {
               Nenhuma venda no período selecionado.
             </p>
           ) : (
-            <Table>
+            <Table className="mobile-cards">
               <TableHeader>
                 <TableRow>
                   <TableHead>{chaves[agrupar].label}</TableHead>
@@ -265,7 +265,7 @@ function RelatoriosFinanceirosPage() {
               <TableBody>
                 {linhas.slice(0, 200).map((l) => (
                   <TableRow key={l.chave}>
-                    <TableCell>
+                    <TableCell data-label={chaves[agrupar].label}>
                       {agrupar === "cliente" || agrupar === "pedido" ? (
                         <ReferenciaRegistro tipo={agrupar} id={l.referencia_id}>
                           {l.chave}
@@ -274,20 +274,36 @@ function RelatoriosFinanceirosPage() {
                         l.chave
                       )}
                     </TableCell>
-                    <TableCell className="text-right">{l.quantidade.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{brl(l.receita)}</TableCell>
+                    <TableCell data-label="Qtd." className="text-right">
+                      {l.quantidade.toFixed(2)}
+                    </TableCell>
+                    <TableCell data-label="Faturamento" className="text-right">
+                      {brl(l.receita)}
+                    </TableCell>
                     {mostraCusto ? (
-                      <TableCell className="text-right">{brl(l.custo)}</TableCell>
+                      <TableCell data-label="Custo" className="text-right">
+                        {brl(l.custo)}
+                      </TableCell>
                     ) : null}
                     {mostraMargem ? (
-                      <TableCell className="text-right">{brl(l.lucro)}</TableCell>
+                      <TableCell data-label="Lucro" className="text-right">
+                        {brl(l.lucro)}
+                      </TableCell>
                     ) : null}
                     {mostraMargem ? (
-                      <TableCell className="text-right">{l.margem.toFixed(1)}%</TableCell>
+                      <TableCell data-label="Margem" className="text-right">
+                        {l.margem.toFixed(1)}%
+                      </TableCell>
                     ) : null}
-                    <TableCell className="text-right">{brl(l.desconto)}</TableCell>
-                    <TableCell className="text-right">{brl(l.comissao)}</TableCell>
-                    <TableCell className="text-right">{brl(l.ticket)}</TableCell>
+                    <TableCell data-label="Desconto" className="text-right">
+                      {brl(l.desconto)}
+                    </TableCell>
+                    <TableCell data-label="Comissão" className="text-right">
+                      {brl(l.comissao)}
+                    </TableCell>
+                    <TableCell data-label="Ticket médio" className="text-right">
+                      {brl(l.ticket)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

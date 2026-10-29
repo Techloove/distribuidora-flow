@@ -174,7 +174,7 @@ export function PlanejamentoCompras() {
           ) : rows.length === 0 ? (
             <p className="py-14 text-center text-sm text-muted-foreground">Sem produtos ativos.</p>
           ) : (
-            <Table>
+            <Table className="mobile-cards">
               <TableHeader>
                 <TableRow>
                   <TableHead>Produto</TableHead>
@@ -192,18 +192,35 @@ export function PlanejamentoCompras() {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={`${r["centro_id"]}-${r["produto_id"]}`}>
-                    <TableCell className="max-w-[16rem] truncate">
+                    <TableCell data-label="Produto" className="max-w-[16rem] truncate">
                       {String(r["codigo"])} · {String(r["descricao"])}
                     </TableCell>
-                    <TableCell className="text-right">{String(r["estoque_atual"])}</TableCell>
-                    <TableCell className="text-right">{String(r["estoque_minimo"])}</TableCell>
-                    <TableCell className="text-right">{String(r["venda_30"])}</TableCell>
-                    <TableCell className="text-right">{String(r["venda_60"])}</TableCell>
-                    <TableCell className="text-right">{String(r["venda_90"])}</TableCell>
-                    <TableCell className="text-right">{String(r["media_mensal"])}</TableCell>
-                    <TableCell className="text-right">{String(r["pedidos_pendentes"])}</TableCell>
-                    <TableCell className="text-right">{String(r["em_transito"])}</TableCell>
+                    <TableCell data-label="Estoque" className="text-right">
+                      {String(r["estoque_atual"])}
+                    </TableCell>
+                    <TableCell data-label="Mín." className="text-right">
+                      {String(r["estoque_minimo"])}
+                    </TableCell>
+                    <TableCell data-label="30d" className="text-right">
+                      {String(r["venda_30"])}
+                    </TableCell>
+                    <TableCell data-label="60d" className="text-right">
+                      {String(r["venda_60"])}
+                    </TableCell>
+                    <TableCell data-label="90d" className="text-right">
+                      {String(r["venda_90"])}
+                    </TableCell>
+                    <TableCell data-label="Média mês" className="text-right">
+                      {String(r["media_mensal"])}
+                    </TableCell>
+                    <TableCell data-label="Pendentes" className="text-right">
+                      {String(r["pedidos_pendentes"])}
+                    </TableCell>
+                    <TableCell data-label="Em trânsito" className="text-right">
+                      {String(r["em_transito"])}
+                    </TableCell>
                     <TableCell
+                      data-label="Sugestão"
                       className={`text-right font-semibold ${
                         Number(r["sugestao"]) > 0 ? "text-primary" : "text-muted-foreground"
                       }`}
