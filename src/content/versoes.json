@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.1",
+    "data": "2026-10-29",
+    "titulo": "Permitir ao representante cancelar somente o próprio pedido aprovado",
+    "novidades": [
+      "Permitir ao representante cancelar somente o próprio pedido aprovado"
+    ]
+  },
+  {
     "versao": "1.14.0",
     "data": "2026-10-29",
     "titulo": "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo",

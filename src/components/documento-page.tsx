@@ -1314,6 +1314,11 @@ export function DocumentoPage({
           <AcoesCancelamentoPedido
             key={String(doc["id"])}
             pedido={String(doc["id"])}
+            criadoPor={
+              String(doc["representante_id"] ?? "") === meuRepresentante
+                ? String(doc["created_by"] ?? "")
+                : ""
+            }
             status={String(doc["status"])}
           />
         )}

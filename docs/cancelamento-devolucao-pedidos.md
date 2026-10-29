@@ -37,3 +37,11 @@ Se houver pagamento entre o ajuste local e a baixa bancária, a liquidação val
 - Migração pré-validada no Supabase com ROLLBACK. Nenhum pedido real foi cancelado, devolvido ou enviado para baixa bancária como teste.
 
 Aplicar `db/fase285_cancelamento_devolucao_pedidos.sql` antes da interface. A migração é transacional e reaplicável. A liberação visual no aparelho e os procedimentos fiscais/financeiros especiais precisam ser homologados na operação real.
+
+## Representante: próprio pedido aprovado (1.14.1 / fase286)
+
+O representante ativo pode cancelar apenas pedido de sua autoria (`created_by`), ainda `aprovado`, vinculado ao seu representante, carteira e centro permitido. A RPC bloqueia a linha antes de conferir o estágio, evitando uma corrida com a separação. A partir de separação, somente o administrador usa o cancelamento existente.
+
+A ação exige motivo e confirmação. Reutiliza as mesmas regras de preservação de títulos com boletos, impedimentos de recebimento/fiscal e reversão exclusiva de movimentos existentes. Não concede baixa bancária, devolução ou acesso administrativo ao representante. O contexto interno é limitado ao pedido e limpo ao concluir; alterações diretas de status continuam bloqueadas.
+
+Verificado com PGlite: autoria, carteira, estágio, bloqueio de alteração direta, cancelamento com boleto preservado e proibição da baixa pelo representante. A migração foi validada por rollback no Supabase antes da instalação. Nenhum pedido real foi cancelado como teste.

@@ -12,13 +12,14 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
  create function escopo_representante() returns boolean language sql as $$select false$$;
  create function documento_na_minha_carteira(text,uuid) returns boolean language sql as $$select true$$;
  create function ator_financeiro_pode_acessar_centro(uuid,uuid) returns boolean language sql as $$select $1='${id(1)}'::uuid and $2='${id(10)}'::uuid$$;
- create function has_role(uuid,text) returns boolean language sql as $$select $2='admin' and current_setting('test.admin',true)='true'$$;
+ create function meu_representante_id() returns uuid language sql as $$select '00000000-0000-4000-8000-000000000900'::uuid$$;
+ create function has_role(uuid,text) returns boolean language sql as $$select ($2='admin' and current_setting('test.admin',true)='true') or ($2='representante' and current_setting('test.rep',true)='true')$$;
  create function usuario_ativo() returns boolean language sql as $$select current_setting('test.ativo',true)='true'$$;
  create function can_manage(uuid) returns boolean language sql as $$select usuario_ativo()$$;
  create function can_ship(uuid) returns boolean language sql as $$select usuario_ativo()$$;
  create function usuario_pode_acessar_centro(uuid) returns boolean language sql as $$select $1='${id(10)}'::uuid$$;
  create table profiles(id uuid primary key,ativo boolean default true);insert into profiles(id) values('${id(1)}');
- create table pedidos(id uuid primary key default gen_random_uuid(),cliente_id uuid,centro_id uuid,status text,tipo_documento text default 'pedido',total_liquido numeric default 100);
+ create table pedidos(id uuid primary key default gen_random_uuid(),cliente_id uuid,centro_id uuid,status text,tipo_documento text default 'pedido',total_liquido numeric default 100,created_by uuid,representante_id uuid);
  create table produtos(id uuid primary key,descricao text,estoque_atual numeric default 100,custo_medio numeric default 5);insert into produtos(id,descricao,estoque_atual) values('${id(20)}','Produto A',100),('${id(21)}','Produto B',100);
  create table pedido_itens(id uuid default gen_random_uuid(),pedido_id uuid,produto_id uuid,quantidade numeric,total numeric);
  create table estoque_movimentos(id uuid primary key default gen_random_uuid(),produto_id uuid,centro_id uuid,tipo text,quantidade numeric,custo_unitario numeric,origem text,documento_id uuid,observacao text,created_by uuid);
@@ -76,6 +77,9 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     const sql = readFileSync("db/fase285_cancelamento_devolucao_pedidos.sql", "utf8");
     await db.exec(sql);
     await db.exec(sql);
+    const sql286 = readFileSync("db/fase286_cancelamento_representante.sql", "utf8");
+    await db.exec(sql286);
+    await db.exec(sql286);
     const user = () => db.exec("set role authenticated"),
       owner = () => db.exec("reset role");
     const reason = "Cliente solicitou cancelamento da venda";
@@ -452,6 +456,61 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
       0,
       "Falha financeira reverte também a devolução e o estoque",
     );
+    // O representante só cancela a própria autoria, aprovado e na carteira.
+    await criar(80, "aprovado", true, false);
+    await owner();
+    await db.query("update pedidos set created_by=$1,representante_id=$2 where id=$3", [
+      id(1),
+      id(900),
+      id(80),
+    ]);
+    await user();
+    await db.exec("set test.admin='false';set test.rep='true'");
+    await assert.rejects(db.query("update pedidos set status='cancelado' where id=$1", [id(80)]), /administrativo/);
+    await assert.rejects(db.query("update pedidos set cancelamento_motivo_285='Tentativa direta' where id=$1", [id(80)]), /administrador/);
+    await db.query("select previa_cancelamento_representante_286($1)", [id(80)]);
+    await db.query("select cancelar_pedido_representante_286($1,$2)", [id(80), reason]);
+    assert.equal(
+      (await db.query("select status from pedidos where id=$1", [id(80)])).rows[0].status,
+      "cancelado",
+    );
+    assert.equal(
+      (await db.query("select status from contas_receber where pedido_id=$1", [id(80)])).rows[0]
+        .status,
+      "cancelado",
+    );
+    await assert.rejects(
+      db.query("select autorizar_baixa_boleto_285(id,$1) from boletos where pedido_id=$2", [
+        reason,
+        id(80),
+      ]),
+      /administrador/,
+    );
+    for (const [n, stage, author, rep] of [
+      [81, "separacao", 1, 900],
+      [82, "aprovado", 2, 900],
+      [83, "aprovado", 1, 901],
+      [84, "rascunho", 1, 900],
+    ]) {
+      await criar(n, stage, false, false);
+      await owner();
+      await db.query("update pedidos set created_by=$1,representante_id=$2 where id=$3", [
+        id(author),
+        id(rep),
+        id(n),
+      ]);
+      await user();
+      await assert.rejects(
+        db.query("select cancelar_pedido_representante_286($1,$2)", [id(n), reason]),
+        /Representante/,
+      );
+      await assert.rejects(
+        db.query("update pedidos set status='cancelado' where id=$1", [id(n)]),
+        /administrativo/,
+      );
+      await assert.rejects(cancel(n), /administrador/);
+    }
+    await db.exec("set test.rep='false';set test.admin='true'");
     console.log(
       "Cancelamento/devolução OK: administrador/motivo, exclusão segura ou preservação de títulos, estoque sem duplicação, montagem e saída, recebimentos, parcial/integral, avaria, saldo sem crédito duplicado, idempotência e bloqueio de boletos substitutos.",
     );

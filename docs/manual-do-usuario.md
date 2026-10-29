@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.14.0 · 2026-10-29
+Versão 1.14.1 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -101,6 +101,7 @@ Cuidados:
 - Os produtos e suas reservas pertencem à loja do pedido. A venda não usa o estoque de outra loja.
 - Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.
 - Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
+- O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.
 
 ## Regularizar o status de um pedido antigo
 

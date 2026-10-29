@@ -31,7 +31,15 @@ type Previa = {
     valor_unitario: number;
   }[];
 };
-export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; status: string }) {
+export function AcoesCancelamentoPedido({
+  pedido,
+  status,
+  criadoPor,
+}: {
+  pedido: string;
+  status: string;
+  criadoPor: string;
+}) {
   const { client, user, roles } = useSupabase();
   const qc = useQueryClient();
   const [modo, setModo] = useState<"cancelar" | "devolver" | null>(null);
@@ -41,6 +49,8 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
   const [condicoes, setCondicoes] = useState<Record<string, string>>({});
   const [chave, setChave] = useState("");
   const admin = roles.includes("admin");
+  const representante =
+    !admin && roles.includes("representante") && criadoPor === user?.id && status === "aprovado";
   const abrir = (value: "cancelar" | "devolver") => {
     setModo(value);
     setMotivo("");
@@ -51,10 +61,13 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
   };
   const q = useQuery({
     queryKey: ["acao-pedido-admin", user?.id, pedido, modo],
-    enabled: !!client && admin && !!modo,
+    enabled: !!client && (admin || representante) && !!modo,
     staleTime: 0,
     queryFn: async () => {
-      const r = await client!.rpc("acao_pedido_admin_285", { _pedido: pedido });
+      const r = await client!.rpc(
+        admin ? "acao_pedido_admin_285" : "previa_cancelamento_representante_286",
+        { _pedido: pedido },
+      );
       if (r.error) throw new Error(r.error.message);
       return r.data as Previa;
     },
@@ -78,7 +91,11 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
                 })),
             };
       const r = await client!.rpc(
-        modo === "cancelar" ? "cancelar_pedido_admin_285" : "devolver_pedido_admin_285",
+        modo === "cancelar"
+          ? admin
+            ? "cancelar_pedido_admin_285"
+            : "cancelar_pedido_representante_286"
+          : "devolver_pedido_admin_285",
         args,
       );
       if (r.error) throw new Error(r.error.message);
@@ -94,7 +111,7 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  if (!admin) return null;
+  if (!admin && !representante) return null;
   const encerrado = ["cancelado", "devolvido"].includes(status);
   const avancado = ["em_rota", "entregue", "parcial", "nao_entregue"].includes(status);
   const valor = (q.data?.itens ?? []).reduce(
@@ -114,10 +131,11 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
     <>
       {!encerrado && !avancado && (
         <Button variant="outline" onClick={() => abrir("cancelar")}>
-          Cancelar pedido · administrador
+          {admin ? "Cancelar pedido · administrador" : "Cancelar meu pedido aprovado"}
         </Button>
       )}
-      {!encerrado &&
+      {admin &&
+        !encerrado &&
         !["rascunho", "digitacao", "aguardando_aprovacao", "recusado", "aprovado"].includes(
           status,
         ) && (
@@ -140,7 +158,9 @@ export function AcoesCancelamentoPedido({ pedido, status }: { pedido: string; st
             </DialogTitle>
             <DialogDescription>
               {modo === "cancelar"
-                ? "Permitido até a montagem da carga. Somente saídas de estoque registradas serão revertidas. Títulos sem vínculos podem ser excluídos nas etapas iniciais; títulos vinculados a boletos serão preservados como cancelados."
+                ? admin
+                  ? "Permitido até a montagem da carga. Somente saídas de estoque registradas serão revertidas. Títulos sem vínculos podem ser excluídos nas etapas iniciais; títulos vinculados a boletos serão preservados como cancelados."
+                  : "Você pode cancelar somente pedidos criados por você e ainda Aprovados. Após iniciar a separação, procure um administrador. Boletos vinculados serão preservados e a baixa deve ser solicitada por um administrador."
                 : "Informe apenas as quantidades que voltaram fisicamente. A devolução parcial mantém a cobrança do restante; a integral encerra o pedido como devolvido. Os títulos afetados ficam cancelados no histórico."}
             </DialogDescription>
           </DialogHeader>
