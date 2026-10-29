@@ -1,3 +1,11 @@
+import {
+  condicoesSicredi,
+  condicoesCorrespondem,
+  instrucaoSicredi,
+  type HistoricoCondicoesSicredi,
+  type CondicoesSicredi,
+  type InstrucaoSicredi,
+} from "./sicredi-condicoes";
 import { cancelamentoBoletoPendente } from "./boletos-lista";
 import { erroPersistenciaSicredi } from "./sicredi-persistencia";
 import {
@@ -887,5 +895,188 @@ export const sicrediAlterarVencimento = createServerFn({ method: "POST" })
     return {
       pendente: true,
       mensagem: "Alteração enviada ao Sicredi. Consulte o boleto para confirmar o novo vencimento.",
+    };
+  });
+
+/** Consulta bancária de condições, sem enviar instruções nem movimentar o financeiro. */
+async function consultarCondicoes292(b: DbRow, c: Awaited<ReturnType<typeof conf>>, tk: string) {
+  const versao = c.ambiente === "producao" ? "v2" : "v1";
+  const res = await fetchWithTimeout(
+    `${c.base}/cobranca/boleto/${versao}/boletos?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&nossoNumero=${encodeURIComponent(String(b["nosso_numero"]))}`,
+    { headers: headers(c, tk) },
+  );
+  if (!res.ok)
+    throw new Error(`Não foi possível conferir as condições no Sicredi (HTTP ${res.status}).`);
+  const json = (await res.json()) as Record<string, unknown>;
+  if (
+    String(json["nossoNumero"] ?? "") !== b["nosso_numero"] ||
+    linhaDigitavelSicredi(json["linhaDigitavel"]) !== linhaDigitavelSicredi(b["linha_digitavel"])
+  )
+    throw new Error("A consulta retornou identificação de outro boleto.");
+  const condicoes = condicoesSicredi(json);
+  if (condicoes.nominal !== Number(b["valor"]))
+    throw new Error("Valor nominal no Sicredi difere do ERP. Concilie antes de alterar.");
+  return condicoes;
+}
+export const sicrediPreviaCondicoes = createServerFn({ method: "POST" })
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { accessToken } = await requireSicrediAccess(
+      "sicredi_previa_condicoes",
+      20,
+      data.accessToken,
+      ["admin"],
+    );
+    const b = await carregarBoleto(accessToken, data.boletoId);
+    const c = await conf();
+    conferirConvenio(b, c);
+    const condicoes = await consultarCondicoes292(b, c, await token(c));
+    const historico = await userRest<HistoricoCondicoesSicredi>(
+      accessToken,
+      `sicredi_condicoes_historico_292?select=id,tipo,motivo,estado,anterior,esperado,created_at&boleto_id=eq.${encodeURIComponent(data.boletoId)}&order=created_at.desc&limit=30`,
+    );
+    return { condicoes, historico, pendente: !!b["condicoes_pendente_292"] };
+  });
+
+export const sicrediAlterarCondicoes = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      boletoId: string;
+      accessToken?: string;
+      chave: string;
+      motivo: string;
+      instrucao: InstrucaoSicredi;
+      anterior: CondicoesSicredi;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_alterar_condicoes",
+      10,
+      data.accessToken,
+      ["admin"],
+    );
+    const motivo = String(data.motivo ?? "").trim();
+    if (motivo.length < 10 || motivo.length > 2000)
+      throw new Error("Descreva o motivo com 10 a 2000 caracteres.");
+    if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(data.chave))
+      throw new Error("Chave inválida.");
+    const b = await carregarBoleto(accessToken, data.boletoId);
+    if (
+      b["status"] !== "registrado" ||
+      b["canal"] !== "api" ||
+      b["condicoes_pendente_292"] ||
+      b["vencimento_solicitacao_id"] ||
+      cancelamentoBoletoPendente(b)
+    )
+      throw new Error("Boleto indisponível ou com instrução pendente. Confira no Sicredi.");
+    const c = await conf();
+    conferirConvenio(b, c);
+    const tk = await token(c),
+      anterior = await consultarCondicoes292(b, c, tk);
+    if (!condicoesCorrespondem(anterior, data.anterior))
+      throw new Error("As condições mudaram. Atualize a consulta e revise antes de confirmar.");
+    const hoje = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const { endpoint, body, esperado } = instrucaoSicredi(anterior, data.instrucao, hoje);
+    const reserva = await serviceRpc<{ id: string; enviar: boolean }>(
+      "sicredi_reservar_condicoes_292",
+      {
+        _actor: user.id,
+        _boleto: data.boletoId,
+        _chave: data.chave,
+        _tipo: data.instrucao.tipo,
+        _motivo: motivo,
+        _anterior: anterior,
+        _esperado: esperado,
+      },
+    );
+    if (!reserva.enviar)
+      return { mensagem: "Solicitação já registrada. Confira no Sicredi antes de reenviar." };
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(
+        `${c.base}/cobranca/boleto/v1/boletos/${encodeURIComponent(String(b["nosso_numero"]))}/${endpoint}`,
+        { method: "PATCH", headers: headersInstrucao(c, tk), body: JSON.stringify(body) },
+      );
+    } catch {
+      await serviceRpc("sicredi_finalizar_condicoes_292", {
+        _actor: user.id,
+        _boleto: data.boletoId,
+        _solicitacao: reserva.id,
+        _estado: "incerto",
+      });
+      return {
+        mensagem:
+          "Resposta indisponível. A solicitação permanece pendente; confira no Sicredi, sem reenviar.",
+      };
+    }
+    const txt = await response.text();
+    // Só 202 significa comando recebido segundo o manual. Respostas inesperadas permanecem incertas.
+    const rejeitado = [400, 401, 403, 404, 422].includes(response.status);
+    const estado = response.status === 202 ? "enviado" : rejeitado ? "rejeitado" : "incerto";
+    const motivoBanco = motivoRecusaSicredi(txt, [c.apiKey, c.password, tk, accessToken]);
+    await serviceRpc("sicredi_finalizar_condicoes_292", {
+      _actor: user.id,
+      _boleto: data.boletoId,
+      _solicitacao: reserva.id,
+      _estado: estado,
+      _banco: { http: response.status, mensagem: motivoBanco || null },
+    });
+    if (rejeitado) {
+      throw new Error(
+        `Sicredi recusou a instrução (HTTP ${response.status}).${motivoBanco ? ` ${motivoBanco}` : " Confira as condições do boleto."}`,
+      );
+    }
+    return {
+      mensagem:
+        estado === "enviado"
+          ? "Solicitação enviada. Use Conferir no Sicredi para confirmar a condição."
+          : "Resposta inconclusiva. Confira no Sicredi antes de qualquer nova instrução.",
+    };
+  });
+
+export const sicrediConferirCondicoes = createServerFn({ method: "POST" })
+  .inputValidator((data: { boletoId: string; accessToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const { user, accessToken } = await requireSicrediAccess(
+      "sicredi_conferir_condicoes",
+      20,
+      data.accessToken,
+      ["admin"],
+    );
+    const b = await carregarBoleto(accessToken, data.boletoId);
+    if (!b["condicoes_pendente_292"])
+      return { mensagem: "Não há solicitação pendente. Atualize as condições." };
+    const rows = await userRest<Record<string, unknown>>(
+      accessToken,
+      `sicredi_condicoes_historico_292?select=*&id=eq.${encodeURIComponent(String(b["condicoes_pendente_292"]))}&limit=1`,
+    );
+    if (!rows[0]) throw new Error("Solicitação não encontrada.");
+    const c = await conf();
+    conferirConvenio(b, c);
+    const banco = await consultarCondicoes292(b, c, await token(c));
+    const esperado = rows[0]["esperado"] as CondicoesSicredi;
+    const terminal = /^(LIQUIDAD|BAIXAD)/.test(banco.situacao);
+    const confirmado =
+      ["EM CARTEIRA", "VENCIDO"].includes(banco.situacao) && condicoesCorrespondem(banco, esperado);
+    if (terminal || confirmado)
+      await serviceRpc("sicredi_finalizar_condicoes_292", {
+        _actor: user.id,
+        _boleto: data.boletoId,
+        _solicitacao: b["condicoes_pendente_292"],
+        _estado: terminal ? "encerrado" : "confirmado",
+        _banco: banco,
+      });
+    return {
+      mensagem: confirmado
+        ? "Condição confirmada no Sicredi."
+        : terminal
+          ? "Boleto encerrado no banco. Consulte a situação do boleto para conciliar o financeiro; a instrução foi encerrada sem alterar valores locais."
+          : "O Sicredi ainda não confirmou a condição solicitada. A solicitação permanece pendente; não reenvie.",
     };
   });

@@ -1,3 +1,4 @@
+import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { lerPaginas } from "@/lib/paginacao";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { dataBr } from "@/lib/formatacao";
@@ -749,9 +750,14 @@ export function TitulosPage({
                               {isReceber &&
                               canFinance &&
                               boletoPorConta.get(String(r["id"]))?.["status"] === "registrado" ? (
-                                <AlterarVencimentoBoleto
-                                  boleto={boletoPorConta.get(String(r["id"]))!}
-                                />
+                                <>
+                                  <AlterarVencimentoBoleto
+                                    boleto={boletoPorConta.get(String(r["id"]))!}
+                                  />
+                                  <CondicoesBoletoSicredi
+                                    boleto={boletoPorConta.get(String(r["id"]))!}
+                                  />
+                                </>
                               ) : null}
                             </div>
                           </PopoverContent>

@@ -1,3 +1,4 @@
+import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { ContextoReferencia } from "@/components/contexto-referencia";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { correspondeReferencia, type BuscaReferencias } from "@/lib/referencias-registros";
@@ -802,6 +803,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                     <LiquidacaoSicredi key={String(b["id"])} boleto={b} />
                                   )}
                                 <AlterarVencimentoBoleto boleto={b} />
+                                <CondicoesBoletoSicredi boleto={b} />
                                 {b["pedido_id"] ? (
                                   <EmitirBoletosPedido
                                     pedidoId={String(b["pedido_id"])}

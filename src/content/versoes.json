@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.19.0",
+    "data": "2026-10-29",
+    "titulo": "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária",
+    "novidades": [
+      "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária"
+    ]
+  },
+  {
     "versao": "1.18.2",
     "data": "2026-10-29",
     "titulo": "Corrigir exposição de crédito para contar cada pedido uma única vez",

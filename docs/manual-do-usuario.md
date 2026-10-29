@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.18.2 · 2026-10-29
+Versão 1.19.0 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -276,6 +276,10 @@ Entenda os cuidados com documentos bancários e fiscais.
 17. As tarifas retornadas pelo Sicredi aparecem automaticamente na lista com a origem API Sicredi. Em Opções, confira a data do lançamento, a descrição e o valor dos débitos. A atualização ocorre pelo agendamento, mesmo com o sistema fechado; o histórico inicial é preenchido aos poucos.
 18. Para ativar a contabilização, confira a data inicial, a conta e a categoria, marque a autorização e use Salvar e contabilizar tarifas da loja. Isso processa os retornos já recebidos desde a data escolhida e habilita o lançamento das próximas tarifas identificadas. Cada tarifa mostra seu resultado e a conta/categoria vinculadas.
 19. Na linha do boleto, use Reimprimir boleto para abrir o PDF original do Sicredi e imprimir ou baixar apenas aquele documento. A reimpressão não gera uma nova cobrança. O cancelamento fica separado, dentro de Opções, à direita, e exige confirmação.
+20. Em Boletos → Opções → Desconto e abatimento, ou nas Opções do título em Contas a receber, o administrador consulta as condições no Sicredi, escolhe a operação, informa o motivo e confirma o envio. Conceder abatimento reduz o valor a pagar sem mudar o valor nominal. Para trocar um abatimento existente, cancele-o e confirme no banco antes de conceder outro.
+21. Alterar desconto existente mantém o tipo cadastrado no Sicredi: valor em reais ou percentual. Escolha o desconto e informe o novo valor. Alterar prazo do desconto muda somente a data daquele desconto; valor e data são solicitações separadas. Um boleto sem desconto cadastrado pode receber abatimento. Não há alteração direta do valor nominal nem mudança do tipo de desconto por este atalho.
+22. Após solicitar, use Conferir no Sicredi. Envio aceito ou resposta indisponível permanece pendente até o banco devolver as condições solicitadas. Não reenvie uma instrução pendente. O histórico mostra as últimas 30 solicitações com motivo, condições anteriores, condições solicitadas e situação. Respostas inconclusivas ou recusas assíncronas exigem conferência com o banco e, quando necessário, suporte técnico.
+23. O valor após abatimento mostrado no diálogo não inclui desconto condicionado à data, juros ou multa. O financeiro preserva o valor nominal até a liquidação: desconto e abatimento efetivamente informados pelo Sicredi são contabilizados uma única vez no recebimento. A concessão não marca o título como pago nem reduz antecipadamente a exposição de crédito. Para alterar o principal para maior valor, regularize o boleto antigo e gere nova cobrança pelo fluxo existente.
 
 Cuidados:
 
