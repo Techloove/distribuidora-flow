@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.18.1 · 2026-10-29
+Versão 1.18.2 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -109,6 +109,7 @@ Da escolha do cliente à confirmação da venda.
 14. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
 15. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
 16. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
+17. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
 
 Cuidados:
 

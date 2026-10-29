@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.18.2",
+    "data": "2026-10-29",
+    "titulo": "Corrigir exposição de crédito para contar cada pedido uma única vez",
+    "novidades": ["Corrigir exposição de crédito para contar cada pedido uma única vez"]
+  },
+  {
     "versao": "1.18.1",
     "data": "2026-10-29",
     "titulo": "Corrigir retorno para digitação ao sincronizar o cancelamento da expedição",
