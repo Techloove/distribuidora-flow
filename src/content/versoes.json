@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.14.2",
+    "data": "2026-10-29",
+    "titulo": "Mostrar representante e rota na impressão e orientar PDF no celular",
+    "novidades": [
+      "Mostrar representante e rota na impressão e orientar PDF no celular"
+    ]
+  },
+  {
     "versao": "1.14.1",
     "data": "2026-10-29",
     "titulo": "Permitir ao representante cancelar somente o próprio pedido aprovado",

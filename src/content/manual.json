@@ -99,6 +99,8 @@
       "Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.",
       "Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.",
       "Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.",
+      "A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.",
+      "Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.",
       "No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.",
       "A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento."
     ],

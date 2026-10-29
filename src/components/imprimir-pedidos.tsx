@@ -83,7 +83,7 @@ export function ImprimirPedidos({
         }
         return resultado;
       };
-      const [clientes, produtos, centros, representantes, formas] = await Promise.all([
+      const [clientes, produtos, centros, representantes, formas, rotas] = await Promise.all([
         lookup(
           "clientes",
           pedidos.map((p) => p["cliente_id"]),
@@ -108,6 +108,11 @@ export function ImprimirPedidos({
           pedidos.map((p) => p["forma_pagamento_id"]),
           "id, nome",
         ),
+        lookup(
+          "rotas",
+          pedidos.map((p) => p["rota_id"]),
+          "id, nome",
+        ),
       ]);
       const find = (rows: PrintRow[], id: unknown) => rows.find((r) => r["id"] === id) ?? {};
       const dados: PedidoImpressao[] = pedidos.map((pedido) => ({
@@ -119,6 +124,7 @@ export function ImprimirPedidos({
         ),
         centro: find(centros, pedido["centro_id"]),
         representante: find(representantes, pedido["representante_id"]),
+        rota: find(rotas, pedido["rota_id"]),
         forma: find(formas, pedido["forma_pagamento_id"]),
         itens: linhas
           .filter((i) => i["pedido_id"] === pedido["id"])
@@ -176,8 +182,14 @@ export function ImprimirPedidos({
               onClick={() => {
                 const win = frame.current?.contentWindow;
                 if (win) {
-                  win.focus();
-                  win.print();
+                  try {
+                    win.focus();
+                    win.print();
+                  } catch {
+                    toast.error(
+                      "Não foi possível abrir a impressão. Tente abrir o sistema no Safari ou Chrome do aparelho.",
+                    );
+                  }
                 }
               }}
             >
@@ -185,6 +197,28 @@ export function ImprimirPedidos({
               Imprimir / salvar PDF
             </Button>
           </div>
+          <details className="text-sm text-muted-foreground">
+            <summary className="cursor-pointer">
+              Como salvar no celular e enviar pelo WhatsApp
+            </summary>
+            <div className="space-y-2 pt-2">
+              <p>Toque em Imprimir / salvar PDF para abrir as opções do aparelho.</p>
+              <p>
+                <strong>Android:</strong> selecione Salvar como PDF no destino da impressão e
+                escolha a pasta.
+              </p>
+              <p>
+                <strong>iPhone/iPad:</strong> na tela de impressão, amplie a prévia com dois dedos
+                para abrir o PDF. Toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se
+                disponível.
+              </p>
+              <p>
+                Depois de salvar, no WhatsApp abra a conversa e anexe o arquivo como Documento. Os
+                menus variam conforme o navegador e a versão do sistema; prefira Safari no iPhone e
+                Chrome no Android.
+              </p>
+            </div>
+          </details>
           <iframe
             ref={frame}
             title="Prévia de impressão dos documentos"

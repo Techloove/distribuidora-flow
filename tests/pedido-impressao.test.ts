@@ -122,3 +122,13 @@ test("imprime razão social, nome fantasia e observações ao final com texto se
   );
   expect(gerarHtmlPedidos([pedido], "")).not.toContain('class="order-observations"');
 });
+
+test("impressão inclui representante e rota do pedido, com texto seguro", () => {
+  const html = gerarHtmlPedidos(
+    [{ ...pedido, representante: { nome: "João <Silva>" }, rota: { nome: "Rota Centro & Sul" } }],
+    "",
+  );
+  expect(html).toContain("<strong>Representante:</strong> João &lt;Silva&gt;");
+  expect(html).toContain("<strong>Rota:</strong> Rota Centro &amp; Sul");
+  expect(gerarHtmlPedidos([pedido], "")).toContain("<strong>Rota:</strong> —");
+});

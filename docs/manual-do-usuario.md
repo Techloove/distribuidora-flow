@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.14.1 · 2026-10-29
+Versão 1.14.2 · 2026-10-29
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -89,8 +89,10 @@ Da escolha do cliente à confirmação da venda.
 4. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.
 5. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
 6. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
-7. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
-8. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
+7. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
+8. Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.
+9. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
+10. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
 
 Cuidados:
 
