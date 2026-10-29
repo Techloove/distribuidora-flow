@@ -758,8 +758,7 @@ export function CrudPage({
             columnPreferences={false}
             className={cn(
               "mobile-cards",
-              table === "pessoas" && "fluid-cards",
-              table === "produtos" && "product-list",
+              ["produtos", "pessoas"].includes(table) && "catalog-list",
             )}
           >
             <TableHeader>

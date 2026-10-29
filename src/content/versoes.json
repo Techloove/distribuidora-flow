@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.17.3",
+    "data": "2026-10-29",
+    "titulo": "Restaurar clientes e Cadastro unificado em lista com colunas",
+    "novidades": ["Restaurar clientes e Cadastro unificado em lista com colunas"]
+  },
+  {
     "versao": "1.17.2",
     "data": "2026-10-29",
     "titulo": "Restaurar exibição de Produtos em lista com colunas",
