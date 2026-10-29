@@ -67,7 +67,7 @@ const nav = [
     items: [
       { to: "/pessoas", label: "Cadastro Unificado", icon: Users },
       { to: "/produtos", label: "Produtos", icon: Package },
-      { to: "/cadastros-padrao", label: "Categorias, Marcas e cCdades", icon: Tags },
+      { to: "/cadastros-padrao", label: "Categorias e Marcas", icon: Tags },
       { to: "/tabelas-preco", label: "Promoção", icon: Tags },
       { to: "/centros", label: "Lojas", icon: Building2 },
       { to: "/rotas", label: "Rotas de Entregas", icon: Route },
