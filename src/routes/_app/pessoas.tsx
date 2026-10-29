@@ -1,3 +1,10 @@
+import {
+  decorarPendenciasClientes,
+  filtroPendenciaCliente,
+  PENDENCIAS_COMERCIAIS_CLIENTE,
+  type FiltroPendenciaCliente,
+} from "@/lib/pendencias-cadastro";
+import { useCentrosPermitidos } from "@/lib/centros-acesso";
 import { idReferencia } from "@/lib/referencias-registros";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -20,11 +27,13 @@ export const Route = createFileRoute("/_app/pessoas")({
   validateSearch: (
     search: Record<string, unknown>,
   ): {
+    pendencia?: FiltroPendenciaCliente | undefined;
     pessoa?: string | undefined;
     cliente?: string | undefined;
     fornecedor?: string | undefined;
     pedido?: string | undefined;
   } => ({
+    pendencia: filtroPendenciaCliente(search["pendencia"]),
     pessoa: idReferencia(search["pessoa"]),
     pedido: idReferencia(search["pedido"]),
     cliente: idReferencia(search["cliente"]),
@@ -221,8 +230,10 @@ function naoSoRepresentante(form: Record<string, string | boolean>) {
 }
 
 function PessoasPage() {
-  const { pessoa, cliente, fornecedor, pedido } = Route.useSearch();
+  const { pessoa, cliente, fornecedor, pedido, pendencia } = Route.useSearch();
+  const filtroComercial = PENDENCIAS_COMERCIAIS_CLIENTE.find((p) => p.filtro === pendencia);
   const { client, roles } = useSupabase();
+  const lojas = useCentrosPermitidos();
   const representante = roles.includes("representante") && !roles.includes("admin");
 
   const vinculo = useQuery({
@@ -313,12 +324,46 @@ function PessoasPage() {
         </p>
       ) : (
         <CrudPage
+          key={pendencia ?? "todos"}
+          readAll
+          decorate={decorarPendenciasClientes}
+          initialFilters={filtroComercial ? { [filtroComercial.campo]: "sem" } : undefined}
           uppercase
           readOnly={representante}
           table="pessoas"
           initialEditId={pessoa ?? vinculo.data}
           fields={[
             ...camposComFormas,
+            {
+              name: "_cadastro_loja",
+              label: "Vínculo de loja do cliente",
+              type: "select",
+              virtual: true,
+              hiddenInForm: true,
+              options: [
+                { value: "especifica", label: "Com loja específica" },
+                { value: "compartilhado", label: "Compartilhado entre lojas (todos os centros)" },
+              ],
+            },
+            {
+              name: "_cadastro_loja_id",
+              label: "Loja específica do cliente",
+              type: "select",
+              virtual: true,
+              hiddenInForm: true,
+              options: lojas.lista.map((l) => ({ value: l.id, label: l.nome })),
+            },
+            ...PENDENCIAS_COMERCIAIS_CLIENTE.map((p) => ({
+              name: p.campo,
+              label: p.filtroLabel,
+              type: "select" as const,
+              virtual: true,
+              hiddenInForm: true,
+              options: [
+                { value: "sem", label: p.sem },
+                { value: "com", label: p.com },
+              ],
+            })),
             {
               name: "credito_pendente",
               label: "Crédito pendente",

@@ -1,5 +1,9 @@
 import { usePermissoesRotinas } from "./permissoes-rotinas";
-import { camposFaltantesCliente } from "./pendencias-cadastro";
+import {
+  camposFaltantesCliente,
+  PENDENCIAS_COMERCIAIS_CLIENTE,
+  pendenciasComerciaisCliente,
+} from "./pendencias-cadastro";
 import { lerPaginas } from "./paginacao";
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "./supabase-provider";
@@ -15,6 +19,7 @@ export type Pendencia = {
   to: string;
   pedido?: string;
   pessoa?: string;
+  cliente?: string;
   centro?: string;
   loja?: string;
   cidade?: string;
@@ -84,6 +89,14 @@ export function usePendencias() {
       statuses: ["aberto", "parcial"],
       high: true,
     },
+    ...PENDENCIAS_COMERCIAIS_CLIENTE.map((p) => ({
+      id: p.id,
+      label: p.label,
+      table: "clientes" as const,
+      module: "/pessoas",
+      statuses: [],
+      high: false,
+    })),
     {
       id: "cadastro",
       label: "Clientes com cadastro incompleto",
@@ -153,6 +166,17 @@ export function usePendencias() {
     staleTime: 30_000,
     refetchInterval: 60_000,
     queryFn: async () => {
+      let clientesPromise: Promise<Row[]> | undefined;
+      const lerClientes = () =>
+        (clientesPromise ??= lerPaginas<Row>((inicio, fim) => {
+          let consulta = client!
+            .from("clientes")
+            .select(
+              "id,pessoa_id,codigo,razao_social,tipo_pessoa,cnpj_cpf,inscricao_estadual,indicador_contribuinte_icms,situacao_inscricao_estadual,rota_id,representante_id,limite_credito,logradouro,numero,bairro,cidade,uf,cep,centro_id,pessoa_fiscal:pessoas(indicador_contribuinte_icms,situacao_inscricao_estadual)",
+            );
+          if (centro) consulta = consulta.or(`centro_id.eq.${centro},centro_id.is.null`);
+          return consulta.order("razao_social").order("id").range(inicio, fim);
+        }));
       const results = await Promise.all(
         kinds.map(async (k) => {
           if (k.id === "frete-volume") {
@@ -241,17 +265,38 @@ export function usePendencias() {
               };
             }
           }
+          const comercial = PENDENCIAS_COMERCIAIS_CLIENTE.find((p) => p.id === k.id);
+          if (comercial) {
+            try {
+              const rows = (await lerClientes()).filter(
+                (r) => pendenciasComerciaisCliente(r)[comercial.filtro],
+              );
+              const itens: Pendencia[] = rows.slice(0, 40).map((r) => ({
+                id: `${k.id}:${String(r["id"])}`,
+                categoria: k.label,
+                prioridade: "normal",
+                to: "/pessoas",
+                titulo: `${r["codigo"] ? `${String(r["codigo"])} · ` : ""}${String(r["razao_social"] ?? "Cliente")}`,
+                detalhe: comercial.detalhe,
+                centro: String(r["centro_id"] ?? ""),
+                ...(r["pessoa_id"]
+                  ? { pessoa: String(r["pessoa_id"]) }
+                  : { cliente: String(r["id"]) }),
+              }));
+              return { id: k.id, label: k.label, total: rows.length, itens, erro: null };
+            } catch {
+              return {
+                id: k.id,
+                label: k.label,
+                total: null,
+                itens: [] as Pendencia[],
+                erro: `Não foi possível conferir ${k.label.toLowerCase()}.`,
+              };
+            }
+          }
           if (k.id === "cadastro") {
             try {
-              const clientes = await lerPaginas<Row>((inicio, fim) => {
-                let consulta = client!
-                  .from("clientes")
-                  .select(
-                    "id,pessoa_id,codigo,razao_social,tipo_pessoa,cnpj_cpf,inscricao_estadual,indicador_contribuinte_icms,situacao_inscricao_estadual,rota_id,representante_id,logradouro,numero,bairro,cidade,uf,cep,centro_id,pessoa_fiscal:pessoas(indicador_contribuinte_icms,situacao_inscricao_estadual)",
-                  );
-                if (centro) consulta = consulta.or(`centro_id.eq.${centro},centro_id.is.null`);
-                return consulta.order("razao_social").order("id").range(inicio, fim);
-              });
+              const clientes = await lerClientes();
               const incompletos = clientes
                 .map((r) => ({ r, faltas: camposFaltantesCliente(r) }))
                 .filter((c) => c.faltas.length);

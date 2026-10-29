@@ -1,3 +1,4 @@
+import { lerPaginas } from "@/lib/paginacao";
 import { StatusBadge } from "@/components/status-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Columns3, Loader2, Pencil, Plus, Printer, Trash2 } from "lucide-react";
@@ -204,6 +205,8 @@ export function CrudPage({
   readOnly = false,
   uppercase = false,
   initialEditId,
+  initialFilters,
+  readAll = false,
   defaultValues,
   formSections,
 }: {
@@ -249,6 +252,9 @@ export function CrudPage({
   /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
   uppercase?: boolean;
   initialEditId?: string | undefined;
+  initialFilters?: Record<string, string> | undefined;
+  /** Pagina a leitura completa antes de aplicar os filtros locais. */
+  readAll?: boolean;
   defaultValues?: Record<string, string | boolean>;
 }) {
   const isUpperField = (f: CrudField) => !f.type || f.type === "text";
@@ -275,13 +281,17 @@ export function CrudPage({
   }, [open, editingId]);
   const [form, setForm] = useState<Record<string, string | boolean>>({});
   const [search, setSearch] = useState("");
-  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [filtros, setFiltros] = useState<Record<string, string>>(initialFilters ?? {});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const query = useQuery({
-    queryKey: [table],
+    queryKey: readAll ? [table, "lista-completa"] : [table],
     enabled: !!client,
     queryFn: async () => {
+      if (readAll)
+        return lerPaginas<Row>((inicio, fim) =>
+          client!.from(table).select("*").order(orderBy).order("id").range(inicio, fim),
+        );
       const { data, error } = await client!.from(table).select("*").order(orderBy);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -629,7 +639,16 @@ export function CrudPage({
       </div>
 
       {filterFields.length > 0 ? (
-        <FilterBar onClear={() => setFiltros({})}>
+        <FilterBar
+          onClear={() => setFiltros({})}
+          extra={
+            Object.values(filtros).some(Boolean) ? (
+              <span className="text-xs text-muted-foreground">
+                {Object.values(filtros).filter(Boolean).length} filtro(s) aplicado(s)
+              </span>
+            ) : undefined
+          }
+        >
           {filterFields.map((f) =>
             f.type === "date" ? (
               <div key={f.name} className="grid grid-cols-2 gap-2 sm:col-span-2">

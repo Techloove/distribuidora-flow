@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { camposFaltantesCliente } from "../src/lib/pendencias-cadastro";
+import {
+  camposFaltantesCliente,
+  pendenciasComerciaisCliente,
+  decorarPendenciasClientes,
+  filtroPendenciaCliente,
+} from "../src/lib/pendencias-cadastro";
 const completo = {
   tipo_pessoa: "PJ",
   cnpj_cpf: "12.345.678/0001-95",
@@ -72,4 +77,59 @@ test("situação fiscal atual do cadastro unificado prevalece sobre a cópia ant
       indicador_contribuinte_icms: "NÃO ISENTO",
     }),
   ).toEqual(["Inscrição estadual"]);
+});
+
+test("pendências comerciais usam cadastro, incluindo limite vazio/zero, e não saldo utilizado", () => {
+  for (const limite_credito of [null, undefined, "", 0, "0", "0.00"])
+    expect(pendenciasComerciaisCliente({ ...completo, limite_credito })).toEqual({
+      sem_rota: false,
+      sem_representante: false,
+      sem_limite: true,
+    });
+  expect(
+    pendenciasComerciaisCliente({
+      ...completo,
+      rota_id: " ",
+      representante_id: null,
+      limite_credito: 500,
+      saldo_disponivel: 0,
+    }),
+  ).toEqual({ sem_rota: true, sem_representante: true, sem_limite: false });
+  expect(pendenciasComerciaisCliente({ ...completo, limite_credito: "0.01" }).sem_limite).toBe(
+    false,
+  );
+});
+
+test("filtros comerciais excluem fornecedores sem função cliente e preservam os dados originais", () => {
+  const origem = [
+    { ...completo, id: "cliente", is_cliente: true, limite_credito: 0, rota_id: null },
+    { id: "fornecedor", is_fornecedor: true, limite_credito: 0 },
+  ];
+  const decorados = decorarPendenciasClientes(origem);
+  expect(decorados[0]).toMatchObject({
+    _cadastro_rota: "sem",
+    _cadastro_representante: "com",
+    _cadastro_limite: "sem",
+  });
+  expect(decorados[1]).toMatchObject({
+    _cadastro_rota: "",
+    _cadastro_representante: "",
+    _cadastro_limite: "",
+  });
+  expect(origem[0]).not.toHaveProperty("_cadastro_rota");
+  expect(filtroPendenciaCliente("sem_rota")).toBe("sem_rota");
+  expect(filtroPendenciaCliente("sem_limite")).toBe("sem_limite");
+  expect(filtroPendenciaCliente(["sem_rota"])).toBeUndefined();
+  expect(filtroPendenciaCliente("qualquer")).toBeUndefined();
+});
+
+test("filtros por loja distinguem loja específica de cadastro compartilhado", () => {
+  const rows = decorarPendenciasClientes([
+    { is_cliente: true, centro_id: "loja-a" },
+    { is_cliente: true, centro_id: null },
+    { is_cliente: false, centro_id: "loja-a" },
+  ]);
+  expect(rows[0]).toMatchObject({ _cadastro_loja: "especifica", _cadastro_loja_id: "loja-a" });
+  expect(rows[1]).toMatchObject({ _cadastro_loja: "compartilhado", _cadastro_loja_id: "" });
+  expect(rows[2]).toMatchObject({ _cadastro_loja: "", _cadastro_loja_id: "" });
 });

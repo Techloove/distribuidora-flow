@@ -1,3 +1,4 @@
+import { PENDENCIAS_COMERCIAIS_CLIENTE } from "@/lib/pendencias-cadastro";
 import { setCentro } from "@/lib/centro-store";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -10,6 +11,7 @@ export function CentralPendencias({ compact = false }: { compact?: boolean }) {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("");
   const [prioridade, setPrioridade] = useState("");
+  const cadastroFiltro = PENDENCIAS_COMERCIAIS_CLIENTE.find((p) => p.label === categoria)?.filtro;
   const rows = (q.data?.itens ?? []).filter(
     (r) =>
       (!categoria || r.categoria === categoria) &&
@@ -73,6 +75,15 @@ export function CentralPendencias({ compact = false }: { compact?: boolean }) {
                 {c.erro} Atualize para tentar novamente.
               </p>
             ))}
+          {cadastroFiltro && (
+            <Link
+              to="/pessoas"
+              search={{ pendencia: cadastroFiltro }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium text-primary"
+            >
+              Ver clientes no Cadastro unificado <ArrowRight className="size-4" />
+            </Link>
+          )}
           {!compact && (
             <FilterBar
               onClear={() => {
@@ -128,7 +139,9 @@ export function CentralPendencias({ compact = false }: { compact?: boolean }) {
                         ? { pedido: r.pedido }
                         : r.pessoa
                           ? { pessoa: r.pessoa }
-                          : {}
+                          : r.cliente
+                            ? { cliente: r.cliente }
+                            : {}
                   }
                   className="inline-flex min-h-11 items-center gap-1 rounded-lg border px-3 text-xs font-medium text-primary"
                 >
