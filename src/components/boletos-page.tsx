@@ -713,21 +713,6 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 financeira; o título cancelado não foi reaberto automaticamente.
                               </p>
                             )}
-                            {(b["ajuste_pedido_motivo_285"] ||
-                              (b["pedidos"] as Row | null)?.["status"] === "cancelado") && (
-                              <p className="mb-2 rounded-md bg-amber-50 p-2 text-xs text-amber-950">
-                                {b["ajuste_pedido_tipo_285"] === "cancelamento_pedido" ||
-                                (b["pedidos"] as Row | null)?.["status"] === "cancelado"
-                                  ? "Pedido cancelado."
-                                  : "Pedido com devolução e título ajustado."}{" "}
-                                {String(
-                                  b["ajuste_pedido_motivo_285"] ?? "Confira o histórico do pedido.",
-                                )}{" "}
-                                {st === "registrado"
-                                  ? "Administrador: solicitar baixa com motivo e aguardar confirmação bancária."
-                                  : "Confira a situação bancária abaixo."}
-                              </p>
-                            )}
                             <span className="inline-block rounded-full bg-muted px-2 py-1 text-xs font-medium">
                               {cancelamentoBoletoPendente(b)
                                 ? "Cancelamento solicitado"
@@ -757,6 +742,22 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                         {expandido === id && (
                           <TableRow className="no-print bg-muted/20" id={`boleto-opcoes-${id}`}>
                             <TableCell colSpan={7}>
+                              {(b["ajuste_pedido_motivo_285"] ||
+                                (b["pedidos"] as Row | null)?.["status"] === "cancelado") && (
+                                <p className="mb-3 whitespace-normal break-words rounded-md bg-amber-50 p-2 text-xs text-amber-950">
+                                  {b["ajuste_pedido_tipo_285"] === "cancelamento_pedido" ||
+                                  (b["pedidos"] as Row | null)?.["status"] === "cancelado"
+                                    ? "Pedido cancelado."
+                                    : "Pedido com devolução e título ajustado."}{" "}
+                                  {String(
+                                    b["ajuste_pedido_motivo_285"] ??
+                                      "Confira o histórico do pedido.",
+                                  )}{" "}
+                                  {st === "registrado"
+                                    ? "Administrador: solicitar baixa com motivo e aguardar confirmação bancária."
+                                    : "Confira a situação bancária abaixo."}
+                                </p>
+                              )}
                               {alteracoes.length > 0 && (
                                 <div
                                   className="mb-3 space-y-2"

@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.19.1",
+    "data": "2026-10-30",
+    "titulo": "Mover aviso e motivo de cancelamento do boleto para Opções",
+    "novidades": ["Mover aviso e motivo de cancelamento do boleto para Opções"]
+  },
+  {
     "versao": "1.19.0",
     "data": "2026-10-29",
     "titulo": "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária",
