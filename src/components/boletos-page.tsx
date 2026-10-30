@@ -553,7 +553,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                 Nenhum boleto encontrado para os filtros selecionados.
               </p>
             ) : (
-              <Table className="mobile-cards">
+              <Table className="mobile-cards boletos-list">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Boleto / parcela</TableHead>

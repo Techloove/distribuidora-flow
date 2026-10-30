@@ -428,3 +428,46 @@ body {
     width: 112px;
   }
 }
+
+/* Boletos: mantém as ações visíveis e distribui o espaço sem expandir a tabela pelo conteúdo. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].boletos-list {
+    width: 100%;
+    table-layout: auto;
+    font-size: 0.8125rem;
+  }
+  table[data-readable-table].boletos-list th,
+  table[data-readable-table].boletos-list td {
+    padding-inline: 0.5rem;
+  }
+  table[data-readable-table].boletos-list td[data-column-kind="name"] {
+    min-width: 9rem;
+    max-width: 16rem;
+  }
+  table[data-readable-table].boletos-list td[data-label="Datas"] {
+    font-size: 0.6875rem;
+  }
+  table[data-readable-table].boletos-list td[data-label="Datas"] p > span.block,
+  table[data-readable-table].boletos-list td[data-label="Tarifas do boleto"],
+  table[data-readable-table].boletos-list td[data-label="Situação"],
+  table[data-readable-table].boletos-list td[colspan] {
+    white-space: normal;
+  }
+  table[data-readable-table].boletos-list th:last-child,
+  table[data-readable-table].boletos-list td[data-label="Ações"] {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: -1px 0 0 var(--border);
+  }
+  table[data-readable-table].boletos-list td[data-label="Ações"] > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.375rem;
+  }
+  table[data-readable-table].boletos-list td[data-label="Ações"] button {
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+  }
+}
