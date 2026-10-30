@@ -1,3 +1,4 @@
+import { CotacoesIntermediacao } from "@/components/intermediacao";
 import { ProvedorFiscalLoja } from "@/components/provedor-fiscal-loja";
 import { FiscalLoja } from "@/components/fiscal-loja";
 import { FreteVolumeLoja } from "@/components/frete-volume-loja";
@@ -17,6 +18,10 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 type Parametro = { chave: string; valor: string | null; descricao: string | null };
 const campos: Record<string, { label: string; tipo: "boolean" | "number" | "comissao" }> = {
+  intermediacao_habilitada: {
+    label: "Habilitar vendas por intermediação (entrega direta da fábrica)",
+    tipo: "boolean",
+  },
   aprovacao_limite_credito: {
     label: "Exigir aprovação ao ultrapassar o limite de crédito",
     tipo: "boolean",
@@ -167,6 +172,7 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
     onSuccess: () => {
       toast.success("Regras desta loja salvas.");
       void qc.invalidateQueries({ queryKey: ["loja-parametros"] });
+      void qc.invalidateQueries({ queryKey: ["intermediacao-ativa"] });
       void qc.invalidateQueries({ queryKey: ["validar_pedido"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -240,6 +246,9 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
       >
         {salvar.isPending ? "Salvando…" : "Salvar regras desta loja"}
       </Button>
+      {q.data.some((p) => p.chave === "intermediacao_habilitada" && p.valor === "true") && (
+        <CotacoesIntermediacao key={loja} loja={loja} />
+      )}
     </div>
   );
 }

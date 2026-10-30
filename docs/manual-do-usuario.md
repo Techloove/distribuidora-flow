@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.20.3 · 2026-10-30
+Versão 1.21.0 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -124,6 +124,27 @@ Cuidados:
 - Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.
 - Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
 - O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.
+
+## Vender por intermediação com cotação diária
+
+Entrega direta da fábrica ao cliente, com custo e margem por saca preservados no pedido.
+
+1. Em Lojas → Configurações da loja, selecione a loja e salve Habilitar vendas por intermediação. A implantação habilita inicialmente apenas Cimento; outras lojas e novas lojas permanecem desabilitadas. Desabilitar impede novos pedidos da modalidade e novas cotações; o histórico e pedidos já criados são preservados.
+2. Na mesma configuração, em Cotações diárias, escolha a data e o produto, informe o custo de fábrica por saca e salve. Alterações criam revisões, preservando o histórico. O cadastro exige a permissão de configurar regras da loja. A cotação não muda o custo médio, estoque ou preço de venda do produto.
+3. Crie um pedido normal na loja e, antes de lançar itens, escolha Modalidade da venda → Intermediação. Orçamentos e pedidos já com itens não trocam de modalidade. Também há um atalho Cotações diárias dentro do pedido.
+4. Ao selecionar o cimento, o sistema busca a cotação da data do pedido e da mesma loja. Informe sacas inteiras, frete por saca e margem em reais por saca. Preço por saca = fábrica + frete + margem. Custo = fábrica + frete. O ganho dos itens é a margem multiplicada pelas sacas.
+5. Clique Adicionar item. Para editar um item, use Editar e Salvar item. Uma nova cotação não recalcula itens anteriores. Para trocar o custo de um item ainda em digitação, use explicitamente Aplicar cotação atual, confira a prévia e salve.
+6. Confira o fechamento e a forma de pagamento. A empresa cobra o valor inteiro: fábrica, frete e margem. Parcelas, boletos, crédito do cliente e comissão seguem os controles atuais. Não há recebimento ou pagamento bancário automático ao salvar uma cotação.
+7. Confirme a venda e use Separação → Cargas → Entregas normalmente para a conferência e transporte direto. O pedido é identificado como intermediação na lista, na fila de separação e na impressão; custos e margem não são exibidos na impressão do cliente.
+
+Cuidados:
+
+- Aprovar, confirmar, cancelar e devolver uma intermediação não reserva, baixa ou repõe estoque da loja. A modalidade não integra o consumo nem as pendências do planejamento de reposição físico. Vendas comuns permanecem com estoque normal.
+- Uma cotação é obrigatória para a data e produto do pedido. Não é usada cotação anterior silenciosamente. Não altere a data ou loja depois de lançar os itens; remova os itens primeiro para evitar misturar cotações.
+- O frete por saca já compõe custo e preço dos itens. O frete automático por volume fica dispensado para evitar duplicação. Frete manual, outras despesas e regras da forma de pagamento permanecem ajustes separados. No resultado estimado, informe somente custos extras de transporte, sem repetir o frete dos itens.
+- Margem dos itens é o ganho bruto por saca. Descontos, encargos de pagamento, comissão, tributos e despesas podem alterar o resultado após ajustes. O custo congelado da intermediação também é usado na margem e no CPV da DRE. Cotações e custos previstos não criam contas a pagar à fábrica ou ao transportador automaticamente.
+- Na devolução, confirme o retorno físico à fábrica/fornecedor. O financeiro é ajustado proporcionalmente, preservando os títulos e vínculos de boletos, sem gerar entrada física na loja. Cobranças pagas e documentos fiscais continuam exigindo o tratamento específico existente.
+- A permissão para alterar preços continua valendo para definir frete e margem dos itens. As restrições de loja, carteira, crédito, aprovação, carga e emissão fiscal são mantidas.
 
 ## Regularizar o status de um pedido antigo
 

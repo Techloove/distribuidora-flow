@@ -1,3 +1,4 @@
+import { ModalidadePedido, ItensIntermediacao } from "@/components/intermediacao";
 import { ReabrirPedidoDigitacao } from "@/components/reabrir-pedido-digitacao";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesCancelamentoPedido } from "@/components/acoes-cancelamento-pedido";
@@ -98,6 +99,7 @@ export function DocumentoPage({
       void queryClient.invalidateQueries({ queryKey: ["acompanhamento_pedido_235"] });
   };
   const [encargosPendentes, setEncargosPendentes] = useState(false);
+  const [intermediacaoPendente, setIntermediacaoPendente] = useState(false);
   const [observacoesPendentes, setObservacoesPendentes] = useState(false);
   const [selected, setSelected] = useState<string | null>(initialDocId);
   useEffect(() => {
@@ -303,6 +305,8 @@ export function DocumentoPage({
     if (soMeusPedidos)
       list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
     if (centro) list = list.filter((d) => d["centro_id"] === centro);
+    if (f["modalidade"])
+      list = list.filter((d) => String(d["modalidade_venda"] ?? "estoque") === f["modalidade"]);
     if (f["tipo"]) list = list.filter((d) => String(d["tipo_documento"] ?? "pedido") === f["tipo"]);
     if (f["status"])
       list = list.filter(
@@ -408,6 +412,7 @@ export function DocumentoPage({
         }
       : documento;
 
+  const inter = config.table === "pedidos" && doc?.["modalidade_venda"] === "intermediacao";
   const lojaDocumento = String(doc?.["centro_id"] ?? "");
   useEffect(() => {
     consultaPreco.current++;
@@ -854,7 +859,7 @@ export function DocumentoPage({
           throw new Error(
             "Registre o aceite do orçamento antes da aprovação e confirmação da venda",
           );
-        if (edicaoPendente || pagamentoAlterado)
+        if (edicaoPendente || pagamentoAlterado || intermediacaoPendente)
           throw new Error(
             "Aguarde o salvamento dos itens e salve as alterações de pagamento antes de confirmar.",
           );
@@ -890,7 +895,12 @@ export function DocumentoPage({
     },
     onSuccess: (motivo) => {
       if (motivo) toast.warning(`Pedido enviado para aprovação: ${motivo}`, { duration: 8000 });
-      else toast.success(`${config.rpcLabel} concluído — estoque e financeiro atualizados`);
+      else
+        toast.success(
+          inter
+            ? "Intermediação confirmada — financeiro atualizado, sem movimentar estoque da loja"
+            : `${config.rpcLabel} concluído — estoque e financeiro atualizados`,
+        );
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1161,6 +1171,7 @@ export function DocumentoPage({
     ) * Number(it["quantidade"] ?? 0);
   const pesoTotal = (itens.data ?? []).reduce((s, it) => s + pesoItem(it), 0);
   const edicaoPendente =
+    intermediacaoPendente ||
     observacoesPendentes ||
     encargosPendentes ||
     addItem.isPending ||
@@ -1186,6 +1197,8 @@ export function DocumentoPage({
     config.table === "pedidos" && doc && itens.isSuccess
       ? conferirPedido(doc as PedidoConferencia, itens.data ?? [])
       : [];
+  if (intermediacaoPendente)
+    avisosPedido.push("Salve ou descarte o item de intermediação antes de confirmar.");
   if (config.table === "pedidos" && pagamentoAlterado)
     avisosPedido.push("Salve as alterações de pagamento antes de confirmar.");
   if (encargosPendentes) avisosPedido.push("Atualize os encargos antes de confirmar.");
@@ -1255,12 +1268,28 @@ export function DocumentoPage({
         ? (() => {
             const custo = (itens.data ?? []).reduce((s, it) => {
               const p = (produtos.data ?? []).find((x) => x["id"] === it["produto_id"]);
-              return s + Number(it["quantidade"] ?? 0) * Number(p?.["custo_medio"] ?? 0);
+              return (
+                s +
+                Number(it["quantidade"] ?? 0) *
+                  Number(inter ? (it["custo_unitario_base"] ?? 0) : (p?.["custo_medio"] ?? 0))
+              );
             }, 0);
             const venda = Number(doc["total_liquido"] ?? 0);
             const comissao = Number(doc["comissao_valor"] ?? 0);
-            const lucro = venda - custo;
-            const liquido = lucro - comissao;
+            const margemItens = (itens.data ?? []).reduce(
+              (s, i) => s + Number(i["quantidade"] ?? 0) * Number(i["margem_saca"] ?? 0),
+              0,
+            );
+            const lucro = inter ? margemItens : venda - custo;
+            const liquido =
+              venda -
+              custo -
+              comissao -
+              (inter
+                ? Number(doc["custo_frete"] ?? 0) +
+                  Number(doc["tributos_estimados"] ?? 0) +
+                  Number(doc["despesas_variaveis"] ?? 0)
+                : 0);
             const markup = custo > 0 ? (venda / custo - 1) * 100 : 0;
             const margem = venda > 0 ? (lucro / venda) * 100 : 0;
             const pct = (n: number) =>
@@ -1268,8 +1297,8 @@ export function DocumentoPage({
             const cards: [string, string, boolean?][] = [
               ["Comissão", brl(comissao)],
               ["Custo", brl(custo)],
-              ["Lucro bruto", brl(lucro), lucro < 0],
-              ["Lucro após comissão", brl(liquido), liquido < 0],
+              [inter ? "Margem dos itens" : "Lucro bruto", brl(lucro), lucro < 0],
+              [inter ? "Resultado após ajustes" : "Lucro após comissão", brl(liquido), liquido < 0],
               ["Markup", pct(markup), markup < 0],
               ["Margem", pct(margem), margem < 0],
             ];
@@ -1333,6 +1362,7 @@ export function DocumentoPage({
                 : ""
             }
             status={String(doc["status"])}
+            intermediacao={inter}
           />
         )}
         {!ehOrcamento && (
@@ -1567,6 +1597,17 @@ export function DocumentoPage({
             value={filtros["ate"] ?? ""}
             onChange={(v) => setF("ate", v)}
           />
+          {config.table === "pedidos" && (
+            <FilterSelect
+              label="Modalidade"
+              value={filtros["modalidade"] ?? ""}
+              onChange={(v) => setF("modalidade", v)}
+              options={[
+                { value: "estoque", label: "Venda do estoque" },
+                { value: "intermediacao", label: "Intermediação" },
+              ]}
+            />
+          )}
           <FilterText
             label="Valor mínimo"
             type="number"
@@ -1699,6 +1740,11 @@ export function DocumentoPage({
                           >
                             {partnerName(d[config.partnerKey])}
                           </ReferenciaRegistro>
+                          {d["modalidade_venda"] === "intermediacao" && (
+                            <span className="mt-1 block w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                              Intermediação • entrega direta
+                            </span>
+                          )}
                         </td>
                         {config.table === "pedidos" ? (
                           <td
@@ -1802,6 +1848,17 @@ export function DocumentoPage({
                 pedido={String(doc["id"])}
                 status={String(doc["status"])}
                 dataPedido={String(doc["data_pedido"] ?? "")}
+              />
+            )}
+            {config.table === "pedidos" && !ehOrcamento && (
+              <ModalidadePedido
+                key={`modalidade-${String(doc["id"])}`}
+                doc={doc}
+                temItens={(itens.data ?? []).length > 0 || itens.isPending}
+                onChange={() => {
+                  atualizarDocumento();
+                  void queryClient.invalidateQueries({ queryKey: ["validar_pedido"] });
+                }}
               />
             )}
             {config.table === "pedidos" && (
@@ -1958,223 +2015,249 @@ export function DocumentoPage({
               </div>
             ) : null}
 
-            {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,4fr)_1fr_1fr_1fr_auto]">
-                <div className="space-y-1.5">
-                  <Label>Produto</Label>
-                  {config.table === "pedidos" && catalogoPedido.isError && (
-                    <p role="alert" className="text-sm text-destructive">
-                      Não foi possível consultar os produtos desta loja:{" "}
-                      {catalogoPedido.error.message}
-                    </p>
-                  )}
-                  {config.table === "pedidos" && catalogoPedido.isPending && (
-                    <p className="text-sm text-muted-foreground">Carregando produtos da loja…</p>
-                  )}
-                  <ProdutoPicker
-                    produtos={produtosDisponiveis}
-                    comprados={comprados.data ?? new Map()}
-                    value={item.produto_id}
-                    onPick={(id) => pickProduto(id)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Qtd</Label>
-                  <Input
-                    type="number"
-                    step="0.001"
-                    value={item.quantidade}
-                    onChange={(e) => setItem((s) => ({ ...s, quantidade: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{config.itemPriceLabel}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={item.preco}
-                    readOnly={!podeAlterarPreco || consultandoPreco}
-                    title={podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"}
-                    onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
-                  />
-                  {!podeAlterarPreco ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      Preço definido pela tabela — seu perfil não permite alterar.
-                    </p>
-                  ) : null}
-                  {promo !== null ? (
-                    <p className="text-xs font-medium text-primary">
-                      {promo.nome}: {brl(promo.preco)}
-                      <br />
-                      {promo.fim ? `Válida até ${fmtDate(promo.fim)}` : "Sem data limite"}
-                    </p>
-                  ) : null}
-                </div>
-
-                {config.itemsTable === "pedido_itens" ? (
-                  <div className="space-y-1.5">
-                    <Label>Desc. %</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.desconto}
-                      onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
-                    />
-                  </div>
-                ) : (
-                  <>
+            {inter ? (
+              <ItensIntermediacao
+                key={`inter-itens-${String(doc["id"])}`}
+                doc={doc}
+                itens={itens.data ?? []}
+                produtos={produtosDisponiveis}
+                carregando={itens.isLoading}
+                onChange={atualizarDocumento}
+                onPendente={setIntermediacaoPendente}
+              />
+            ) : (
+              <>
+                {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
+                  <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,4fr)_1fr_1fr_1fr_auto]">
                     <div className="space-y-1.5">
-                      <Label>Lote</Label>
+                      <Label>Produto</Label>
+                      {config.table === "pedidos" && catalogoPedido.isError && (
+                        <p role="alert" className="text-sm text-destructive">
+                          Não foi possível consultar os produtos desta loja:{" "}
+                          {catalogoPedido.error.message}
+                        </p>
+                      )}
+                      {config.table === "pedidos" && catalogoPedido.isPending && (
+                        <p className="text-sm text-muted-foreground">
+                          Carregando produtos da loja…
+                        </p>
+                      )}
+                      <ProdutoPicker
+                        produtos={produtosDisponiveis}
+                        comprados={comprados.data ?? new Map()}
+                        value={item.produto_id}
+                        onPick={(id) => pickProduto(id)}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>Qtd</Label>
                       <Input
-                        value={item.lote}
-                        onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                        type="number"
+                        step="0.001"
+                        value={item.quantidade}
+                        onChange={(e) => setItem((s) => ({ ...s, quantidade: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Validade</Label>
+                      <Label>{config.itemPriceLabel}</Label>
                       <Input
-                        type="date"
-                        value={item.validade}
-                        onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                        type="number"
+                        step="0.01"
+                        value={item.preco}
+                        readOnly={!podeAlterarPreco || consultandoPreco}
+                        title={
+                          podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"
+                        }
+                        onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                       />
+                      {!podeAlterarPreco ? (
+                        <p className="text-[11px] text-muted-foreground">
+                          Preço definido pela tabela — seu perfil não permite alterar.
+                        </p>
+                      ) : null}
+                      {promo !== null ? (
+                        <p className="text-xs font-medium text-primary">
+                          {promo.nome}: {brl(promo.preco)}
+                          <br />
+                          {promo.fim ? `Válida até ${fmtDate(promo.fim)}` : "Sem data limite"}
+                        </p>
+                      ) : null}
                     </div>
-                  </>
-                )}
-                <div className="flex items-end">
-                  <Button
-                    onClick={() => addItem.mutate()}
-                    disabled={
-                      addItem.isPending ||
-                      consultandoPreco ||
-                      (config.table === "pedidos" &&
-                        (catalogoPedido.isPending || catalogoPedido.isError))
-                    }
-                  >
-                    <Plus className="size-4" /> Item
-                  </Button>
-                </div>
-              </div>
-            ) : null}
 
-            <div className="overflow-x-auto rounded-lg border border-border bg-card">
-              {itens.isLoading ? (
-                <div className="py-10 text-center text-sm text-muted-foreground">Carregando...</div>
-              ) : (itens.data ?? []).length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  Nenhum item lançado.
-                </p>
-              ) : (
-                <Table className="mobile-cards">
-                  <TableHeader>
-                    <TableRow>
-                      {config.table === "pedidos" && <TableHead>Código</TableHead>}
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-right">Qtd</TableHead>
-                      <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
-                      <TableHead className="text-right">Peso</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="w-12" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {itens.data!.map((it) => (
-                      <TableRow key={String(it["id"])}>
-                        {config.table === "pedidos" && (
-                          <TableCell data-label="Código" className="font-mono">
-                            {produtoCodigo(it["produto_id"])}
-                          </TableCell>
-                        )}
-                        <TableCell data-label="Produto">{produtoName(it["produto_id"])}</TableCell>
-                        <TableCell data-label="Quantidade" className="text-right">
-                          {["rascunho", "digitacao"].includes(String(doc["status"])) &&
-                          propostaEditavel ? (
-                            <Input
-                              aria-label={`Quantidade de ${produtoName(it["produto_id"])}`}
-                              type="number"
-                              step="0.001"
-                              min="0"
-                              className="ml-auto h-8 w-24 text-right"
-                              defaultValue={String(it["quantidade"] ?? 0)}
-                              onBlur={(e) => {
-                                const qtd = Number(e.target.value || 0);
-                                if (qtd > 0 && qtd !== Number(it["quantidade"])) {
-                                  updateItem.mutate({
-                                    id: String(it["id"]),
-                                    values: { quantidade: qtd },
-                                  });
-                                }
-                              }}
-                            />
-                          ) : (
-                            String(it["quantidade"])
-                          )}
-                        </TableCell>
-                        <TableCell data-label="Preço" className="text-right">
-                          {["rascunho", "digitacao"].includes(String(doc["status"])) &&
-                          propostaEditavel &&
-                          podeAlterarPreco ? (
-                            <Input
-                              aria-label={`Preço de ${produtoName(it["produto_id"])}`}
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              className="ml-auto h-8 w-28 text-right"
-                              defaultValue={String(it[config.itemPriceField] ?? 0)}
-                              onBlur={(e) => {
-                                const preco = Number(e.target.value || 0);
-                                if (preco !== Number(it[config.itemPriceField])) {
-                                  updateItem.mutate({
-                                    id: String(it["id"]),
-                                    values: { [config.itemPriceField]: preco },
-                                  });
-                                }
-                              }}
-                            />
-                          ) : (
-                            brl(it[config.itemPriceField])
-                          )}
-                        </TableCell>
-                        <TableCell data-label="Peso" className="text-right text-muted-foreground">
-                          {kg(pesoItem(it))}
-                        </TableCell>
-                        <TableCell data-label="Total" className="text-right">
-                          {brl(it["total"])}
-                        </TableCell>
-                        <TableCell data-label="Ações" className="text-right">
-                          <Button
-                            aria-label={`Remover ${produtoName(it["produto_id"])}`}
-                            variant="ghost"
-                            size="icon"
-                            disabled={doc["status"] !== "rascunho" || !propostaEditavel}
-                            onClick={() => removeItem.mutate(String(it["id"]))}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell
-                        colSpan={config.table === "pedidos" ? 2 : 1}
-                        className="font-semibold"
+                    {config.itemsTable === "pedido_itens" ? (
+                      <div className="space-y-1.5">
+                        <Label>Desc. %</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.desconto}
+                          onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label>Lote</Label>
+                          <Input
+                            value={item.lote}
+                            onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Validade</Label>
+                          <Input
+                            type="date"
+                            value={item.validade}
+                            onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                          />
+                        </div>
+                      </>
+                    )}
+                    <div className="flex items-end">
+                      <Button
+                        onClick={() => addItem.mutate()}
+                        disabled={
+                          addItem.isPending ||
+                          consultandoPreco ||
+                          (config.table === "pedidos" &&
+                            (catalogoPedido.isPending || catalogoPedido.isError))
+                        }
                       >
-                        Peso total dos itens
-                      </TableCell>
-                      <TableCell />
-                      <TableCell />
-                      <TableCell className="text-right font-semibold">{kg(pesoTotal)}</TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {brl(doc["total_itens"])}
-                      </TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              )}
-            </div>
+                        <Plus className="size-4" /> Item
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
-            {config.table === "pedidos" && (
+                <div className="overflow-x-auto rounded-lg border border-border bg-card">
+                  {itens.isLoading ? (
+                    <div className="py-10 text-center text-sm text-muted-foreground">
+                      Carregando...
+                    </div>
+                  ) : (itens.data ?? []).length === 0 ? (
+                    <p className="py-10 text-center text-sm text-muted-foreground">
+                      Nenhum item lançado.
+                    </p>
+                  ) : (
+                    <Table className="mobile-cards">
+                      <TableHeader>
+                        <TableRow>
+                          {config.table === "pedidos" && <TableHead>Código</TableHead>}
+                          <TableHead>Produto</TableHead>
+                          <TableHead className="text-right">Qtd</TableHead>
+                          <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
+                          <TableHead className="text-right">Peso</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead className="w-12" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {itens.data!.map((it) => (
+                          <TableRow key={String(it["id"])}>
+                            {config.table === "pedidos" && (
+                              <TableCell data-label="Código" className="font-mono">
+                                {produtoCodigo(it["produto_id"])}
+                              </TableCell>
+                            )}
+                            <TableCell data-label="Produto">
+                              {produtoName(it["produto_id"])}
+                            </TableCell>
+                            <TableCell data-label="Quantidade" className="text-right">
+                              {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                              propostaEditavel ? (
+                                <Input
+                                  aria-label={`Quantidade de ${produtoName(it["produto_id"])}`}
+                                  type="number"
+                                  step="0.001"
+                                  min="0"
+                                  className="ml-auto h-8 w-24 text-right"
+                                  defaultValue={String(it["quantidade"] ?? 0)}
+                                  onBlur={(e) => {
+                                    const qtd = Number(e.target.value || 0);
+                                    if (qtd > 0 && qtd !== Number(it["quantidade"])) {
+                                      updateItem.mutate({
+                                        id: String(it["id"]),
+                                        values: { quantidade: qtd },
+                                      });
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                String(it["quantidade"])
+                              )}
+                            </TableCell>
+                            <TableCell data-label="Preço" className="text-right">
+                              {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                              propostaEditavel &&
+                              podeAlterarPreco ? (
+                                <Input
+                                  aria-label={`Preço de ${produtoName(it["produto_id"])}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="ml-auto h-8 w-28 text-right"
+                                  defaultValue={String(it[config.itemPriceField] ?? 0)}
+                                  onBlur={(e) => {
+                                    const preco = Number(e.target.value || 0);
+                                    if (preco !== Number(it[config.itemPriceField])) {
+                                      updateItem.mutate({
+                                        id: String(it["id"]),
+                                        values: { [config.itemPriceField]: preco },
+                                      });
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                brl(it[config.itemPriceField])
+                              )}
+                            </TableCell>
+                            <TableCell
+                              data-label="Peso"
+                              className="text-right text-muted-foreground"
+                            >
+                              {kg(pesoItem(it))}
+                            </TableCell>
+                            <TableCell data-label="Total" className="text-right">
+                              {brl(it["total"])}
+                            </TableCell>
+                            <TableCell data-label="Ações" className="text-right">
+                              <Button
+                                aria-label={`Remover ${produtoName(it["produto_id"])}`}
+                                variant="ghost"
+                                size="icon"
+                                disabled={doc["status"] !== "rascunho" || !propostaEditavel}
+                                onClick={() => removeItem.mutate(String(it["id"]))}
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow>
+                          <TableCell
+                            colSpan={config.table === "pedidos" ? 2 : 1}
+                            className="font-semibold"
+                          >
+                            Peso total dos itens
+                          </TableCell>
+                          <TableCell />
+                          <TableCell />
+                          <TableCell className="text-right font-semibold">
+                            {kg(pesoTotal)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {brl(doc["total_itens"])}
+                          </TableCell>
+                          <TableCell />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </>
+            )}
+            {config.table === "pedidos" && !inter && (
               <ProgressoDescontoPeso
                 loja={lojaDocumento}
                 carregando={itens.isPending || itens.isFetching}
@@ -2193,7 +2276,7 @@ export function DocumentoPage({
               />
             )}
 
-            {config.table === "pedidos" && descontoPeso.data ? (
+            {config.table === "pedidos" && !inter && descontoPeso.data ? (
               <div className="rounded-lg border border-border bg-card p-4">
                 <h3 className="text-sm font-semibold">Desconto por peso (kg)</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">

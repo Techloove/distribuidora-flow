@@ -132,3 +132,32 @@ test("impressão inclui representante e rota do pedido, com texto seguro", () =>
   expect(html).toContain("<strong>Rota:</strong> Rota Centro &amp; Sul");
   expect(gerarHtmlPedidos([pedido], "")).toContain("<strong>Rota:</strong> —");
 });
+
+test("intermediação é identificada na impressão sem expor custo, frete de compra ou margem", () => {
+  const html = gerarHtmlPedidos(
+    [
+      {
+        ...pedido,
+        pedido: { ...pedido.pedido, modalidade_venda: "intermediacao" },
+        itens: [
+          {
+            item: {
+              quantidade: 100,
+              preco_unitario: 34,
+              total: 3400,
+              custo_fabrica_saca: 28.5,
+              frete_saca: 3,
+              margem_saca: 2.5,
+            },
+            produto: { descricao: "CIMENTO", unidade: "SC", peso_kg: 50 },
+          },
+        ],
+      },
+    ],
+    "",
+  );
+  expect(html).toContain("PEDIDO • INTERMEDIAÇÃO");
+  expect(html).not.toContain("28,50");
+  expect(html).not.toContain("Margem");
+  expect(html).toContain("5.000 kg");
+});

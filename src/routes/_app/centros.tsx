@@ -71,7 +71,7 @@ function CentrosPage() {
   return (
     <ErpLayout
       title="Lojas"
-      description="Identificação, regras comerciais e cobrança por loja. O estoque físico permanece compartilhado."
+      description="Identificação, regras comerciais e cobrança por loja. Estoque e regras comerciais respeitam o vínculo de cada loja."
     >
       <CrudPage
         table="centros"

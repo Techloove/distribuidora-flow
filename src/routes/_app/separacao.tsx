@@ -188,6 +188,7 @@ function SeparacaoPage() {
       string,
       {
         numero: string;
+        intermediacao: boolean;
         centroId: string;
         cliente: string;
         clienteId: unknown;
@@ -202,6 +203,7 @@ function SeparacaoPage() {
       const cliSeq = r["sequencia_entrega"];
       map.set(String(r["pedido_id"]), {
         numero: String(r["numero"]),
+        intermediacao: r["modalidade_venda"] === "intermediacao",
         centroId: String(r["centro_id"] ?? ""),
         cliente: String(r["cliente"] ?? "—"),
         clienteId: r["cliente_id"],
@@ -607,6 +609,11 @@ function SeparacaoPage() {
                             <ReferenciaRegistro tipo="cliente" id={p.clienteId}>
                               {p.cliente}
                             </ReferenciaRegistro>
+                            {p.intermediacao && (
+                              <span className="mt-1 block w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                                Entrega direta • fábrica
+                              </span>
+                            )}
                           </td>
                           <td data-label="Rota" className="px-4 py-2.5">
                             {p.rota}

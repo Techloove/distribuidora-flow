@@ -35,10 +35,12 @@ export function AcoesCancelamentoPedido({
   pedido,
   status,
   criadoPor,
+  intermediacao = false,
 }: {
   pedido: string;
   status: string;
   criadoPor: string;
+  intermediacao?: boolean;
 }) {
   const { client, user, roles } = useSupabase();
   const qc = useQueryClient();
@@ -104,7 +106,9 @@ export function AcoesCancelamentoPedido({
       toast.success(
         modo === "cancelar"
           ? "Pedido cancelado. Confira os boletos que precisam de baixa bancária."
-          : "Devolução registrada: estoque e financeiro ajustados proporcionalmente. Confira os boletos anteriores.",
+          : intermediacao
+            ? "Devolução de intermediação registrada sem movimentar estoque da loja. Confira o financeiro e os boletos anteriores."
+            : "Devolução registrada: estoque e financeiro ajustados proporcionalmente. Confira os boletos anteriores.",
       );
       setModo(null);
       void qc.invalidateQueries();
@@ -161,7 +165,9 @@ export function AcoesCancelamentoPedido({
                 ? admin
                   ? "Permitido até a montagem da carga. Somente saídas de estoque registradas serão revertidas. Títulos sem vínculos podem ser excluídos nas etapas iniciais; títulos vinculados a boletos serão preservados como cancelados."
                   : "Você pode cancelar somente pedidos criados por você e ainda Aprovados. Após iniciar a separação, procure um administrador. Boletos vinculados serão preservados e a baixa deve ser solicitada por um administrador."
-                : "Informe apenas as quantidades que voltaram fisicamente. A devolução parcial mantém a cobrança do restante; a integral encerra o pedido como devolvido. Os títulos afetados ficam cancelados no histórico."}
+                : intermediacao
+                  ? "Confirme o retorno à fábrica/fornecedor. A devolução ajusta a cobrança proporcionalmente, sem criar estoque na loja. Títulos e boletos preservam seus vínculos e histórico."
+                  : "Informe apenas as quantidades que voltaram fisicamente. A devolução parcial mantém a cobrança do restante; a integral encerra o pedido como devolvido. Os títulos afetados ficam cancelados no histórico."}
             </DialogDescription>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">
@@ -226,7 +232,9 @@ export function AcoesCancelamentoPedido({
                         setCondicoes((v) => ({ ...v, [i.produto_id]: e.target.value }))
                       }
                     >
-                      <option value="revenda">Volta ao estoque</option>
+                      <option value="revenda">
+                        {intermediacao ? "Retorno à fábrica / fornecedor" : "Volta ao estoque"}
+                      </option>
                       <option value="avaria">Avariado</option>
                     </select>
                   </div>
@@ -244,7 +252,9 @@ export function AcoesCancelamentoPedido({
                   disabled={executar.isPending}
                   onChange={(e) => setRecebido(e.target.checked)}
                 />
-                Confirmo que os itens informados foram fisicamente recebidos.
+                {intermediacao
+                  ? "Confirmo o retorno dos itens à fábrica / fornecedor, sem entrada no estoque da loja."
+                  : "Confirmo que os itens informados foram fisicamente recebidos."}
               </label>
             </div>
           )}

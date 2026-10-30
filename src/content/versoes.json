@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.21.0",
+    "data": "2026-10-30",
+    "titulo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saca",
+    "novidades": ["Adicionar intermediação por loja com cotações diárias, frete e margem por saca"]
+  },
+  {
     "versao": "1.20.3",
     "data": "2026-10-30",
     "titulo": "Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa",

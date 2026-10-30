@@ -34,7 +34,8 @@ export function EncargosPedido({
   const qc = useQueryClient();
   const [usar, setUsar] = useState<boolean | null>(null);
   const [despesas, setDespesas] = useState<string | null>(null);
-  const habilitado = usar ?? doc["frete_volume_ativo"] === true;
+  const inter = doc["modalidade_venda"] === "intermediacao";
+  const habilitado = !inter && (usar ?? doc["frete_volume_ativo"] === true);
   const valor = despesas ?? String(doc["outras_despesas"] ?? 0);
   const mudou =
     habilitado !== (doc["frete_volume_ativo"] === true) ||
@@ -101,10 +102,18 @@ export function EncargosPedido({
   return (
     <section className="rounded-xl border bg-card p-4 space-y-3">
       <div>
-        <h3 className="font-semibold">Frete por volume e outras despesas</h3>
+        <h3 className="font-semibold">
+          {inter ? "Outras despesas da intermediação" : "Frete por volume e outras despesas"}
+        </h3>
         <p className="text-sm text-muted-foreground">
-          Frete calculado pela quantidade na unidade de venda do produto e pela cidade/UF do
-          cliente, conforme as tarifas desta loja. O frete manual permanece separado.
+          {inter ? (
+            "O frete por saca já compõe o preço dos itens. O frete por volume está desativado para evitar cobrança duplicada."
+          ) : (
+            <>
+              Frete calculado pela quantidade na unidade de venda do produto e pela cidade/UF do
+              cliente, conforme as tarifas desta loja. O frete manual permanece separado.
+            </>
+          )}
         </p>
       </div>
       {conferirAutomatico && automatico.isFetching && (
@@ -126,7 +135,7 @@ export function EncargosPedido({
           dispensar a cobrança, desmarque e atualize os encargos.
         </p>
       )}
-      {doc["frete_volume_opcao"] === "dispensar" && (
+      {!inter && doc["frete_volume_opcao"] === "dispensar" && (
         <p className="text-xs text-muted-foreground">
           Frete dispensado manualmente neste documento. A dispensa será mantida nas próximas
           alterações dos itens.
@@ -138,7 +147,7 @@ export function EncargosPedido({
             <input
               type="checkbox"
               checked={habilitado}
-              disabled={!pode || salvar.isPending || automatico.isFetching}
+              disabled={inter || !pode || salvar.isPending || automatico.isFetching}
               onChange={(e) => setUsar(e.target.checked)}
             />
             Aplicar frete por volume
