@@ -471,3 +471,80 @@ body {
     font-size: 0.75rem;
   }
 }
+
+/* Planejamento mantém produto e cálculo acessíveis na comparação de períodos. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].planejamento-list {
+    font-size: 0.75rem;
+  }
+  table[data-readable-table].planejamento-list th {
+    font-size: 0.6875rem;
+  }
+  table[data-readable-table].planejamento-list td[data-label="Selecionar"],
+  table[data-readable-table].planejamento-list th:first-child {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--card);
+  }
+  table[data-readable-table].planejamento-list td[data-label="Produto"],
+  table[data-readable-table].planejamento-list th:nth-child(2) {
+    position: sticky;
+    left: 2.5rem;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: 1px 0 0 var(--border);
+  }
+  table[data-readable-table].planejamento-list td[data-label="Produto"] {
+    min-width: 12rem;
+    max-width: 15rem;
+    width: 15rem;
+  }
+  table[data-readable-table].planejamento-list td[data-label="Sugestão"],
+  table[data-readable-table].planejamento-list th:nth-child(12) {
+    position: sticky;
+    right: 6.5rem;
+    z-index: 1;
+    min-width: 5rem;
+    background: var(--card);
+    box-shadow: -1px 0 0 var(--border);
+  }
+  table[data-readable-table].planejamento-list td[data-label="Ações"],
+  table[data-readable-table].planejamento-list th:last-child {
+    width: 6.5rem;
+    min-width: 6.5rem;
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: -1px 0 0 var(--border);
+  }
+}
+
+@media print {
+  .planejamento-print table {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 9px;
+  }
+  .planejamento-print th,
+  .planejamento-print td {
+    padding: 4px;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  .planejamento-print th:nth-child(2) {
+    width: 18%;
+  }
+  .planejamento-print thead {
+    display: table-header-group;
+  }
+  .planejamento-print tbody tr {
+    break-inside: avoid;
+  }
+  .planejamento-print .overflow-auto {
+    overflow: visible;
+  }
+}

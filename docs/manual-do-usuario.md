@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.19.6 · 2026-10-30
+Versão 1.20.0 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -183,6 +183,13 @@ Planeje a reposição e acompanhe a entrada das mercadorias.
 2. Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.
 3. Confira os dados antes de confirmar o documento e siga a ação indicada pela tela.
 4. Após a operação, confira o histórico de estoque e os títulos financeiros gerados pelo fluxo.
+5. Em Compras → Planejamento e reposição, acompanhe itens para comprar, faltas, investimento estimado e produtos em trânsito. A lista mostra Estoque, Pendência, Comprado (em trânsito), Mínimo, Média mês, 30d, 60d, 90d e 120d nessa ordem, seguidos da sugestão e dos indicadores. Use Colunas para personalizar e Cálculo para ver de onde veio cada quantidade.
+6. O planejamento considera somente pedidos aprovados e os que já avançaram no fluxo. Digitação, aguardando aprovação, recusados e cancelados ficam fora. Pendência inclui somente o status Aprovado, antes da confirmação que baixa estoque. Vendas históricas descontam devoluções confirmadas da venda original. Cada produto usa seu saldo, compras e demanda na respectiva loja.
+7. Abra Como calcular a compra para escolher Cobertura por consumo, Repor até o mínimo, Mínimo e máximo ou Atender pendências. Use base de 30, 60, 90 ou 120 dias, ou média ponderada de quatro faixas mensais, com maior peso no período recente. Média mês representa 30 dias do consumo ajustado selecionado, não a soma das janelas acumuladas.
+8. Cobertura por consumo soma estoque mínimo e consumo previsto durante cobertura, entrega e segurança; desconta o estoque disponível e as compras em trânsito. Em mínimo/máximo, a reposição só acontece ao atingir o ponto de reposição e exige máximo cadastrado válido. Atender pendências cobre o déficit atual, sem acrescentar estoque mínimo ou previsão futura. Estoque negativo continua contado como falta.
+9. Nos parâmetros avançados, ajuste segurança, demanda, prazo, lote mínimo e múltiplo de compra. O múltiplo automático respeita unidades inteiras ou fracionadas. Os parâmetros valem para a simulação inteira; confira prazo, embalagem e pedido mínimo com o fornecedor. Em Produtos → Preços e estoque, o administrador/gestor pode cadastrar mínimo, máximo e prazo do produto conforme seu acesso.
+10. Compras em trânsito entram somente quando estão como Comprado e ainda não recebidas. Você pode simular sem descontar o trânsito para avaliar atrasos. Ruptura continua avisada quando falta estoque disponível, mesmo havendo compra a caminho. Histórico curto ou sem giro recebe aviso; não há previsão garantida de demanda ou chegada.
+11. O investimento usa último custo positivo de compra ou custo médio. Itens sem custo aparecem sinalizados e ficam fora do total estimado. Frete, impostos adicionais e variação de preço não estão incluídos. Selecione produtos e exporte a seleção visível em CSV; sem seleção, exporta os filtros atuais. O arquivo inclui modelo, parâmetros e alertas. Imprimir inclui todos os resultados filtrados. Calcular ou exportar não cria compras, estoque ou contas a pagar; revise e prossiga em Compras e entradas.
 
 Cuidados:
 

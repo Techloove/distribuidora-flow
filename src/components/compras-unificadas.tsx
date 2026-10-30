@@ -57,12 +57,18 @@ export function ComprasUnificadas({ aba }: { aba: AbaCompras }) {
       }
       className="space-y-5"
     >
-      <section className="rounded-xl border bg-card p-4 space-y-3">
-        <h2 className="font-semibold">Da reposição à entrada de mercadorias</h2>
-        <p className="text-sm text-muted-foreground">
-          Planeje o abastecimento e acompanhe as compras em um só lugar. O estoque e as contas a
-          pagar são atualizados ao receber a compra.
-        </p>
+      <section
+        className={`rounded-xl border bg-card p-4 space-y-3 ${selecionada === "planejamento" ? "no-print" : ""}`}
+      >
+        {selecionada !== "planejamento" && (
+          <>
+            <h2 className="font-semibold">Da reposição à entrada de mercadorias</h2>
+            <p className="text-sm text-muted-foreground">
+              Planeje o abastecimento e acompanhe as compras em um só lugar. O estoque e as contas a
+              pagar são atualizados ao receber a compra.
+            </p>
+          </>
+        )}
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
           {abas.map(({ id, titulo, Icon }) => (
             <TabsTrigger key={id} value={id} className="gap-2">

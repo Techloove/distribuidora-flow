@@ -116,6 +116,8 @@ const fields: CrudField[] = [
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
+  { name: "estoque_maximo", label: "Estoque máximo para reposição", type: "number", step: "0.001" },
+  { name: "prazo_fornecedor_dias", label: "Prazo do fornecedor (dias)", type: "number", step: "1" },
   {
     name: "estoque_atual",
     label: "Estoque",
@@ -299,6 +301,8 @@ function ProdutosPage() {
               "comissao_percentual",
               "comissao_fixa_unidade",
               "estoque_minimo",
+              "estoque_maximo",
+              "prazo_fornecedor_dias",
               "estoque_atual",
               "comprado_qtd",
               "permite_estoque_negativo",

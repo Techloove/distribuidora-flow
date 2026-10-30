@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.20.0",
+    "data": "2026-10-30",
+    "titulo": "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados",
+    "novidades": [
+      "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados"
+    ]
+  },
+  {
     "versao": "1.19.6",
     "data": "2026-10-30",
     "titulo": "Padronizar valores monetários em reais com duas casas decimais",
