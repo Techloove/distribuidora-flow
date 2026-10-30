@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.20.1 · 2026-10-30
+Versão 1.20.2 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -43,15 +43,16 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 
 1. Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.
 2. Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.
-3. Para consultar a distribuição dos clientes por loja, use Vínculo de loja do cliente: Sem loja, Com loja específica ou Compartilhado entre lojas. Use Loja específica do cliente para selecionar a loja pelo nome. Para comparar as lojas, selecione Todas as lojas no topo. Os clientes antigos de Todos os centros continuam compartilhados; somente a marcação explícita Sem loja gera a nova pendência.
-4. No Cadastro unificado, os filtros Rota do cliente, Representante do cliente e Limite de crédito do cliente permitem selecionar Sem ou Com cadastro. Combine os filtros para encontrar clientes com mais de uma pendência. Esses filtros excluem pessoas que não têm a função Cliente e respeitam a loja e a carteira permitidas. Sem limite considera valor não informado ou zero; não significa que um limite cadastrado foi consumido pelas compras. Apenas o administrador pode conceder ou alterar o limite.
-5. No Cadastro unificado, abra o cliente e a aba Dados gerais para escolher o Vínculo de loja do cliente. Escolha Sem loja para um cadastro ainda pendente, uma loja pelo nome, ou Compartilhado entre lojas para atender pelas duas lojas atuais. Salve a alteração. Cliente Sem loja precisa ter esse vínculo definido antes de iniciar ou confirmar novos pedidos; pedidos e financeiros anteriores não são apagados nem recategorizados. Administrador e gestor podem revisar o vínculo, conforme suas permissões. O representante continua cadastrando na loja permitida e não ganha acesso para mudar esse vínculo.
-6. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
-7. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
-8. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
-9. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
-10. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
-11. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
+3. Se a consulta de CNPJ trouxer endereço incompleto, use Consultar novamente para tentar as fontes alternativas. Na aba Contato e endereço, informe o CEP e clique Consultar CEP. Confira o resultado, marque os campos desejados, clique Usar endereço do CEP e depois Salvar. Número e complemento não são obtidos pelo CEP; CEPs gerais podem não informar o logradouro. Dados vazios não apagam os campos existentes e nenhum dado comercial é alterado.
+4. Para consultar a distribuição dos clientes por loja, use Vínculo de loja do cliente: Sem loja, Com loja específica ou Compartilhado entre lojas. Use Loja específica do cliente para selecionar a loja pelo nome. Para comparar as lojas, selecione Todas as lojas no topo. Os clientes antigos de Todos os centros continuam compartilhados; somente a marcação explícita Sem loja gera a nova pendência.
+5. No Cadastro unificado, os filtros Rota do cliente, Representante do cliente e Limite de crédito do cliente permitem selecionar Sem ou Com cadastro. Combine os filtros para encontrar clientes com mais de uma pendência. Esses filtros excluem pessoas que não têm a função Cliente e respeitam a loja e a carteira permitidas. Sem limite considera valor não informado ou zero; não significa que um limite cadastrado foi consumido pelas compras. Apenas o administrador pode conceder ou alterar o limite.
+6. No Cadastro unificado, abra o cliente e a aba Dados gerais para escolher o Vínculo de loja do cliente. Escolha Sem loja para um cadastro ainda pendente, uma loja pelo nome, ou Compartilhado entre lojas para atender pelas duas lojas atuais. Salve a alteração. Cliente Sem loja precisa ter esse vínculo definido antes de iniciar ou confirmar novos pedidos; pedidos e financeiros anteriores não são apagados nem recategorizados. Administrador e gestor podem revisar o vínculo, conforme suas permissões. O representante continua cadastrando na loja permitida e não ganha acesso para mudar esse vínculo.
+7. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
+8. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
+9. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
+10. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
+11. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
+12. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
 
 Cuidados:
 

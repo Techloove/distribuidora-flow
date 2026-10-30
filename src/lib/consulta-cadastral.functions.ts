@@ -1,3 +1,10 @@
+import {
+  completarEndereco,
+  qualidadeEndereco,
+  mapearCep,
+  normalizarCep,
+  type EnderecoCep,
+} from "./consulta-endereco";
 import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { createServerFn } from "@tanstack/react-start";
@@ -265,28 +272,79 @@ const PROVEDORES_CNPJ: Provedor[] = [
 async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
   let limites = 0;
   let naoEncontrado = 0;
+  let melhor: Extract<ConsultaResultado, { ok: true }> | null = null;
+  const signal = AbortSignal.timeout(18_000);
   for (const p of PROVEDORES_CNPJ) {
     try {
-      const res = await fetchWithTimeout(p.url(doc), { headers: { Accept: "application/json" } });
-      if (res.status === 429) { limites++; continue; }
-      if (res.status === 404) { naoEncontrado++; continue; }
+      const res = await fetchWithTimeout(p.url(doc), {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5_000)]),
+      });
+      if (res.status === 429) {
+        limites++;
+        continue;
+      }
+      if (res.status === 404) {
+        naoEncontrado++;
+        continue;
+      }
       if (!res.ok) continue;
       const j = (await res.json()) as Record<string, unknown>;
-      if (p.erroNoCorpo?.(j)) { naoEncontrado++; continue; }
+      if (p.erroNoCorpo?.(j)) {
+        naoEncontrado++;
+        continue;
+      }
       const dados = p.map(j);
       if (!dados.razao_social) continue;
-      return { ok: true, documento: doc, tipo: "PJ", provedor: p.nome, dados, validadeDias: 30 };
+      if (digitos(dados.cnpj_cpf ?? "") !== doc) continue;
+      if (!melhor)
+        melhor = {
+          ok: true,
+          documento: doc,
+          tipo: "PJ",
+          provedor: p.nome,
+          dados,
+          validadeDias: 30,
+        };
+      else if (qualidadeEndereco(dados) > qualidadeEndereco(melhor.dados)) {
+        // Usa o bloco completo da fonte alternativa; nunca mistura ruas/números de endereços distintos.
+        const endereco = completarEndereco(melhor.dados, dados);
+        Object.assign(melhor, {
+          provedor: `${melhor.provedor} + ${p.nome} (endereço)`,
+          dados: endereco,
+        });
+      }
+      if (melhor.dados.logradouro && melhor.dados.numero) return melhor;
     } catch {
       /* tenta o próximo provedor */
     }
   }
+  if (melhor) return melhor;
   if (naoEncontrado >= 2) {
-    return { ok: false, documento: doc, tipo: "PJ", codigo: "nao_encontrado", mensagem: "CNPJ não encontrado na base da Receita Federal." };
+    return {
+      ok: false,
+      documento: doc,
+      tipo: "PJ",
+      codigo: "nao_encontrado",
+      mensagem: "CNPJ não encontrado na base da Receita Federal.",
+    };
   }
   if (limites === PROVEDORES_CNPJ.length) {
-    return { ok: false, documento: doc, tipo: "PJ", codigo: "limite", mensagem: "Todos os serviços de consulta estão no limite. Tente novamente em 1 minuto." };
+    return {
+      ok: false,
+      documento: doc,
+      tipo: "PJ",
+      codigo: "limite",
+      mensagem: "Todos os serviços de consulta estão no limite. Tente novamente em 1 minuto.",
+    };
   }
-  return { ok: false, documento: doc, tipo: "PJ", codigo: "indisponivel", mensagem: "Serviço de consulta indisponível no momento. Tente novamente mais tarde." };
+  return {
+    ok: false,
+    documento: doc,
+    tipo: "PJ",
+    codigo: "indisponivel",
+    mensagem: "Serviço de consulta indisponível no momento. Tente novamente mais tarde.",
+  };
 }
 
 async function consultarCpf(doc: string): Promise<ConsultaResultado> {
@@ -410,3 +468,45 @@ export const consultarDocumento = createServerFn({ method: "POST" })
       mensagem: "Informe um CNPJ com 14 números ou um CPF com 11 números.",
     };
   });
+
+/** Busca postal autenticada, sem alterar o cadastro: o usuário revisa antes de salvar. */
+export const consultarCep = createServerFn({ method: "POST" })
+  .inputValidator((input: { cep: string; accessToken?: string }) => ({
+    cep: String(input?.cep ?? ""),
+    accessToken: String(input?.accessToken ?? ""),
+  }))
+  .handler(
+    async ({
+      data,
+    }): Promise<
+      { ok: true; dados: EnderecoCep; provedor: string } | { ok: false; mensagem: string }
+    > => {
+      const token = data.accessToken.trim() || requestAccessToken();
+      await requireServerAuth(token, ["admin", "gestor"]);
+      await enforceRateLimit(token, "consulta-cep", 20, 60);
+      const cep = normalizarCep(data.cep);
+      if (!/^\d{8}$/.test(cep)) return { ok: false, mensagem: "Informe um CEP com 8 números." };
+      const signal = AbortSignal.timeout(15_000);
+      for (const [provedor, url] of [
+        ["ViaCEP", `https://viacep.com.br/ws/${cep}/json/`],
+        ["BrasilAPI", `https://brasilapi.com.br/api/cep/v1/${cep}`],
+      ]) {
+        try {
+          const r = await fetchWithTimeout(url!, {
+            headers: { Accept: "application/json" },
+            signal,
+          });
+          if (!r.ok) continue;
+          const dados = mapearCep((await r.json()) as Record<string, unknown>, cep);
+          if (dados) return { ok: true, dados, provedor: provedor! };
+        } catch {
+          /* tenta a alternativa sem apagar o endereço */
+        }
+      }
+      return {
+        ok: false,
+        mensagem:
+          "CEP não localizado ou serviço indisponível. Confira o CEP ou preencha o endereço manualmente. Nenhum dado foi alterado.",
+      };
+    },
+  );

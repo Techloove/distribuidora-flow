@@ -1,3 +1,4 @@
+import { ConsultaCep } from "@/components/consulta-cep";
 import {
   decorarPendenciasClientes,
   filtroPendenciaCliente,
@@ -418,6 +419,7 @@ function PessoasPage() {
             {
               id: "endereco",
               label: "Contato e endereço",
+              extra: true,
               fields: [
                 "email",
                 "telefone",
@@ -509,6 +511,9 @@ function PessoasPage() {
                     </p>
                   )}
                 </div>
+              )}
+              {sectionId === "endereco" && (
+                <ConsultaCep key={String(editing?.["id"] ?? "novo")} form={form} patch={patch} />
               )}
               {sectionId === "identificacao" && (
                 <ConsultaCadastral

@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.20.2",
+    "data": "2026-10-30",
+    "titulo": "Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro",
+    "novidades": ["Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro"]
+  },
+  {
     "versao": "1.20.1",
     "data": "2026-10-30",
     "titulo": "Aplicar o filtro global de loja ao planejamento e revisar listagens e totais",

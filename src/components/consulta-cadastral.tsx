@@ -368,6 +368,16 @@ export function ConsultaCadastral({
             {new Date(resultado.consultadoEm).toLocaleString("pt-BR")}. Marque o que deseja
             substituir e confirme.
           </p>
+          {resultado.tipo === "PJ" && (!resultado.dados.logradouro || !resultado.dados.numero) && (
+            <p
+              role="status"
+              className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-sm"
+            >
+              A fonte retornou o endereço incompleto. Use Consultar novamente para tentar outras
+              fontes ou consulte o CEP em Contato e endereço. Confira o número do imóvel
+              manualmente. Campos vazios não substituem os dados cadastrados.
+            </p>
+          )}
           <div className="max-h-72 overflow-y-auto rounded-md border border-border bg-card">
             <Table>
               <TableHeader>
