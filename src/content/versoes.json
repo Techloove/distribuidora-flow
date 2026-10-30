@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.19.2",
+    "data": "2026-10-30",
+    "titulo": "Identificar boletos cancelados com tag vermelha junto ao vencimento",
+    "novidades": ["Identificar boletos cancelados com tag vermelha junto ao vencimento"]
+  },
+  {
     "versao": "1.19.1",
     "data": "2026-10-30",
     "titulo": "Mover aviso e motivo de cancelamento do boleto para Opções",

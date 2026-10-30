@@ -568,6 +568,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                 <TableBody>
                   {boletosFiltrados.map((b) => {
                     const st = String(b["status"]);
+                    const boletoCancelado = ["baixado", "cancelado"].includes(st);
                     const id = String(b["id"]);
                     const alteracoes = alteracoesVencimentoConfirmadas(b);
                     const alteracao = alteracoes[0];
@@ -606,23 +607,33 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                             </p>
                             <p
                               className={
-                                alteracao
-                                  ? "my-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary"
-                                  : undefined
+                                boletoCancelado
+                                  ? "my-1 rounded-md border border-destructive/20 bg-destructive/10 px-2 py-1 font-semibold text-destructive"
+                                  : alteracao
+                                    ? "my-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary"
+                                    : undefined
                               }
                               title={
-                                alteracao
-                                  ? `Alterado de ${dataBr(alteracao.anterior)} para ${dataBr(alteracao.novo)}`
-                                  : undefined
+                                boletoCancelado
+                                  ? "Baixa/cancelamento confirmado. Veja detalhes em Opções."
+                                  : alteracao
+                                    ? `Alterado de ${dataBr(alteracao.anterior)} para ${dataBr(alteracao.novo)}`
+                                    : undefined
                               }
                             >
-                              <span className={alteracao ? undefined : "text-muted-foreground"}>
+                              <span
+                                className={
+                                  boletoCancelado || alteracao ? undefined : "text-muted-foreground"
+                                }
+                              >
                                 Vencimento:
                               </span>{" "}
                               {dataBr(b["vencimento"])}
-                              {alteracao && (
+                              {(boletoCancelado || alteracao) && (
                                 <span className="block text-[11px] font-medium">
-                                  Vencimento alterado · ver Opções
+                                  {boletoCancelado
+                                    ? "Boleto cancelado · ver Opções"
+                                    : "Vencimento alterado · ver Opções"}
                                 </span>
                               )}
                             </p>
