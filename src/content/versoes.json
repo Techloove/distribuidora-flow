@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.22.0",
+    "data": "2026-10-30",
+    "titulo": "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação",
+    "novidades": [
+      "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação"
+    ]
+  },
+  {
     "versao": "1.21.1",
     "data": "2026-10-30",
     "titulo": "Preparar a cotação de intermediação no orçamento e preservar custos no aceite",

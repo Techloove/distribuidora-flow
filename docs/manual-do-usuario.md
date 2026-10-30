@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.21.1 · 2026-10-30
+Versão 1.22.0 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -29,6 +29,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 19. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
 20. Os valores monetários das telas, relatórios e impressões seguem o padrão brasileiro: R$ 2,90, sempre com duas casas decimais. Em Produtos, Custo Compra, Custo Médio e preços seguem esse padrão; os campos editáveis de preço são identificados por R$. Quantidades, pesos, códigos e percentuais mantêm seus formatos próprios. Essa apresentação não altera os valores nem a precisão dos cálculos gravados no sistema.
 21. O seletor de loja do topo controla o planejamento de compras, indicadores, produtos e listagens operacionais. Escolha Cimento, Ferragem ou Todas as lojas, conforme seu acesso. Cadastros realmente compartilhados continuam disponíveis nas lojas permitidas; documentos sem loja não são atribuídos a uma loja específica pelo filtro. Históricos e documentos já abertos mantêm sua loja de origem.
+22. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
 
 Cuidados:
 
@@ -125,26 +126,28 @@ Cuidados:
 - Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
 - O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.
 
-## Vender por intermediação com cotação diária
+## Vender por intermediação com preço de fábrica vigente
 
 Entrega direta da fábrica ao cliente, com custo e margem por saca preservados no pedido.
 
 1. Em Lojas → Configurações da loja, selecione a loja e salve Habilitar vendas por intermediação. A implantação habilita inicialmente apenas Cimento; outras lojas e novas lojas permanecem desabilitadas. Desabilitar impede novos pedidos da modalidade e novas cotações; o histórico e pedidos já criados são preservados.
-2. Dentro do orçamento, escolha Intermediação antes de lançar itens. O bloco Cotação de fábrica abre na própria proposta: selecione o produto, informe o custo da fábrica por saca e salve. Nas configurações da loja fica somente habilitar ou desabilitar. Alterações criam revisões, preservando o histórico. O cadastro da cotação respeita a permissão de precificação; habilitar a modalidade na loja continua exigindo a permissão de configurar regras. A cotação não muda o custo médio, estoque ou preço de venda do produto.
-3. Crie um orçamento na loja e, antes de lançar itens, escolha Modalidade do orçamento → Intermediação. A cotação, frete e margem são preparados na proposta. O pedido direto também pode usar a modalidade. Documentos com itens não trocam de modalidade.
-4. Ao selecionar o cimento, o sistema busca a cotação da data base da proposta e da mesma loja. O aceite converte o orçamento sem recalcular os custos, mesmo quando a data comercial do pedido muda. Informe sacas inteiras, frete por saca e margem em reais por saca. Preço por saca = fábrica + frete + margem. Custo = fábrica + frete. O ganho dos itens é a margem multiplicada pelas sacas.
+2. Em Lojas → Configurações da loja, habilite a modalidade e selecione Vendedores autorizados • Intermediação. Administradores e gestores mantêm acesso. A seleção não concede acesso a outras lojas ou carteiras. As cotações ficam dentro do orçamento ou pedido, não nas configurações.
+3. Novo orçamento e Novo pedido sempre começam em Venda do estoque da loja, inclusive em Cimento. Na abertura, escolha explicitamente Intermediação quando desejado. Durante a digitação, é possível trocar a modalidade. Se houver itens, confira a prévia e confirme; nada muda antes da confirmação. Salve as edições pendentes antes de trocar.
+4. A cotação usa o último preço cadastrado do produto na mesma loja até a data base da proposta. Ele continua válido nos dias seguintes até uma nova cotação; a lista mostra a Data do último preço. Cotações futuras não são antecipadas. Salvar o mesmo valor preserva a data original. O aceite não recalcula custos. Informe sacas inteiras, frete e margem em reais por saca. Preço = fábrica + frete + margem; custo = fábrica + frete; ganho dos itens = margem × sacas.
 5. Clique Adicionar item. Para editar um item, use Editar e Salvar item. Uma nova cotação não recalcula itens anteriores. Para trocar o custo de um item ainda em digitação, use explicitamente Aplicar cotação atual, confira a prévia e salve.
-6. Confira o fechamento e a forma de pagamento. A empresa cobra o valor inteiro: fábrica, frete e margem. Parcelas, boletos, crédito do cliente e comissão seguem os controles atuais. Não há recebimento ou pagamento bancário automático ao salvar uma cotação.
-7. Confirme a venda e use Separação → Cargas → Entregas normalmente para a conferência e transporte direto. O pedido é identificado como intermediação na lista, na fila de separação e na impressão; custos e margem não são exibidos na impressão do cliente.
+6. Na intermediação, informe Quem paga o frete: Loja vendedora ou Cliente. O campo é apenas informativo, aparece na impressão e não altera valores, custo ou cobrança.
+7. Confira o fechamento e a forma de pagamento. A empresa cobra o valor inteiro: fábrica, frete e margem. Parcelas, boletos, crédito do cliente e comissão seguem os controles atuais. Não há recebimento ou pagamento bancário automático ao salvar uma cotação.
+8. Confirme a venda e use Separação → Cargas → Entregas normalmente para a conferência e transporte direto. O pedido é identificado como intermediação na lista, na fila de separação e na impressão; custos e margem não são exibidos na impressão do cliente.
 
 Cuidados:
 
 - Aprovar, confirmar, cancelar e devolver uma intermediação não reserva, baixa ou repõe estoque da loja. A modalidade não integra o consumo nem as pendências do planejamento de reposição físico. Vendas comuns permanecem com estoque normal.
-- Uma cotação é obrigatória para a data e produto do pedido. Não é usada cotação anterior silenciosamente. Não altere a data ou loja depois de lançar os itens; remova os itens primeiro para evitar misturar cotações.
+- É obrigatório ter uma cotação vigente até a data base do documento. Na troca para intermediação, confira todos os produtos, frete e margem; se faltar cotação, cadastre e atualize a prévia. Descontos dos itens são incorporados ao preço líquido. O retorno para estoque preserva preços negociados e usa o custo do estoque. A troca só ocorre em documentos ainda em digitação, sem vínculos ativos de confirmação.
 - O frete por saca já compõe custo e preço dos itens. O frete automático por volume fica dispensado para evitar duplicação. Frete manual, outras despesas e regras da forma de pagamento permanecem ajustes separados. No resultado estimado, informe somente custos extras de transporte, sem repetir o frete dos itens.
 - Margem dos itens é o ganho bruto por saca. Descontos, encargos de pagamento, comissão, tributos e despesas podem alterar o resultado após ajustes. O custo congelado da intermediação também é usado na margem e no CPV da DRE. Cotações e custos previstos não criam contas a pagar à fábrica ou ao transportador automaticamente.
 - Na devolução, confirme o retorno físico à fábrica/fornecedor. O financeiro é ajustado proporcionalmente, preservando os títulos e vínculos de boletos, sem gerar entrada física na loja. Cobranças pagas e documentos fiscais continuam exigindo o tratamento específico existente.
 - A permissão para alterar preços continua valendo para definir frete e margem dos itens. As restrições de loja, carteira, crédito, aprovação, carga e emissão fiscal são mantidas.
+- Os mínimos de acréscimo e margem de contribuição da loja valem apenas para venda de estoque. Intermediação aceita margem por saca a partir de zero; custos, quantidades, crédito e demais aprovações continuam validados.
 
 ## Regularizar o status de um pedido antigo
 

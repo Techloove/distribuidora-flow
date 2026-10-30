@@ -192,3 +192,20 @@ test("orçamento de intermediação é identificado sem expor os custos da fábr
   expect(html).not.toContain("28,50");
   expect(html).not.toContain("Margem");
 });
+
+test("impressão informa pagador do frete somente na intermediação, sem expor custos", () => {
+  const inter = {
+    ...pedido,
+    pedido: {
+      ...pedido.pedido,
+      modalidade_venda: "intermediacao",
+      responsavel_frete_intermediacao: "cliente",
+    },
+  };
+  const html = gerarHtmlPedidos([inter], "");
+  expect(html).toContain("Frete pago por");
+  expect(html).toContain("Cliente");
+  expect(html).toContain("3.716,79");
+  expect(gerarHtmlPedidos([pedido], "")).not.toContain("Frete pago por");
+  expect(html).not.toContain("custo_fabrica");
+});

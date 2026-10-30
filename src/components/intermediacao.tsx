@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -29,14 +30,7 @@ function useCotacoes(loja: string, dia: string) {
     enabled: !!client && !!loja && !!dia,
     queryFn: () =>
       lerPaginas<Cotacao>((a, b) =>
-        client!
-          .from("intermediacao_cotacoes_296")
-          .select("*")
-          .eq("centro_id", loja)
-          .eq("dia", dia)
-          .order("revisao", { ascending: false })
-          .order("id")
-          .range(a, b),
+        client!.rpc("listar_cotacoes_vigentes_298", { _loja: loja, _ate: dia }).range(a, b),
       ),
   });
 }
@@ -56,7 +50,25 @@ export function CotacoesIntermediacao({
     usePodeAlterarPreco() || (canManage && permissoes.pode("configuracao_rotinas_editar"));
   const [dia, setDia] = useState(diaInicial),
     [produto, setProduto] = useState(""),
-    [custo, setCusto] = useState("");
+    [custo, setCusto] = useState(""),
+    [historicoAberto, setHistoricoAberto] = useState(false);
+  const acesso = useAcessoIntermediacao(loja);
+  const historico = useQuery({
+    queryKey: ["intermediacao-cotacoes-historico", user?.id, loja, dia],
+    enabled: !!client && historicoAberto && acesso.data === true,
+    queryFn: async () => {
+      const r = await client!
+        .from("intermediacao_cotacoes_296")
+        .select("*")
+        .eq("centro_id", loja)
+        .lte("dia", dia)
+        .order("dia", { ascending: false })
+        .order("revisao", { ascending: false })
+        .limit(100);
+      if (r.error) throw Error(r.error.message);
+      return r.data as Cotacao[];
+    },
+  });
   const cotacoes = useCotacoes(loja, dia);
   const produtos = useQuery({
     queryKey: ["cotacoes-catalogo", user?.id, loja],
@@ -82,17 +94,12 @@ export function CotacoesIntermediacao({
       toast.success("Cotação salva. Pedidos anteriores mantêm o custo gravado.");
       setCusto("");
       void qc.invalidateQueries({ queryKey: ["intermediacao-cotacoes"] });
+      void qc.invalidateQueries({ queryKey: ["intermediacao-cotacoes-historico"] });
+      void qc.invalidateQueries({ queryKey: ["previa-modalidade"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const ultimas = [
-    ...new Map(
-      (cotacoes.data ?? [])
-        .slice()
-        .reverse()
-        .map((c) => [c.produto_id, c]),
-    ).values(),
-  ];
+  const ultimas = cotacoes.data ?? [];
   const nome = (id: string) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? id);
   return (
@@ -100,8 +107,8 @@ export function CotacoesIntermediacao({
       <div>
         <h3 className="font-semibold">Cotação de fábrica • Intermediação</h3>
         <p className="text-xs text-muted-foreground">
-          Custo da fábrica por saca e produto. Cada alteração cria uma revisão; pedidos já lançados
-          não são recalculados.
+          O último preço continua válido nos dias seguintes até uma nova cotação. Pedidos já
+          lançados mantêm o custo gravado.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -144,7 +151,14 @@ export function CotacoesIntermediacao({
         </div>
         <div className="flex items-end">
           <Button
-            disabled={!podeCotar || salvar.isPending || !dia || !produto || !(Number(custo) > 0)}
+            disabled={
+              !podeCotar ||
+              !acesso.data ||
+              salvar.isPending ||
+              !dia ||
+              !produto ||
+              !(Number(custo) > 0)
+            }
             onClick={() => salvar.mutate()}
           >
             Salvar cotação
@@ -165,6 +179,7 @@ export function CotacoesIntermediacao({
               <TableRow>
                 <TableHead>Produto</TableHead>
                 <TableHead>Fábrica / saca</TableHead>
+                <TableHead>Data do último preço</TableHead>
                 <TableHead>Revisão</TableHead>
               </TableRow>
             </TableHeader>
@@ -175,6 +190,7 @@ export function CotacoesIntermediacao({
                   <TableCell data-label="Fábrica / saca" className="whitespace-nowrap">
                     {brl(c.custo_fabrica)}
                   </TableCell>
+                  <TableCell data-label="Data do último preço">{dataBr(c.dia)}</TableCell>
                   <TableCell data-label="Revisão">{c.revisao}</TableCell>
                 </TableRow>
               ))}
@@ -182,19 +198,20 @@ export function CotacoesIntermediacao({
           </Table>
           {!ultimas.length && (
             <p className="p-2 text-sm text-muted-foreground">
-              Nenhuma cotação nesta data. Cadastre antes de incluir itens.
+              Nenhuma cotação vigente até esta data. Cadastre antes de incluir itens.
             </p>
           )}
         </div>
       )}
       {cotacoes.data && cotacoes.data.length > 0 && (
-        <details className="text-xs">
-          <summary>Histórico de revisões desta data</summary>
+        <details className="text-xs" onToggle={(e) => setHistoricoAberto(e.currentTarget.open)}>
+          <summary>Histórico de preços e revisões (últimos 100)</summary>
+          {historico.error && <p role="alert">{historico.error.message}</p>}
           <ul className="mt-2 space-y-1">
-            {cotacoes.data.map((c) => (
+            {(historico.data ?? []).map((c) => (
               <li key={c.id}>
-                {nome(c.produto_id)} · revisão {c.revisao} · {brl(c.custo_fabrica)} ·{" "}
-                {new Date(c.created_at).toLocaleString("pt-BR")}
+                {nome(c.produto_id)} · preço de {dataBr(c.dia)} · revisão {c.revisao} ·{" "}
+                {brl(c.custo_fabrica)} · {new Date(c.created_at).toLocaleString("pt-BR")}
               </li>
             ))}
           </ul>
@@ -203,94 +220,376 @@ export function CotacoesIntermediacao({
     </section>
   );
 }
-export function ModalidadePedido({
-  doc,
-  temItens,
-  onChange,
-  editavel = true,
-}: {
-  doc: Row;
-  editavel?: boolean;
-  temItens: boolean;
-  onChange: () => void;
-}) {
+const dataBr = (dia: string) => dia?.split("-").reverse().join("/");
+function useAcessoIntermediacao(loja: string, habilitada = false) {
   const { client, user } = useSupabase();
-  const [cotas, setCotas] = useState(false);
-  const q = useQuery({
-    queryKey: ["intermediacao-ativa", user?.id, doc["centro_id"]],
-    enabled: !!client,
+  return useQuery({
+    queryKey: [habilitada ? "intermediacao-ativa" : "intermediacao-vendedor", user?.id, loja],
+    enabled: !!client && !!loja,
     queryFn: async () => {
-      const r = await client!.rpc("intermediacao_ativa_296", { _loja: String(doc["centro_id"]) });
+      const r = await client!.rpc(
+        habilitada ? "intermediacao_ativa_296" : "vendedor_intermediacao_autorizado_298",
+        { _loja: loja },
+      );
       if (r.error) throw Error(r.error.message);
       return r.data === true;
     },
   });
-  const mudar = useMutation({
-    mutationFn: async (modalidade: string) => {
-      const r = await client!.rpc("definir_modalidade_pedido_296", {
-        _pedido: String(doc["id"]),
+}
+export function ModalidadeInicial({
+  loja,
+  value,
+  onChange,
+}: {
+  loja: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const q = useAcessoIntermediacao(loja, true);
+  return (
+    <div className="space-y-1">
+      <Label htmlFor="modalidade-inicial">Modalidade da venda</Label>
+      <select
+        id="modalidade-inicial"
+        className="h-11 w-full rounded-md border bg-background px-3"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="estoque">Venda do estoque da loja</option>
+        <option value="intermediacao" disabled={!q.data}>
+          Intermediação • entrega direta
+        </option>
+      </select>
+      <p className="text-xs text-muted-foreground">
+        Novos documentos começam com venda do estoque. A intermediação exige habilitação da loja e
+        autorização do vendedor.
+      </p>
+      {q.error && (
+        <p role="alert" className="text-xs text-destructive">
+          {q.error.message}
+        </p>
+      )}
+    </div>
+  );
+}
+type PreviaItem = {
+  id: string;
+  produto: string;
+  quantidade: number;
+  preco_anterior: number;
+  total_anterior: number;
+  cotacao: string | null;
+  data_preco: string;
+  fabrica: number;
+  frete: number;
+  margem: number;
+};
+type Previa = { versao: string; itens: PreviaItem[] };
+function TrocaModalidade({
+  doc,
+  modalidade,
+  onClose,
+  onChange,
+}: {
+  doc: Row;
+  modalidade: string;
+  onClose: () => void;
+  onChange: () => void;
+}) {
+  const { client, user } = useSupabase();
+  const [valores, setValores] = useState<Record<string, { frete: string; margem: string }>>({});
+  const [mostrarCotas, setMostrarCotas] = useState(false);
+  const q = useQuery({
+    queryKey: ["previa-modalidade", user?.id, doc["id"], modalidade],
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const r = await client!.rpc("previa_modalidade_298", {
+        _pedido: doc["id"],
         _modalidade: modalidade,
+      });
+      if (r.error) throw Error(r.error.message);
+      return r.data as Previa;
+    },
+  });
+  useEffect(() => {
+    if (q.data)
+      setValores(
+        Object.fromEntries(
+          q.data.itens.map((i) => [
+            i.id,
+            { frete: String(i.frete ?? 0), margem: String(i.margem ?? 0) },
+          ]),
+        ),
+      );
+  }, [q.data]);
+  const inter = modalidade === "intermediacao";
+  const calculo = (i: PreviaItem) =>
+    calcularIntermediacao({
+      quantidade: Number(i.quantidade),
+      fabrica: Number(i.fabrica),
+      frete: Number(valores[i.id]?.frete),
+      margem: Number(valores[i.id]?.margem),
+    });
+  const invalido = !q.data || (inter && q.data.itens.some((i) => !i.cotacao || !calculo(i)));
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const r = await client!.rpc("trocar_modalidade_298", {
+        _pedido: doc["id"],
+        _modalidade: modalidade,
+        _versao: q.data!.versao,
+        _itens: inter
+          ? q.data!.itens.map((i) => ({
+              id: i.id,
+              cotacao: i.cotacao,
+              frete: Number(valores[i.id]?.frete),
+              margem: Number(valores[i.id]?.margem),
+            }))
+          : [],
       });
       if (r.error) throw Error(r.error.message);
     },
     onSuccess: () => {
       onChange();
-      toast.success("Modalidade do pedido atualizada.");
+      onClose();
+      toast.success("Modalidade e itens atualizados.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const inter = doc["modalidade_venda"] === "intermediacao";
-  const orcamento = doc["tipo_documento"] === "orcamento";
+  return (
+    <Dialog
+      open
+      onOpenChange={(v) => {
+        if (!v && !salvar.isPending) onClose();
+      }}
+    >
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Revisar mudança de modalidade</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm">
+          {inter
+            ? "Confira fábrica, frete e margem por saca. A sugestão mantém o preço líquido atual quando ele cobre o custo da fábrica; ajuste a margem se necessário. Descontos dos itens serão incorporados ao preço."
+            : "Os preços negociados serão preservados; o custo e a movimentação voltarão a seguir o estoque da loja após a aprovação."}
+        </p>
+        {q.error && (
+          <p role="alert" className="text-destructive">
+            {q.error.message}
+          </p>
+        )}
+        {q.isFetching && <p>Conferindo itens e preços…</p>}
+        <div className="space-y-3">
+          {q.data?.itens.map((i) => (
+            <div key={i.id} className="rounded-lg border p-3 space-y-2">
+              <p className="font-medium">
+                {i.produto} · {i.quantidade} unidades
+              </p>
+              <p className="text-sm">Total atual: {brl(i.total_anterior)}</p>
+              {inter && (
+                <>
+                  <p className="text-sm">
+                    {i.cotacao
+                      ? `Fábrica: ${brl(i.fabrica)} / saca · último preço: ${dataBr(i.data_preco)}`
+                      : "Sem cotação vigente. Cadastre um preço e atualize a prévia."}
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {(["frete", "margem"] as const).map((c) => (
+                      <div key={c}>
+                        <Label htmlFor={`previa-${c}-${i.id}`}>
+                          {c === "frete" ? "Frete" : "Margem"} / saca (R$)
+                        </Label>
+                        <Input
+                          id={`previa-${c}-${i.id}`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={valores[i.id]?.[c] ?? ""}
+                          onChange={(e) =>
+                            setValores((v) => ({
+                              ...v,
+                              [i.id]: { ...v[i.id]!, [c]: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm">
+                    {calculo(i)
+                      ? `Novo total: ${brl(calculo(i)!.total)}`
+                      : "Informe quantidade inteira e valores válidos, sem frete ou margem negativos."}
+                  </p>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        {inter && (
+          <>
+            <Button variant="outline" onClick={() => setMostrarCotas((v) => !v)}>
+              Cotações de fábrica
+            </Button>
+            {mostrarCotas && (
+              <CotacoesIntermediacao
+                loja={String(doc["centro_id"])}
+                diaInicial={dataBaseIntermediacao(doc)}
+                dataFixa
+              />
+            )}
+          </>
+        )}
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="outline"
+            disabled={salvar.isPending || q.isFetching}
+            onClick={() => void q.refetch()}
+          >
+            Atualizar prévia
+          </Button>
+          <Button variant="outline" disabled={salvar.isPending} onClick={onClose}>
+            Voltar
+          </Button>
+          <Button
+            disabled={invalido || q.isFetching || salvar.isPending}
+            onClick={() => salvar.mutate()}
+          >
+            Confirmar modalidade
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+export function ModalidadePedido({
+  doc,
+  temItens,
+  onChange,
+  editavel = true,
+  pendente = false,
+  carregando = false,
+}: {
+  doc: Row;
+  temItens: boolean;
+  onChange: () => void;
+  editavel?: boolean;
+  pendente?: boolean;
+  carregando?: boolean;
+}) {
+  const { client } = useSupabase(),
+    qc = useQueryClient();
+  const [cotas, setCotas] = useState(false),
+    [troca, setTroca] = useState("");
+  const q = useAcessoIntermediacao(String(doc["centro_id"]), true);
+  const acesso = useAcessoIntermediacao(String(doc["centro_id"]));
+  const inter = doc["modalidade_venda"] === "intermediacao",
+    orcamento = doc["tipo_documento"] === "orcamento";
+  const editar =
+    editavel &&
+    ["rascunho", "digitacao"].includes(String(doc["status"])) &&
+    (!inter || acesso.data === true);
+  const atualizar = () => {
+    void qc.invalidateQueries({ queryKey: ["pedido_itens"] });
+    void qc.invalidateQueries({ queryKey: ["vw_margem_pedido_209"] });
+    void qc.invalidateQueries({ queryKey: ["validar_pedido"] });
+    onChange();
+  };
+  const mudar = useMutation({
+    mutationFn: async (modalidade: string) => {
+      const r = await client!.rpc("definir_modalidade_pedido_296", {
+        _pedido: doc["id"],
+        _modalidade: modalidade,
+      });
+      if (r.error) throw Error(r.error.message);
+    },
+    onSuccess: atualizar,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const frete = useMutation({
+    mutationFn: async (v: string) => {
+      const r = await client!.rpc("definir_responsavel_frete_298", {
+        _pedido: doc["id"],
+        _responsavel: v || null,
+      });
+      if (r.error) throw Error(r.error.message);
+    },
+    onSuccess: () => {
+      onChange();
+      toast.success("Responsável pelo frete salvo.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   useEffect(() => {
-    if (orcamento && inter && editavel) setCotas(true);
-  }, [orcamento, inter, editavel]);
+    if (orcamento && inter && editar) setCotas(true);
+  }, [orcamento, inter, editar]);
   if (!q.data && !inter)
     return q.error ? (
-      <p role="alert" className="text-sm text-destructive">
-        Não foi possível conferir a intermediação desta loja: {q.error.message}
+      <p role="alert" className="text-destructive">
+        {q.error.message}
       </p>
     ) : null;
   return (
     <section className="space-y-3 rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0 w-full space-y-1 sm:w-auto">
-          <Label htmlFor={"modalidade-" + doc["id"]}>
+        <div className="w-full min-w-0 space-y-1 sm:w-auto">
+          <Label htmlFor={`modalidade-${doc["id"]}`}>
             {orcamento ? "Modalidade do orçamento" : "Modalidade da venda"}
           </Label>
           <select
-            id={"modalidade-" + doc["id"]}
-            className="block h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-3"
-            disabled={
-              !editavel ||
-              temItens ||
-              mudar.isPending ||
-              !["rascunho", "digitacao"].includes(String(doc["status"]))
-            }
+            id={`modalidade-${doc["id"]}`}
+            className="block h-11 w-full max-w-full rounded-md border bg-background px-3"
+            disabled={!editar || pendente || carregando || mudar.isPending}
             value={inter ? "intermediacao" : "estoque"}
-            onChange={(e) => mudar.mutate(e.target.value)}
+            onChange={(e) => (temItens ? setTroca(e.target.value) : mudar.mutate(e.target.value))}
           >
             <option value="estoque">Venda do estoque da loja</option>
-            <option value="intermediacao">Intermediação • entrega direta</option>
+            <option value="intermediacao" disabled={!q.data}>
+              Intermediação • entrega direta
+            </option>
           </select>
         </div>
-        {q.data && editavel && inter && (
+        {q.data && editar && inter && (
           <Button variant="outline" onClick={() => setCotas((v) => !v)}>
-            {cotas ? "Fechar cotações" : "Cotações diárias"}
+            {cotas ? "Fechar cotações" : "Cotações de fábrica"}
           </Button>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
         {inter
-          ? orcamento
-            ? "Defina a cotação, o frete e a margem nesta proposta. O orçamento não gera cobrança, reserva ou saída de estoque. O aceite preserva os valores para o pedido."
-            : "Fábrica + frete por saca + margem por saca. Cobrança integral, carga e entrega usuais, sem movimentar estoque da loja."
-          : "Venda com o estoque e preços atuais da loja. Escolha a modalidade antes de incluir itens."}
+          ? "Fábrica + frete + margem por saca, sem margem mínima configurada e sem movimentar estoque da loja. A cobrança é integral; carga e entrega seguem o fluxo usual."
+          : "Venda com estoque da loja. É possível revisar a modalidade durante a digitação; documentos com itens exigem conferência da prévia."}
       </p>
-      {cotas && editavel && inter && q.data && (
+      {inter && (
+        <div className="space-y-1">
+          <Label htmlFor={`frete-pagador-${doc["id"]}`}>Quem paga o frete</Label>
+          <select
+            id={`frete-pagador-${doc["id"]}`}
+            className="h-11 w-full rounded-md border bg-background px-3 sm:max-w-md"
+            value={String(doc["responsavel_frete_intermediacao"] ?? "")}
+            disabled={!editar || frete.isPending}
+            onChange={(e) => frete.mutate(e.target.value)}
+          >
+            <option value="">Não informado</option>
+            <option value="loja">Loja vendedora</option>
+            <option value="cliente">Cliente</option>
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Informação para a operação. Não altera o preço, o custo nem a cobrança do pedido.
+          </p>
+        </div>
+      )}
+      {cotas && editar && inter && q.data && (
         <CotacoesIntermediacao
           loja={String(doc["centro_id"])}
           diaInicial={dataBaseIntermediacao(doc)}
           dataFixa
+        />
+      )}
+      {troca && (
+        <TrocaModalidade
+          doc={doc}
+          modalidade={troca}
+          onClose={() => setTroca("")}
+          onChange={atualizar}
         />
       )}
     </section>
@@ -325,6 +624,7 @@ export function ItensIntermediacao({
   const { client } = useSupabase(),
     qc = useQueryClient(),
     podePreco = usePodeAlterarPreco();
+  const acesso = useAcessoIntermediacao(String(doc["centro_id"]));
   const cotacoes = useCotacoes(String(doc["centro_id"]), dataBaseIntermediacao(doc));
   const [form, setForm] = useState({ ...vazio });
   useEffect(() => {
@@ -338,7 +638,10 @@ export function ItensIntermediacao({
       );
   }, [cotacoes.data, form.produto, form.id, form.cotacao]);
 
-  const editavel = propostaEditavel && ["rascunho", "digitacao"].includes(String(doc["status"]));
+  const editavel =
+    propostaEditavel &&
+    acesso.data === true &&
+    ["rascunho", "digitacao"].includes(String(doc["status"]));
   const nome = (id: unknown) => String(produtos.find((p) => p["id"] === id)?.["descricao"] ?? id);
   const atual = (id: string) => (cotacoes.data ?? []).find((c) => c.produto_id === id);
   const conferir = () => {

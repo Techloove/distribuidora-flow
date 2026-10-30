@@ -13,7 +13,7 @@ export function StatusBadge({ value }: { value: unknown }) {
         : "bg-muted text-muted-foreground";
   return (
     <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
-      {status.replace(/_/g, " ")}
+      {status === "venda_nao_aprovada" ? "Venda não aprovada" : status.replace(/_/g, " ")}
     </span>
   );
 }

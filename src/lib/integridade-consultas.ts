@@ -35,7 +35,9 @@ export function saldosPorProduto(rows: readonly Row[], centro: string) {
 /** Os cartões respeitam o mesmo centro da listagem, sem esconder valores pagos. */
 export function totaisTitulos(rows: readonly Row[], centro: string, hoje: string) {
   const permitidos = rows.filter((r) => !centro || r["centro_id"] === centro);
-  const abertos = permitidos.filter((r) => r["status"] !== "pago" && r["status"] !== "cancelado");
+  const abertos = permitidos.filter(
+    (r) => r["status"] !== "pago" && r["status"] !== "cancelado" && r["venda_aprovada"] !== false,
+  );
   const somar = (list: readonly Row[]) => list.reduce((sum, r) => sum + saldoTitulo(r), 0);
   return {
     aberto: somar(abertos),

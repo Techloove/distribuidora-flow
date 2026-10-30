@@ -436,6 +436,171 @@ const criarBanco = require("./fixtures/pedidos-operacionais.cjs");
     await db.exec(
       "set test.preco='true';create or replace function can_manage(uuid) returns boolean language sql as $$select usuario_ativo()$$",
     );
+    // Fase298: preços duradouros, troca atômica e acesso por vendedor.
+    await db.exec(`create table representantes(id uuid primary key,nome text,profile_id uuid,ativo boolean default true);
+      insert into representantes values('${id(80)}','Vendedor teste','${id(1)}',true);
+      create table rotas(id uuid primary key,ativo boolean default true);
+      alter table clientes add column centro_id uuid;
+      insert into rotas values('${id(70)}',true);
+      alter table pedidos alter column status set default 'rascunho';`);
+    await db.exec(fs.readFileSync("scripts/fixtures/intermediacao-criacao-298.sql", "utf8"));
+    const fase298 = fs.readFileSync(
+      "db/fase298_intermediacao_preco_vigente_modalidade.sql",
+      "utf8",
+    );
+    await db.exec(fase298);
+    await db.exec(fase298);
+    assert.match(
+      await scalar("select pg_get_functiondef('modalidade_pedido_296()'::regprocedure)"),
+      /vendedor_modalidade_298/,
+    );
+    const vigente = await cotacao(34);
+    const amanha = await scalar("select (current_date+1)::text");
+    const mesma = (
+      await db.query("select * from salvar_cotacao_intermediacao_296($1,$2,$3,34)", [
+        id(10),
+        id(20),
+        amanha,
+      ])
+    ).rows[0];
+    assert.equal(mesma.id, vigente.id, "Mesmo preço mantém a data original");
+    const futura = (
+      await db.query("select * from salvar_cotacao_intermediacao_296($1,$2,current_date+2,35)", [
+        id(10),
+        id(20),
+      ])
+    ).rows[0];
+    assert.notEqual(futura.id, vigente.id);
+    assert.equal(
+      await scalar(
+        "select id from listar_cotacoes_vigentes_298($1,current_date+1) where produto_id=$2",
+        [id(10), id(20)],
+      ),
+      vigente.id,
+      "Preço futuro não contamina o vigente",
+    );
+    await db.exec(`insert into pedidos(id,numero,cliente_id,centro_id,status,data_pedido,forma_pagamento_id) values('${id(520)}',520,'${id(90)}','${id(10)}','rascunho',current_date,'${id(30)}');
+      insert into pedido_itens(id,pedido_id,produto_id,quantidade,preco_unitario) values('${id(521)}','${id(520)}','${id(20)}',10,40);`);
+    const preview = async (modalidade) =>
+      (await db.query("select previa_modalidade_298($1,$2) p", [id(520), modalidade])).rows[0].p;
+    await db.query(
+      "update pedido_itens set desconto_percentual=10,preco_unitario=44.4444 where id=$1",
+      [id(521)],
+    );
+    const pv = await preview("intermediacao");
+    const args = pv.itens.map((i) => ({ id: i.id, cotacao: i.cotacao, frete: 2, margem: 4 }));
+    await assert.rejects(
+      () =>
+        db.query("select trocar_modalidade_298($1,'intermediacao','obsoleta',$2)", [
+          id(520),
+          JSON.stringify(args),
+        ]),
+      /Atualize a prévia/,
+    );
+    assert.equal(
+      await scalar("select modalidade_venda from pedidos where id=$1", [id(520)]),
+      "estoque",
+    );
+    await assert.rejects(
+      () =>
+        db.query("select trocar_modalidade_298($1,'intermediacao',$2,$3)", [
+          id(520),
+          pv.versao,
+          JSON.stringify(args.map((i) => ({ ...i, margem: -1 }))),
+        ]),
+      /não negativos/,
+    );
+    assert.equal(
+      await scalar("select modalidade_venda from pedidos where id=$1", [id(520)]),
+      "estoque",
+      "Falha na precificação reverte a troca inteira",
+    );
+    await db.query("select trocar_modalidade_298($1,'intermediacao',$2,$3)", [
+      id(520),
+      pv.versao,
+      JSON.stringify(args),
+    ]);
+    assert.equal(
+      Number(await scalar("select total_liquido from pedidos where id=$1", [id(520)])),
+      400,
+    );
+    const antesFrete = await scalar(
+      "select to_jsonb(p)-'responsavel_frete_intermediacao' from pedidos p where id=$1",
+      [id(520)],
+    );
+    await db.query("select definir_responsavel_frete_298($1,'cliente')", [id(520)]);
+    assert.deepEqual(
+      await scalar(
+        "select to_jsonb(p)-'responsavel_frete_intermediacao' from pedidos p where id=$1",
+        [id(520)],
+      ),
+      antesFrete,
+      "Frete é informativo",
+    );
+    await db.exec(
+      "insert into parametros values('margem_liquida_minima','99','Mínimo') on conflict(chave) do update set valor='99'",
+    );
+    assert.equal(await scalar("select margem_inadequada_215($1)", [id(520)]), false);
+    const back = await preview("estoque");
+    await db.query("select trocar_modalidade_298($1,'estoque',$2,'[]')", [id(520), back.versao]);
+    assert.equal(
+      Number(await scalar("select preco_unitario from pedido_itens where id=$1", [id(521)])),
+      40,
+    );
+    assert.equal(
+      await scalar("select cotacao_intermediacao_id from pedido_itens where id=$1", [id(521)]),
+      null,
+    );
+    assert.equal(
+      await scalar("select margem_inadequada_215($1)", [id(520)]),
+      true,
+      "Estoque mantém mínimo de margem",
+    );
+    // Criação atômica: padrão estoque e intermediação explicitamente selecionada.
+    const criar = async (modo, loja = id(10)) =>
+      (
+        await db.query(
+          "select * from criar_documento_modalidade_298('pedido',$1,$2,$3,$4,$5,current_date)",
+          [modo, id(90), loja, id(70), id(30)],
+        )
+      ).rows[0];
+    assert.equal((await criar("estoque")).modalidade_venda, "estoque");
+    assert.equal((await criar("intermediacao")).modalidade_venda, "intermediacao");
+    const novoOrc = (
+      await db.query(
+        "select * from criar_documento_modalidade_298('orcamento','intermediacao',$1,$2,$3,$4,current_date,current_date+15)",
+        [id(90), id(10), id(70), id(30)],
+      )
+    ).rows[0];
+    assert.equal(novoOrc.tipo_documento, "orcamento");
+    assert.equal(novoOrc.modalidade_venda, "intermediacao");
+    assert.equal(
+      Number(await scalar("select count(*) from contas_receber where pedido_id=$1", [novoOrc.id])),
+      0,
+    );
+
+    const count = await scalar("select count(*) from pedidos");
+    await assert.rejects(() => criar("intermediacao", id(11)), /não habilitada/);
+    assert.equal(await scalar("select count(*) from pedidos"), count);
+    await db.exec(
+      "create or replace function can_manage(uuid) returns boolean language sql as $$select false$$",
+    );
+    assert.equal(await scalar("select intermediacao_ativa_296($1)", [id(10)]), false);
+    await assert.rejects(() => cotacao(36), /Sem permissão/);
+    await db.exec(
+      "create or replace function can_manage(uuid) returns boolean language sql as $$select usuario_ativo()$$",
+    );
+    await db.query("select salvar_vendedores_intermediacao_298($1,$2)", [id(10), [id(80)]]);
+    await db.exec(
+      "create or replace function can_manage(uuid) returns boolean language sql as $$select false$$",
+    );
+    assert.equal(await scalar("select intermediacao_ativa_296($1)", [id(10)]), true);
+    await cotacao(36);
+    await db.exec(
+      "create or replace function can_manage(uuid) returns boolean language sql as $$select usuario_ativo()$$",
+    );
+    await db.query("select salvar_vendedores_intermediacao_298($1,'{}')", [id(10)]);
+    assert.equal(await scalar("select count(*) from intermediacao_trocas_contexto_298"), 0);
     await db.exec("set role authenticated");
     await assert.rejects(
       () =>

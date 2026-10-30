@@ -304,7 +304,10 @@ export function TitulosPage({
     centroGlobal,
   ]);
 
-  const totalFiltrado = rows.reduce((s, r) => s + saldoTitulo(r), 0);
+  const totalFiltrado = rows.reduce(
+    (s, r) => s + (r["venda_aprovada"] === false ? 0 : saldoTitulo(r)),
+    0,
+  );
 
   const totals = useMemo(
     () =>

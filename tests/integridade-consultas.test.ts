@@ -95,3 +95,24 @@ test("parcela vencida parcialmente recebida aparece nos filtros e saldo inclui e
   expect(saldoTitulo(row)).toBe(67);
   expect(saldoTitulo({ ...row, saldo: 65 })).toBe(65);
 });
+
+test("venda não aprovada não aumenta atraso nem saldo aberto; recebimentos reais permanecem no histórico", () => {
+  const rows = [
+    {
+      status: "parcial",
+      valor: 900,
+      valor_pago: 20,
+      vencimento: "2026-01-01",
+      venda_aprovada: false,
+      status_efetivo: "venda_nao_aprovada",
+    },
+    { status: "aberto", valor: 100, valor_pago: 0, vencimento: "2026-01-01", venda_aprovada: true },
+  ];
+  expect(totaisTitulos(rows, "", "2026-10-30")).toMatchObject({
+    aberto: 100,
+    vencido: 100,
+    pago: 20,
+  });
+  expect(tituloNoStatus(rows[0]!, "vencido")).toBe(false);
+  expect(tituloNoStatus(rows[0]!, "todos")).toBe(true);
+});

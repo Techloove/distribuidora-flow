@@ -1,4 +1,8 @@
-import { ModalidadePedido, ItensIntermediacao } from "@/components/intermediacao";
+import {
+  ModalidadeInicial,
+  ModalidadePedido,
+  ItensIntermediacao,
+} from "@/components/intermediacao";
 import { ReabrirPedidoDigitacao } from "@/components/reabrir-pedido-digitacao";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesCancelamentoPedido } from "@/components/acoes-cancelamento-pedido";
@@ -488,7 +492,7 @@ export function DocumentoPage({
     enabled: !!client && !!clienteFoco,
     queryFn: async () => {
       const { data, error } = await client!
-        .from("contas_receber")
+        .from("vw_contas_receber_efetivas_299")
         .select("id, documento, parcela, valor, valor_pago, vencimento, status")
         .eq("cliente_id", clienteFoco)
         .neq("status", "pago")
@@ -534,31 +538,18 @@ export function DocumentoPage({
             "Informe a forma de pagamento (defina a condição de pagamento no cliente)",
           );
       }
-      if (config.table === "pedidos" && header["natureza"] === "orcamento") {
-        const { data, error } = await client!.rpc("criar_orcamento_236", {
+      if (config.table === "pedidos") {
+        const { data, error } = await client!.rpc("criar_documento_modalidade_298", {
+          _natureza: header["natureza"] === "orcamento" ? "orcamento" : "pedido",
+          _modalidade: header["modalidade"] || "estoque",
           _cliente_id: payload["cliente_id"],
           _centro_id: payload["centro_id"],
           _rota_id: payload["rota_id"],
           _forma_pagamento_id: payload["forma_pagamento_id"],
           _data_pedido: payload["data_pedido"],
-          _validade: header["validade"],
+          _validade: header["natureza"] === "orcamento" ? header["validade"] : null,
           _observacoes: payload["observacoes"],
           _representante_id: payload["representante_id"] || null,
-        });
-        if (error) throw new Error(error.message);
-        return data as Row;
-      }
-      if (config.table === "pedidos") {
-        const { data, error } = await client!.rpc("criar_pedido_rascunho", {
-          _cliente_id: String(payload["cliente_id"]),
-          _centro_id: String(payload["centro_id"]),
-          _rota_id: String(payload["rota_id"]),
-          _forma_pagamento_id: String(payload["forma_pagamento_id"]),
-          _data_pedido: String(payload["data_pedido"]),
-          _observacoes: payload["observacoes"] ? String(payload["observacoes"]) : null,
-          _representante_id: payload["representante_id"]
-            ? String(payload["representante_id"])
-            : null,
         });
         if (error) throw new Error(error.message);
         return data as Row;
@@ -1473,6 +1464,7 @@ export function DocumentoPage({
                 setHeader((h) => ({
                   ...h,
                   natureza: "orcamento",
+                  modalidade: "estoque",
                   validade: deslocarDataISO(hoje, 15),
                 }));
                 setOpenNew(true);
@@ -1483,7 +1475,7 @@ export function DocumentoPage({
           )}
           <Button
             onClick={() => {
-              setHeader((h) => ({ ...h, natureza: "pedido" }));
+              setHeader((h) => ({ ...h, natureza: "pedido", modalidade: "estoque" }));
               setOpenNew(true);
             }}
             disabled={!canWrite}
@@ -1855,7 +1847,9 @@ export function DocumentoPage({
                 key={`modalidade-${String(doc["id"])}`}
                 doc={doc}
                 editavel={propostaEditavel}
-                temItens={(itens.data ?? []).length > 0 || itens.isPending}
+                temItens={(itens.data ?? []).length > 0}
+                carregando={itens.isPending}
+                pendente={edicaoPendente || pagamentoAlterado}
                 onChange={() => {
                   atualizarDocumento();
                   void queryClient.invalidateQueries({ queryKey: ["validar_pedido"] });
@@ -2552,6 +2546,15 @@ export function DocumentoPage({
                 ))}
               </select>
             </div>
+            {config.table === "pedidos" && (
+              <div className="sm:col-span-2">
+                <ModalidadeInicial
+                  loja={header["centro"] || centro || ""}
+                  value={header["modalidade"] || "estoque"}
+                  onChange={(v) => setHeader((h) => ({ ...h, modalidade: v }))}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>
                 {config.table === "pedidos" && header["natureza"] === "orcamento"

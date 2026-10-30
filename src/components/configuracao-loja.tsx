@@ -34,8 +34,11 @@ const campos: Record<string, { label: string; tipo: "boolean" | "number" | "comi
     tipo: "boolean",
   },
   tolerancia_dias_vencidos: { label: "Tolerância de atraso (dias)", tipo: "number" },
-  margem_minima: { label: "Acréscimo mínimo sobre o custo (%)", tipo: "number" },
-  margem_liquida_minima: { label: "Margem de contribuição mínima (%)", tipo: "number" },
+  margem_minima: { label: "Acréscimo mínimo sobre o custo — venda do estoque (%)", tipo: "number" },
+  margem_liquida_minima: {
+    label: "Margem de contribuição mínima — venda do estoque (%)",
+    tipo: "number",
+  },
   desconto_maximo: { label: "Desconto máximo nos itens (%)", tipo: "number" },
   comissao_fato_gerador: { label: "Liberar comissão por", tipo: "comissao" },
   exigir_nf_carga: { label: "Exigir nota fiscal para a carga", tipo: "boolean" },
@@ -87,6 +90,9 @@ export function ConfiguracaoLoja({
           loja={valida}
           editar={canManage && permissoes.pode("configuracao_rotinas_editar")}
         />
+      )}
+      {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
+        <VendedoresIntermediacao key={`vendedores-${valida}`} loja={valida} />
       )}
       {valida && canManage && permissoes.pode("configuracao_rotinas_editar") && (
         <ProvedorFiscalLoja key={`provedor-fiscal-${valida}`} loja={valida} />
@@ -250,5 +256,87 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
         Intermediação.
       </p>
     </div>
+  );
+}
+
+function VendedoresIntermediacao({ loja }: { loja: string }) {
+  const { client, user } = useSupabase(),
+    qc = useQueryClient();
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const q = useQuery({
+    queryKey: ["intermediacao-vendedores-config", user?.id, loja],
+    queryFn: async () => {
+      const [reps, grants] = await Promise.all([
+        client!.from("representantes").select("id,nome,profile_id").eq("ativo", true).order("nome"),
+        client!
+          .from("intermediacao_vendedores_298")
+          .select("representante_id")
+          .eq("centro_id", loja),
+      ]);
+      if (reps.error || grants.error) throw Error((reps.error ?? grants.error)!.message);
+      return { reps: reps.data, ids: grants.data.map((g) => String(g.representante_id)) };
+    },
+  });
+  useEffect(() => {
+    if (q.data) setSelecionados(q.data.ids);
+  }, [q.data]);
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const r = await client!.rpc("salvar_vendedores_intermediacao_298", {
+        _loja: loja,
+        _representantes: selecionados,
+      });
+      if (r.error) throw Error(r.error.message);
+    },
+    onSuccess: () => {
+      toast.success("Vendedores autorizados nesta loja.");
+      void qc.invalidateQueries({ queryKey: ["intermediacao-vendedores-config"] });
+      void qc.invalidateQueries({ queryKey: ["intermediacao-vendedor"] });
+      void qc.invalidateQueries({ queryKey: ["intermediacao-ativa"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <section className="rounded-xl border p-4 space-y-3">
+      <h3 className="font-semibold">Vendedores autorizados • Intermediação</h3>
+      <p className="text-sm text-muted-foreground">
+        Selecione quem pode usar esta modalidade nesta loja. Administradores e gestores mantêm
+        acesso. A autorização não amplia lojas nem carteiras. A intermediação dispensa as margens
+        mínimas configuradas para venda de estoque.
+      </p>
+      {q.isPending && <p>Carregando vendedores…</p>}
+      {q.error && (
+        <p role="alert" className="text-destructive">
+          {q.error.message}
+        </p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {q.data?.reps.map((r) => (
+          <label key={String(r.id)} className="flex items-center gap-2 rounded-md border p-3">
+            <input
+              type="checkbox"
+              checked={selecionados.includes(String(r.id))}
+              disabled={salvar.isPending}
+              onChange={(e) =>
+                setSelecionados((s) =>
+                  e.target.checked ? [...s, String(r.id)] : s.filter((id) => id !== String(r.id)),
+                )
+              }
+            />
+            <span>
+              {String(r.nome)}
+              {!r.profile_id && (
+                <small className="block text-muted-foreground">
+                  O acesso depende de vincular o usuário ao representante.
+                </small>
+              )}
+            </span>
+          </label>
+        ))}
+      </div>
+      <Button disabled={!q.data || salvar.isPending} onClick={() => salvar.mutate()}>
+        Salvar vendedores autorizados
+      </Button>
+    </section>
   );
 }
