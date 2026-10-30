@@ -65,12 +65,14 @@ const fields: CrudField[] = [
   { name: "peso_kg", label: "Peso (kg)", type: "number", step: "0.001" },
   {
     name: "comissao_fixa_unidade",
+    currency: true,
     label: "Comissão fixa por unidade (vazio = percentual)",
     type: "number",
     step: "0.0001",
   },
   {
     name: "ultimo_custo",
+    currency: true,
     label: "Custo Compra",
     type: "number",
     step: "0.01",
@@ -79,6 +81,7 @@ const fields: CrudField[] = [
   },
   {
     name: "custo_medio",
+    currency: true,
     label: "Custo Médio",
     type: "number",
     step: "0.01",
@@ -95,13 +98,21 @@ const fields: CrudField[] = [
   },
   {
     name: "preco_venda",
+    currency: true,
     label: "Preço Venda",
     type: "number",
     step: "0.01",
     inTable: true,
     span: 1,
   },
-  { name: "promo_preco", label: "Preço Promoção", inTable: true, auto: true, virtual: true },
+  {
+    name: "promo_preco",
+    currency: true,
+    label: "Preço Promoção",
+    inTable: true,
+    auto: true,
+    virtual: true,
+  },
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
   { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
@@ -151,9 +162,6 @@ function recalcularPreco(
     return { markup_percentual: (((num(value) - custo) / custo) * 100).toFixed(2) };
   }
 }
-
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 
 const fmtDate = (v: unknown) => {
   const s = String(v ?? "");
@@ -215,7 +223,7 @@ function ProdutosPage() {
         const comprado = comprados.data?.get(String(r["id"])) ?? 0;
         return {
           ...r,
-          promo_preco: promoBase > 0 ? brl(promoBase) : "—",
+          promo_preco: promoBase > 0 ? promoBase : null,
           promo_fim: promoBase > 0 ? (p ? fmtDate(p["vigencia_fim"]) : "sem limite") : "—",
           comprado_qtd: comprado > 0 ? `C ${comprado}` : "—",
         };

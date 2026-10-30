@@ -1,3 +1,4 @@
+import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { SelecionarPedidosLote, DespacharCarga } from "@/components/logistica-pratica";
@@ -47,9 +48,6 @@ export const Route = createFileRoute("/_app/cargas")({
 });
 
 type Row = Record<string, unknown>;
-
-const moeda = (v: unknown) =>
-  Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const PROXIMOS: Record<string, string[]> = {
   aberta: ["em_rota", "cancelada"],

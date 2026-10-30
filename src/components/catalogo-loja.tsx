@@ -1,3 +1,4 @@
+import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { CategoriaLoja } from "@/components/categoria-loja";
 import { useEffect, useState } from "react";
@@ -18,8 +19,7 @@ type Produto = {
   disponivel: boolean;
   desconto_maximo: number | null;
 };
-const moeda = (n: number) =>
-  Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
   const { client, user, canManage } = useSupabase();
   const permissoes = usePermissoesRotinas();

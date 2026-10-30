@@ -1,3 +1,4 @@
+import { brl } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -206,7 +207,7 @@ function CentroCnab({ centro }: { centro: string }) {
                             {OCORRENCIAS[e.ocorrencia] ??
                               `Ocorrência ${e.ocorrencia}: registrada sem alterar títulos`}
                           </td>
-                          <td>R$ {e.valor_recebido}</td>
+                          <td>{brl(e.valor_recebido)}</td>
                           <td>{e.vencimento ?? "—"}</td>
                           <td>
                             {e.problema ?? `Localizado · ${e.status_atual}`}

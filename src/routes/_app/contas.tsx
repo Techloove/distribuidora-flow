@@ -73,7 +73,7 @@ const fields: CrudField[] = [
   { name: "banco", label: "Banco", inTable: true },
   { name: "agencia", label: "Agência" },
   { name: "conta", label: "Conta" },
-  { name: "saldo_inicial", label: "Saldo inicial", type: "number", step: "0.01" },
+  { name: "saldo_inicial", currency: true, label: "Saldo inicial", type: "number", step: "0.01" },
   { name: "data_saldo_inicial", label: "Data do saldo inicial", type: "date" },
   {
     name: "centro_id",

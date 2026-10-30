@@ -1,3 +1,4 @@
+import { brl } from "./formatacao";
 import { usePermissoesRotinas } from "./permissoes-rotinas";
 import {
   camposFaltantesCliente,
@@ -363,7 +364,7 @@ export function usePendencias() {
               : k.id === "extrato"
                 ? String(r["descricao"] ?? "Vincule ao movimento correspondente.")
                 : k.id === "comissao"
-                  ? `Valor a conferir: R$ ${Number(r["valor"]).toFixed(2)}`
+                  ? `Valor a conferir: ${brl(r["valor"])}`
                   : k.id === "vencimento"
                     ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
                     : String(

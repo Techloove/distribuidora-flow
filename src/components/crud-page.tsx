@@ -1,3 +1,4 @@
+import { brl } from "@/lib/formatacao";
 import { useColumnPreferences } from "@/lib/use-column-preferences";
 import { cn } from "@/lib/utils";
 import { lerPaginas } from "@/lib/paginacao";
@@ -46,6 +47,8 @@ export type CrudField = {
   ref?: { table: string; labelField: string; emptyLabel?: string };
   required?: boolean;
   step?: string;
+  /** Valor monetário: exibição BRL com duas casas; armazenamento continua numérico. */
+  currency?: boolean;
   inTable?: boolean;
   /** Largura no formulário: 1 = 1/4 da linha, 2 = linha inteira, padrão = metade. */
   span?: 1 | 2;
@@ -779,39 +782,51 @@ export function CrudPage({
                       ) : f.name === "status" ? (
                         <StatusBadge value={row[f.name]} />
                       ) : inlineSet.has(f.name) && canManage && !directWriteBlocked ? (
-                        <Input
-                          key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
-                          type="number"
-                          step={f.step ?? "0.01"}
-                          aria-label={f.label}
-                          disabled={inlineUpdate.isPending}
-                          defaultValue={
-                            row[f.name] === null || row[f.name] === undefined
-                              ? ""
-                              : Number(row[f.name]).toFixed(2)
-                          }
-                          className="h-8 w-24"
-                          onBlur={(e) => {
-                            const antes =
+                        <div className={f.currency ? "relative w-28" : undefined}>
+                          {f.currency && (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-xs text-muted-foreground"
+                            >
+                              R$
+                            </span>
+                          )}
+                          <Input
+                            key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
+                            type="number"
+                            step={f.step ?? "0.01"}
+                            aria-label={f.label}
+                            disabled={inlineUpdate.isPending}
+                            defaultValue={
                               row[f.name] === null || row[f.name] === undefined
                                 ? ""
-                                : Number(row[f.name]).toFixed(2);
-                            if (e.target.value === antes) return;
-                            const patch = onInlineSave
-                              ? onInlineSave(row, f.name, e.target.value)
-                              : { [f.name]: e.target.value === "" ? null : Number(e.target.value) };
-                            if (Object.keys(patch).length === 0) return;
-                            const input = e.currentTarget;
-                            inlineUpdate.mutate(
-                              { id: row["id"] as string, patch },
-                              {
-                                onError: () => {
-                                  input.value = antes;
+                                : Number(row[f.name]).toFixed(2)
+                            }
+                            className={cn("h-8 w-24", f.currency && "w-28 pl-8 tabular-nums")}
+                            onBlur={(e) => {
+                              const antes =
+                                row[f.name] === null || row[f.name] === undefined
+                                  ? ""
+                                  : Number(row[f.name]).toFixed(2);
+                              if (e.target.value === antes) return;
+                              const patch = onInlineSave
+                                ? onInlineSave(row, f.name, e.target.value)
+                                : {
+                                    [f.name]: e.target.value === "" ? null : Number(e.target.value),
+                                  };
+                              if (Object.keys(patch).length === 0) return;
+                              const input = e.currentTarget;
+                              inlineUpdate.mutate(
+                                { id: row["id"] as string, patch },
+                                {
+                                  onError: () => {
+                                    input.value = antes;
+                                  },
                                 },
-                              },
-                            );
-                          }}
-                        />
+                              );
+                            }}
+                          />
+                        </div>
                       ) : f.type === "multicheck" ? (
                         (f.checks ?? [])
                           .filter((c) => row[c.name])
@@ -828,6 +843,12 @@ export function CrudPage({
                       ) : f.type === "select" && f.options?.length ? (
                         (f.options.find((o) => o.value === String(row[f.name] ?? ""))?.label ??
                         String(row[f.name] ?? "—"))
+                      ) : f.currency ? (
+                        row[f.name] === null || row[f.name] === undefined || row[f.name] === "" ? (
+                          "—"
+                        ) : (
+                          <span className="whitespace-nowrap tabular-nums">{brl(row[f.name])}</span>
+                        )
                       ) : (
                         String(row[f.name] ?? "—")
                       )}
@@ -954,7 +975,13 @@ export function CrudPage({
                           id={field.name}
                           readOnly
                           disabled
-                          value={String(form[field.name] ?? "")}
+                          value={
+                            field.currency &&
+                            form[field.name] !== undefined &&
+                            form[field.name] !== ""
+                              ? brl(form[field.name])
+                              : String(form[field.name] ?? "")
+                          }
                           placeholder="Gerado automaticamente"
                         />
                       ) : field.type === "multicheck" ? (
@@ -1020,34 +1047,45 @@ export function CrudPage({
                           {field.lookup ? (
                             <LookupList id={`lk-${field.name}`} table={field.lookup} />
                           ) : null}
-                          <Input
-                            id={field.name}
-                            list={field.lookup ? `lk-${field.name}` : undefined}
-                            autoComplete={field.lookup ? "off" : undefined}
-                            type={field.type === "number" ? "number" : (field.type ?? "text")}
-                            step={field.step}
-                            value={String(form[field.name] ?? "")}
-                            disabled={directWriteBlocked}
-                            onBlur={(e) => {
-                              if (field.type !== "number" || !field.step) return;
-                              const dec = (field.step.split(".")[1] ?? "").length;
-                              const raw = e.target.value;
-                              if (raw === "" || Number.isNaN(Number(raw))) return;
-                              const fixed = Number(raw).toFixed(dec);
-                              if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
-                            }}
-                            onChange={(e) =>
-                              setForm((f) => {
-                                const val =
-                                  uppercase && isUpperField(field)
-                                    ? e.target.value.toUpperCase()
-                                    : e.target.value;
-                                const next = { ...f, [field.name]: val };
-                                const patch = onFieldChange?.(field.name, val, next);
-                                return patch ? { ...next, ...patch } : next;
-                              })
-                            }
-                          />
+                          <div className={field.currency ? "relative" : undefined}>
+                            {field.currency && (
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+                              >
+                                R$
+                              </span>
+                            )}
+                            <Input
+                              id={field.name}
+                              className={field.currency ? "pl-10 tabular-nums" : undefined}
+                              list={field.lookup ? `lk-${field.name}` : undefined}
+                              autoComplete={field.lookup ? "off" : undefined}
+                              type={field.type === "number" ? "number" : (field.type ?? "text")}
+                              step={field.step}
+                              value={String(form[field.name] ?? "")}
+                              disabled={directWriteBlocked}
+                              onBlur={(e) => {
+                                if (field.type !== "number" || !field.step) return;
+                                const dec = (field.step.split(".")[1] ?? "").length;
+                                const raw = e.target.value;
+                                if (raw === "" || Number.isNaN(Number(raw))) return;
+                                const fixed = Number(raw).toFixed(dec);
+                                if (fixed !== raw) setForm((f) => ({ ...f, [field.name]: fixed }));
+                              }}
+                              onChange={(e) =>
+                                setForm((f) => {
+                                  const val =
+                                    uppercase && isUpperField(field)
+                                      ? e.target.value.toUpperCase()
+                                      : e.target.value;
+                                  const next = { ...f, [field.name]: val };
+                                  const patch = onFieldChange?.(field.name, val, next);
+                                  return patch ? { ...next, ...patch } : next;
+                                })
+                              }
+                            />
+                          </div>
                         </>
                       )}
                     </div>

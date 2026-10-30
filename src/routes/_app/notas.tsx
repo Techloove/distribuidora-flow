@@ -1,3 +1,4 @@
+import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,9 +45,6 @@ export const Route = createFileRoute("/_app/notas")({
 });
 
 type Row = Record<string, unknown>;
-
-const moeda = (v: unknown) =>
-  Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const tomNota = (s: string) => {
   if (s === "autorizada") return "bg-emerald-500/15 text-emerald-600";

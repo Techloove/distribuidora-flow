@@ -22,3 +22,5 @@
 - O manual em /ajuda é documentação para usuários autenticados com acesso ao sistema. Ele não concede permissões a módulos, lojas, carteiras ou operações. Atalhos devem respeitar o acesso existente.
 
 - Preserve o manifesto público `/versao.json` gerado pelo build e sua política sem cache. O aviso de atualização deve usar esse manifesto, manter a versão no pacote/histórico e recarregar automaticamente somente na verificação inicial, antes dos formulários; durante o uso, preservar o aviso e a confirmação do usuário.
+
+- Valores monetários exibidos em telas, relatórios e impressões usam `brl` de `src/lib/formatacao.ts` (BRL, duas casas e separadores brasileiros). Campos monetários de `CrudPage` devem declarar `currency: true`; percentuais, quantidades e códigos não são moeda. Preserve a precisão numérica dos dados e os formatos técnicos de APIs, CNAB e integrações.

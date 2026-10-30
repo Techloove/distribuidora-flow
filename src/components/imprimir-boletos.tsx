@@ -20,7 +20,7 @@ import {
   type BoletoDocumento,
 } from "@/lib/boletos-documento";
 import { lerPaginas } from "@/lib/paginacao";
-import { dataBr } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 
 type Contexto = {
   contaId?: string | undefined;
@@ -315,12 +315,8 @@ export function PainelImpressaoBoletos({
                     {b.documento || "Título"} · Parcela {b.parcela} · {dataBr(b.vencimento)}
                   </span>
                   <span className="block">
-                    Boleto {b.nosso_numero} ·{" "}
-                    {Number(b.valor).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}{" "}
-                    · {b.status === "liquidado" ? "Liquidado" : "Registrado"}
+                    Boleto {b.nosso_numero} · {brl(b.valor)} ·{" "}
+                    {b.status === "liquidado" ? "Liquidado" : "Registrado"}
                   </span>
                 </span>
               </label>

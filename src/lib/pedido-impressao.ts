@@ -1,3 +1,4 @@
+import { brl as money } from "@/lib/formatacao";
 import { logoLojaValida } from "@/lib/identidade-loja";
 import { nomeStatusPedido, statusVisivelPedido } from "@/lib/status-pedido";
 export type PrintRow = Record<string, unknown>;
@@ -21,8 +22,7 @@ const number = (value: unknown) => {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
 };
-const money = (value: unknown) =>
-  number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 const quantity = (value: unknown) =>
   number(value).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 export function pesoItemImpressao(item: PrintRow, produto: PrintRow) {

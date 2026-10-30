@@ -1,3 +1,4 @@
+import { brl } from "@/lib/formatacao";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,7 +21,7 @@ import {
   sicrediConferirCondicoes,
 } from "@/lib/sicredi.functions";
 import type { InstrucaoSicredi, CondicoesSicredi } from "@/lib/sicredi-condicoes";
-const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 const dia = (s: string) =>
   /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10).split("-").reverse().join("/") : s;
 const nomes = {

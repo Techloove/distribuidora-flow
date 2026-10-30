@@ -1,3 +1,4 @@
+import { brl as money } from "@/lib/formatacao";
 import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,8 +24,6 @@ import {
 } from "@/lib/boletos-documento";
 import { lerPaginas } from "@/lib/paginacao";
 
-const money = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 const estados: Record<string, string> = {
   registrado: "Boleto emitido",
   liquidado: "Boleto liquidado",

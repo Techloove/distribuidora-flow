@@ -170,6 +170,7 @@ const fields: CrudField[] = [
   },
   {
     name: "meta_mensal",
+    currency: true,
     label: "Meta mensal (R$)",
     type: "number",
     step: "0.01",
@@ -212,6 +213,7 @@ const fields: CrudField[] = [
   },
   {
     name: "limite_credito",
+    currency: true,
     label: "Limite de crédito",
     type: "number",
     step: "0.01",

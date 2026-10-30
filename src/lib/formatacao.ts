@@ -1,5 +1,11 @@
-export const brl = (value: unknown) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value ?? 0));
+/** Padrão único de exibição monetária: reais, separadores brasileiros e duas casas. */
+const moedaBRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+export const brl = (value: unknown) => moedaBRL.format(Number(value ?? 0));
 
 /** Data de calendário do banco, sem deslocamento por fuso horário. */
 export function dataBr(value: unknown) {

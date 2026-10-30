@@ -76,9 +76,17 @@ function FaixasPage() {
         { value: "apos_desconto", label: "Após descontos" },
       ],
     },
-    { name: "valor_min", label: "De (R$)", type: "number", step: "0.01", inTable: true },
+    {
+      name: "valor_min",
+      currency: true,
+      label: "De (R$)",
+      type: "number",
+      step: "0.01",
+      inTable: true,
+    },
     {
       name: "valor_max",
+      currency: true,
       label: "Até (R$) — vazio = sem limite",
       type: "number",
       step: "0.01",

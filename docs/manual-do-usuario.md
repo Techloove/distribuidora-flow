@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.19.5 · 2026-10-30
+Versão 1.19.6 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -27,6 +27,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 17. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
 18. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
 19. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+20. Os valores monetários das telas, relatórios e impressões seguem o padrão brasileiro: R$ 2,90, sempre com duas casas decimais. Em Produtos, Custo Compra, Custo Médio e preços seguem esse padrão; os campos editáveis de preço são identificados por R$. Quantidades, pesos, códigos e percentuais mantêm seus formatos próprios. Essa apresentação não altera os valores nem a precisão dos cálculos gravados no sistema.
 
 Cuidados:
 
