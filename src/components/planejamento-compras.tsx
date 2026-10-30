@@ -214,7 +214,7 @@ export function PlanejamentoCompras() {
             <Badge variant="outline" className="bg-card">
               Compras · Planejamento
             </Badge>
-            <h2 className="text-xl font-semibold sm:text-2xl">Comprar na medida certa</h2>
+            <h2 className="text-xl font-semibold sm:text-2xl">Comprar na Medida Certa</h2>
             <p className="text-sm text-muted-foreground">
               Priorize faltas, simule a reposição e confira o investimento por loja antes de
               negociar com o fornecedor.
@@ -277,7 +277,7 @@ export function PlanejamentoCompras() {
             Icon: Calculator,
           },
           {
-            titulo: "Produtos em trânsito",
+            titulo: "Produtos em Trânsito (Comprados)",
             valor: rows.filter((x) => numero(x.r["em_transito"]) > 0).length,
             nota: "Compras marcadas como Comprado, ainda não recebidas",
             Icon: Truck,
@@ -521,9 +521,9 @@ export function PlanejamentoCompras() {
                 {[
                   "Estoque",
                   "Pendência",
-                  "Comprado (em trânsito)",
+                  "Comprado",
                   "Mínimo",
-                  "Média mês",
+                  "Média Mês",
                   "30d",
                   "60d",
                   "90d",

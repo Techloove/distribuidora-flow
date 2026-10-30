@@ -29,13 +29,13 @@ export function ComprasUnificadas({ aba }: { aba: AbaCompras }) {
   const abas = [
     {
       id: "entradas" as const,
-      titulo: "Compras e entradas",
+      titulo: "Compras e Entradas",
       acao: "compras_operar" as const,
       Icon: ShoppingCart,
     },
     {
       id: "planejamento" as const,
-      titulo: "Planejamento e reposição",
+      titulo: "Planejamento e Reposição",
       acao: "compras_planejar" as const,
       Icon: PackageCheck,
     },
