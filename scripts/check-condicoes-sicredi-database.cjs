@@ -12,7 +12,7 @@ const root = path.resolve(__dirname, ".."),
  create function auth.uid() returns uuid language sql as $$select '${id(1)}'::uuid$$;
  create function has_role(uuid,text) returns boolean language sql as $$select $1='${id(1)}'::uuid and coalesce(current_setting('test.admin',true),'true')='true'$$;
  create function ator_financeiro_pode_acessar_centro(uuid,uuid) returns boolean language sql as $$select $1='${id(1)}'::uuid and $2='${id(10)}'::uuid$$;
- create function usuario_ativo() returns boolean language sql as $$select true$$;
+ create function usuario_ativo() returns boolean language plpgsql security definer as $$begin return exists(select 1 from profiles where id=auth.uid() and ativo);end$$;
  create function usuario_pode_acessar_centro(uuid) returns boolean language sql as $$select $1='${id(10)}'::uuid$$;
  create function cnab_validar_ator(uuid,uuid) returns void language sql as $$select null::void$$;
  create table profiles(id uuid primary key,ativo boolean);insert into profiles values('${id(1)}',true);
@@ -41,6 +41,35 @@ const root = path.resolve(__dirname, ".."),
     );
     await d.exec(sql);
     await d.exec(sql);
+    // A ACL real do helper é privada; o teste anterior deixava EXECUTE PUBLIC na fixture.
+    await d.exec(
+      "revoke all on function ator_financeiro_pode_acessar_centro(uuid,uuid) from public,anon,authenticated;grant execute on function ator_financeiro_pode_acessar_centro(uuid,uuid) to service_role;set role authenticated",
+    );
+    await assert.rejects(
+      () => d.query("select * from sicredi_condicoes_historico_292"),
+      /permission denied for function ator_financeiro/,
+    );
+    await d.exec("reset role");
+    const leitura = fs.readFileSync(
+      path.join(root, "db/fase293_leitura_historico_condicoes_sicredi.sql"),
+      "utf8",
+    );
+    await d.exec(leitura);
+    await d.exec(leitura);
+    await d.exec("set role authenticated");
+    assert.equal(
+      (await d.query("select count(*)::int n from sicredi_condicoes_historico_292")).rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await d.query(
+          "select has_function_privilege('authenticated','ator_financeiro_pode_acessar_centro(uuid,uuid)','execute') ok",
+        )
+      ).rows[0].ok,
+      false,
+    );
+    await d.exec("reset role");
     const anterior = {
         nominal: 100,
         abatimento: 0,
@@ -144,13 +173,30 @@ const root = path.resolve(__dirname, ".."),
       (await d.query("select count(*)::int n from sicredi_condicoes_historico_292")).rows[0].n,
       3,
     );
-    await d.exec("reset role;set test.admin='false';set role authenticated");
+    await d.exec(`reset role;
+     insert into sicredi_condicoes_historico_292(boleto_id,centro_id,usuario_id,chave,tipo,motivo,anterior,esperado,estado)
+     select boleto_id,'${id(11)}',usuario_id,'${id(99)}',tipo,motivo,anterior,esperado,'confirmado' from sicredi_condicoes_historico_292 limit 1;
+     set role authenticated;`);
+    assert.equal(
+      (await d.query("select count(*)::int n from sicredi_condicoes_historico_292")).rows[0].n,
+      3,
+      "histórico de centro sem acesso fica oculto",
+    );
+    await d.exec("reset role;update profiles set ativo=false;set role authenticated");
+    assert.equal(
+      (await d.query("select count(*)::int n from sicredi_condicoes_historico_292")).rows[0].n,
+      0,
+      "inativo não lê o histórico",
+    );
+    await d.exec(
+      "reset role;update profiles set ativo=true;set test.admin='false';set role authenticated",
+    );
     assert.equal(
       (await d.query("select count(*)::int n from sicredi_condicoes_historico_292")).rows[0].n,
       0,
     );
     console.log(
-      "OK: fase292 repetível, reserva/idempotência, administrador/loja/RLS, pendências de baixa/vencimento, confirmação bancária e financeiro nominal preservado.",
+      "OK: fases292/293 repetíveis, ACL privada real reproduzida e leitura corrigida, reserva/idempotência, administrador/loja/RLS, pendências de baixa/vencimento, confirmação bancária e financeiro nominal preservado.",
     );
   } finally {
     await d.close();

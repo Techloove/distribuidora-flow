@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.19.4",
+    "data": "2026-10-30",
+    "titulo": "Corrigir consulta ao histórico de desconto e abatimento Sicredi",
+    "novidades": ["Corrigir consulta ao histórico de desconto e abatimento Sicredi"]
+  },
+  {
     "versao": "1.19.3",
     "data": "2026-10-30",
     "titulo": "Compactar a lista de boletos para manter Opções visível",

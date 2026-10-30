@@ -34,3 +34,11 @@ Não altera valor nominal do boleto/título nem simula recebimento ao conceder a
 Aplicar `db/fase292_sicredi_desconto_abatimento.sql`, transacional e repetível; instalação não envia comandos ao Sicredi e não altera negócios anteriores. Publicar a versão compatível.
 
 Testes descartáveis de SQL: administrador/ativo/centro, RLS/grants, idempotência, reserva única, bloqueio de instruções concorrentes, confirmação divergente/terminal, preservação nominal e reaplicação. Testes de API com fetch simulado conferem endpoints, formato/cabeçalhos, reserva antes do envio, recusa/timeout/429/5xx/persistência e consulta sem mutação bancária. Interface validada em navegador local com banco fictício. Não houve envio de comando sobre boleto real; homologação junto ao Sicredi depende de credenciais e retorno do convênio.
+
+## Correção de leitura — fase293 / versão1.19.4
+
+A política inicial do histórico chamava `ator_financeiro_pode_acessar_centro`, helper exclusivo do servidor. A consulta REST com JWT do administrador falhava com42501 mesmo com SELECT permitido, antes de liberar o formulário. O erro era apresentado genericamente como “Não foi possível validar o título no ERP”.
+
+A fase293 substitui essa expressão por `usuario_ativo()`, `has_role(auth.uid(),'admin')` e `usuario_pode_acessar_centro(centro_id)`, helpers já autorizados para políticas de sessão. Mantém RLS, administrador ativo, escopo existente e proibição de gravação pelo navegador. Não concede EXECUTE ao helper privado. Não altera valores, boletos ou solicitações.
+
+A regressão reproduz a ACL privada real antes da correção e testa leitura depois, repetição da migração, usuário inativo/não administrador, centros, idempotência e permissões de gravação. A leitura com papel authenticated e contexto do administrador também foi conferida no Supabase, sem enviar instrução bancária. Após a correção, reabra Desconto e abatimento ou use Tentar novamente.
