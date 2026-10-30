@@ -111,9 +111,13 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         let query = client!
           .from("boletos")
           .select(
-            "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at)",
+            "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at),abatimentos_confirmados:sicredi_condicoes_historico_292!sicredi_condicoes_historico_292_boleto_id_fkey(id,tipo,estado,motivo,esperado,updated_at,created_at)",
           )
           .eq("alteracoes_vencimento.estado", "confirmado")
+          .eq("abatimentos_confirmados.estado", "confirmado")
+          .in("abatimentos_confirmados.tipo", ["abatimento", "cancelar_abatimento"])
+          .order("updated_at", { referencedTable: "abatimentos_confirmados", ascending: false })
+          .limit(1, { referencedTable: "abatimentos_confirmados" })
           .order("vencimento", { ascending: false })
           .order("id");
         if (centro) query = query.eq("centro_id", centro);
@@ -572,6 +576,33 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                     const id = String(b["id"]);
                     const alteracoes = alteracoesVencimentoConfirmadas(b);
                     const alteracao = alteracoes[0];
+                    const condicoes = b["condicoes_sicredi_292"] as Row | null;
+                    const valorAbatimento = Number(condicoes?.["abatimento"] ?? 0);
+                    const temAbatimento = Number.isFinite(valorAbatimento) && valorAbatimento > 0;
+                    const historicoAbatimento = Array.isArray(b["abatimentos_confirmados"])
+                      ? (b["abatimentos_confirmados"] as Row[]).find(
+                          (h) =>
+                            h["estado"] === "confirmado" &&
+                            h["tipo"] === "abatimento" &&
+                            Number((h["esperado"] as Row | null)?.["abatimento"]) ===
+                              valorAbatimento,
+                        )
+                      : undefined;
+                    const confirmadoEm = historicoAbatimento
+                      ? new Date(
+                          String(
+                            historicoAbatimento["updated_at"] ?? historicoAbatimento["created_at"],
+                          ),
+                        )
+                      : null;
+                    const dataAbatimento =
+                      confirmadoEm && Number.isFinite(confirmadoEm.getTime())
+                        ? confirmadoEm.toLocaleString("pt-BR", {
+                            timeZone: "America/Sao_Paulo",
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })
+                        : "—";
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
                     const financeiro = financeiroTarifas.data?.get(id);
@@ -637,6 +668,18 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 </span>
                               )}
                             </p>
+                            {temAbatimento && (
+                              <div
+                                className="my-1 whitespace-normal rounded-md border border-amber-300 bg-amber-50 px-2 py-1 font-semibold text-amber-950"
+                                aria-label="Abatimento confirmado"
+                              >
+                                Abatimento:{" "}
+                                <span className="whitespace-nowrap">{brl(valorAbatimento)}</span>
+                                <span className="block text-[11px] font-medium">
+                                  Confirmado · ver Opções
+                                </span>
+                              </div>
+                            )}
                             <p>
                               <span className="text-muted-foreground">Liquidação:</span>{" "}
                               {dataBr(b["data_liquidacao"])}
@@ -753,6 +796,37 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                         {expandido === id && (
                           <TableRow className="no-print bg-muted/20" id={`boleto-opcoes-${id}`}>
                             <TableCell colSpan={7}>
+                              {temAbatimento && (
+                                <div
+                                  className="mb-3 space-y-1 whitespace-normal break-words rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"
+                                  aria-label="Detalhes do abatimento confirmado"
+                                >
+                                  <p className="font-semibold">
+                                    Abatimento confirmado no Sicredi: {brl(valorAbatimento)}
+                                  </p>
+                                  <p>
+                                    Valor nominal: {brl(b["valor"])} · Após abatimento:{" "}
+                                    {brl(Number(b["valor"]) - valorAbatimento)}, antes de outros
+                                    descontos ou encargos.
+                                  </p>
+                                  {historicoAbatimento ? (
+                                    <>
+                                      <p>Motivo: {String(historicoAbatimento["motivo"])}</p>
+                                      <p className="text-xs">Confirmado em {dataAbatimento}</p>
+                                    </>
+                                  ) : (
+                                    <p className="text-xs">
+                                      O motivo da solicitação fica disponível para o administrador
+                                      no histórico de Desconto e abatimento.
+                                    </p>
+                                  )}
+                                  <p className="text-xs">
+                                    O valor nominal foi preservado. Desconto e abatimento
+                                    efetivamente recebidos são contabilizados na liquidação
+                                    bancária.
+                                  </p>
+                                </div>
+                              )}
                               {(b["ajuste_pedido_motivo_285"] ||
                                 (b["pedidos"] as Row | null)?.["status"] === "cancelado") && (
                                 <p className="mb-3 whitespace-normal break-words rounded-md bg-amber-50 p-2 text-xs text-amber-950">

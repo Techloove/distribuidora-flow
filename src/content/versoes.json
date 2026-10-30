@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.19.5",
+    "data": "2026-10-30",
+    "titulo": "Destacar abatimento confirmado em amarelo e apresentar motivo em Opções",
+    "novidades": ["Destacar abatimento confirmado em amarelo e apresentar motivo em Opções"]
+  },
+  {
     "versao": "1.19.4",
     "data": "2026-10-30",
     "titulo": "Corrigir consulta ao histórico de desconto e abatimento Sicredi",
