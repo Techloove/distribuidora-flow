@@ -1850,10 +1850,11 @@ export function DocumentoPage({
                 dataPedido={String(doc["data_pedido"] ?? "")}
               />
             )}
-            {config.table === "pedidos" && !ehOrcamento && (
+            {config.table === "pedidos" && (
               <ModalidadePedido
                 key={`modalidade-${String(doc["id"])}`}
                 doc={doc}
+                editavel={propostaEditavel}
                 temItens={(itens.data ?? []).length > 0 || itens.isPending}
                 onChange={() => {
                   atualizarDocumento();
@@ -2024,6 +2025,7 @@ export function DocumentoPage({
                 carregando={itens.isLoading}
                 onChange={atualizarDocumento}
                 onPendente={setIntermediacaoPendente}
+                propostaEditavel={propostaEditavel}
               />
             ) : (
               <>

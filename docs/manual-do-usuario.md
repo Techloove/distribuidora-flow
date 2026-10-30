@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.21.0 · 2026-10-30
+Versão 1.21.1 · 2026-10-30
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -130,9 +130,9 @@ Cuidados:
 Entrega direta da fábrica ao cliente, com custo e margem por saca preservados no pedido.
 
 1. Em Lojas → Configurações da loja, selecione a loja e salve Habilitar vendas por intermediação. A implantação habilita inicialmente apenas Cimento; outras lojas e novas lojas permanecem desabilitadas. Desabilitar impede novos pedidos da modalidade e novas cotações; o histórico e pedidos já criados são preservados.
-2. Na mesma configuração, em Cotações diárias, escolha a data e o produto, informe o custo de fábrica por saca e salve. Alterações criam revisões, preservando o histórico. O cadastro exige a permissão de configurar regras da loja. A cotação não muda o custo médio, estoque ou preço de venda do produto.
-3. Crie um pedido normal na loja e, antes de lançar itens, escolha Modalidade da venda → Intermediação. Orçamentos e pedidos já com itens não trocam de modalidade. Também há um atalho Cotações diárias dentro do pedido.
-4. Ao selecionar o cimento, o sistema busca a cotação da data do pedido e da mesma loja. Informe sacas inteiras, frete por saca e margem em reais por saca. Preço por saca = fábrica + frete + margem. Custo = fábrica + frete. O ganho dos itens é a margem multiplicada pelas sacas.
+2. Dentro do orçamento, escolha Intermediação antes de lançar itens. O bloco Cotação de fábrica abre na própria proposta: selecione o produto, informe o custo da fábrica por saca e salve. Nas configurações da loja fica somente habilitar ou desabilitar. Alterações criam revisões, preservando o histórico. O cadastro da cotação respeita a permissão de precificação; habilitar a modalidade na loja continua exigindo a permissão de configurar regras. A cotação não muda o custo médio, estoque ou preço de venda do produto.
+3. Crie um orçamento na loja e, antes de lançar itens, escolha Modalidade do orçamento → Intermediação. A cotação, frete e margem são preparados na proposta. O pedido direto também pode usar a modalidade. Documentos com itens não trocam de modalidade.
+4. Ao selecionar o cimento, o sistema busca a cotação da data base da proposta e da mesma loja. O aceite converte o orçamento sem recalcular os custos, mesmo quando a data comercial do pedido muda. Informe sacas inteiras, frete por saca e margem em reais por saca. Preço por saca = fábrica + frete + margem. Custo = fábrica + frete. O ganho dos itens é a margem multiplicada pelas sacas.
 5. Clique Adicionar item. Para editar um item, use Editar e Salvar item. Uma nova cotação não recalcula itens anteriores. Para trocar o custo de um item ainda em digitação, use explicitamente Aplicar cotação atual, confira a prévia e salve.
 6. Confira o fechamento e a forma de pagamento. A empresa cobra o valor inteiro: fábrica, frete e margem. Parcelas, boletos, crédito do cliente e comissão seguem os controles atuais. Não há recebimento ou pagamento bancário automático ao salvar uma cotação.
 7. Confirme a venda e use Separação → Cargas → Entregas normalmente para a conferência e transporte direto. O pedido é identificado como intermediação na lista, na fila de separação e na impressão; custos e margem não são exibidos na impressão do cliente.

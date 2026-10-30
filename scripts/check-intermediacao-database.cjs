@@ -265,15 +265,36 @@ const criarBanco = require("./fixtures/pedidos-operacionais.cjs");
     );
 
     // Crédito integral não gera parcela, mas ainda deve gerar prova logística privada.
-    await db.query("insert into pedidos(id,numero,cliente_id,centro_id,status,data_pedido,forma_pagamento_id) values($1,300,$2,$3,'rascunho',current_date,$4)",[id(504),id(90),id(10),id(30)]);
-    await db.query("select definir_modalidade_pedido_296($1,'intermediacao')",[id(504)]);
-    await db.query('select salvar_item_intermediacao_296($1,null,$2,10,$3,3,2.5)',[id(504),id(20),q2.id]);
-    await db.query("insert into creditos_clientes(id,cliente_id,centro_id,valor_original,valor_utilizado,status) values($1,$2,$3,355,0,'disponivel')",[id(801),id(90),id(10)]);
-    await db.query("insert into creditos_clientes_aplicacoes(pedido_id,credito_id,valor,status) values($1,$2,355,'reservado')",[id(504),id(801)]);
-    await db.query('select confirmar_pedido($1)',[id(504)]);
-    assert.equal(Number(await scalar('select count(*) from contas_receber where pedido_id=$1',[id(504)])),0);
-    assert.equal(await scalar('select pedido_confirmado_logistica_233($1)',[id(504)]),true);
-    assert.equal(Number(await scalar('select count(*) from estoque_movimentos where documento_id=$1',[id(504)])),0);
+    await db.query(
+      "insert into pedidos(id,numero,cliente_id,centro_id,status,data_pedido,forma_pagamento_id) values($1,300,$2,$3,'rascunho',current_date,$4)",
+      [id(504), id(90), id(10), id(30)],
+    );
+    await db.query("select definir_modalidade_pedido_296($1,'intermediacao')", [id(504)]);
+    await db.query("select salvar_item_intermediacao_296($1,null,$2,10,$3,3,2.5)", [
+      id(504),
+      id(20),
+      q2.id,
+    ]);
+    await db.query(
+      "insert into creditos_clientes(id,cliente_id,centro_id,valor_original,valor_utilizado,status) values($1,$2,$3,355,0,'disponivel')",
+      [id(801), id(90), id(10)],
+    );
+    await db.query(
+      "insert into creditos_clientes_aplicacoes(pedido_id,credito_id,valor,status) values($1,$2,355,'reservado')",
+      [id(504), id(801)],
+    );
+    await db.query("select confirmar_pedido($1)", [id(504)]);
+    assert.equal(
+      Number(await scalar("select count(*) from contas_receber where pedido_id=$1", [id(504)])),
+      0,
+    );
+    assert.equal(await scalar("select pedido_confirmado_logistica_233($1)", [id(504)]), true);
+    assert.equal(
+      Number(
+        await scalar("select count(*) from estoque_movimentos where documento_id=$1", [id(504)]),
+      ),
+      0,
+    );
     // Desabilitar a loja impede novos pedidos, sem reescrever os pedidos existentes.
     await db.query("select salvar_parametros_loja_243($1,$2::jsonb)", [
       id(10),
@@ -298,6 +319,122 @@ const criarBanco = require("./fixtures/pedidos-operacionais.cjs");
         await scalar("select count(*) from vw_planejamento_compras_294 where id=$1", [id(501)]),
       ),
       0,
+    );
+
+    // A proposta precifica sem efeitos operacionais e conserva a cotação no aceite em outro dia.
+    const correcao = fs.readFileSync("db/fase297_intermediacao_orcamento.sql", "utf8");
+    await db.exec(correcao);
+    await db.exec(correcao);
+    await db.exec(fs.readFileSync("scripts/fixtures/orcamento-intermediacao-297.sql", "utf8"));
+    await db.exec(`create table orcamento_contexto_aprovacao_241(pedido_id uuid primary key,usuario_id uuid,transacao bigint);
+     create trigger orcamento_proteger_236 before update on pedidos for each row execute function proteger_orcamento_236();
+     create trigger orcamento_itens_236 before insert or update or delete on pedido_itens for each row execute function proteger_orcamento_236();
+     create trigger orcamento_sem_contas before insert on contas_receber for each row execute function impedir_efeito_orcamento_236();
+     create trigger orcamento_sem_comissao before insert on comissoes for each row execute function impedir_efeito_orcamento_236();`);
+    const anterior = await scalar(
+      "select jsonb_build_array((select count(*) from contas_receber),(select count(*) from estoque_movimentos),(select count(*) from estoque_reservas),(select count(*) from comissoes),(select count(*) from expedicoes))",
+    );
+    await db.query(
+      "insert into pedidos(id,numero,cliente_id,centro_id,status,data_pedido,forma_pagamento_id,tipo_documento,orcamento_situacao,orcamento_data,orcamento_validade) values($1,301,$2,$3,'rascunho',(now() at time zone 'America/Sao_Paulo')::date-1,$4,'orcamento','negociacao',(now() at time zone 'America/Sao_Paulo')::date-1,current_date+10)",
+      [id(505), id(90), id(10), id(30)],
+    );
+    await db.query("select definir_modalidade_pedido_296($1,'intermediacao')", [id(505)]);
+    const cotacaoOrc = (
+      await db.query(
+        "select * from salvar_cotacao_intermediacao_296($1,$2,(now() at time zone 'America/Sao_Paulo')::date-1,27)",
+        [id(10), id(20)],
+      )
+    ).rows[0];
+    await db.query("select salvar_item_intermediacao_296($1,null,$2,10,$3,3,2.5)", [
+      id(505),
+      id(20),
+      cotacaoOrc.id,
+    ]);
+    assert.deepEqual(
+      await scalar(
+        "select jsonb_build_array((select count(*) from contas_receber),(select count(*) from estoque_movimentos),(select count(*) from estoque_reservas),(select count(*) from comissoes),(select count(*) from expedicoes))",
+      ),
+      anterior,
+    );
+    await assert.rejects(() => db.query("select confirmar_pedido($1)", [id(505)]), /orçamento/);
+    await db.query("select decidir_orcamento_236($1,'aceitar',null)", [id(505)]);
+    const convertido = (await db.query("select * from pedidos where id=$1", [id(505)])).rows[0];
+    assert.equal(convertido.tipo_documento, "pedido");
+    assert.equal(convertido.status, "aprovado");
+    assert.equal(Number(convertido.total_liquido), 325);
+    assert.equal(
+      await scalar(
+        "select data_pedido=(now() at time zone 'America/Sao_Paulo')::date and orcamento_data<data_pedido from pedidos where id=$1",
+        [id(505)],
+      ),
+      true,
+    );
+    assert.equal(
+      Number(
+        await scalar("select custo_fabrica_saca from pedido_itens where pedido_id=$1", [id(505)]),
+      ),
+      27,
+    );
+    assert.equal(
+      Number(await scalar("select count(*) from contas_receber where pedido_id=$1", [id(505)])),
+      0,
+    );
+    await db.query("select confirmar_pedido($1)", [id(505)]);
+    assert.equal(
+      Number(await scalar("select sum(valor) from contas_receber where pedido_id=$1", [id(505)])),
+      325,
+    );
+    assert.equal(
+      Number(
+        await scalar("select count(*) from estoque_movimentos where documento_id=$1", [id(505)]),
+      ),
+      0,
+    );
+    await assert.rejects(
+      () => db.query("update pedidos set orcamento_data=current_date where id=$1", [id(505)]),
+      /data base/,
+    );
+
+    await db.query(
+      "insert into pedidos(id,numero,cliente_id,centro_id,status,data_pedido,forma_pagamento_id,tipo_documento,orcamento_situacao,orcamento_data,orcamento_validade) values($1,302,$2,$3,'rascunho',current_date,$4,'orcamento','negociacao',current_date,current_date+10)",
+      [id(506), id(90), id(10), id(30)],
+    );
+    await db.query("select definir_modalidade_pedido_296($1,'intermediacao')", [id(506)]);
+    const recusado = (
+      await db.query("select * from salvar_item_intermediacao_296($1,null,$2,10,$3,3,2.5)", [
+        id(506),
+        id(20),
+        q2.id,
+      ])
+    ).rows[0];
+    await db.query("select decidir_orcamento_236($1,'recusar','Cliente não aprovou a proposta')", [
+      id(506),
+    ]);
+    await assert.rejects(
+      () =>
+        db.query("select salvar_item_intermediacao_296($1,$2,$3,10,$4,4,2.5)", [
+          id(506),
+          recusado.id,
+          id(20),
+          q2.id,
+        ]),
+      /validade/,
+    );
+    assert.equal(
+      Number(await scalar("select count(*) from contas_receber where pedido_id=$1", [id(506)])),
+      0,
+    );
+
+    // Precificação no orçamento não exige a autorização administrativa para configurar lojas.
+    await db.exec(
+      "create or replace function can_manage(uuid) returns boolean language sql as $$select false$$",
+    );
+    const comercial = await cotacao(32);
+    assert.equal(Number(comercial.custo_fabrica), 32);
+    await db.exec("set test.preco='false'");
+    await assert.rejects(() => cotacao(33), /Sem permissão/);
+    await db.exec(
+      "set test.preco='true';create or replace function can_manage(uuid) returns boolean language sql as $$select usuario_ativo()$$",
     );
     await db.exec("set role authenticated");
     await assert.rejects(

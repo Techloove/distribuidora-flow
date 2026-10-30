@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.21.1",
+    "data": "2026-10-30",
+    "titulo": "Preparar a cotação de intermediação no orçamento e preservar custos no aceite",
+    "novidades": ["Preparar a cotação de intermediação no orçamento e preservar custos no aceite"]
+  },
+  {
     "versao": "1.21.0",
     "data": "2026-10-30",
     "titulo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saca",

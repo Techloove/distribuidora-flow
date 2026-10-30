@@ -28,3 +28,8 @@ export function calcularIntermediacao({ quantidade, fabrica, frete, margem }: Li
     total: arredondar(quantidade * precoSaca),
   };
 }
+
+/** O aceite muda a data comercial, mas mantém a data da cotação do orçamento. */
+export function dataBaseIntermediacao(doc: Record<string, unknown>) {
+  return String(doc["orcamento_data"] ?? doc["data_pedido"] ?? "").slice(0, 10);
+}

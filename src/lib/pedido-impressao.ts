@@ -49,11 +49,9 @@ export function gerarHtmlPedidos(dados: PedidoImpressao[], css: string) {
     .map((data) => {
       const { pedido: p, cliente: c, empresa: e, centro, representante, forma, itens } = data;
       const orcamento = p["tipo_documento"] === "orcamento";
-      const tipo = orcamento
-        ? "ORÇAMENTO"
-        : p["modalidade_venda"] === "intermediacao"
-          ? "PEDIDO • INTERMEDIAÇÃO"
-          : "PEDIDO";
+      const tipoBase = orcamento ? "ORÇAMENTO" : "PEDIDO";
+      const tipo =
+        p["modalidade_venda"] === "intermediacao" ? `${tipoBase} • INTERMEDIAÇÃO` : tipoBase;
       const validade = String(p["orcamento_validade"] ?? "")
         .slice(0, 10)
         .split("-")

@@ -1,4 +1,3 @@
-import { CotacoesIntermediacao } from "@/components/intermediacao";
 import { ProvedorFiscalLoja } from "@/components/provedor-fiscal-loja";
 import { FiscalLoja } from "@/components/fiscal-loja";
 import { FreteVolumeLoja } from "@/components/frete-volume-loja";
@@ -246,9 +245,10 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
       >
         {salvar.isPending ? "Salvando…" : "Salvar regras desta loja"}
       </Button>
-      {q.data.some((p) => p.chave === "intermediacao_habilitada" && p.valor === "true") && (
-        <CotacoesIntermediacao key={loja} loja={loja} />
-      )}
+      <p className="text-xs text-muted-foreground">
+        A cotação da fábrica, o frete e a margem são definidos no orçamento ou pedido, na modalidade
+        Intermediação.
+      </p>
     </div>
   );
 }

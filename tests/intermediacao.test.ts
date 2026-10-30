@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { calcularIntermediacao } from "../src/lib/intermediacao";
+import { calcularIntermediacao, dataBaseIntermediacao } from "../src/lib/intermediacao";
 test("cem sacas cobram fábrica, frete e margem, mas o ganho dos itens é somente a margem", () => {
   expect(calcularIntermediacao({ quantidade: 100, fabrica: 28.5, frete: 3, margem: 2.5 })).toEqual({
     custoSaca: 31.5,
@@ -36,4 +36,22 @@ test("não sugere preço com cotação ausente, fração de saca ou custos invá
     { quantidade: Infinity },
   ])
     expect(calcularIntermediacao({ ...base, ...patch })).toBeNull();
+});
+
+test("conversão de orçamento conserva a data base da cotação mesmo com nova data comercial", () => {
+  expect(
+    dataBaseIntermediacao({
+      tipo_documento: "pedido",
+      orcamento_data: "2026-10-29",
+      data_pedido: "2026-10-30",
+    }),
+  ).toBe("2026-10-29");
+  expect(
+    dataBaseIntermediacao({
+      tipo_documento: "orcamento",
+      orcamento_data: "2026-10-29",
+      data_pedido: "2026-10-29",
+    }),
+  ).toBe("2026-10-29");
+  expect(dataBaseIntermediacao({ data_pedido: "2026-10-30" })).toBe("2026-10-30");
 });

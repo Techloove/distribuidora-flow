@@ -11,7 +11,7 @@ import { usePodeAlterarPreco } from "@/lib/papeis";
 import { lerPaginas } from "@/lib/paginacao";
 import { brl } from "@/lib/formatacao";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
-import { calcularIntermediacao } from "@/lib/intermediacao";
+import { calcularIntermediacao, dataBaseIntermediacao } from "@/lib/intermediacao";
 
 type Row = Record<string, unknown>;
 type Cotacao = {
@@ -43,13 +43,17 @@ function useCotacoes(loja: string, dia: string) {
 export function CotacoesIntermediacao({
   loja,
   diaInicial = hojeSaoPaulo(),
+  dataFixa = false,
 }: {
   loja: string;
   diaInicial?: string;
+  dataFixa?: boolean;
 }) {
   const { client, canManage, user } = useSupabase(),
     qc = useQueryClient(),
     permissoes = usePermissoesRotinas();
+  const podeCotar =
+    usePodeAlterarPreco() || (canManage && permissoes.pode("configuracao_rotinas_editar"));
   const [dia, setDia] = useState(diaInicial),
     [produto, setProduto] = useState(""),
     [custo, setCusto] = useState("");
@@ -94,7 +98,7 @@ export function CotacoesIntermediacao({
   return (
     <section className="space-y-3 rounded-xl border bg-card p-4">
       <div>
-        <h3 className="font-semibold">Cotações diárias • Intermediação</h3>
+        <h3 className="font-semibold">Cotação de fábrica • Intermediação</h3>
         <p className="text-xs text-muted-foreground">
           Custo da fábrica por saca e produto. Cada alteração cria uma revisão; pedidos já lançados
           não são recalculados.
@@ -106,6 +110,7 @@ export function CotacoesIntermediacao({
           <Input
             id={"cotacao-dia-" + loja}
             type="date"
+            readOnly={dataFixa}
             value={dia}
             onChange={(e) => setDia(e.target.value)}
           />
@@ -139,14 +144,7 @@ export function CotacoesIntermediacao({
         </div>
         <div className="flex items-end">
           <Button
-            disabled={
-              !canManage ||
-              !permissoes.pode("configuracao_rotinas_editar") ||
-              salvar.isPending ||
-              !dia ||
-              !produto ||
-              !(Number(custo) > 0)
-            }
+            disabled={!podeCotar || salvar.isPending || !dia || !produto || !(Number(custo) > 0)}
             onClick={() => salvar.mutate()}
           >
             Salvar cotação
@@ -209,8 +207,10 @@ export function ModalidadePedido({
   doc,
   temItens,
   onChange,
+  editavel = true,
 }: {
   doc: Row;
+  editavel?: boolean;
   temItens: boolean;
   onChange: () => void;
 }) {
@@ -240,6 +240,10 @@ export function ModalidadePedido({
     onError: (e: Error) => toast.error(e.message),
   });
   const inter = doc["modalidade_venda"] === "intermediacao";
+  const orcamento = doc["tipo_documento"] === "orcamento";
+  useEffect(() => {
+    if (orcamento && inter && editavel) setCotas(true);
+  }, [orcamento, inter, editavel]);
   if (!q.data && !inter)
     return q.error ? (
       <p role="alert" className="text-sm text-destructive">
@@ -250,11 +254,14 @@ export function ModalidadePedido({
     <section className="space-y-3 rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 w-full space-y-1 sm:w-auto">
-          <Label htmlFor={"modalidade-" + doc["id"]}>Modalidade da venda</Label>
+          <Label htmlFor={"modalidade-" + doc["id"]}>
+            {orcamento ? "Modalidade do orçamento" : "Modalidade da venda"}
+          </Label>
           <select
             id={"modalidade-" + doc["id"]}
             className="block h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-3"
             disabled={
+              !editavel ||
               temItens ||
               mudar.isPending ||
               !["rascunho", "digitacao"].includes(String(doc["status"]))
@@ -266,7 +273,7 @@ export function ModalidadePedido({
             <option value="intermediacao">Intermediação • entrega direta</option>
           </select>
         </div>
-        {q.data && (
+        {q.data && editavel && inter && (
           <Button variant="outline" onClick={() => setCotas((v) => !v)}>
             {cotas ? "Fechar cotações" : "Cotações diárias"}
           </Button>
@@ -274,13 +281,16 @@ export function ModalidadePedido({
       </div>
       <p className="text-xs text-muted-foreground">
         {inter
-          ? "Fábrica + frete por saca + margem por saca. Cobrança integral, carga e entrega usuais, sem movimentar estoque da loja."
+          ? orcamento
+            ? "Defina a cotação, o frete e a margem nesta proposta. O orçamento não gera cobrança, reserva ou saída de estoque. O aceite preserva os valores para o pedido."
+            : "Fábrica + frete por saca + margem por saca. Cobrança integral, carga e entrega usuais, sem movimentar estoque da loja."
           : "Venda com o estoque e preços atuais da loja. Escolha a modalidade antes de incluir itens."}
       </p>
-      {cotas && (
+      {cotas && editavel && inter && q.data && (
         <CotacoesIntermediacao
           loja={String(doc["centro_id"])}
-          diaInicial={String(doc["data_pedido"])}
+          diaInicial={dataBaseIntermediacao(doc)}
+          dataFixa
         />
       )}
     </section>
@@ -302,8 +312,10 @@ export function ItensIntermediacao({
   carregando,
   onChange,
   onPendente,
+  propostaEditavel = true,
 }: {
   doc: Row;
+  propostaEditavel?: boolean;
   itens: Row[];
   produtos: Row[];
   carregando: boolean;
@@ -313,7 +325,7 @@ export function ItensIntermediacao({
   const { client } = useSupabase(),
     qc = useQueryClient(),
     podePreco = usePodeAlterarPreco();
-  const cotacoes = useCotacoes(String(doc["centro_id"]), String(doc["data_pedido"]));
+  const cotacoes = useCotacoes(String(doc["centro_id"]), dataBaseIntermediacao(doc));
   const [form, setForm] = useState({ ...vazio });
   useEffect(() => {
     if (!form.produto || form.id || form.cotacao) return;
@@ -326,7 +338,7 @@ export function ItensIntermediacao({
       );
   }, [cotacoes.data, form.produto, form.id, form.cotacao]);
 
-  const editavel = ["rascunho", "digitacao"].includes(String(doc["status"]));
+  const editavel = propostaEditavel && ["rascunho", "digitacao"].includes(String(doc["status"]));
   const nome = (id: unknown) => String(produtos.find((p) => p["id"] === id)?.["descricao"] ?? id);
   const atual = (id: string) => (cotacoes.data ?? []).find((c) => c.produto_id === id);
   const conferir = () => {
@@ -387,7 +399,7 @@ export function ItensIntermediacao({
       <div>
         <h3 className="font-semibold">Itens de intermediação</h3>
         <p className="text-xs text-muted-foreground">
-          Cotação da data do pedido: {String(doc["data_pedido"]).split("-").reverse().join("/")}. A
+          Data base da cotação: {dataBaseIntermediacao(doc).split("-").reverse().join("/")}. A
           margem é um valor em reais por saca.
         </p>
       </div>

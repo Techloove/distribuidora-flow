@@ -161,3 +161,34 @@ test("intermediação é identificada na impressão sem expor custo, frete de co
   expect(html).not.toContain("Margem");
   expect(html).toContain("5.000 kg");
 });
+
+test("orçamento de intermediação é identificado sem expor os custos da fábrica", () => {
+  const html = gerarHtmlPedidos(
+    [
+      {
+        ...pedido,
+        pedido: {
+          ...pedido.pedido,
+          tipo_documento: "orcamento",
+          modalidade_venda: "intermediacao",
+        },
+        itens: [
+          {
+            item: {
+              quantidade: 10,
+              preco_unitario: 34,
+              custo_fabrica_saca: 28.5,
+              frete_saca: 3,
+              margem_saca: 2.5,
+            },
+            produto: { descricao: "Cimento", unidade: "SC" },
+          },
+        ],
+      },
+    ],
+    "",
+  );
+  expect(html).toContain("ORÇAMENTO • INTERMEDIAÇÃO");
+  expect(html).not.toContain("28,50");
+  expect(html).not.toContain("Margem");
+});
