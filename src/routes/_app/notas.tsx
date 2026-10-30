@@ -115,9 +115,7 @@ function NotasPage() {
   });
 
   const listaPedidos = (pedidos.data ?? []).filter((p) => !centro || p["centro_id"] === centro);
-  const listaNotas = (notas.data ?? []).filter(
-    (n) => !centro || !n["centro_id"] || n["centro_id"] === centro,
-  );
+  const listaNotas = (notas.data ?? []).filter((n) => !centro || n["centro_id"] === centro);
 
   return (
     <ErpLayout

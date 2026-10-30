@@ -1,3 +1,4 @@
+import { lerPaginas } from "@/lib/paginacao";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -176,6 +177,22 @@ function ProdutosPage() {
   const { client, user } = useSupabase();
   const cv = useCentroValido();
 
+  const vinculosLoja = useQuery({
+    queryKey: ["produtos-lojas-295", user?.id, cv.centro],
+    enabled: !!client && !!cv.centro && !cv.isLoading && !cv.error,
+    queryFn: async () => {
+      const rows = await lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("vw_produtos_lojas_295")
+          .select("produto_id,centro_id")
+          .eq("centro_id", cv.centro)
+          .order("produto_id")
+          .range(inicio, fim),
+      );
+      return new Set(rows.map((r) => String(r["produto_id"])));
+    },
+  });
+
   /** Promoções vigentes (tabelas de preço) usadas para exibir o preço promocional do produto. */
   const promocoes = useQuery({
     queryKey: ["vw_promocoes", "vigentes", user?.id, cv.centro],
@@ -193,12 +210,14 @@ function ProdutosPage() {
 
   /** Quantidades compradas aguardando recebimento (compras com status "comprado"). */
   const comprados = useQuery({
-    queryKey: ["vw_produto_comprado", "produtos"],
+    queryKey: ["vw_produto_comprado", "produtos", user?.id, cv.centro],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
+      let q = client!
         .from("vw_produto_comprado")
-        .select("produto_id, quantidade_comprada");
+        .select("produto_id, quantidade_comprada,centro_id");
+      if (cv.centro) q = q.eq("centro_id", cv.centro);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       const mapa = new Map<string, number>();
       for (const r of (data ?? []) as Record<string, unknown>[]) {
@@ -217,7 +236,13 @@ function ProdutosPage() {
         const id = String(p["produto_id"] ?? "");
         if (id && !mapa.has(id)) mapa.set(id, p);
       }
-      return rows.map((r) => {
+      const visiveis =
+        cv.isLoading || cv.error
+          ? []
+          : cv.centro
+            ? rows.filter((r) => vinculosLoja.data?.has(String(r["id"])))
+            : rows;
+      return visiveis.map((r) => {
         const p = mapa.get(String(r["id"]));
         const promoBase = p
           ? Number(p["preco_promocional"] ?? 0)
@@ -231,7 +256,7 @@ function ProdutosPage() {
         };
       });
     },
-    [promocoes.data, comprados.data],
+    [promocoes.data, comprados.data, cv.centro, cv.isLoading, cv.error, vinculosLoja.data],
   );
 
   /** Alteração direta na listagem: markup e preço de venda sempre sobre o custo médio. */
@@ -269,7 +294,16 @@ function ProdutosPage() {
         </Link>
         .
       </p>
+      {(cv.error || vinculosLoja.error) && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          Não foi possível validar os produtos da loja: {(cv.error || vinculosLoja.error)?.message}
+        </p>
+      )}
+      {cv.isLoading || (cv.centro && vinculosLoja.isPending) ? (
+        <p role="status">Carregando produtos da loja…</p>
+      ) : null}
       <CrudPage
+        readAll
         uppercase
         table="produtos"
         fields={fields}

@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.20.1",
+    "data": "2026-10-30",
+    "titulo": "Aplicar o filtro global de loja ao planejamento e revisar listagens e totais",
+    "novidades": [
+      "Aplicar o filtro global de loja ao planejamento e revisar listagens e totais",
+      "Retirar Pendência da listagem de compras, mantendo pedidos aprovados nos cálculos sem duplicar baixas de estoque."
+    ]
+  },
+  {
     "versao": "1.20.0",
     "data": "2026-10-30",
     "titulo": "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados",

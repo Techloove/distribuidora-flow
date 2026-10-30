@@ -503,7 +503,7 @@ body {
     width: 15rem;
   }
   table[data-readable-table].planejamento-list td[data-label="Sugestão"],
-  table[data-readable-table].planejamento-list th:nth-child(12) {
+  table[data-readable-table].planejamento-list th[data-label="Sugestão"] {
     position: sticky;
     right: 6.5rem;
     z-index: 1;

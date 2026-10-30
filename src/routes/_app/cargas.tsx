@@ -151,9 +151,7 @@ function CargasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const lista = (cargas.data ?? []).filter(
-    (c) => !centro || !c["centro_id"] || c["centro_id"] === centro,
-  );
+  const lista = (cargas.data ?? []).filter((c) => !centro || c["centro_id"] === centro);
   const cargaAtual = lista.find((c) => c["id"] === aberta) ?? null;
   const candidatos = (disponiveis.data ?? []).filter(
     (p) =>

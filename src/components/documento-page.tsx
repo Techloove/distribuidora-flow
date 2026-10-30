@@ -302,7 +302,7 @@ export function DocumentoPage({
     const f = filtros;
     if (soMeusPedidos)
       list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
-    if (centro) list = list.filter((d) => !d["centro_id"] || d["centro_id"] === centro);
+    if (centro) list = list.filter((d) => d["centro_id"] === centro);
     if (f["tipo"]) list = list.filter((d) => String(d["tipo_documento"] ?? "pedido") === f["tipo"]);
     if (f["status"])
       list = list.filter(
@@ -310,7 +310,7 @@ export function DocumentoPage({
           (config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"])) ===
           f["status"],
       );
-    if (f["centro"]) list = list.filter((d) => String(d["centro_id"] ?? "") === f["centro"]);
+
     if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
     if (f["representante"])
       list = list.filter((d) => String(d["representante_id"] ?? "") === f["representante"]);
@@ -1523,15 +1523,7 @@ export function DocumentoPage({
               label: String(p["razao_social"]),
             }))}
           />
-          <FilterSelect
-            label="Centro de custo"
-            value={filtros["centro"] ?? ""}
-            onChange={(v) => setF("centro", v)}
-            options={(centros.data ?? []).map((c) => ({
-              value: String(c["id"]),
-              label: String(c["nome"]),
-            }))}
-          />
+
           {config.table === "pedidos" ? (
             <>
               <FilterSelect

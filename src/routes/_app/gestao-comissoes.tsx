@@ -2,7 +2,7 @@ import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -88,7 +88,11 @@ function GestaoComissoesPage() {
     vencimento: hoje.toISOString().slice(0, 10),
   });
 
-  const centroFiltro = filtros["centro"] || centro || "";
+  const centroFiltro = centro;
+  useEffect(() => {
+    setSelecionadas(new Set());
+    setPagarAberto(false);
+  }, [centro]);
 
   const opcoes = useQuery({
     queryKey: ["gestao-comissoes", "opcoes"],
@@ -132,9 +136,18 @@ function GestaoComissoesPage() {
   });
 
   const resumo = useQuery({
-    queryKey: ["vw_comissoes_resumo", filtros["representante"] ?? ""],
+    queryKey: ["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
     enabled: !!client,
     queryFn: async () => {
+      if (centroFiltro) {
+        const { data, error } = await client!.rpc("resumo_comissoes_loja_295", {
+          _centro: centroFiltro,
+        });
+        if (error) throw new Error(error.message);
+        return ((data ?? []) as Row[]).filter(
+          (r) => !filtros["representante"] || r["representante_id"] === filtros["representante"],
+        );
+      }
       let q = client!.from("vw_comissoes_resumo").select("*");
       if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
       const { data, error } = await q
@@ -146,10 +159,11 @@ function GestaoComissoesPage() {
   });
 
   const lotes = useQuery({
-    queryKey: ["comissao_pagamentos", filtros["representante"] ?? ""],
+    queryKey: ["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("comissao_pagamentos").select("*");
+      if (centroFiltro) q = q.eq("centro_id", centroFiltro);
       if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
@@ -326,15 +340,7 @@ function GestaoComissoesPage() {
               { value: "cancelada", label: "Cancelada" },
             ]}
           />
-          <FilterSelect
-            label="Centro de custo"
-            value={filtros["centro"] ?? ""}
-            onChange={(v) => setF("centro", v)}
-            options={(opcoes.data?.centros ?? []).map((c) => ({
-              value: String(c["id"]),
-              label: String(c["nome"]),
-            }))}
-          />
+
           <FilterSelect
             label="Mês"
             value={filtros["mes"] ?? ""}
@@ -531,13 +537,21 @@ function GestaoComissoesPage() {
                             {num(r["pedidos"])}
                           </TableCell>
                           <TableCell data-label="Meta" className="text-right">
-                            {brl(r["valor_meta"])}
+                            {r["valor_meta"] === null ? (
+                              <span title="A meta é global por representante. Consulte em Todas as lojas.">
+                                Meta consolidada
+                              </span>
+                            ) : (
+                              brl(r["valor_meta"])
+                            )}
                           </TableCell>
                           <TableCell data-label="Realizado" className="text-right">
                             {brl(r["realizado"])}
                           </TableCell>
                           <TableCell data-label="Atingimento" className="text-right">
-                            {num(r["atingimento_percentual"]).toFixed(2)}%
+                            {r["atingimento_percentual"] === null
+                              ? "—"
+                              : `${num(r["atingimento_percentual"]).toFixed(2)}%`}
                           </TableCell>
                           <TableCell data-label="A pagar" className="text-right">
                             {brl(r["a_pagar"])}

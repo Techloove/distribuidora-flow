@@ -323,7 +323,9 @@ export function CrudPage({
     let list = query.data ?? [];
     if (decorate) list = decorate(list);
     if (table !== "produtos" && centro && list.some((r) => "centro_id" in r)) {
-      list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
+      list = list.filter(
+        (r) => r["centro_id"] === centro || (!r["centro_id"] && r["loja_pendente"] !== true),
+      );
     }
 
     for (const f of filterFields) {

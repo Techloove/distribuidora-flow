@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCentroValido } from "@/lib/centros-acesso";
+import { filtrarCentro } from "@/lib/centro-store";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Calculator,
@@ -71,32 +73,47 @@ const dias = (n: number | null) =>
 export function PlanejamentoCompras() {
   const { client, user, roles } = useSupabase(),
     perm = usePermissoesRotinas();
+  const cv = useCentroValido();
   const [config, setConfig] = useState<ConfigCompra>({ ...CONFIG_COMPRA });
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [detalhe, setDetalhe] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((f) => ({ ...f, [k]: v }));
+  useEffect(() => {
+    setFiltros({});
+    setSelecionados(new Set());
+    setDetalhe(null);
+  }, [cv.centro]);
   const lista = useQuery({
-    queryKey: ["planejamento-compras-294", user?.id, roles.slice().sort().join(",")],
-    enabled: !!client && perm.pode("compras_planejar"),
+    queryKey: ["planejamento-compras-294", user?.id, roles.slice().sort().join(","), cv.centro],
+    enabled:
+      !!client &&
+      perm.pode("compras_planejar") &&
+      !cv.isLoading &&
+      !cv.error &&
+      cv.lista.length > 0,
     queryFn: () =>
-      lerPaginas<FonteCompra>((inicio, fim) =>
-        client!
-          .from("vw_planejamento_compras_294")
-          .select("*")
-          .order("centro_id")
-          .order("produto_id")
-          .range(inicio, fim),
-      ),
+      lerPaginas<FonteCompra>((inicio, fim) => {
+        let q = client!.from("vw_planejamento_compras_294").select("*");
+        if (cv.centro) q = q.eq("centro_id", cv.centro);
+        return q.order("centro_id").order("produto_id").range(inicio, fim);
+      }),
     refetchInterval: 60_000,
   });
+  const dadosDaLoja = useMemo(
+    () => (cv.isLoading || cv.error ? [] : filtrarCentro(lista.data ?? [], cv.centro)),
+    [lista.data, cv.centro, cv.isLoading, cv.error],
+  );
+  const nomeLoja = cv.centro
+    ? (cv.lista.find((l) => l.id === cv.centro)?.nome ?? "Loja selecionada")
+    : "Todas as lojas permitidas";
   const erros = validarConfigCompra(config);
   const calculados = useMemo(
-    () => (lista.data ?? []).map((r) => ({ r, c: calcularCompra(r, config) })),
-    [lista.data, config],
+    () => dadosDaLoja.map((r) => ({ r, c: calcularCompra(r, config) })),
+    [dadosDaLoja, config],
   );
   const opcoes = (campo: string) =>
-    [...new Set((lista.data ?? []).map((r) => String(r[campo] ?? "")).filter(Boolean))]
+    [...new Set(dadosDaLoja.map((r) => String(r[campo] ?? "")).filter(Boolean))]
       .sort()
       .map((v) => ({ value: v, label: v }));
   const rows = useMemo(() => {
@@ -104,7 +121,7 @@ export function PlanejamentoCompras() {
     const result = calculados.filter(
       ({ r, c }) =>
         (!termo || `${r["codigo"]} ${r["descricao"]}`.toLocaleLowerCase("pt-BR").includes(termo)) &&
-        ["centro", "grupo", "marca", "fornecedor"].every(
+        ["grupo", "marca", "fornecedor"].every(
           (k) => !filtros[k] || String(r[k] ?? "") === filtros[k],
         ) &&
         (!filtros["situacao"] || c.status === filtros["situacao"]) &&
@@ -205,6 +222,14 @@ export function PlanejamentoCompras() {
       />
     </div>
   );
+  if (cv.isLoading) return <p role="status">Carregando lojas permitidas…</p>;
+  if (cv.error)
+    return (
+      <p role="alert" className="text-destructive">
+        Não foi possível validar a loja: {cv.error.message}
+      </p>
+    );
+  if (!cv.lista.length) return <p role="status">Nenhuma loja liberada para planejamento.</p>;
   return (
     <section className="min-w-0 space-y-5">
       <style media="print">{"@page { size: A4 landscape; margin: 10mm; }"}</style>
@@ -212,7 +237,7 @@ export function PlanejamentoCompras() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-xl space-y-2">
             <Badge variant="outline" className="bg-card">
-              Compras · Planejamento
+              Compras · Planejamento · {nomeLoja}
             </Badge>
             <h2 className="text-xl font-semibold sm:text-2xl">Comprar na medida certa</h2>
             <p className="text-sm text-muted-foreground">
@@ -407,18 +432,10 @@ export function PlanejamentoCompras() {
           value={filtros["busca"] ?? ""}
           onChange={(v) => setF("busca", v)}
         />
-        {["centro", "grupo", "marca", "fornecedor"].map((k) => (
+        {["grupo", "marca", "fornecedor"].map((k) => (
           <FilterSelect
             key={k}
-            label={
-              k === "centro"
-                ? "Loja"
-                : k === "fornecedor"
-                  ? "Último fornecedor"
-                  : k === "grupo"
-                    ? "Grupo"
-                    : "Marca"
-            }
+            label={k === "fornecedor" ? "Último fornecedor" : k === "grupo" ? "Grupo" : "Marca"}
             value={filtros[k] ?? ""}
             onChange={(v) => setF(k, v)}
             options={opcoes(k)}
@@ -451,7 +468,7 @@ export function PlanejamentoCompras() {
       <div className="print-area planejamento-print min-w-0 rounded-xl border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
           <div>
-            <h3 className="font-semibold">Plano de abastecimento</h3>
+            <h3 className="font-semibold">Plano de abastecimento · {nomeLoja}</h3>
             <p className="text-xs text-muted-foreground">
               {rows.length} produtos/lojas · dados de {dataBr(lista.data?.[0]?.["data_referencia"])}{" "}
               · vendas líquidas de devoluções confirmadas · períodos acumulados
@@ -467,13 +484,12 @@ export function PlanejamentoCompras() {
           </p>
         </div>
         <p className="hidden p-3 text-xs print:block">
-          {METODOS_COMPRA[config.metodo]} · {BASES_CONSUMO[config.base]} · cobertura{" "}
-          {config.cobertura}d · segurança {config.seguranca}d · ajuste {config.ajuste}% · trânsito{" "}
-          {config.considerarTransito ? "considerado" : "desconsiderado"} · investimento estimado{" "}
-          {brl(investimento)}.{" "}
+          Loja: {nomeLoja} · {METODOS_COMPRA[config.metodo]} · {BASES_CONSUMO[config.base]} ·
+          cobertura {config.cobertura}d · segurança {config.seguranca}d · ajuste {config.ajuste}% ·
+          trânsito {config.considerarTransito ? "considerado" : "desconsiderado"} · investimento
+          estimado {brl(investimento)}.{" "}
           {[
             filtros["busca"],
-            filtros["centro"],
             filtros["grupo"],
             filtros["marca"],
             filtros["fornecedor"],
@@ -520,7 +536,6 @@ export function PlanejamentoCompras() {
                 <TableHead>Produto</TableHead>
                 {[
                   "Estoque",
-                  "Pendência",
                   "Comprado (em trânsito)",
                   "Mínimo",
                   "Média mês",
@@ -533,7 +548,7 @@ export function PlanejamentoCompras() {
                   "Investimento",
                   "Situação",
                 ].map((t) => (
-                  <TableHead key={t} className="text-right">
+                  <TableHead key={t} data-label={t} className="text-right">
                     {t}
                   </TableHead>
                 ))}
@@ -572,13 +587,7 @@ export function PlanejamentoCompras() {
                   >
                     {qtdCompra(c.estoque)}
                   </TableCell>
-                  <TableCell
-                    data-label="Pendência"
-                    className="text-right tabular-nums"
-                    title="Somente pedidos no status Aprovado; pedidos com baixa de estoque já estão no saldo"
-                  >
-                    {qtdCompra(c.pendencia)}
-                  </TableCell>
+
                   <TableCell
                     data-label="Comprado (em trânsito)"
                     className="text-right tabular-nums"
@@ -606,7 +615,11 @@ export function PlanejamentoCompras() {
                   >
                     {c.erros.length ? "Revisar" : qtdCompra(c.sugestao)}
                   </TableCell>
-                  <TableCell data-label="Cobertura" className="text-right text-xs">
+                  <TableCell
+                    data-label="Cobertura"
+                    className="text-right text-xs"
+                    title="Dias que o estoque menos as pendências aprovadas atende ao consumo diário. Não inclui compras ainda em trânsito."
+                  >
                     {dias(c.cobertura)}
                   </TableCell>
                   <TableCell data-label="Investimento" className="text-right tabular-nums">
@@ -663,6 +676,7 @@ export function PlanejamentoCompras() {
                   ["Pendência aprovada", qtdCompra(atual.c.pendencia)],
                   ["Trânsito considerado", qtdCompra(atual.c.transito)],
                   ["Posição projetada", qtdCompra(atual.c.posicao)],
+                  ["Cobertura atual", dias(atual.c.cobertura)],
                   ["Ponto de reposição", qtdCompra(atual.c.ponto)],
                   ["Estoque alvo", qtdCompra(atual.c.alvo)],
                   ["Necessidade antes do lote", qtdCompra(atual.c.necessidade)],

@@ -14,7 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { useCentro } from "@/lib/centro-store";
+import { useCentroValido } from "@/lib/centros-acesso";
 import { toast } from "sonner";
 
 import { brl } from "@/components/documento-page";
@@ -90,17 +90,15 @@ export function TitulosPage({
   config: TitulosConfig;
   referencia?: BuscaReferencias;
 }) {
-  const { client, roles } = useSupabase();
+  const { client, roles, session } = useSupabase();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statuses)[number]>(
     referencia && Object.values(referencia).some(Boolean) ? "todos" : "aberto",
   );
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
-  const { centro: centroGlobal } = useCentro();
-  useEffect(() => {
-    setFiltros((s) => ({ ...s, centro: centroGlobal }));
-  }, [centroGlobal]);
+  const { centro: centroGlobal, isLoading: lojasCarregando, error: lojasErro } = useCentroValido();
+
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
   const [data, setData] = useState(hojeSaoPaulo());
@@ -118,13 +116,14 @@ export function TitulosPage({
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
 
   const titulos = useQuery({
-    queryKey: [config.view],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data: rows, error } = await client!.from(config.view).select("*").order("vencimento");
-      if (error) throw new Error(error.message);
-      return (rows ?? []) as Row[];
-    },
+    queryKey: [config.view, "lista", session?.user.id, centroGlobal],
+    enabled: !!client && !!session && !lojasCarregando && !lojasErro,
+    queryFn: () =>
+      lerPaginas<Row>((inicio, fim) => {
+        let q = client!.from(config.view).select("*");
+        if (centroGlobal) q = q.eq("centro_id", centroGlobal);
+        return q.order("vencimento").order("id").range(inicio, fim);
+      }),
   });
 
   const partners = useQuery({
@@ -237,7 +236,7 @@ export function TitulosPage({
       (r) => !referencia || correspondeReferencia(r, referencia),
     );
     if (status !== "todos") list = list.filter((r) => tituloNoStatus(r, status));
-    if (filtros["centro"]) list = list.filter((r) => r["centro_id"] === filtros["centro"]);
+    if (centroGlobal) list = list.filter((r) => r["centro_id"] === centroGlobal);
     if (filtros["conta"]) list = list.filter((r) => r["conta_financeira_id"] === filtros["conta"]);
     if (filtros["forma"]) list = list.filter((r) => r["forma_pagamento_id"] === filtros["forma"]);
     if (filtros["pgde"])
@@ -302,6 +301,7 @@ export function TitulosPage({
     boletoPorConta,
     boletos.isError,
     boletos.isLoading,
+    centroGlobal,
   ]);
 
   const totalFiltrado = rows.reduce((s, r) => s + saldoTitulo(r), 0);
@@ -310,10 +310,10 @@ export function TitulosPage({
     () =>
       totaisTitulos(
         (titulos.data ?? []).filter((r) => !referencia || correspondeReferencia(r, referencia)),
-        filtros["centro"] ?? "",
+        centroGlobal,
         hojeSaoPaulo(),
       ),
-    [titulos.data, filtros, referencia],
+    [titulos.data, referencia, centroGlobal],
   );
   const idsVisiveis = useMemo(() => selecaoVisivel(selecionados, rows), [selecionados, rows]);
   useEffect(() => {
@@ -413,7 +413,7 @@ export function TitulosPage({
 
       <ContextoReferencia busca={referencia} to={isReceber ? "/receber" : "/pagar"} />
       <FilterBar
-        onClear={() => setFiltros({ centro: centroGlobal })}
+        onClear={() => setFiltros({})}
         extra={
           <div className="flex gap-2">
             <Button
@@ -488,15 +488,7 @@ export function TitulosPage({
           value={filtros["max"] ?? ""}
           onChange={(v) => setF("max", v)}
         />
-        <FilterSelect
-          label="Centro de custo"
-          value={filtros["centro"] ?? ""}
-          onChange={(v) => setF("centro", v)}
-          options={(centros.data ?? []).map((c) => ({
-            value: String(c["id"]),
-            label: String(c["nome"]),
-          }))}
-        />
+
         <FilterSelect
           label="Banco/caixa"
           value={filtros["conta"] ?? ""}
@@ -565,13 +557,13 @@ export function TitulosPage({
       </p>
 
       <div className="print-area rounded-lg border border-border bg-card">
-        {titulos.isLoading ? (
+        {titulos.isLoading || lojasCarregando ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
           </div>
-        ) : titulos.isError ? (
+        ) : titulos.isError || lojasErro ? (
           <div className="p-6 text-sm text-destructive">
-            {(titulos.error as Error).message}
+            {(lojasErro || titulos.error)?.message}
             <p className="mt-2 text-xs text-muted-foreground">
               Tente atualizar a página. Se o problema continuar, solicite a conferência das
               permissões e da versão do banco ao administrador.

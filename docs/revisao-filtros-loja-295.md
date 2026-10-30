@@ -1,0 +1,24 @@
+# Revisão do filtro global de loja — fase295 / versão1.20.1
+
+O seletor do topo é a origem do escopo de loja nas listagens operacionais: uma loja limita os registros; Todas mostra os registros permitidos pelo perfil. O filtro não concede acesso a outras lojas e não altera a loja de documentos ou saldos. Cadastros e parâmetros efetivamente compartilhados continuam compartilhados; históricos de um registro aberto seguem o próprio registro autorizado.
+
+## Correções verificadas
+
+- **Planejamento:** usa `useCentroValido`, inclui centro no cache e aplica `centro_id` na consulta paginada, com filtragem adicional no resultado antes de calcular indicadores, detalhes, seleção e CSV/impressão. Espera a validação das lojas e apresenta falha de acesso explicitamente. O segundo seletor local de loja foi removido; ao trocar a loja, filtros locais, seleção e detalhe são limpos, preservando os parâmetros de cálculo. A identificação da loja fica no painel/relatório. A coluna Pendência foi retirada da lista a pedido do usuário; a quantidade de pedidos aprovados ainda sem baixa continua na memória de cálculo, evitando ignorar compromissos ou somar duas vezes saídas já realizadas. O critério continua somente pedidos aprovados e os que avançaram no fluxo, sem digitação/análise/recusados/cancelados.
+- **Produtos:** o cadastro era explicitamente excluído do filtro genérico. Agora usa uma view de vínculos produto/loja pela categoria, com a mesma regra de normalização/vínculo da fase271, RLS e `security_invoker`. Não chama o helper privado `loja_produto_estoque_271`. A loja selecionada mostra só seus produtos; Todas mantém os produtos autorizados, inclusive sem vínculo. A coluna Comprado também consulta o trânsito do centro selecionado. A listagem completa é paginada.
+- **Compras e pedidos:** não incluem registros sem loja dentro de uma loja específica. Esses registros ficam em Todas. Removido seletor local de centro que podia contradizer o topo. Documento já aberto mantém seu próprio vínculo e não é reatribuído ao trocar o filtro.
+- **Contas a receber/pagar:** consulta paginada e cache por usuário/loja, filtro de centro na consulta e no resultado; totais e seleção usam o mesmo escopo. Removido segundo seletor local de centro. As opções de banco/forma de pagamento e a loja efetiva de um título aberto mantêm os controles de negócio existentes.
+- **Comissões e gestão de comissões:** apuração segue o topo, sem override local. Resumo de loja é calculado antes de agrupar, por RPC somente leitura com `security_invoker` e RLS, sem filtrar um agregado global já pronto. Metas cadastradas não têm centro_id e permanecem globais: não são rateadas nem repetidas como meta de uma loja; na loja a célula informa Meta consolidada e o atingimento não é calculado contra um alvo global. Todas mantém o resumo consolidado existente. Histórico de pagamentos limita lotes pelo centro; lotes sem centro/multiloja são vistos em Todas, sem atribuir seu valor integral a cada loja. Seleções anteriores são limpas ao trocar a loja.
+- **Notas e cargas:** registros sem centro não aparecem como se pertencessem à loja selecionada; permanecem acessíveis em Todas conforme RLS.
+- **Cadastros compartilhados:** pessoas com `loja_pendente=true` não são tratadas como compartilhadas por terem centro nulo. Clientes realmente compartilhados continuam aparecendo nas lojas permitidas. Parâmetros/contas compartilhados não são indevidamente escondidos.
+- **Reposição legada:** já tinha centro no cache, mas faltava aplicar o centro à consulta. Corrigido, preservando a restrição de permissão da rotina.
+
+## Telas revisadas que já encaminhavam o filtro
+
+Dashboard (`dashboard_resumo`), financeiro, DRE, fluxo de caixa, relatórios financeiros/vendas, estoque/saldos, separação, cargas/entregas/romaneios, agenda comercial e painel do representante. As consultas usam centro em RPC/filtro ou filtram a lista resultante; não foram removidas restrições de carteira/perfil. Consultas de configuração global, convênio bancário, cadastros compartilhados e histórico de um registro não são convertidas em movimentos exclusivos de uma loja por causa do seletor.
+
+## Implantação e validação
+
+Aplicar `fase295_vinculos_produtos_lojas.sql` após294, sem alterar dados de negócio. A migração cria apenas uma view de vínculos e uma RPC de resumo; não amplia permissões das tabelas de origem. Teste PGlite verifica repetição, categoria/loja, produto sem vínculo, comissões e vendas isoladas, metas não inventadas por loja, RLS, usuário inativo, centro não permitido e anon.
+
+Navegador local com duas lojas: Todas → Cimento → Ferragem → Todas, conferindo planejamento, indicadores, CSV/seleção, produtos, títulos, apuração/resumo e pagamentos de comissões no computador e telefone. Nenhuma operação financeira/estoque é enviada nesses testes. A leitura das novas consultas com o papel authenticated também é validada no Supabase, preservando as permissões reais.
