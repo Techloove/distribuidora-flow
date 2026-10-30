@@ -51,3 +51,18 @@ export function completarEndereco<
   if (qualidadeEndereco(novo) <= qualidadeEndereco(atual)) return atual;
   return Object.assign({}, atual, Object.fromEntries(CAMPOS_ENDERECO.map((k) => [k, novo[k]])));
 }
+
+/** Endereço incompleto não deve ficar preso no cache cadastral de 30 dias.
+ * Uma resposta parcial recém-consultada aguarda 15 minutos para evitar consultas repetidas;
+ * Consultar novamente sempre ignora o cache, independentemente desta regra.
+ */
+export function aproveitarCacheCadastral(
+  tipo: string,
+  dados: { logradouro?: string | undefined; numero?: string | undefined },
+  consultadoEm: string,
+  agora = Date.now(),
+) {
+  if (tipo !== "PJ" || (dados.logradouro?.trim() && dados.numero?.trim())) return true;
+  const idade = agora - Date.parse(consultadoEm);
+  return Number.isFinite(idade) && idade >= 0 && idade < 15 * 60_000;
+}

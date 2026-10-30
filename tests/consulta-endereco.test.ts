@@ -1,3 +1,4 @@
+import { aproveitarCacheCadastral } from "../src/lib/consulta-endereco";
 import type { DadosCadastrais } from "../src/lib/consulta-cadastral.functions";
 import { describe, expect, test } from "bun:test";
 import {
@@ -91,4 +92,31 @@ test("prioriza rua e número disponíveis mesmo quando a fonte alternativa não 
       uf: "ES",
     }),
   );
+});
+
+test("cadastro PJ não reutiliza por 30 dias uma consulta antiga sem rua ou número", () => {
+  const agora = Date.parse("2026-10-30T16:00:00Z");
+  expect(
+    aproveitarCacheCadastral(
+      "PJ",
+      { logradouro: "", numero: undefined },
+      "2026-10-16T02:14:57Z",
+      agora,
+    ),
+  ).toBe(false);
+  expect(
+    aproveitarCacheCadastral(
+      "PJ",
+      { logradouro: "AV RAFAEL VALLE DOS REIS", numero: "SN" },
+      "2026-10-16T02:14:57Z",
+      agora,
+    ),
+  ).toBe(true);
+  expect(
+    aproveitarCacheCadastral("PJ", { logradouro: "Avenida" }, "2026-10-30T15:55:00Z", agora),
+  ).toBe(true);
+  expect(aproveitarCacheCadastral("PJ", {}, "2026-10-30T15:45:00Z", agora)).toBe(false);
+  expect(aproveitarCacheCadastral("PJ", {}, "data inválida", agora)).toBe(false);
+  expect(aproveitarCacheCadastral("PJ", {}, "2026-10-31T16:00:00Z", agora)).toBe(false);
+  expect(aproveitarCacheCadastral("PF", {}, "2026-10-16T02:14:57Z", agora)).toBe(true);
 });

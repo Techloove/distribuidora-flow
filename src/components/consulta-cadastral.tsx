@@ -1,3 +1,4 @@
+import { aproveitarCacheCadastral } from "@/lib/consulta-endereco";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, RefreshCw, Search } from "lucide-react";
@@ -155,7 +156,14 @@ export function ConsultaCadastral({
           .eq("documento", doc)
           .gt("expira_em", new Date().toISOString())
           .maybeSingle();
-        if (cache) {
+        if (
+          cache &&
+          aproveitarCacheCadastral(
+            String(cache["tipo"]),
+            (cache["dados"] ?? {}) as DadosCadastrais,
+            String(cache["consultado_em"]),
+          )
+        ) {
           await registrar("cache", String(cache["provedor"]), String(cache["tipo"]), null, true);
           return {
             dados: (cache["dados"] ?? {}) as DadosCadastrais,

@@ -254,6 +254,7 @@ type Provedor = {
   url: (doc: string) => string;
   map: (j: Record<string, unknown>) => DadosCadastrais;
   erroNoCorpo?: (j: Record<string, unknown>) => boolean;
+  headers?: Record<string, string>;
 };
 
 /** Ordem de rotação: se um provedor der limite/falha, tenta o próximo. */
@@ -273,11 +274,27 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
   let limites = 0;
   let naoEncontrado = 0;
   let melhor: Extract<ConsultaResultado, { ok: true }> | null = null;
-  const signal = AbortSignal.timeout(18_000);
-  for (const p of PROVEDORES_CNPJ) {
+  // A chave fica somente no servidor. Consulta autenticada apenas se as fontes
+  // gratuitas falharem ou não trouxerem logradouro/número, sem pedir nova chave.
+  const key = process.env["CNPJA_API_KEY"]?.trim();
+  const provedores: Provedor[] = [
+    ...PROVEDORES_CNPJ,
+    ...(key
+      ? [
+          {
+            nome: "cnpja",
+            url: (d: string) => `https://api.cnpja.com/office/${d}`,
+            map: mapCnpjaOpen,
+            headers: { Authorization: key },
+          },
+        ]
+      : []),
+  ];
+  const signal = AbortSignal.timeout(key ? 28_000 : 18_000);
+  for (const p of provedores) {
     try {
       const res = await fetchWithTimeout(p.url(doc), {
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", ...p.headers },
         signal: AbortSignal.any([signal, AbortSignal.timeout(5_000)]),
       });
       if (res.status === 429) {
@@ -329,7 +346,7 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
       mensagem: "CNPJ não encontrado na base da Receita Federal.",
     };
   }
-  if (limites === PROVEDORES_CNPJ.length) {
+  if (limites === provedores.length) {
     return {
       ok: false,
       documento: doc,
