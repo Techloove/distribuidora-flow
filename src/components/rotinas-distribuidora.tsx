@@ -100,7 +100,13 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 text-sm">
             {[
               ["Custo dos produtos", brl(q.data["custo"])],
-              ["Comissão prevista", brl(q.data["comissao"])],
+              [
+                pedido["tipo_documento"] === "orcamento" ||
+                ["rascunho", "digitacao", "aguardando_aprovacao"].includes(String(pedido["status"]))
+                  ? "Comissão estimada"
+                  : "Comissão prevista",
+                brl(q.data["comissao"]),
+              ],
               ["Custo do frete", brl(q.data["custo_frete"])],
               ["Contribuição", brl(q.data["resultado"])],
               ["Margem", `${q.data["margem"] ?? "—"}%`],

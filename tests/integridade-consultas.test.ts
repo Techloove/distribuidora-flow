@@ -116,3 +116,14 @@ test("venda não aprovada não aumenta atraso nem saldo aberto; recebimentos rea
   expect(tituloNoStatus(rows[0]!, "vencido")).toBe(false);
   expect(tituloNoStatus(rows[0]!, "todos")).toBe(true);
 });
+
+test("Em aberto reúne vencidos e parciais sem ocultar dívidas; Todos preserva histórico", () => {
+  for (const status_efetivo of ["aberto", "vencido", "parcial", "vencido_parcial"])
+    expect(tituloNoStatus({ status_efetivo }, "aberto")).toBe(true);
+  for (const status_efetivo of ["pago", "cancelado", "venda_nao_aprovada"])
+    expect(tituloNoStatus({ status_efetivo }, "aberto")).toBe(false);
+  expect(tituloNoStatus({ status_efetivo: "vencido", venda_aprovada: false }, "aberto")).toBe(
+    false,
+  );
+  expect(tituloNoStatus({ status_efetivo: "cancelado" }, "todos")).toBe(true);
+});

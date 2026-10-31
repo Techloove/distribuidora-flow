@@ -14,6 +14,11 @@ export function saldoTitulo(row: Row) {
 
 export function tituloNoStatus(row: Row, status: string) {
   const efetivo = String(row["status_efetivo"] ?? row["status"]);
+  if (status === "aberto")
+    return (
+      row["venda_aprovada"] !== false &&
+      ["aberto", "vencido", "parcial", "vencido_parcial"].includes(efetivo)
+    );
   return (
     status === "todos" ||
     efetivo === status ||

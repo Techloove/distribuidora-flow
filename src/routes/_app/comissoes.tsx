@@ -319,6 +319,11 @@ function ComissoesPage() {
       }
     >
       <div className="space-y-4">
+        <p className="rounded-xl border bg-primary/5 p-4 text-sm text-muted-foreground">
+          A apuração considera somente pedidos aprovados e as etapas seguintes. Digitação, orçamento
+          e pedidos aguardando aprovação ficam fora dos totais. A liberação continua seguindo a
+          regra da loja; comissões canceladas permanecem no histórico.
+        </p>
         <ComissaoProporcional />
         <AjustesComissao />
         <FilterBar

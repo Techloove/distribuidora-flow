@@ -543,13 +543,28 @@ export function TitulosPage({
             variant={status === s ? "default" : "outline"}
             onClick={() => setStatus(s)}
           >
-            {s}
+            {s === "aberto" ? "Em aberto" : s}
           </Button>
         ))}
       </div>
 
+      {(!referencia || !Object.values(referencia).some(Boolean)) && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="no-print"
+          onClick={() => {
+            setStatus("todos");
+            setFiltros({});
+            setModalidade("todos");
+          }}
+        >
+          Ver todos {centroGlobal ? "desta loja" : "os títulos"}
+        </Button>
+      )}
       <p className="text-xs text-muted-foreground">
-        {rows.length} título(s) · saldo {brl(totalFiltrado)}
+        {rows.length} de {(titulos.data ?? []).length} título(s) na loja/modalidade atual · saldo{" "}
+        {brl(totalFiltrado)}
       </p>
 
       <div className="print-area rounded-lg border border-border bg-card">

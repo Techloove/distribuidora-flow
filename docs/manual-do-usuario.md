@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.23.2 · 2026-10-31
+Versão 1.24.0 · 2026-10-31
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -305,6 +305,7 @@ Acompanhe títulos, registre baixas e confira o caixa da loja.
 11. Registre os custos de rota no módulo correspondente para acompanhar a operação.
 12. Lançamentos manuais sem vínculo com venda aparecem em Todos no filtro de modalidade. Se lançou em outra loja ou está filtrando Estoque/Intermediação, use Ver lançamentos no aviso de confirmação para abrir a loja informada e a modalidade Todos.
 13. Ao receber ou pagar, confira Total atualizado: o saldo atual recebe somente os juros e a multa novos, menos o desconto informado. O valor da baixa acompanha esse total automaticamente. Se digitar um valor parcial, ele será mantido e a tela mostrará o saldo restante. Use Usar total atualizado para voltar à quitação integral.
+14. A aba Em aberto reúne todos os saldos pendentes, inclusive vencidos e parciais. Use Ver todos os títulos ou Ver todos desta loja para limpar os filtros da listagem e conferir também pagos e cancelados, respeitando a loja selecionada e suas permissões.
 
 Cuidados:
 
@@ -370,6 +371,8 @@ Acompanhe clientes, atividades e resultados da carteira.
 4. Use Relatórios de Vendas para analisar os resultados com os filtros corretos.
 5. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
 6. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
+7. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
+8. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. A escolha influencia o mês de apuração após a aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
 
 Cuidados:
 

@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.24.0",
+    "data": "2026-10-31",
+    "titulo": "Comissões somente após aprovação, escolha da data ao retomar pedidos e exibição completa dos títulos pendentes",
+    "novidades": [
+      "Comissões apuradas somente para pedidos aprovados e etapas seguintes, com bloqueio de liberação e pagamento de previsões ligadas à digitação, orçamento ou análise.",
+      "Ao retomar um pedido em digitação de outro dia, escolha manter a data original ou atualizar para hoje, preservando os itens e os preços gravados.",
+      "A aba Em aberto reúne títulos vencidos e parciais. Novo atalho limpa os filtros para conferir todos os títulos da loja selecionada."
+    ]
+  },
+  {
     "versao": "1.23.2",
     "data": "2026-10-31",
     "titulo": "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar",

@@ -1,3 +1,4 @@
+import { RetomarDataPedido } from "@/components/retomar-data-pedido";
 import { getModalidade } from "@/lib/modalidade-store";
 import {
   ModalidadeInicial,
@@ -107,6 +108,10 @@ export function DocumentoPage({
   const [intermediacaoPendente, setIntermediacaoPendente] = useState(false);
   const [observacoesPendentes, setObservacoesPendentes] = useState(false);
   const [selected, setSelected] = useState<string | null>(initialDocId);
+  const [recemCriado, setRecemCriado] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selected) setRecemCriado(null);
+  }, [selected]);
   useEffect(() => {
     setSelected(initialDocId);
   }, [initialDocId]);
@@ -568,6 +573,7 @@ export function DocumentoPage({
       toast.success("Documento criado — lance os itens e depois a forma de pagamento");
       setOpenNew(false);
       setHeader({});
+      setRecemCriado(String(data["id"]));
       setSelected(String(data["id"]));
       atualizarDocumento();
       if (config.table === "pedidos") {
@@ -1798,6 +1804,21 @@ export function DocumentoPage({
               ← Voltar à lista
             </Button>
             {config.table === "pedidos" &&
+              propostaEditavel &&
+              recemCriado !== String(doc["id"]) && (
+                <RetomarDataPedido
+                  key={`retomada-${doc["id"]}`}
+                  doc={doc}
+                  onChange={() => {
+                    atualizarDocumento();
+                    void queryClient.invalidateQueries({ queryKey: ["vw_comissoes_detalhe"] });
+                    void queryClient.invalidateQueries({ queryKey: ["vw_comissoes_resumo"] });
+                  }}
+                  onSair={() => setSelected(null)}
+                />
+              )}
+
+            {config.table === "pedidos" &&
               ["separacao", "separado", "conferido", "faturado", "em_carga", "em_rota"].includes(
                 String(doc["status"]),
               ) && (
@@ -1903,7 +1924,12 @@ export function DocumentoPage({
                       ) : null}
                       <p className="text-xs text-muted-foreground">Peso total {kg(pesoTotal)}</p>
                       <p className="mt-1 inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                        {ehOrcamento ? "Comissão estimada" : "Sua comissão"}{" "}
+                        {ehOrcamento ||
+                        ["rascunho", "digitacao", "aguardando_aprovacao"].includes(
+                          String(doc["status"]),
+                        )
+                          ? "Comissão estimada"
+                          : "Sua comissão"}{" "}
                         {brl(doc["comissao_valor"])}
                         {Number(doc["comissao_percentual"] ?? 0) > 0
                           ? ` (${Number(doc["comissao_percentual"]).toLocaleString("pt-BR")}%)`

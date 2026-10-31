@@ -354,7 +354,8 @@
       "Use Dashboard financeiro, Fluxo de caixa, DRE e relatórios para acompanhar resultados e pendências.",
       "Registre os custos de rota no módulo correspondente para acompanhar a operação.",
       "Lançamentos manuais sem vínculo com venda aparecem em Todos no filtro de modalidade. Se lançou em outra loja ou está filtrando Estoque/Intermediação, use Ver lançamentos no aviso de confirmação para abrir a loja informada e a modalidade Todos.",
-      "Ao receber ou pagar, confira Total atualizado: o saldo atual recebe somente os juros e a multa novos, menos o desconto informado. O valor da baixa acompanha esse total automaticamente. Se digitar um valor parcial, ele será mantido e a tela mostrará o saldo restante. Use Usar total atualizado para voltar à quitação integral."
+      "Ao receber ou pagar, confira Total atualizado: o saldo atual recebe somente os juros e a multa novos, menos o desconto informado. O valor da baixa acompanha esse total automaticamente. Se digitar um valor parcial, ele será mantido e a tela mostrará o saldo restante. Use Usar total atualizado para voltar à quitação integral.",
+      "A aba Em aberto reúne todos os saldos pendentes, inclusive vencidos e parciais. Use Ver todos os títulos ou Ver todos desta loja para limpar os filtros da listagem e conferir também pagos e cancelados, respeitando a loja selecionada e suas permissões."
     ],
     "cuidados": [
       "Pedido entregue não significa título recebido. A baixa financeira precisa representar o pagamento real.",
@@ -432,7 +433,9 @@
       "Em Comissões, confira a situação dos valores e os recebimentos/devoluções que influenciam sua apuração.",
       "Use Relatórios de Vendas para analisar os resultados com os filtros corretos.",
       "Acompanhe Central de pendências e Notificações para identificar as próximas ações.",
-      "Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só."
+      "Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.",
+      "Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.",
+      "Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. A escolha influencia o mês de apuração após a aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta."
     ],
     "cuidados": [
       "Representantes consultam sua própria carteira, conforme as permissões atribuídas.",
