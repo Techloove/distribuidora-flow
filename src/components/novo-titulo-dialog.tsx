@@ -28,7 +28,6 @@ export function NovoTituloDialog({
   parceiros,
   parceirosCarregando,
   parceirosErro,
-  formas,
   onClose,
   onCreated,
 }: {
@@ -38,7 +37,6 @@ export function NovoTituloDialog({
   parceiros: Opcao[];
   parceirosCarregando: boolean;
   parceirosErro: string | undefined;
-  formas: Opcao[];
   onClose: () => void;
   onCreated: (loja: string, parcelas: number) => void;
 }) {
@@ -54,7 +52,6 @@ export function NovoTituloDialog({
     observacao: "",
     parcelas: "1",
     intervalo: "30",
-    forma: "",
   });
   const [parcelar, setParcelar] = useState(false),
     [erro, setErro] = useState("");
@@ -110,7 +107,7 @@ export function NovoTituloDialog({
         _descricao: form.observacao.trim() || null,
         _parcelas: quantidade,
         _intervalo_dias: intervalo,
-        _forma_id: form.forma || null,
+        _forma_id: null,
         _conta_id: null,
       });
       if (r.error) throw Error(r.error.message);
@@ -337,7 +334,7 @@ export function NovoTituloDialog({
               <details className="rounded-xl border bg-muted/15 p-3">
                 <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium">
                   <Layers3 className="size-4 text-primary" />
-                  Parcelamento e forma de pagamento{" "}
+                  Parcelamento{" "}
                   <span className="ml-auto text-xs font-normal text-muted-foreground">
                     Opcional
                   </span>
@@ -384,22 +381,6 @@ export function NovoTituloDialog({
                       </div>
                     </div>
                   )}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="titulo-forma">Forma de pagamento prevista</Label>
-                    <select
-                      id="titulo-forma"
-                      className={selectCls}
-                      value={form.forma}
-                      onChange={(e) => set("forma", e.target.value)}
-                    >
-                      <option value="">Definir na baixa</option>
-                      {formas.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
               </details>
               <div className="space-y-1.5">

@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.23.2",
+    "data": "2026-10-31",
+    "titulo": "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar",
+    "novidades": [
+      "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar"
+    ]
+  },
+  {
     "versao": "1.23.1",
     "data": "2026-10-31",
     "titulo": "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa",

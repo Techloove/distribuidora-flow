@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.23.1 · 2026-10-31
+Versão 1.23.2 · 2026-10-31
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -295,7 +295,7 @@ Acompanhe títulos, registre baixas e confira o caixa da loja.
 1. Escolha a loja e consulte Contas a receber ou Contas a pagar.
 2. Para lançar manualmente, clique Nova conta a pagar ou Nova conta a receber. Preencha nesta ordem: Loja → Fornecedor ou Cliente → Número do documento → Valor total → Vencimento → Categoria → Subcategoria → Observação. A loja do topo pode vir preenchida; confira antes de continuar.
 3. A subcategoria mostra somente as opções da categoria escolhida. Quando houver subcategorias ativas, selecione uma; se não houver, o lançamento usa a categoria principal. A classificação segue o cadastro de categorias de despesas ou receitas e continua sendo usada nos relatórios e na DRE.
-4. O valor aceita o padrão brasileiro, como 1.234,56. Para parcelar, expanda Parcelamento e forma de pagamento, marque Dividir em parcelas e informe quantidade e intervalo. O rodapé mostra total, primeiro e último vencimento e o ajuste de centavos na última parcela. A forma de pagamento prevista é opcional.
+4. O valor aceita o padrão brasileiro, como 1.234,56. Para parcelar, expanda Parcelamento, marque Dividir em parcelas e informe quantidade e intervalo. O rodapé mostra total, primeiro e último vencimento e o ajuste de centavos na última parcela. A forma de pagamento é escolhida na baixa; o cadastro da conta não solicita forma prevista.
 5. Não é necessário informar banco ao cadastrar a conta. O banco/caixa é escolhido na baixa individual ou em lote. São oferecidas contas da loja do título e contas compartilhadas; para baixar títulos de lojas diferentes, use uma conta compatível com todas ou faça as baixas separadamente por loja.
 6. A lista de títulos exibe Emissão e Vencimento em dia/mês/ano, documentos e valores sem partir os números. Receber ou Pagar continua visível em cada linha. Em Contas a receber, use Opções para Histórico, Pix, Renegociar, Emitir boleto ou Reimprimir boleto e Alterar vencimento, conforme as permissões e o estado do título. No telefone, os dados continuam em cartões; tabelas largas permitem rolagem interna.
 7. Localize o título e confira cliente/fornecedor, vencimento, valor e o que já foi pago.
@@ -304,6 +304,7 @@ Acompanhe títulos, registre baixas e confira o caixa da loja.
 10. Use Dashboard financeiro, Fluxo de caixa, DRE e relatórios para acompanhar resultados e pendências.
 11. Registre os custos de rota no módulo correspondente para acompanhar a operação.
 12. Lançamentos manuais sem vínculo com venda aparecem em Todos no filtro de modalidade. Se lançou em outra loja ou está filtrando Estoque/Intermediação, use Ver lançamentos no aviso de confirmação para abrir a loja informada e a modalidade Todos.
+13. Ao receber ou pagar, confira Total atualizado: o saldo atual recebe somente os juros e a multa novos, menos o desconto informado. O valor da baixa acompanha esse total automaticamente. Se digitar um valor parcial, ele será mantido e a tela mostrará o saldo restante. Use Usar total atualizado para voltar à quitação integral.
 
 Cuidados:
 
@@ -311,6 +312,7 @@ Cuidados:
 - Evite registrar o mesmo recebimento manualmente se ele já entrou por conciliação ou integração.
 - Saldo bancário, caixa e resultado gerencial têm finalidades diferentes. Confira período e filtros antes de comparar relatórios.
 - O lançamento apenas cadastra os títulos; não movimenta banco/caixa e não representa pagamento ou recebimento. Confira os dados e escolha o banco ao confirmar a baixa.
+- Juros, multa e desconto são valores em reais, não percentuais. O saldo inicial da baixa já considera ajustes anteriores e valores recebidos/pagos. Não repita os encargos de uma baixa anterior; o valor confirmado deve ser positivo e não pode exceder o total atualizado.
 
 ## Boletos e notas fiscais
 

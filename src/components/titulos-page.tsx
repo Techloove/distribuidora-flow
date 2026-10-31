@@ -1,3 +1,4 @@
+import { recalcularBaixa } from "@/lib/baixa-titulo";
 import { NovoTituloDialog } from "@/components/novo-titulo-dialog";
 import { setCentro } from "@/lib/centro-store";
 import { getModalidade, nomesModalidade, setModalidade } from "@/lib/modalidade-store";
@@ -95,6 +96,7 @@ export function TitulosPage({
 
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
+  const [valorManual, setValorManual] = useState(false);
   const [data, setData] = useState(hojeSaoPaulo());
   const [contaId, setContaId] = useState("");
   const [formaId, setFormaId] = useState("");
@@ -313,10 +315,33 @@ export function TitulosPage({
         .map((r) => String(r["centro_id"] ?? "")),
     ),
   ]);
+  const previaBaixa = target
+    ? recalcularBaixa(
+        Number(target["saldo"] ?? 0),
+        Number(juros || 0),
+        Number(multa || 0),
+        Number(descontoBaixa || 0),
+      )
+    : null;
+  const valorEfetivo = valorManual
+    ? Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100
+    : (previaBaixa?.total ?? 0);
+  const valorBaixaValido =
+    !!previaBaixa &&
+    Number.isFinite(valorEfetivo) &&
+    valorEfetivo > 0 &&
+    Math.round(valorEfetivo * 100) <= Math.round(previaBaixa.total * 100);
   const baixar = useMutation({
     mutationFn: async () => {
-      const v = Number(valor || 0);
-      if (v <= 0) throw new Error("Informe o valor da baixa");
+      const v = valorEfetivo;
+      if (!previaBaixa)
+        throw new Error(
+          "Confira os ajustes: use valores não negativos e desconto de até o saldo com juros e multa.",
+        );
+      if (!valorBaixaValido)
+        throw new Error(
+          "O valor da baixa deve ser maior que zero e não pode exceder o total atualizado.",
+        );
       if (!contaId || !contasBaixa.some((c) => c["id"] === contaId))
         throw new Error("Selecione um banco/caixa compatível com a loja do título");
       const { error } = await client!.rpc(config.rpcBaixa, {
@@ -325,9 +350,9 @@ export function TitulosPage({
         _data: data,
         _conta_id: contaId || null,
         _forma_id: formaId || null,
-        _juros: Number(juros || 0),
-        _multa: Number(multa || 0),
-        _desconto: Number(descontoBaixa || 0),
+        _juros: previaBaixa.juros,
+        _multa: previaBaixa.multa,
+        _desconto: previaBaixa.desconto,
         _observacao: null,
       });
       if (error) throw new Error(error.message);
@@ -675,6 +700,7 @@ export function TitulosPage({
                         }
                         onClick={() => {
                           setTarget(r);
+                          setValorManual(false);
                           setContaId(String(r["conta_financeira_id"] ?? ""));
                           setFormaId(String(r["forma_pagamento_id"] ?? ""));
                           setData(hoje());
@@ -745,7 +771,12 @@ export function TitulosPage({
         </p>
       ) : null}
 
-      <Dialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
+      <Dialog
+        open={!!target}
+        onOpenChange={(o) => {
+          if (!o && !baixar.isPending) setTarget(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{config.baixaLabel} título</DialogTitle>
@@ -754,14 +785,19 @@ export function TitulosPage({
               escolhido e atualiza fluxo de caixa, DRE e relatórios.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <fieldset disabled={baixar.isPending} className="grid min-w-0 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Valor</Label>
+              <Label htmlFor="baixa-valor">Valor a {isReceber ? "receber" : "pagar"} (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                id="baixa-valor"
+                min="0.01"
+                value={valorManual ? valor : (previaBaixa?.total.toFixed(2) ?? "")}
+                onChange={(e) => {
+                  setValor(e.target.value);
+                  setValorManual(true);
+                }}
               />
             </div>
             <div className="space-y-1.5">
@@ -800,40 +836,120 @@ export function TitulosPage({
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label>Juros</Label>
+              <Label htmlFor="baixa-juros">Juros (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
+                id="baixa-juros"
+                min="0"
                 value={juros}
                 onChange={(e) => setJuros(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Multa</Label>
+              <Label htmlFor="baixa-multa">Multa (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
+                id="baixa-multa"
+                min="0"
                 value={multa}
                 onChange={(e) => setMulta(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Desconto</Label>
+              <Label htmlFor="baixa-desconto">Desconto (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
+                id="baixa-desconto"
+                min="0"
                 value={descontoBaixa}
                 onChange={(e) => setDescontoBaixa(e.target.value)}
               />
             </div>
-          </div>
+          </fieldset>
+          <section
+            aria-live="polite"
+            aria-atomic="true"
+            className="space-y-3 rounded-xl border bg-primary/5 p-4"
+          >
+            <dl className="space-y-1 text-sm text-muted-foreground">
+              <div className="flex justify-between gap-3">
+                <dt>Saldo atual</dt>
+                <dd className="whitespace-nowrap tabular-nums">{brl(target?.["saldo"] ?? 0)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Juros + multa desta baixa</dt>
+                <dd className="whitespace-nowrap tabular-nums">
+                  {previaBaixa ? brl(previaBaixa.juros + previaBaixa.multa) : "—"}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Desconto desta baixa</dt>
+                <dd className="whitespace-nowrap tabular-nums">
+                  {previaBaixa ? brl(previaBaixa.desconto) : "—"}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+              <span className="text-sm font-medium">
+                Total atualizado a {isReceber ? "receber" : "pagar"}
+              </span>
+              <strong data-total-baixa className="text-xl tabular-nums text-primary">
+                {previaBaixa ? brl(previaBaixa.total) : "—"}
+              </strong>
+            </div>
+            {valorManual && previaBaixa && (
+              <>
+                <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+                  <span>Saldo após esta baixa</span>
+                  <span>
+                    {valorBaixaValido
+                      ? brl(Math.round((previaBaixa.total - valorEfetivo) * 100) / 100)
+                      : "—"}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={baixar.isPending}
+                  onClick={() => setValorManual(false)}
+                >
+                  Usar total atualizado
+                </Button>
+              </>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {valorManual
+                ? "O valor informado foi mantido para permitir baixa parcial."
+                : "O valor da baixa acompanha automaticamente os ajustes acima."}
+            </p>
+          </section>
+          {!previaBaixa && (
+            <p role="alert" className="text-sm text-destructive">
+              Use juros e multa não negativos. O desconto não pode superar o saldo acrescido desses
+              valores.
+            </p>
+          )}
+          {previaBaixa && !valorBaixaValido && (
+            <p role="alert" className="text-sm text-destructive">
+              O valor da baixa deve ser maior que zero e não pode superar o total atualizado.
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTarget(null)}>
+            <Button variant="outline" disabled={baixar.isPending} onClick={() => setTarget(null)}>
               Cancelar
             </Button>
             <Button
               onClick={() => baixar.mutate()}
-              disabled={baixar.isPending || !contasBaixa.some((c) => c["id"] === contaId) || !data}
+              disabled={
+                baixar.isPending ||
+                !valorBaixaValido ||
+                !contasBaixa.some((c) => c["id"] === contaId) ||
+                !data
+              }
             >
               {baixar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Confirmar
@@ -853,10 +969,6 @@ export function TitulosPage({
           }))}
           parceirosCarregando={partners.isPending}
           parceirosErro={partners.error?.message}
-          formas={(formas.data ?? []).map((f) => ({
-            id: String(f["id"]),
-            nome: String(f["nome"]),
-          }))}
           onClose={() => setOpenNovo(false)}
           onCreated={(loja, parcelas) => {
             setOpenNovo(false);
