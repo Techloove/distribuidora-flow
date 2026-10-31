@@ -1,4 +1,6 @@
-import { getModalidade } from "@/lib/modalidade-store";
+import { NovoTituloDialog } from "@/components/novo-titulo-dialog";
+import { setCentro } from "@/lib/centro-store";
+import { getModalidade, nomesModalidade, setModalidade } from "@/lib/modalidade-store";
 import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { lerPaginas } from "@/lib/paginacao";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -68,20 +70,6 @@ export type TitulosConfig = {
 
 const hoje = hojeSaoPaulo;
 
-const novoTituloVazio = {
-  parceiro: "",
-  documento: "",
-  descricao: "",
-  valor: "",
-  parcelas: "1",
-  vencimento: hoje(),
-  intervalo: "30",
-  categoria: "",
-  centro: "",
-  conta: "",
-  forma: "",
-};
-
 const statuses = ["todos", "aberto", "vencido", "parcial", "pago", "cancelado"] as const;
 
 export function TitulosPage({
@@ -98,7 +86,12 @@ export function TitulosPage({
   );
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
-  const { centro: centroGlobal, isLoading: lojasCarregando, error: lojasErro } = useCentroValido();
+  const {
+    centro: centroGlobal,
+    lista: lojasPermitidas,
+    isLoading: lojasCarregando,
+    error: lojasErro,
+  } = useCentroValido();
 
   const [target, setTarget] = useState<Row | null>(null);
   const [valor, setValor] = useState("");
@@ -110,8 +103,7 @@ export function TitulosPage({
   const [descontoBaixa, setDescontoBaixa] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [openNovo, setOpenNovo] = useState(false);
-  const [novo, setNovo] = useState({ ...novoTituloVazio });
-  const setN = (k: keyof typeof novoTituloVazio, v: string) => setNovo((s) => ({ ...s, [k]: v }));
+  const [openBaixaLote, setOpenBaixaLote] = useState(false);
 
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
@@ -130,14 +122,15 @@ export function TitulosPage({
   const partners = useQuery({
     queryKey: [...[config.partnerTable, "options"], getModalidade()],
     enabled: !!client,
-    queryFn: async () => {
-      const { data: rows, error } = await client!
-        .from(config.partnerTable)
-        .select("id, razao_social")
-        .order("razao_social");
-      if (error) throw new Error(error.message);
-      return (rows ?? []) as Row[];
-    },
+    queryFn: () =>
+      lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from(config.partnerTable)
+          .select("id, razao_social")
+          .order("razao_social")
+          .order("id")
+          .range(inicio, fim),
+      ),
   });
 
   const isReceber = config.table === "contas_receber";
@@ -148,7 +141,7 @@ export function TitulosPage({
     queryFn: async () => {
       const { data: rows, error } = await client!
         .from("contas_financeiras")
-        .select("id, nome")
+        .select("id, nome, centro_id")
         .eq("ativo", true)
         .order("nome");
       if (error) throw new Error(error.message);
@@ -176,22 +169,6 @@ export function TitulosPage({
       const { data: rows, error } = await client!.from("centros").select("id, nome").order("nome");
       if (error) return [] as Row[];
       return (rows ?? []) as Row[];
-    },
-  });
-
-  const categorias = useQuery({
-    queryKey: [...["categorias_financeiras", "titulos", isReceber], getModalidade()],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data: rows, error } = await client!
-        .from("categorias_financeiras")
-        .select("id, nome, tipo, parent_id, ativo")
-        .eq("ativo", true)
-        .order("ordem");
-      if (error) return [] as Row[];
-      return (rows ?? []).filter(
-        (c) => String((c as Row)["tipo"]) === (isReceber ? "receita" : "despesa"),
-      ) as Row[];
     },
   });
 
@@ -324,10 +301,24 @@ export function TitulosPage({
     if (idsVisiveis.length !== selecionados.length) setSelecionados(idsVisiveis);
   }, [idsVisiveis, selecionados.length]);
 
+  const contasParaLoja = (lojas: string[]) =>
+    (contas.data ?? []).filter(
+      (c) => !c["centro_id"] || lojas.every((loja) => loja === String(c["centro_id"])),
+    );
+  const contasBaixa = contasParaLoja([String(target?.["centro_id"] ?? "")]);
+  const contasBaixaLote = contasParaLoja([
+    ...new Set(
+      rows
+        .filter((r) => idsVisiveis.includes(String(r["id"])))
+        .map((r) => String(r["centro_id"] ?? "")),
+    ),
+  ]);
   const baixar = useMutation({
     mutationFn: async () => {
       const v = Number(valor || 0);
       if (v <= 0) throw new Error("Informe o valor da baixa");
+      if (!contaId || !contasBaixa.some((c) => c["id"] === contaId))
+        throw new Error("Selecione um banco/caixa compatível com a loja do título");
       const { error } = await client!.rpc(config.rpcBaixa, {
         _id: target!["id"],
         _valor: v,
@@ -353,6 +344,8 @@ export function TitulosPage({
   const baixarLote = useMutation({
     mutationFn: async () => {
       if (idsVisiveis.length === 0) throw new Error("Selecione os títulos");
+      if (!contaId || !contasBaixaLote.some((c) => c["id"] === contaId))
+        throw new Error("Selecione um banco/caixa compatível com as lojas dos títulos");
       const { error } = await client!.rpc("baixar_titulos_lote", {
         _tabela: config.table,
         _ids: idsVisiveis,
@@ -365,38 +358,7 @@ export function TitulosPage({
     onSuccess: () => {
       toast.success(`${idsVisiveis.length} título(s) baixado(s)`);
       setSelecionados([]);
-      queryClient.invalidateQueries();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const criar = useMutation({
-    mutationFn: async () => {
-      if (!novo.parceiro) throw new Error(`Selecione o ${config.partnerLabel.toLowerCase()}`);
-      if (Number(novo.valor || 0) <= 0) throw new Error("Informe o valor do título");
-      if (!novo.categoria)
-        throw new Error(`Selecione a categoria de ${isReceber ? "receita" : "despesa"}`);
-      const args: Record<string, unknown> = {
-        _categoria_id: novo.categoria || null,
-        _centro_id: novo.centro || null,
-        _descricao: novo.descricao || null,
-        _documento: novo.documento || null,
-        _valor: Number(novo.valor),
-        _parcelas: Math.max(1, Number(novo.parcelas || 1)),
-        _primeiro_vencimento: novo.vencimento || hoje(),
-        _intervalo_dias: Number(novo.intervalo || 30),
-        _forma_id: novo.forma || null,
-        _conta_id: novo.conta || null,
-      };
-      if (isReceber) args["_cliente_id"] = novo.parceiro;
-      else args["_fornecedor_id"] = novo.parceiro;
-      const { error } = await client!.rpc(config.rpcCriar, args);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      toast.success("Título lançado");
-      setOpenNovo(false);
-      setNovo({ ...novoTituloVazio, vencimento: hoje() });
+      setOpenBaixaLote(false);
       queryClient.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -424,11 +386,11 @@ export function TitulosPage({
               size="sm"
               disabled={!canFinance}
               onClick={() => {
-                setNovo((s) => ({ ...s, vencimento: hoje(), centro: centroGlobal }));
                 setOpenNovo(true);
               }}
             >
-              <Plus className="size-3.5" /> Novo título
+              <Plus className="size-3.5" />{" "}
+              {isReceber ? "Nova conta a receber" : "Nova conta a pagar"}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => window.print()}>
               <Printer className="size-3.5" /> Imprimir
@@ -436,7 +398,12 @@ export function TitulosPage({
             <Button
               size="sm"
               disabled={!canFinance || idsVisiveis.length === 0 || baixarLote.isPending}
-              onClick={() => baixarLote.mutate()}
+              onClick={() => {
+                setContaId("");
+                setFormaId("");
+                setData(hoje());
+                setOpenBaixaLote(true);
+              }}
             >
               {baixarLote.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Baixar {idsVisiveis.length} selecionado(s)
@@ -708,6 +675,9 @@ export function TitulosPage({
                         }
                         onClick={() => {
                           setTarget(r);
+                          setContaId(String(r["conta_financeira_id"] ?? ""));
+                          setFormaId(String(r["forma_pagamento_id"] ?? ""));
+                          setData(hoje());
                           setValor(String(Number(r["saldo"] ?? 0)));
                           setJuros("");
                           setMulta("");
@@ -799,14 +769,15 @@ export function TitulosPage({
               <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Banco/caixa</Label>
+              <Label htmlFor="baixa-banco">Banco/caixa *</Label>
               <select
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                id="baixa-banco"
                 value={contaId}
                 onChange={(e) => setContaId(e.target.value)}
               >
                 <option value="">Selecione</option>
-                {(contas.data ?? []).map((c) => (
+                {contasBaixa.map((c) => (
                   <option key={String(c["id"])} value={String(c["id"])}>
                     {String(c["nome"])}
                   </option>
@@ -860,7 +831,10 @@ export function TitulosPage({
             <Button variant="outline" onClick={() => setTarget(null)}>
               Cancelar
             </Button>
-            <Button onClick={() => baixar.mutate()} disabled={baixar.isPending}>
+            <Button
+              onClick={() => baixar.mutate()}
+              disabled={baixar.isPending || !contasBaixa.some((c) => c["id"] === contaId) || !data}
+            >
               {baixar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Confirmar
             </Button>
@@ -868,146 +842,135 @@ export function TitulosPage({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={openNovo} onOpenChange={setOpenNovo}>
-        <DialogContent className="sm:max-w-2xl">
+      {openNovo && (
+        <NovoTituloDialog
+          receber={isReceber}
+          lojaInicial={centroGlobal}
+          lojas={lojasPermitidas}
+          parceiros={(partners.data ?? []).map((p) => ({
+            id: String(p["id"]),
+            nome: String(p["razao_social"]),
+          }))}
+          parceirosCarregando={partners.isPending}
+          parceirosErro={partners.error?.message}
+          formas={(formas.data ?? []).map((f) => ({
+            id: String(f["id"]),
+            nome: String(f["nome"]),
+          }))}
+          onClose={() => setOpenNovo(false)}
+          onCreated={(loja, parcelas) => {
+            setOpenNovo(false);
+            void queryClient.invalidateQueries();
+            toast.success(`${parcelas === 1 ? "Título lançado" : `${parcelas} títulos lançados`}`, {
+              description:
+                [
+                  centroGlobal && centroGlobal !== loja
+                    ? "O título foi lançado em outra loja; ajuste o filtro para visualizá-lo."
+                    : "",
+                  getModalidade() !== "todos"
+                    ? `Lançamentos manuais aparecem em Todos. O filtro atual está em ${nomesModalidade[getModalidade()]}.`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined,
+              action: {
+                label: "Ver lançamentos",
+                onClick: () => {
+                  setCentro(loja);
+                  setModalidade("todos");
+                },
+              },
+            });
+          }}
+        />
+      )}
+      <Dialog
+        open={openBaixaLote}
+        onOpenChange={(v) => {
+          if (!baixarLote.isPending) setOpenBaixaLote(v);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo título {isReceber ? "a receber" : "a pagar"}</DialogTitle>
+            <DialogTitle>Baixar títulos selecionados</DialogTitle>
             <DialogDescription>
-              Lançamento manual, sem depender de pedido ou nota. Informe as parcelas e o sistema
-              gera um título para cada vencimento.
+              Confira os {idsVisiveis.length} títulos e escolha o banco/caixa para registrar a
+              movimentação.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>{config.partnerLabel}</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={novo.parceiro}
-                onChange={(e) => setN("parceiro", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {(partners.data ?? []).map((p) => (
-                  <option key={String(p["id"])} value={String(p["id"])}>
-                    {String(p["razao_social"])}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Descrição</Label>
-              <Input
-                value={novo.descricao}
-                onChange={(e) => setN("descricao", e.target.value)}
-                placeholder={isReceber ? "Ex.: Serviço de frete" : "Ex.: Combustível do mês"}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Documento</Label>
-              <Input value={novo.documento} onChange={(e) => setN("documento", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Valor total (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={novo.valor}
-                onChange={(e) => setN("valor", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Parcelas</Label>
-              <Input
-                type="number"
-                min="1"
-                value={novo.parcelas}
-                onChange={(e) => setN("parcelas", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>1º vencimento</Label>
-              <Input
-                type="date"
-                value={novo.vencimento}
-                onChange={(e) => setN("vencimento", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Intervalo entre parcelas (dias)</Label>
-              <Input
-                type="number"
-                value={novo.intervalo}
-                onChange={(e) => setN("intervalo", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{isReceber ? "Categoria de receita" : "Categoria de despesa"}</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={novo.categoria}
-                onChange={(e) => setN("categoria", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {(categorias.data ?? []).map((c) => (
-                  <option key={String(c["id"])} value={String(c["id"])}>
-                    {c["parent_id"] ? "— " : ""}
-                    {String(c["nome"])}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Centro de custo</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={novo.centro}
-                onChange={(e) => setN("centro", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {(centros.data ?? []).map((c) => (
-                  <option key={String(c["id"])} value={String(c["id"])}>
-                    {String(c["nome"])}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Banco/caixa previsto</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={novo.conta}
-                onChange={(e) => setN("conta", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {(contas.data ?? []).map((c) => (
-                  <option key={String(c["id"])} value={String(c["id"])}>
-                    {String(c["nome"])}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Forma de pagamento</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={novo.forma}
-                onChange={(e) => setN("forma", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {(formas.data ?? []).map((c) => (
-                  <option key={String(c["id"])} value={String(c["id"])}>
-                    {String(c["nome"])}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="rounded-xl border bg-muted/20 p-4">
+            <p className="text-sm text-muted-foreground">Saldo selecionado</p>
+            <p className="text-xl font-semibold">
+              {brl(
+                rows
+                  .filter((r) => idsVisiveis.includes(String(r["id"])))
+                  .reduce((total, r) => total + saldoTitulo(r), 0),
+              )}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="baixa-lote-data">Data da baixa</Label>
+            <Input
+              id="baixa-lote-data"
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              disabled={baixarLote.isPending}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="baixa-lote-banco">Banco/caixa *</Label>
+            <select
+              id="baixa-lote-banco"
+              className="h-11 w-full rounded-xl border bg-background px-3"
+              value={contaId}
+              onChange={(e) => setContaId(e.target.value)}
+              disabled={baixarLote.isPending}
+            >
+              <option value="">Selecione</option>
+              {contasBaixaLote.map((c) => (
+                <option key={String(c["id"])} value={String(c["id"])}>
+                  {String(c["nome"])}
+                </option>
+              ))}
+            </select>
+            {!contasBaixaLote.length && (
+              <p role="alert" className="text-xs text-destructive">
+                Não há banco/caixa disponível para todas as lojas selecionadas. Faça a baixa por
+                loja ou cadastre uma conta compatível.
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="baixa-lote-forma">Forma de pagamento</Label>
+            <select
+              id="baixa-lote-forma"
+              className="h-11 w-full rounded-xl border bg-background px-3"
+              value={formaId}
+              onChange={(e) => setFormaId(e.target.value)}
+              disabled={baixarLote.isPending}
+            >
+              <option value="">Selecione</option>
+              {(formas.data ?? []).map((f) => (
+                <option key={String(f["id"])} value={String(f["id"])}>
+                  {String(f["nome"])}
+                </option>
+              ))}
+            </select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenNovo(false)}>
+            <Button
+              variant="outline"
+              disabled={baixarLote.isPending}
+              onClick={() => setOpenBaixaLote(false)}
+            >
               Cancelar
             </Button>
-            <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
-              {criar.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Lançar título
+            <Button
+              disabled={baixarLote.isPending || !contaId || !idsVisiveis.length || !data}
+              onClick={() => baixarLote.mutate()}
+            >
+              {baixarLote.isPending && <Loader2 className="size-4 animate-spin" />}Confirmar baixa
             </Button>
           </DialogFooter>
         </DialogContent>

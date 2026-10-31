@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.23.1",
+    "data": "2026-10-31",
+    "titulo": "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa",
+    "novidades": [
+      "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa"
+    ]
+  },
+  {
     "versao": "1.23.0",
     "data": "2026-10-31",
     "titulo": "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos",
