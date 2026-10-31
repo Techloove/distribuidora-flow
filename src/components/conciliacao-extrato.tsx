@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { lerExtratoOfx } from "@/lib/importacoes-distribuidora";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { exportarCsv } from "@/lib/exportar";
@@ -5,7 +6,7 @@ import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { brl } from "@/lib/formatacao";
 import {
   candidatosConciliacao,
@@ -33,7 +34,7 @@ export function ConciliacaoExtrato() {
   const [situacao, setSituacao] = useState("pendente");
   const rpc = useRotinaRpc(["extrato_bancario_linhas"]);
   const contas = useQuery({
-    queryKey: ["contas-fin-conciliacao", user?.id],
+    queryKey: [...["contas-fin-conciliacao", user?.id], getModalidade()],
     enabled: !!client && permitido,
     queryFn: async () => {
       const { data, error } = await client!
@@ -46,7 +47,7 @@ export function ConciliacaoExtrato() {
     },
   });
   const extrato = useQuery({
-    queryKey: ["extrato_bancario_linhas", user?.id, conta, pagina, situacao],
+    queryKey: [...["extrato_bancario_linhas", user?.id, conta, pagina, situacao], getModalidade()],
     enabled: !!client && permitido && !!conta,
     queryFn: async () => {
       let r = client!
@@ -64,10 +65,13 @@ export function ConciliacaoExtrato() {
   });
   const movimentos = useQuery({
     queryKey: [
-      "movimentos-conciliacao",
-      user?.id,
-      conta,
-      extrato.data?.rows.map((r) => r["id"]).join(","),
+      ...[
+        "movimentos-conciliacao",
+        user?.id,
+        conta,
+        extrato.data?.rows.map((r) => r["id"]).join(","),
+      ],
+      getModalidade(),
     ],
     enabled: !!client && permitido && !!conta && !!extrato.data?.rows.length,
     queryFn: async () => {

@@ -1,7 +1,9 @@
+import { clienteAnalitico } from "./modalidade-consultas";
+import { useModalidade, setModalidade } from "./modalidade-store";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
 import { getSupabaseClient } from "./supabase-client";
 import { setCentro } from "./centro-store";
 import { estadoRecuperacaoSenha } from "./auth-senhas";
@@ -42,6 +44,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         void queryClient.cancelQueries();
         queryClient.clear();
         setCentro("");
+        setModalidade("todos");
         previousUser = id;
       }
       setSession(next);
@@ -155,4 +158,15 @@ export function useSupabase() {
   const context = useContext(SupabaseContext);
   if (!context) throw new Error("useSupabase precisa estar dentro de <SupabaseProvider>");
   return context;
+}
+
+/** Cliente de consulta: filtro de resultados sem alterar as operações do sistema. */
+export function useSupabaseAnalitico() {
+  const contexto = useSupabase(),
+    { modalidade } = useModalidade();
+  const client = useMemo(
+    () => (contexto.client ? clienteAnalitico(contexto.client, modalidade) : null),
+    [contexto.client, modalidade],
+  );
+  return { ...contexto, client };
 }

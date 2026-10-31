@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -14,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
@@ -44,7 +45,7 @@ export function HistoricoCliente({
       : null;
 
   const hist = useQuery({
-    queryKey: ["vw_historico_cliente", chave?.coluna, chave?.valor],
+    queryKey: [...["vw_historico_cliente", chave?.coluna, chave?.valor], getModalidade()],
     enabled: !!client && !!chave,
     queryFn: async () => {
       const { data, error } = await client!
@@ -58,7 +59,7 @@ export function HistoricoCliente({
   });
 
   const titulos = useQuery({
-    queryKey: ["vw_cliente_titulos", chave?.coluna, chave?.valor],
+    queryKey: [...["vw_cliente_titulos", chave?.coluna, chave?.valor], getModalidade()],
     enabled: !!client && !!chave,
     queryFn: async () => {
       const { data, error } = await client!

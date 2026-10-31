@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { CentralPendencias } from "@/components/central-pendencias";
 import { PainelRepresentante } from "@/components/painel-representante";
 import { perfilPainel, hojeSaoPaulo } from "@/lib/painel-trabalho";
@@ -9,7 +10,7 @@ import { AlertTriangle, ClipboardList, Coins, Package, Users, Wallet } from "luc
 import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -45,7 +46,7 @@ function Dashboard() {
   const { centro, isLoading: centrosLoading, error: centroError } = useCentroValido();
 
   const data = useQuery({
-    queryKey: ["dashboard", user?.id, centro],
+    queryKey: [...["dashboard", user?.id, centro], getModalidade()],
     enabled: !!client && !centrosLoading && !centroError,
     queryFn: async () => {
       const result = await client!.rpc("dashboard_resumo", { _centro_id: centro || null });
@@ -245,7 +246,7 @@ function RankingRotas() {
   const de = `${hojeSaoPaulo().slice(0, 7)}-01`;
 
   const ranking = useQuery({
-    queryKey: ["dashboard_rankings", centro, de],
+    queryKey: [...["dashboard_rankings", centro, de], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.rpc("dashboard_rankings", {
@@ -312,7 +313,7 @@ function FluxoOperacional() {
   const acesso = useAcesso();
   const { client } = useSupabase();
   const fluxo = useQuery({
-    queryKey: ["vw_fluxo_operacional"],
+    queryKey: [...["vw_fluxo_operacional"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("vw_fluxo_operacional").select("*").maybeSingle();

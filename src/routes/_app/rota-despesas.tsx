@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { useCentro } from "@/lib/centro-store";
 import { exportarCsv } from "@/lib/exportar";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/rota-despesas")({
   head: () => ({
@@ -130,7 +131,7 @@ function RotaDespesasPage() {
   const { centro } = useCentro();
 
   const resultado = useQuery({
-    queryKey: ["vw_rota_resultado", centro],
+    queryKey: [...["vw_rota_resultado", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_rota_resultado").select("*").order("periodo", { ascending: false });

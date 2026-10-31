@@ -1,10 +1,11 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { EntregaPorItem, AbrirComprovante } from "@/components/entrega-por-item";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRotinaRpc } from "@/lib/use-rotina-rpc";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { brl } from "@/lib/formatacao";
 import type { Registro } from "@/lib/rotinas-distribuidora";
@@ -243,7 +244,7 @@ export function ReposicaoInteligente() {
   const cv = useCentroValido();
   const [filtro, setFiltro] = useState("repor");
   const q = useQuery({
-    queryKey: ["vw_reposicao_209", user?.id, cv.centro, filtro],
+    queryKey: [...["vw_reposicao_209", user?.id, cv.centro, filtro], getModalidade()],
     enabled: !!client && permissoes.pode("reposicao_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!.from("vw_reposicao_209").select("*", { count: "exact" });
@@ -484,7 +485,7 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
   const [pedido, setPedido] = useState("");
   const rpc = useRotinaRpc(["devolucoes"]);
   const q = useQuery({
-    queryKey: ["pedidos-troca", user?.id, devolucao["id"]],
+    queryKey: [...["pedidos-troca", user?.id, devolucao["id"]], getModalidade()],
     enabled:
       !!client &&
       permissoes.pode("troca_vincular") &&
@@ -563,7 +564,7 @@ export function AjustesComissao() {
   const [resolucoes, setResolucoes] = useState<Record<string, string>>({});
   const rpc = useRotinaRpc(["comissao_ajustes"]);
   const regra = useQuery({
-    queryKey: ["loja-parametros", "comissao", user?.id, cv.centro],
+    queryKey: [...["loja-parametros", "comissao", user?.id, cv.centro], getModalidade()],
     enabled:
       !!client &&
       !!cv.centro &&
@@ -579,7 +580,7 @@ export function AjustesComissao() {
     },
   });
   const q = useQuery({
-    queryKey: ["comissao_ajustes", user?.id, cv.centro],
+    queryKey: [...["comissao_ajustes", user?.id, cv.centro], getModalidade()],
     enabled: !!client && permissoes.pode("comissao_ajustes_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useCentro } from "@/lib/centro-store";
 import { exportarCsv } from "@/lib/exportar";
 import { usePermissoesFin } from "@/lib/permissoes-financeiras";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/dre")({
   head: () => ({
@@ -35,13 +36,23 @@ export const Route = createFileRoute("/_app/dre")({
 });
 
 type Row = Record<string, unknown>;
-type Linha = { label: string; valor: number; nivel: 0 | 1 | 2; total?: boolean; key: string; pai?: string; avo?: string; filhos?: number };
+type Linha = {
+  label: string;
+  valor: number;
+  nivel: 0 | 1 | 2;
+  total?: boolean;
+  key: string;
+  pai?: string;
+  avo?: string;
+  filhos?: number;
+};
 
 const hoje = new Date();
 const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
 const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().slice(0, 10);
 
-const ehReceita = (g: string) => g === "receita_bruta" || g === "receita_financeira" || g === "outras_receitas";
+const ehReceita = (g: string) =>
+  g === "receita_bruta" || g === "receita_financeira" || g === "outras_receitas";
 
 function DrePage() {
   const { client } = useSupabase();
@@ -53,10 +64,12 @@ function DrePage() {
   const alternar = (k: string) => setAbertas((s) => ({ ...s, [k]: !s[k] }));
 
   const dre = useQuery({
-    queryKey: ["vw_dre_base", "pagina", centro, de, ate],
+    queryKey: [...["vw_dre_base", "pagina", centro, de, ate], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
-      let q = client!.from("vw_dre_base").select("data, centro_id, grupo_dre, categoria, subcategoria, valor");
+      let q = client!
+        .from("vw_dre_base")
+        .select("data, centro_id, grupo_dre, categoria, subcategoria, valor");
       if (centro) q = q.eq("centro_id", centro);
       if (de) q = q.gte("data", de);
       if (ate) q = q.lte("data", ate);
@@ -111,7 +124,15 @@ function DrePage() {
         const nSubs = [...subs.keys()].filter(Boolean).length;
         out.push({ label: cat, valor: t, nivel: 1, key: ck, pai: sk, filhos: nSubs });
         for (const [sub, v] of subs)
-          if (sub) out.push({ label: `↳ ${sub}`, valor: v, nivel: 2, key: `${ck}:${sub}`, pai: ck, avo: sk });
+          if (sub)
+            out.push({
+              label: `↳ ${sub}`,
+              valor: v,
+              nivel: 2,
+              key: `${ck}:${sub}`,
+              pai: ck,
+              avo: sk,
+            });
       }
     };
     const rb = total("receita");
@@ -123,8 +144,15 @@ function DrePage() {
     out.push({ label: "(=) LUCRO BRUTO", valor: lb, nivel: 0, total: true, key: "t" + out.length });
     secao("despesa", "(-) DESPESAS OPERACIONAIS");
     const ro = lb + total("despesa");
-    out.push({ label: "(=) RESULTADO OPERACIONAL", valor: ro, nivel: 0, total: true, key: "t" + out.length });
-    if (secoes.has("outras_receitas")) secao("outras_receitas", "(+) RECEITAS FINANCEIRAS / OUTRAS");
+    out.push({
+      label: "(=) RESULTADO OPERACIONAL",
+      valor: ro,
+      nivel: 0,
+      total: true,
+      key: "t" + out.length,
+    });
+    if (secoes.has("outras_receitas"))
+      secao("outras_receitas", "(+) RECEITAS FINANCEIRAS / OUTRAS");
     if (secoes.has("financeira")) secao("financeira", "(-) DESPESAS FINANCEIRAS");
     out.push({
       label: "(=) RESULTADO LÍQUIDO",
@@ -146,10 +174,14 @@ function DrePage() {
     );
   }
 
-  const pct = (v: number) => (receita ? `${((Math.abs(v) / receita) * 100).toFixed(1).replace(".", ",")}%` : "—");
+  const pct = (v: number) =>
+    receita ? `${((Math.abs(v) / receita) * 100).toFixed(1).replace(".", ",")}%` : "—";
 
   return (
-    <ErpLayout title="DRE gerencial" description="As despesas e receitas lançadas aparecem aqui automaticamente, pela categoria.">
+    <ErpLayout
+      title="DRE gerencial"
+      description="As despesas e receitas lançadas aparecem aqui automaticamente, pela categoria."
+    >
       <div className="space-y-4">
         <FilterBar
           onClear={() => {
@@ -189,7 +221,8 @@ function DrePage() {
             <BarChart3 className="size-5" /> Demonstração do Resultado (DRE)
           </h2>
           <p className="no-print px-6 pb-2 text-xs text-muted-foreground">
-            Clique em um totalizador para ver as categorias, e numa categoria para ver as subcategorias.
+            Clique em um totalizador para ver as categorias, e numa categoria para ver as
+            subcategorias.
           </p>
           {dre.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
@@ -210,36 +243,46 @@ function DrePage() {
                 {linhas
                   .filter((l) => (!l.pai || abertas[l.pai]) && (!l.avo || abertas[l.avo]))
                   .map((l) => (
-                  <Fragment key={l.key}>
-                    <tr
-                      onClick={l.filhos ? () => alternar(l.key) : undefined}
-                      className={`border-b border-border ${l.filhos ? "cursor-pointer hover:bg-accent/50" : ""} ${l.total ? "bg-muted/50" : ""} ${
-                        l.nivel === 2 ? "text-xs italic text-muted-foreground" : ""
-                      }`}
-                    >
-                      <td
-                        className={`px-4 py-3 ${l.nivel === 0 ? "font-semibold" : ""} ${
-                          l.nivel === 1 ? "pl-8 text-muted-foreground" : l.nivel === 2 ? "pl-12" : ""
+                    <Fragment key={l.key}>
+                      <tr
+                        onClick={l.filhos ? () => alternar(l.key) : undefined}
+                        className={`border-b border-border ${l.filhos ? "cursor-pointer hover:bg-accent/50" : ""} ${l.total ? "bg-muted/50" : ""} ${
+                          l.nivel === 2 ? "text-xs italic text-muted-foreground" : ""
                         }`}
                       >
-                        <span className="inline-flex items-center gap-1">
-                          {l.filhos ? (
-                            abertas[l.key] ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />
-                          ) : null}
-                          {l.label}
-                        </span>
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-right ${l.nivel === 0 ? "font-semibold" : ""} ${
-                          l.valor < 0 ? "text-destructive" : ""
-                        }`}
-                      >
-                        {brl(l.valor)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">{l.nivel === 2 ? "" : pct(l.valor)}</td>
-                    </tr>
-                  </Fragment>
-                ))}
+                        <td
+                          className={`px-4 py-3 ${l.nivel === 0 ? "font-semibold" : ""} ${
+                            l.nivel === 1
+                              ? "pl-8 text-muted-foreground"
+                              : l.nivel === 2
+                                ? "pl-12"
+                                : ""
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {l.filhos ? (
+                              abertas[l.key] ? (
+                                <ChevronDown className="size-4" />
+                              ) : (
+                                <ChevronRight className="size-4" />
+                              )
+                            ) : null}
+                            {l.label}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-4 py-3 text-right ${l.nivel === 0 ? "font-semibold" : ""} ${
+                            l.valor < 0 ? "text-destructive" : ""
+                          }`}
+                        >
+                          {brl(l.valor)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground">
+                          {l.nivel === 2 ? "" : pct(l.valor)}
+                        </td>
+                      </tr>
+                    </Fragment>
+                  ))}
               </tbody>
             </Table>
           )}

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { RegistroEntrega } from "@/components/rotinas-distribuidora";
@@ -23,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { filtrarCentro } from "@/lib/centro-store";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
@@ -58,7 +59,7 @@ export function RomaneiosEntrega() {
   }, [centro, user?.id, canShip]);
 
   const expedicoes = useQuery({
-    queryKey: ["expedicoes", ...escopo, centro],
+    queryKey: [...["expedicoes", ...escopo, centro], getModalidade()],
     refetchInterval: 30_000,
     enabled: !!client && canShip && !centrosCarregando && !centrosErro,
     queryFn: async () => {
@@ -71,7 +72,7 @@ export function RomaneiosEntrega() {
   });
 
   const pedidos = useQuery({
-    queryKey: ["pedidos", "romaneios", ...escopo, centro],
+    queryKey: [...["pedidos", "romaneios", ...escopo, centro], getModalidade()],
     enabled: !!client && canShip && !centrosCarregando && !centrosErro,
     queryFn: async () => {
       let q = client!.from("pedidos").select("id, numero, cliente_id, status");
@@ -81,7 +82,7 @@ export function RomaneiosEntrega() {
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "romaneios", ...escopo, centro],
+    queryKey: [...["clientes", "romaneios", ...escopo, centro], getModalidade()],
     enabled: !!client && canShip && !centrosCarregando && !centrosErro,
     queryFn: async () => {
       return lerPaginas<Row>((inicio, fim) =>
@@ -91,7 +92,7 @@ export function RomaneiosEntrega() {
   });
 
   const transportadoras = useQuery({
-    queryKey: ["transportadoras", "romaneios", ...escopo, centro],
+    queryKey: [...["transportadoras", "romaneios", ...escopo, centro], getModalidade()],
     enabled: !!client && canShip && !centrosCarregando && !centrosErro,
     queryFn: async () => {
       const { data, error } = await client!
@@ -104,7 +105,7 @@ export function RomaneiosEntrega() {
   });
 
   const rotas = useQuery({
-    queryKey: ["rotas", "romaneios", ...escopo, centro],
+    queryKey: [...["rotas", "romaneios", ...escopo, centro], getModalidade()],
     enabled: !!client && canShip && !centrosCarregando && !centrosErro,
     queryFn: async () => {
       const { data, error } = await client!

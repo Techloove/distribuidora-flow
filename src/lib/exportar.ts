@@ -1,3 +1,4 @@
+import { getModalidade, nomesModalidade } from "./modalidade-store";
 /** Exportações simples de relatórios (CSV/Excel e PDF via impressão). */
 
 type Row = Record<string, unknown>;
@@ -13,7 +14,12 @@ export function escapar(v: unknown) {
 }
 
 /** Gera e baixa um CSV (abre no Excel) com as colunas informadas. */
-export function exportarCsv(nome: string, colunas: Coluna[], rows: Row[]) {
+export function exportarCsv(
+  nome: string,
+  colunas: Coluna[],
+  rows: Row[],
+  aplicarModalidade = true,
+) {
   const linhas = [
     colunas.map((c) => escapar(c.label)).join(";"),
     ...rows.map((r) => colunas.map((c) => escapar(r[c.key])).join(";")),
@@ -24,7 +30,7 @@ export function exportarCsv(nome: string, colunas: Coluna[], rows: Row[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `${nome}${!aplicarModalidade || getModalidade() === "todos" ? "" : "-" + nomesModalidade[getModalidade()]}-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

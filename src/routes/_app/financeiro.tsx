@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -18,7 +19,7 @@ import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
 import { useCentro } from "@/lib/centro-store";
 import { usePermissoesFin } from "@/lib/permissoes-financeiras";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/financeiro")({
   head: () => ({
@@ -49,7 +50,7 @@ function FinanceiroPage() {
   const perm = usePermissoesFin();
 
   const indicadores = useQuery({
-    queryKey: ["dashboard_financeiro", centro],
+    queryKey: [...["dashboard_financeiro", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.rpc("dashboard_financeiro", {
@@ -61,7 +62,7 @@ function FinanceiroPage() {
   });
 
   const realizado = useQuery({
-    queryKey: ["vw_fluxo_realizado", centro],
+    queryKey: [...["vw_fluxo_realizado", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_fluxo_realizado").select("*");
@@ -73,7 +74,7 @@ function FinanceiroPage() {
   });
 
   const dre = useQuery({
-    queryKey: ["vw_dre_mensal", centro],
+    queryKey: [...["vw_dre_mensal", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_dre_mensal").select("*");
@@ -85,7 +86,7 @@ function FinanceiroPage() {
   });
 
   const despesas = useQuery({
-    queryKey: ["vw_despesas_categoria", centro],
+    queryKey: [...["vw_despesas_categoria", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_despesas_categoria").select("*");
@@ -176,7 +177,14 @@ function FinanceiroPage() {
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <Kpi label="Saldo em bancos/caixa" value={brl(i["saldo_contas"])} />
+            <Kpi
+              label={
+                getModalidade() === "todos"
+                  ? "Saldo em bancos/caixa"
+                  : "Movimentação líquida vinculada"
+              }
+              value={brl(i["saldo_contas"])}
+            />
             <Kpi label="Contas a receber" value={brl(i["a_receber"])} />
             <Kpi label="Contas a pagar" value={brl(i["a_pagar"])} tone />
             <Kpi label="Recebido no mês" value={brl(i["recebido_mes"])} />

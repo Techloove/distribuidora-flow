@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { ContextoReferencia } from "@/components/contexto-referencia";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -56,7 +57,7 @@ import {
   sicrediConsultarBoleto,
   sicrediStatus,
 } from "@/lib/sicredi.functions";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
@@ -91,7 +92,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const baixarFn = useServerFn(sicrediBaixarBoleto);
 
   const config = useQuery({
-    queryKey: ["sicredi", "status", session?.user.id, centro],
+    queryKey: [...["sicredi", "status", session?.user.id, centro], getModalidade()],
     enabled: !!session && canFinance && !!centro,
     queryFn: () =>
       sicrediStatus({
@@ -103,7 +104,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
 
   const boletos = useQuery({
-    queryKey: ["boletos", "lista", session?.user.id, centro],
+    queryKey: [...["boletos", "lista", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -131,7 +132,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "options", session?.user.id],
+    queryKey: [...["clientes", "options", session?.user.id], getModalidade()],
     enabled: !!client && !!session,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -183,7 +184,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   );
   const periodoInvalido = periodoBoletosInvalido(filtros);
   const tarifas = useQuery({
-    queryKey: ["sicredi-tarifa", "lista", session?.user.id, centro],
+    queryKey: [...["sicredi-tarifa", "lista", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session && canFinance,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -206,7 +207,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
 
   const tarifasApi = useQuery({
-    queryKey: ["sicredi-tarifas-api", session?.user.id, centro],
+    queryKey: [...["sicredi-tarifas-api", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session && canFinance,
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -230,7 +231,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     },
   });
   const statusTarifas = useQuery({
-    queryKey: ["sicredi-tarifas-status", session?.user.id, centro],
+    queryKey: [...["sicredi-tarifas-status", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session && canFinance,
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -247,7 +248,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
 
   const financeiroTarifas = useQuery({
-    queryKey: ["sicredi-tarifa-financeiro-lista", session?.user.id, centro],
+    queryKey: [...["sicredi-tarifa-financeiro-lista", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session && canFinance,
     refetchInterval: 60_000,
     queryFn: async () => {

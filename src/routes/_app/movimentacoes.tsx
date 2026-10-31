@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ConciliacaoExtrato } from "@/components/conciliacao-extrato";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,7 +32,7 @@ import {
 import { useCentro } from "@/lib/centro-store";
 import { exportarCsv } from "@/lib/exportar";
 import { usePermissoesFin } from "@/lib/permissoes-financeiras";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/movimentacoes")({
   head: () => ({
@@ -75,7 +76,7 @@ function MovimentacoesPage() {
   });
 
   const movimentos = useQuery({
-    queryKey: ["vw_extrato_conta", "todos", centro],
+    queryKey: [...["vw_extrato_conta", "todos", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!
@@ -91,7 +92,7 @@ function MovimentacoesPage() {
   });
 
   const contas = useQuery({
-    queryKey: ["contas_financeiras", "options"],
+    queryKey: [...["contas_financeiras", "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -105,7 +106,7 @@ function MovimentacoesPage() {
   });
 
   const categorias = useQuery({
-    queryKey: ["categorias_financeiras", "options"],
+    queryKey: [...["categorias_financeiras", "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!

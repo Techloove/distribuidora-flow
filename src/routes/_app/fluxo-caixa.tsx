@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/fluxo-caixa")({
   head: () => ({
@@ -51,7 +52,7 @@ function FluxoCaixaPage() {
   const { centro, isLoading: centrosCarregando, error: centrosErro } = useCentroValido();
 
   const fluxo = useQuery({
-    queryKey: ["vw_fluxo_caixa", centro],
+    queryKey: [...["vw_fluxo_caixa", centro], getModalidade()],
     enabled: !!client && !centrosCarregando && !centrosErro,
     queryFn: async () => {
       let q = client!.from("vw_fluxo_caixa").select("*");

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -38,7 +39,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useCentro } from "@/lib/centro-store";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/gestao-comissoes")({
   head: () => ({
@@ -95,7 +96,7 @@ function GestaoComissoesPage() {
   }, [centro]);
 
   const opcoes = useQuery({
-    queryKey: ["gestao-comissoes", "opcoes"],
+    queryKey: [...["gestao-comissoes", "opcoes"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const [representantes, centros, categorias, contas, formas] = await Promise.all([
@@ -119,7 +120,7 @@ function GestaoComissoesPage() {
   });
 
   const comissoes = useQuery({
-    queryKey: ["vw_comissoes_detalhe", filtros, centroFiltro],
+    queryKey: [...["vw_comissoes_detalhe", filtros, centroFiltro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_comissoes_detalhe").select("*");
@@ -136,7 +137,10 @@ function GestaoComissoesPage() {
   });
 
   const resumo = useQuery({
-    queryKey: ["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
+    queryKey: [
+      ...["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       if (centroFiltro) {
@@ -159,7 +163,10 @@ function GestaoComissoesPage() {
   });
 
   const lotes = useQuery({
-    queryKey: ["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
+    queryKey: [
+      ...["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("comissao_pagamentos").select("*");

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, Printer } from "lucide-react";
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCentro } from "@/lib/centro-store";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/metas")({
   head: () => ({
@@ -59,7 +60,7 @@ function MetasPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const representantes = useQuery({
-    queryKey: ["representantes", "options"],
+    queryKey: [...["representantes", "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("representantes").select("id, nome").order("nome");
@@ -69,7 +70,7 @@ function MetasPage() {
   });
 
   const metas = useQuery({
-    queryKey: ["vw_metas_acompanhamento"],
+    queryKey: [...["vw_metas_acompanhamento"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -99,7 +100,11 @@ function MetasPage() {
     if (centro) list = list.filter((r) => !r["centro_id"] || r["centro_id"] === centro);
     const termo = (filtros["busca"] ?? "").trim().toLowerCase();
     if (termo) {
-      list = list.filter((r) => String(r["representante"] ?? "").toLowerCase().includes(termo));
+      list = list.filter((r) =>
+        String(r["representante"] ?? "")
+          .toLowerCase()
+          .includes(termo),
+      );
     }
     if (filtros["representante"]) {
       list = list.filter((r) => String(r["representante"] ?? "") === filtros["representante"]);

@@ -1,6 +1,7 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { brl } from "@/lib/formatacao";
@@ -15,7 +16,7 @@ export function ComparativoCentros() {
     [inicio, setInicio] = useState(hoje.slice(0, 7) + "-01"),
     [fim, setFim] = useState(hoje);
   const q = useQuery({
-    queryKey: ["comparativo_centros", user?.id, inicio, fim],
+    queryKey: [...["comparativo_centros", user?.id, inicio, fim], getModalidade()],
     enabled: !!client && perm.pode("indicadores_comparar") && !!inicio && !!fim,
     queryFn: async () => {
       const { data, error } = await client!.rpc("comparativo_centros_220", {

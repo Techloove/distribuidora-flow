@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/conciliacao-creditos")({
   head: () => ({
@@ -53,7 +54,7 @@ function ConciliacaoCreditosPage() {
   const [busca, setBusca] = useState("");
 
   const dados = useQuery({
-    queryKey: ["conciliacao_creditos_dev"],
+    queryKey: [...["conciliacao_creditos_dev"], getModalidade()],
     enabled: !!client && canManage,
     queryFn: async () => {
       const { data, error } = await client!

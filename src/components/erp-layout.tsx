@@ -1,3 +1,4 @@
+import { useModalidade, nomesModalidade } from "@/lib/modalidade-store";
 import { VERSAO_SISTEMA } from "@/lib/versao";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -122,6 +123,33 @@ const nav = [
   },
 ] as const;
 
+function ModalidadeFiltro() {
+  const { modalidade, setModalidade } = useModalidade();
+  return (
+    <div className="w-full min-w-0 sm:w-[13rem]">
+      <label htmlFor="modalidade-global" className="sr-only">
+        Modalidade das vendas
+      </label>
+      <select
+        id="modalidade-global"
+        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+        value={modalidade}
+        onChange={(e) => setModalidade(e.target.value as typeof modalidade)}
+      >
+        {(["todos", "estoque", "intermediacao"] as const).map((m) => (
+          <option key={m} value={m}>
+            {nomesModalidade[m]}
+          </option>
+        ))}
+      </select>
+      {modalidade !== "todos" && (
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Somente vendas e lançamentos vinculados.
+        </p>
+      )}
+    </div>
+  );
+}
 function CentroFiltro() {
   const { setCentro } = useCentro();
   const { centro, lista, todos, isLoading, error } = useCentroValido();
@@ -322,6 +350,7 @@ export function ErpLayout({
   children: ReactNode;
 }) {
   const { user, roles, signOut } = useSupabase();
+  const { modalidade } = useModalidade();
   const { centro, lista, isLoading: centroLoading, error: centroError } = useCentroValido();
   const centroNome = centroError
     ? "Loja indisponível"
@@ -453,10 +482,21 @@ export function ErpLayout({
               <span className="truncate">{centroNome}</span>
             </span>
             <CentroFiltro />
+            <ModalidadeFiltro />
             {actions}
           </div>
         </header>
-        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-9 lg:py-8">{children}</div>
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-9 lg:py-8">
+          {modalidade !== "todos" && (
+            <p className="mb-4 rounded-xl border bg-primary/5 px-4 py-3 text-xs text-muted-foreground">
+              <strong>{nomesModalidade[modalidade]}.</strong> Resultados de vendas e lançamentos
+              vinculados a esta modalidade. Lançamentos gerais ou mistos sem atribuição exclusiva
+              aparecem em Todos. Cadastros, estoque físico e a conferência de crédito permanecem
+              integrais.
+            </p>
+          )}
+          {children}
+        </div>
       </main>
     </div>
   );

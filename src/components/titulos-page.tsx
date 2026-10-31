@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { lerPaginas } from "@/lib/paginacao";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -38,7 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import {
@@ -116,7 +117,7 @@ export function TitulosPage({
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
 
   const titulos = useQuery({
-    queryKey: [config.view, "lista", session?.user.id, centroGlobal],
+    queryKey: [...[config.view, "lista", session?.user.id, centroGlobal], getModalidade()],
     enabled: !!client && !!session && !lojasCarregando && !lojasErro,
     queryFn: () =>
       lerPaginas<Row>((inicio, fim) => {
@@ -127,7 +128,7 @@ export function TitulosPage({
   });
 
   const partners = useQuery({
-    queryKey: [config.partnerTable, "options"],
+    queryKey: [...[config.partnerTable, "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
@@ -142,7 +143,7 @@ export function TitulosPage({
   const isReceber = config.table === "contas_receber";
 
   const contas = useQuery({
-    queryKey: ["contas_financeiras", "titulos"],
+    queryKey: [...["contas_financeiras", "titulos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
@@ -156,7 +157,7 @@ export function TitulosPage({
   });
 
   const formas = useQuery({
-    queryKey: ["formas_pagamento", "titulos"],
+    queryKey: [...["formas_pagamento", "titulos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
@@ -169,7 +170,7 @@ export function TitulosPage({
   });
 
   const centros = useQuery({
-    queryKey: ["centros", "titulos"],
+    queryKey: [...["centros", "titulos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!.from("centros").select("id, nome").order("nome");
@@ -179,7 +180,7 @@ export function TitulosPage({
   });
 
   const categorias = useQuery({
-    queryKey: ["categorias_financeiras", "titulos", isReceber],
+    queryKey: [...["categorias_financeiras", "titulos", isReceber], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data: rows, error } = await client!
@@ -195,7 +196,7 @@ export function TitulosPage({
   });
 
   const boletos = useQuery({
-    queryKey: ["boletos", "por-conta"],
+    queryKey: [...["boletos", "por-conta"], getModalidade()],
     enabled: !!client && isReceber,
     queryFn: async () => {
       return lerPaginas<Row>((inicio, fim) =>

@@ -1,3 +1,4 @@
+import { getModalidade } from "./modalidade-store";
 import { brl } from "./formatacao";
 import { usePermissoesRotinas } from "./permissoes-rotinas";
 import {
@@ -7,7 +8,7 @@ import {
 } from "./pendencias-cadastro";
 import { lerPaginas } from "./paginacao";
 import { useQuery } from "@tanstack/react-query";
-import { useSupabase } from "./supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "./supabase-provider";
 import { useCentroValido } from "./centros-acesso";
 import { useAcesso } from "./permissoes";
 import { hojeSaoPaulo } from "./painel-trabalho";
@@ -157,6 +158,7 @@ export function usePendencias() {
   return useQuery({
     queryKey: [
       "pendencias",
+      getModalidade(),
       user?.id,
       roles.slice().sort().join(","),
       centro,
@@ -322,7 +324,10 @@ export function usePendencias() {
               };
             }
           }
-          let q = client!.from(k.table).select("*", { count: "exact" }).limit(40);
+          let q = client!
+            .from(k.id === "vencido" ? "vw_contas_receber_efetivas_299" : k.table)
+            .select("*", { count: "exact" })
+            .limit(40);
           if (centro && !["cadastro", "extrato", "agenda", "cobranca"].includes(k.id))
             q = q.eq("centro_id", centro);
           if (["agenda", "cobranca"].includes(k.id)) {

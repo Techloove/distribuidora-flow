@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { AcoesLeadCliente } from "@/components/lead-rota-agenda";
@@ -10,7 +11,7 @@ import {
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { brl } from "@/lib/formatacao";
@@ -65,14 +66,8 @@ export function AgendaClientes({
   const [paginaAtividades, setPaginaAtividades] = useState(0);
   const q = useQuery({
     queryKey: [
-      "agenda_clientes_228",
-      user?.id,
-      escopo,
-      cv.centro,
-      tipo,
-      reativacao,
-      filtros,
-      pagina,
+      ...["agenda_clientes_228", user?.id, escopo, cv.centro, tipo, reativacao, filtros, pagina],
+      getModalidade(),
     ],
     enabled: !!client && podeAcompanhar && !cv.isLoading && !cv.error,
     queryFn: async () => {
@@ -107,15 +102,18 @@ export function AgendaClientes({
   }, [clienteInicialId, cliente, q.data]);
   const atividades = useQuery({
     queryKey: [
-      "acompanhamentos",
-      user?.id,
-      escopo,
-      tipo,
-      cv.centro,
-      cliente?.["cliente_id"],
-      status,
-      filtros,
-      paginaAtividades,
+      ...[
+        "acompanhamentos",
+        user?.id,
+        escopo,
+        tipo,
+        cv.centro,
+        cliente?.["cliente_id"],
+        status,
+        filtros,
+        paginaAtividades,
+      ],
+      getModalidade(),
     ],
     enabled: !!client && podeAcompanhar && !cv.isLoading && !cv.error,
     queryFn: async () => {
@@ -143,12 +141,8 @@ export function AgendaClientes({
   });
   const parcelas = useQuery({
     queryKey: [
-      "cobranca-parcelas",
-      user?.id,
-      escopo,
-      cliente?.["cliente_id"],
-      cv.centro,
-      paginaTitulos,
+      ...["cobranca-parcelas", user?.id, escopo, cliente?.["cliente_id"], cv.centro, paginaTitulos],
+      getModalidade(),
     ],
     enabled:
       !!client && podeAcompanhar && !!cliente && tipo === "cobranca" && !cv.isLoading && !cv.error,

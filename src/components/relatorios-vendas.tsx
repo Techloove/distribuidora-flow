@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
@@ -16,7 +17,7 @@ import { Download, Printer, RefreshCw } from "lucide-react";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { exportarCsv, type Coluna } from "@/lib/exportar";
@@ -107,7 +108,7 @@ export function RelatoriosVendas() {
     filtros.inicio <= filtros.fim &&
     (Date.parse(filtros.fim) - Date.parse(filtros.inicio)) / 86400000 <= 366;
   const opcoes = useQuery({
-    queryKey: ["relatorio_vendas_filtros_230", user?.id, escopo],
+    queryKey: [...["relatorio_vendas_filtros_230", user?.id, escopo], getModalidade()],
     enabled: !!client && permitido,
     queryFn: async () => {
       const { data, error } = await client!.rpc("relatorio_vendas_filtros_230");
@@ -117,23 +118,26 @@ export function RelatoriosVendas() {
   });
   const consulta = useQuery({
     queryKey: [
-      "relatorio_vendas_230",
-      user?.id,
-      escopo,
-      filtros.inicio,
-      filtros.fim,
-      centro,
-      filtros.representante,
-      filtros.rota,
-      filtros.cidade,
-      busca,
-      filtros.status,
-      grupo,
-      ordem,
-      asc,
-      pagina,
-      paginaPedidos,
-      comissao,
+      ...[
+        "relatorio_vendas_230",
+        user?.id,
+        escopo,
+        filtros.inicio,
+        filtros.fim,
+        centro,
+        filtros.representante,
+        filtros.rota,
+        filtros.cidade,
+        busca,
+        filtros.status,
+        grupo,
+        ordem,
+        asc,
+        pagina,
+        paginaPedidos,
+        comissao,
+      ],
+      getModalidade(),
     ],
     enabled: !!client && permitido && valido && !cv.isLoading && !cv.error,
     queryFn: async () => {

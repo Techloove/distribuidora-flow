@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { idReferencia } from "@/lib/referencias-registros";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -22,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/devolucoes")({
   validateSearch: (search: Record<string, unknown>): { pedido?: string | undefined } => ({
@@ -99,7 +100,7 @@ function DevolucoesPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const devolucoes = useQuery({
-    queryKey: ["devolucoes"],
+    queryKey: [...["devolucoes"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -112,7 +113,7 @@ function DevolucoesPage() {
   });
 
   const clientes = useQuery({
-    queryKey: ["clientes", "options"],
+    queryKey: [...["clientes", "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -125,7 +126,7 @@ function DevolucoesPage() {
   });
 
   const centros = useQuery({
-    queryKey: ["centros", "options", "devolucoes"],
+    queryKey: [...["centros", "options", "devolucoes"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("centros").select("id, nome").order("nome");
@@ -135,7 +136,7 @@ function DevolucoesPage() {
   });
 
   const pedidos = useQuery({
-    queryKey: ["pedidos", "faturados", head.cliente_id],
+    queryKey: [...["pedidos", "faturados", head.cliente_id], getModalidade()],
     enabled: !!client && !!head.cliente_id,
     queryFn: async () => {
       const { data, error } = await client!
@@ -163,7 +164,7 @@ function DevolucoesPage() {
   });
 
   const produtos = useQuery({
-    queryKey: ["produtos", "options", "devolucoes"],
+    queryKey: [...["produtos", "options", "devolucoes"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!

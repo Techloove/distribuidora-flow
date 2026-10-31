@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ConsultaCep } from "@/components/consulta-cep";
 import {
   decorarPendenciasClientes,
@@ -18,7 +19,7 @@ import { CrudPage, type CrudField } from "@/components/crud-page";
 import { HistoricoCliente } from "@/components/historico-cliente";
 import { ErpLayout } from "@/components/erp-layout";
 import { RotasRepresentante } from "@/components/rotas-representante";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import {
   CadastrarClienteRepresentante,
   CreditosClientesPendentes,
@@ -274,7 +275,7 @@ function PessoasPage() {
   });
 
   const formas = useQuery({
-    queryKey: ["formas_pagamento", "pessoas"],
+    queryKey: [...["formas_pagamento", "pessoas"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -287,7 +288,7 @@ function PessoasPage() {
   });
 
   const representantes = useQuery({
-    queryKey: ["representantes", "pessoas"],
+    queryKey: [...["representantes", "pessoas"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -562,7 +563,7 @@ function PessoasPage() {
 function ComissaoDaPessoa({ pessoaId }: { pessoaId: string | null }) {
   const { client } = useSupabase();
   const vinculo = useQuery({
-    queryKey: ["representante_da_pessoa", pessoaId],
+    queryKey: [...["representante_da_pessoa", pessoaId], getModalidade()],
     enabled: !!client && !!pessoaId,
     queryFn: async () => {
       const { data, error } = await client!

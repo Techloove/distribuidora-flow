@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.22.0 · 2026-10-30
+Versão 1.23.0 · 2026-10-31
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -37,6 +37,24 @@ Cuidados:
 - Representantes continuam restritos à própria carteira. Selecionar outra loja não libera clientes ou operações fora da sua permissão.
 - Todas as lojas é uma visão de consulta quando disponível. Para movimentar estoque, escolha uma loja específica.
 - O aviso pode ser recolhido em Depois; ele continua disponível no canto da tela. A consulta é feita enquanto a página está aberta e com conexão. O manifesto de versão deve ser publicado sem cache no provedor de hospedagem, inclusive na Vercel, para que a consulta reconheça as atualizações.
+
+## Filtrar Vendas Estoque e Vendas Intermediação
+
+Separe pedidos, indicadores e resultados financeiros pelo tipo de venda.
+
+1. No topo da tela, junto do filtro de loja, escolha Modalidade das vendas: Todos, Vendas Estoque ou Vendas Intermediação. A seleção acompanha a navegação e pode ser combinada com loja, datas, cliente, representante e demais filtros da tela.
+2. Todos mostra a visão consolidada. Vendas Estoque considera vendas que movimentam estoque da loja; Vendas Intermediação considera vendas de entrega direta. Orçamentos e pedidos são classificados pela modalidade gravada no documento.
+3. O recorte é aplicado antes da paginação e afeta listagens, totais, gráficos e relatórios de pedidos, vendas, contas a receber, boletos, comissões, resultado/DRE, caixa, separação, cargas e entregas vinculadas. CSVs exportados identificam a modalidade no nome do arquivo.
+4. Lançamentos manuais, saldos iniciais e despesas gerais ou mistas sem vínculo exclusivo com uma modalidade aparecem em Todos. Não são rateados automaticamente entre estoque e intermediação. No dashboard financeiro, o saldo de uma modalidade representa a movimentação líquida vinculada, não o saldo bancário integral.
+5. Em cargas mistas, a lista mostra os valores e pedidos correspondentes ao recorte. Ao abrir ou operar uma carga, a operação conserva seus dados completos.
+6. Na abertura do orçamento ou pedido, as modalidades se chamam Vendas Estoque e Vendas Intermediação. Novos documentos continuam começando em Vendas Estoque, mesmo quando o filtro de análise estiver em Intermediação.
+
+Cuidados:
+
+- O filtro serve para consulta e apuração. Não altera modalidades, preços, estoque, parcelas ou lançamentos gravados; não concede acesso a lojas ou carteiras.
+- Cadastros, configurações e estoque físico continuam integrais. A disponibilidade de produtos e o planejamento de reposição não são transformados em estoque de intermediação.
+- A conferência de crédito e as operações de cobrança continuam considerando os registros reais completos do cliente. Abrir um documento específico preserva seus dados; o filtro não permite ignorar dívidas de outra modalidade.
+- Para conferir saldos bancários integrais, despesas gerais e pagamentos mistos sem atribuição exclusiva, volte a Todos. Metas que não foram separadas por modalidade permanecem metas globais.
 
 ## Clientes, fornecedores e outros cadastros
 
@@ -132,7 +150,7 @@ Entrega direta da fábrica ao cliente, com custo e margem por saca preservados n
 
 1. Em Lojas → Configurações da loja, selecione a loja e salve Habilitar vendas por intermediação. A implantação habilita inicialmente apenas Cimento; outras lojas e novas lojas permanecem desabilitadas. Desabilitar impede novos pedidos da modalidade e novas cotações; o histórico e pedidos já criados são preservados.
 2. Em Lojas → Configurações da loja, habilite a modalidade e selecione Vendedores autorizados • Intermediação. Administradores e gestores mantêm acesso. A seleção não concede acesso a outras lojas ou carteiras. As cotações ficam dentro do orçamento ou pedido, não nas configurações.
-3. Novo orçamento e Novo pedido sempre começam em Venda do estoque da loja, inclusive em Cimento. Na abertura, escolha explicitamente Intermediação quando desejado. Durante a digitação, é possível trocar a modalidade. Se houver itens, confira a prévia e confirme; nada muda antes da confirmação. Salve as edições pendentes antes de trocar.
+3. Novo orçamento e Novo pedido sempre começam em Vendas Estoque, inclusive em Cimento. Na abertura, escolha explicitamente Vendas Intermediação quando desejado. Durante a digitação, é possível trocar a modalidade. Se houver itens, confira a prévia e confirme; nada muda antes da confirmação. Salve as edições pendentes antes de trocar.
 4. A cotação usa o último preço cadastrado do produto na mesma loja até a data base da proposta. Ele continua válido nos dias seguintes até uma nova cotação; a lista mostra a Data do último preço. Cotações futuras não são antecipadas. Salvar o mesmo valor preserva a data original. O aceite não recalcula custos. Informe sacas inteiras, frete e margem em reais por saca. Preço = fábrica + frete + margem; custo = fábrica + frete; ganho dos itens = margem × sacas.
 5. Clique Adicionar item. Para editar um item, use Editar e Salvar item. Uma nova cotação não recalcula itens anteriores. Para trocar o custo de um item ainda em digitação, use explicitamente Aplicar cotação atual, confira a prévia e salve.
 6. Na intermediação, informe Quem paga o frete: Loja vendedora ou Cliente. O campo é apenas informativo, aparece na impressão e não altera valores, custo ou cobrança.

@@ -1,7 +1,8 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { brl } from "@/lib/formatacao";
@@ -27,7 +28,7 @@ export function PainelRepresentante() {
   const anoAtual = Number(hoje.slice(0, 4));
   const [ano, setAno] = useState(anoAtual);
   const q = useQuery({
-    queryKey: ["painel-representante", "vendas", user?.id, ano, cv.centro],
+    queryKey: [...["painel-representante", "vendas", user?.id, ano, cv.centro], getModalidade()],
     enabled: !!client && !cv.isLoading && !cv.error,
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -42,7 +43,10 @@ export function PainelRepresentante() {
   const reativacao = perm.pode("clientes_reativar");
   const cobranca = perm.pode("cobranca_acompanhar");
   const agenda = useQuery({
-    queryKey: ["painel-representante", "agenda", user?.id, cv.centro, reativacao, cobranca],
+    queryKey: [
+      ...["painel-representante", "agenda", user?.id, cv.centro, reativacao, cobranca],
+      getModalidade(),
+    ],
     enabled: !!client && !cv.isLoading && !cv.error && (reativacao || cobranca),
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -217,7 +221,7 @@ function MetasRepresentante() {
   const acesso = useAcesso();
   const month = hojeSaoPaulo().slice(0, 7);
   const meta = useQuery({
-    queryKey: ["painel-meta", user?.id, month],
+    queryKey: [...["painel-meta", user?.id, month], getModalidade()],
     enabled: !!client && acesso.pode("/metas"),
     queryFn: async () => {
       const r = await client!

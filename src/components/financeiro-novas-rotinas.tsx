@@ -1,9 +1,10 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import qrcode from "qrcode-generator";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useRotinaRpc } from "@/lib/use-rotina-rpc";
 import { gerarPixChave } from "@/lib/importacoes-distribuidora";
@@ -29,7 +30,7 @@ export function AcoesFinanceirasTitulo({ titulo }: { titulo: Registro }) {
     [pix, setPix] = useState(""),
     [chave, setChave] = useState(() => crypto.randomUUID());
   const contas = useQuery({
-    queryKey: ["contas-pix", user?.id],
+    queryKey: [...["contas-pix", user?.id], getModalidade()],
     enabled: !!client && modo === "pix" && perm.pode("pix_gerar"),
     queryFn: async () => {
       const { data, error } = await client!
@@ -294,7 +295,7 @@ export function ComissaoProporcional() {
     [vencimento, setVencimento] = useState(hojeSaoPaulo()),
     [motivos, setMotivos] = useState<Record<string, string>>({});
   const q = useQuery({
-    queryKey: ["comissao_proporcional", user?.id],
+    queryKey: [...["comissao_proporcional", user?.id], getModalidade()],
     enabled: !!client && perm.pode("comissao_ajustes_ver"),
     queryFn: async () => {
       const { data, error, count } = await client!
@@ -307,7 +308,7 @@ export function ComissaoProporcional() {
     },
   });
   const pagamentos = useQuery({
-    queryKey: ["comissao_parcelas", user?.id],
+    queryKey: [...["comissao_parcelas", user?.id], getModalidade()],
     enabled: !!client && perm.pode("comissao_ajustes_ver"),
     queryFn: async () => {
       const { data, error } = await client!

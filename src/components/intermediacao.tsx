@@ -255,9 +255,9 @@ export function ModalidadeInicial({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="estoque">Venda do estoque da loja</option>
+        <option value="estoque">Vendas Estoque</option>
         <option value="intermediacao" disabled={!q.data}>
-          Intermediação • entrega direta
+          Vendas Intermediação
         </option>
       </select>
       <p className="text-xs text-muted-foreground">
@@ -541,9 +541,9 @@ export function ModalidadePedido({
             value={inter ? "intermediacao" : "estoque"}
             onChange={(e) => (temItens ? setTroca(e.target.value) : mudar.mutate(e.target.value))}
           >
-            <option value="estoque">Venda do estoque da loja</option>
+            <option value="estoque">Vendas Estoque</option>
             <option value="intermediacao" disabled={!q.data}>
-              Intermediação • entrega direta
+              Vendas Intermediação
             </option>
           </select>
         </div>

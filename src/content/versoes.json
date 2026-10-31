@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.23.0",
+    "data": "2026-10-31",
+    "titulo": "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos",
+    "novidades": [
+      "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos"
+    ]
+  },
+  {
     "versao": "1.22.0",
     "data": "2026-10-30",
     "titulo": "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação",

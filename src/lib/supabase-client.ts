@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { fetchModalidade } from "./modalidade-consultas";
 import { getSupabaseConfig } from "./supabase-config.functions";
 
 let clientPromise: Promise<SupabaseClient> | null = null;
@@ -13,6 +14,7 @@ export function getSupabaseClient(): Promise<SupabaseClient> {
           throw new Error("Serviço de acesso indisponível. Entre em contato com o administrador.");
         }
         return createClient(config.url, config.anonKey, {
+          global: { fetch: fetchModalidade },
           auth: {
             persistSession: true,
             autoRefreshToken: true,

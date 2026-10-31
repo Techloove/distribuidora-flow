@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ComissaoProporcional } from "@/components/financeiro-novas-rotinas";
 import { AjustesComissao } from "@/components/rotinas-distribuidora";
@@ -40,7 +41,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useCentro } from "@/lib/centro-store";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/comissoes")({
   head: () => ({
@@ -97,7 +98,7 @@ function ComissoesPage() {
   }, [centro]);
 
   const opcoes = useQuery({
-    queryKey: ["comissoes", "opcoes"],
+    queryKey: [...["comissoes", "opcoes"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       // allSettled: quem não pode ver uma das listas (ex. contas de banco)
@@ -122,7 +123,7 @@ function ComissoesPage() {
   });
 
   const comissoes = useQuery({
-    queryKey: ["vw_comissoes_detalhe", filtros, centroFiltro],
+    queryKey: [...["vw_comissoes_detalhe", filtros, centroFiltro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_comissoes_detalhe").select("*");
@@ -139,7 +140,10 @@ function ComissoesPage() {
   });
 
   const resumo = useQuery({
-    queryKey: ["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
+    queryKey: [
+      ...["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       if (centroFiltro) {
@@ -162,7 +166,10 @@ function ComissoesPage() {
   });
 
   const lotes = useQuery({
-    queryKey: ["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
+    queryKey: [
+      ...["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("comissao_pagamentos").select("*");

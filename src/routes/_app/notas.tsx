@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -19,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCentro } from "@/lib/centro-store";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { ForecastPrevia } from "@/components/forecast-previa";
 
@@ -67,7 +68,7 @@ function NotasPage() {
   const [motivo, setMotivo] = useState("");
 
   const pedidos = useQuery({
-    queryKey: ["pedidos_conferidos"],
+    queryKey: [...["pedidos_conferidos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -83,7 +84,7 @@ function NotasPage() {
   });
 
   const notas = useQuery({
-    queryKey: ["notas_saida"],
+    queryKey: [...["notas_saida"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!

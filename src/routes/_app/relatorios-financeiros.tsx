@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -19,7 +20,7 @@ import {
 import { useCentro } from "@/lib/centro-store";
 import { exportarCsv } from "@/lib/exportar";
 import { usePermissoesFin } from "@/lib/permissoes-financeiras";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/relatorios-financeiros")({
   head: () => ({
@@ -64,7 +65,7 @@ function RelatoriosFinanceirosPage() {
   const [ordem, setOrdem] = useState("lucro");
 
   const itens = useQuery({
-    queryKey: ["vw_rentabilidade_item", centro],
+    queryKey: [...["vw_rentabilidade_item", centro], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_rentabilidade_item").select("*").limit(5000);

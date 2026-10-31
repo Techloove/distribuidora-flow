@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import type { ReactNode } from "react";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ import { useCentroValido } from "@/lib/centros-acesso";
 import { useAcesso } from "@/lib/permissoes";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { RESULTADOS_CONTATO, type AgendaFiltros } from "@/lib/agenda-comercial";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
@@ -159,13 +160,16 @@ export function LeadRotaAgenda({
 
   const carteira = useQuery({
     queryKey: [
-      "agenda_leads_229",
-      user?.id,
-      roles.slice().sort().join(","),
-      centro,
-      compartilhados,
-      filtros,
-      pagina,
+      ...[
+        "agenda_leads_229",
+        user?.id,
+        roles.slice().sort().join(","),
+        centro,
+        compartilhados,
+        filtros,
+        pagina,
+      ],
+      getModalidade(),
     ],
     enabled: !!client && !!rotaId && perm.pode("lead_rota_operar") && !cv.isLoading && !cv.error,
     queryFn: async () => {
@@ -902,7 +906,10 @@ function ContatoDialog({
   });
 
   const historico = useQuery({
-    queryKey: ["lead_contatos", clienteId, user?.id, roles.slice().sort().join(","), centro],
+    queryKey: [
+      ...["lead_contatos", clienteId, user?.id, roles.slice().sort().join(","), centro],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       let consulta = client!
@@ -1130,11 +1137,8 @@ function useLeadHistorico(clienteId: string) {
     { centro } = useCentroValido();
   return useQuery({
     queryKey: [
-      "agenda_lead_historico_229",
-      user?.id,
-      roles.slice().sort().join(","),
-      clienteId,
-      centro,
+      ...["agenda_lead_historico_229", user?.id, roles.slice().sort().join(","), clienteId, centro],
+      getModalidade(),
     ],
     enabled: !!client,
     queryFn: async () => {
@@ -1159,11 +1163,8 @@ export function AcoesLeadCliente({ clienteId }: { clienteId: string }) {
   const [modo, setModo] = useState<"cliente" | "historico" | "contato" | null>(null);
   const cliente = useQuery({
     queryKey: [
-      "agenda_lead_cliente_229",
-      user?.id,
-      roles.slice().sort().join(","),
-      clienteId,
-      centro,
+      ...["agenda_lead_cliente_229", user?.id, roles.slice().sort().join(","), clienteId, centro],
+      getModalidade(),
     ],
     enabled: !!client && modo !== null && perm.pode("lead_rota_operar"),
     queryFn: async () => {

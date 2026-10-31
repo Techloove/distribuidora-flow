@@ -201,6 +201,7 @@ export function PlanejamentoCompras() {
         config: `Cobertura ${config.cobertura}d; segurança ${config.seguranca}d; ajuste ${config.ajuste}%; prazo produto ${config.usarPrazoProduto ? "sim" : "não"}; prazo padrão ${config.prazoPadrao}d; trânsito ${config.considerarTransito ? "sim" : "não"}; lote mínimo ${config.loteMinimo}`,
         alertas: [...c.erros, ...c.avisos].join(" · "),
       })),
+      false,
     );
   }
   if (!perm.pode("compras_planejar"))

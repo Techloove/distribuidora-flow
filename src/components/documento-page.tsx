@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import {
   ModalidadeInicial,
   ModalidadePedido,
@@ -50,7 +51,7 @@ import {
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { useCentro } from "@/lib/centro-store";
 import { usePodeAlterarPreco } from "@/lib/papeis";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 import { brl } from "@/lib/formatacao";
 import { deslocarDataISO } from "@/lib/integridade-consultas";
@@ -132,7 +133,7 @@ export function DocumentoPage({
   const podeAlterarPreco = usePodeAlterarPreco();
 
   const docs = useQuery({
-    queryKey: [config.table, user?.id, roles.slice().sort().join(",")],
+    queryKey: [...[config.table, user?.id, roles.slice().sort().join(",")], getModalidade()],
     refetchInterval: config.table === "pedidos" ? 30_000 : false,
     enabled: !!client,
     queryFn: async () => {
@@ -149,11 +150,8 @@ export function DocumentoPage({
 
   const partners = useQuery({
     queryKey: [
-      config.partnerTable,
-      "options",
-      config.table,
-      user?.id,
-      roles.slice().sort().join(","),
+      ...[config.partnerTable, "options", config.table, user?.id, roles.slice().sort().join(",")],
+      getModalidade(),
     ],
     enabled: !!client,
     queryFn: async () => {
@@ -171,7 +169,7 @@ export function DocumentoPage({
   });
 
   const produtos = useQuery({
-    queryKey: ["produtos", "options", "documentos"],
+    queryKey: [...["produtos", "options", "documentos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -185,7 +183,7 @@ export function DocumentoPage({
 
   /** Quantidades já compradas (NF de entrada pendente de recebimento). */
   const comprados = useQuery({
-    queryKey: ["vw_produto_comprado"],
+    queryKey: [...["vw_produto_comprado"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -201,7 +199,7 @@ export function DocumentoPage({
   });
 
   const centros = useQuery({
-    queryKey: ["centros", "options", "documentos"],
+    queryKey: [...["centros", "options", "documentos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -215,7 +213,7 @@ export function DocumentoPage({
   });
 
   const rotas = useQuery({
-    queryKey: ["rotas", "options"],
+    queryKey: [...["rotas", "options"], getModalidade()],
     enabled: !!client && config.table === "pedidos",
     queryFn: async () => {
       const { data, error } = await client!
@@ -229,7 +227,7 @@ export function DocumentoPage({
   });
 
   const representantes = useQuery({
-    queryKey: ["representantes", "options", "documentos"],
+    queryKey: [...["representantes", "options", "documentos"], getModalidade()],
     enabled: !!client && config.table === "pedidos",
     queryFn: async () => {
       const { data, error } = await client!
@@ -250,7 +248,7 @@ export function DocumentoPage({
     String(representantes.data?.find((r) => r["id"] === id)?.["nome"] ?? "—");
 
   const formas = useQuery({
-    queryKey: ["formas_pagamento", "options"],
+    queryKey: [...["formas_pagamento", "options"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -309,8 +307,7 @@ export function DocumentoPage({
     if (soMeusPedidos)
       list = list.filter((d) => String(d["representante_id"] ?? "") === meuRepresentante);
     if (centro) list = list.filter((d) => d["centro_id"] === centro);
-    if (f["modalidade"])
-      list = list.filter((d) => String(d["modalidade_venda"] ?? "estoque") === f["modalidade"]);
+
     if (f["tipo"]) list = list.filter((d) => String(d["tipo_documento"] ?? "pedido") === f["tipo"]);
     if (f["status"])
       list = list.filter(
@@ -425,7 +422,7 @@ export function DocumentoPage({
     setConsultandoPreco(false);
   }, [lojaDocumento]);
   const catalogoPedido = useQuery({
-    queryKey: ["loja-catalogo", "pedido", user?.id, lojaDocumento],
+    queryKey: [...["loja-catalogo", "pedido", user?.id, lojaDocumento], getModalidade()],
     enabled: !!client && config.table === "pedidos" && !!lojaDocumento,
     queryFn: () =>
       lerPaginas<Row>(async (inicio, fim) => {
@@ -457,7 +454,7 @@ export function DocumentoPage({
       : "";
 
   const credito = useQuery({
-    queryKey: ["vw_cliente_credito", clienteFoco],
+    queryKey: [...["vw_cliente_credito", clienteFoco], getModalidade()],
     enabled: !!client && !!clienteFoco,
     queryFn: async () => {
       const { data, error } = await client!
@@ -471,7 +468,7 @@ export function DocumentoPage({
   });
 
   const creditosDevolucao = useQuery({
-    queryKey: ["creditos_clientes", clienteFoco, doc?.["centro_id"]],
+    queryKey: [...["creditos_clientes", clienteFoco, doc?.["centro_id"]], getModalidade()],
     enabled: !!client && config.table === "pedidos" && !!clienteFoco,
     queryFn: async () => {
       const query = client!
@@ -488,7 +485,7 @@ export function DocumentoPage({
   });
 
   const titulosAbertos = useQuery({
-    queryKey: ["contas_receber", "abertos", clienteFoco],
+    queryKey: [...["contas_receber", "abertos", clienteFoco], getModalidade()],
     enabled: !!client && !!clienteFoco,
     queryFn: async () => {
       const { data, error } = await client!
@@ -1589,17 +1586,7 @@ export function DocumentoPage({
             value={filtros["ate"] ?? ""}
             onChange={(v) => setF("ate", v)}
           />
-          {config.table === "pedidos" && (
-            <FilterSelect
-              label="Modalidade"
-              value={filtros["modalidade"] ?? ""}
-              onChange={(v) => setF("modalidade", v)}
-              options={[
-                { value: "estoque", label: "Venda do estoque" },
-                { value: "intermediacao", label: "Intermediação" },
-              ]}
-            />
-          )}
+
           <FilterText
             label="Valor mínimo"
             type="number"
@@ -1734,7 +1721,7 @@ export function DocumentoPage({
                           </ReferenciaRegistro>
                           {d["modalidade_venda"] === "intermediacao" && (
                             <span className="mt-1 block w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                              Intermediação • entrega direta
+                              Vendas Intermediação
                             </span>
                           )}
                         </td>

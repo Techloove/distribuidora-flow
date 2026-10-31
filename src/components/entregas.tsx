@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { RegistroEntrega } from "@/components/rotinas-distribuidora";
 import { ImprimirPedidos } from "@/components/imprimir-pedidos";
@@ -5,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, RefreshCw, Truck } from "lucide-react";
 import { toast } from "sonner";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
@@ -80,7 +81,10 @@ export function Entregas() {
     setSelecionada(null);
   }, [cv.centro, user?.id, escopo]);
   const lista = useQuery({
-    queryKey: ["entregas_listar_232", user?.id, escopo, cv.centro, status, rota, termo, pagina],
+    queryKey: [
+      ...["entregas_listar_232", user?.id, escopo, cv.centro, status, rota, termo, pagina],
+      getModalidade(),
+    ],
     enabled: !!client && pode && !cv.isLoading && !cv.error,
     refetchInterval: 30_000,
     queryFn: async () => {
@@ -351,7 +355,10 @@ function FormalizarEntrega({
     [obs, setObs] = useState("");
   const [chave] = useState(() => crypto.randomUUID());
   const itens = useQuery({
-    queryKey: ["entregas_itens_232", user?.id, roles.join(","), entrega.expedicao_id],
+    queryKey: [
+      ...["entregas_itens_232", user?.id, roles.join(","), entrega.expedicao_id],
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.rpc("entregas_itens_232", {

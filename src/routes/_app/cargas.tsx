@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -24,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/cargas")({
   head: () => ({
@@ -85,7 +86,7 @@ function CargasPage() {
   });
 
   const rotas = useQuery({
-    queryKey: ["rotas_ativas"],
+    queryKey: [...["rotas_ativas"], getModalidade()],
     enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {
       const { data, error } = await client!.from("rotas").select("id, nome").order("nome");
@@ -95,7 +96,7 @@ function CargasPage() {
   });
 
   const cargas = useQuery({
-    queryKey: ["vw_cargas", user?.id, roles.join(","), centro],
+    queryKey: [...["vw_cargas", user?.id, roles.join(","), centro], getModalidade()],
     refetchInterval: 30_000,
     enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {
@@ -123,7 +124,7 @@ function CargasPage() {
   });
 
   const disponiveis = useQuery({
-    queryKey: ["vw_pedidos_para_carga", user?.id, roles.join(","), centro],
+    queryKey: [...["vw_pedidos_para_carga", user?.id, roles.join(","), centro], getModalidade()],
     refetchInterval: 30_000,
     enabled: !!client && !cv.isLoading && !cv.error,
     queryFn: async () => {

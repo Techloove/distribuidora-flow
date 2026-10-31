@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftRight, Loader2, ScrollText } from "lucide-react";
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { exportarCsv } from "@/lib/exportar";
 import { usePermissoesFin } from "@/lib/permissoes-financeiras";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/contas")({
   head: () => ({
@@ -103,7 +104,7 @@ function ContasPage() {
   });
 
   const saldos = useQuery({
-    queryKey: ["vw_conta_saldo"],
+    queryKey: [...["vw_conta_saldo"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!.from("vw_conta_saldo").select("*").order("nome");
@@ -113,7 +114,7 @@ function ContasPage() {
   });
 
   const lancamentos = useQuery({
-    queryKey: ["vw_extrato_conta", extrato?.["conta_id"]],
+    queryKey: [...["vw_extrato_conta", extrato?.["conta_id"]], getModalidade()],
     enabled: !!client && !!extrato,
     queryFn: async () => {
       const { data, error } = await client!

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { brl } from "@/lib/formatacao";
 import { useColumnPreferences } from "@/lib/use-column-preferences";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { useCentro } from "@/lib/centro-store";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export type FieldType =
   "text" | "email" | "number" | "date" | "select" | "checkbox" | "multicheck" | "ref";
@@ -82,7 +83,7 @@ export type CrudField = {
 function LookupList({ id, table }: { id: string; table: string }) {
   const { client } = useSupabase();
   const query = useQuery({
-    queryKey: ["lookup", table],
+    queryKey: [...["lookup", table], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
@@ -110,7 +111,7 @@ function useRefOptions(field: CrudField) {
   const { client } = useSupabase();
   const ref = field.ref;
   return useQuery({
-    queryKey: ["ref", ref?.table],
+    queryKey: [...["ref", ref?.table], getModalidade()],
     enabled: !!client && !!ref,
     queryFn: async () => {
       const { data, error } = await client!
@@ -291,7 +292,7 @@ export function CrudPage({
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const query = useQuery({
-    queryKey: readAll ? [table, "lista-completa"] : [table],
+    queryKey: [...(readAll ? [table, "lista-completa"] : [table]), getModalidade()],
     enabled: !!client,
     queryFn: async () => {
       if (readAll)

@@ -1,3 +1,4 @@
+import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
   SeparacaoLote,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { lerPaginas } from "@/lib/paginacao";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app/separacao")({
   head: () => ({
@@ -62,7 +63,10 @@ function SeparacaoPage() {
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const lista = useQuery({
-    queryKey: ["vw_separacao", user?.id, roles.slice().sort().join(","), centro],
+    queryKey: [
+      ...["vw_separacao", user?.id, roles.slice().sort().join(","), centro],
+      getModalidade(),
+    ],
     enabled: !!client && !cv.isLoading && !cv.error,
     refetchInterval: 30_000,
     queryFn: async () =>
