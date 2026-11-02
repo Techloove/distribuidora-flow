@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.26.0",
+    "data": "2026-11-02",
+    "titulo": "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação",
+    "novidades": [
+      "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação"
+    ]
+  },
+  {
     "versao": "1.25.1",
     "data": "2026-11-02",
     "titulo": "Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido",

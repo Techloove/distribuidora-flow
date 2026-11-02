@@ -54,7 +54,7 @@ import { useCentro } from "@/lib/centro-store";
 import { usePodeAlterarPreco } from "@/lib/papeis";
 import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
-import { brl } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 import { deslocarDataISO } from "@/lib/integridade-consultas";
 export { brl } from "@/lib/formatacao";
 
@@ -101,8 +101,10 @@ export function DocumentoPage({
   const queryClient = useQueryClient();
   const atualizarDocumento = () => {
     void queryClient.invalidateQueries({ queryKey: [config.table] });
-    if (config.table === "pedidos")
+    if (config.table === "pedidos") {
       void queryClient.invalidateQueries({ queryKey: ["acompanhamento_pedido_235"] });
+      void queryClient.invalidateQueries({ queryKey: ["datas_pedido_306"] });
+    }
   };
   const [encargosPendentes, setEncargosPendentes] = useState(false);
   const [intermediacaoPendente, setIntermediacaoPendente] = useState(false);
@@ -441,6 +443,26 @@ export function DocumentoPage({
     config.table === "pedidos" ? (catalogoPedido.data ?? []) : (produtos.data ?? []);
 
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
+  const datasPedido = useQuery({
+    queryKey: [
+      "datas_pedido_306",
+      selected,
+      doc?.["status"],
+      doc?.["data_pedido"],
+      doc?.["ciclo_reabertura_289"],
+    ],
+    enabled: !!client && config.table === "pedidos" && !!doc && !ehOrcamento,
+    queryFn: async () => {
+      const r = await client!.rpc("datas_pedido_306", { _pedido: selected });
+      if (r.error) throw Error(r.error.message);
+      return r.data as {
+        data_original: string;
+        data_comercial: string;
+        data_aprovacao: string | null;
+        data_base_previa: string;
+      } | null;
+    },
+  });
   const reabertoSomenteAdmin =
     config.table === "pedidos" &&
     Number(doc?.["ciclo_reabertura_289"] ?? 0) > 0 &&
@@ -710,14 +732,22 @@ export function DocumentoPage({
 
   /** Prévia das parcelas conforme a forma de pagamento escolhida. */
   const previaParcelas = (() => {
-    if (!doc || !formaSelecionada) return [];
+    if (
+      !doc ||
+      !formaSelecionada ||
+      (config.table === "pedidos" && !ehOrcamento && !datasPedido.data)
+    )
+      return [];
     const total = Number(doc["total_liquido"] ?? 0);
     const qtd = Math.max(1, Number(formaSelecionada["parcelas_padrao"] ?? 1));
     const dias1 = Number(formaSelecionada["dias_primeira_parcela"] ?? 0);
     const intervalo = Number(formaSelecionada["intervalo_dias"] ?? 0);
-    const base = ehOrcamento
-      ? hojeSaoPaulo()
-      : String(doc[config.dateField] ?? hojeSaoPaulo()).slice(0, 10);
+    const base =
+      config.table === "pedidos"
+        ? ehOrcamento
+          ? hojeSaoPaulo()
+          : datasPedido.data!.data_base_previa
+        : String(doc[config.dateField] ?? hojeSaoPaulo()).slice(0, 10);
     const valor = Math.round((total / qtd) * 100) / 100;
     let saldo = total;
     const list: { parcela: number; valor: number; vencimento: string }[] = [];
@@ -1843,6 +1873,45 @@ export function DocumentoPage({
               </p>
             )}
             {config.table === "pedidos" && !ehOrcamento && (
+              <div className="rounded-xl border bg-card p-4">
+                <h3 className="font-semibold">Datas do pedido</h3>
+                {datasPedido.isPending ? (
+                  <p className="text-sm text-muted-foreground">Carregando datas...</p>
+                ) : datasPedido.error ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Não foi possível consultar as datas do pedido. Atualize a tela antes de conferir
+                    os prazos.
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data original do pedido</p>
+                        <p className="font-medium">{dataBr(datasPedido.data?.data_original)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data comercial atual</p>
+                        <p className="font-medium">{dataBr(datasPedido.data?.data_comercial)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data da aprovação</p>
+                        <p className="font-medium">
+                          {datasPedido.data?.data_aprovacao
+                            ? dataBr(datasPedido.data.data_aprovacao)
+                            : "Aguardando aprovação"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      A aprovação define o mês da comissão e o início dos prazos da condição de
+                      pagamento. A data original é preservada ao atualizar a data comercial.
+                      Parcelas e boletos já gerados mantêm os vencimentos registrados.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+            {config.table === "pedidos" && !ehOrcamento && (
               <RegularizarStatusPedido
                 key={String(doc["id"]) + String(doc["status"])}
                 pedido={String(doc["id"])}
@@ -1892,7 +1961,7 @@ export function DocumentoPage({
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {ehOrcamento ? "Data da proposta" : config.dateLabel}:{" "}
-                    {String(doc[config.dateField] ?? "—")} · {String(doc["parcelas"])}x ·{" "}
+                    {dataBr(doc[config.dateField])} · {String(doc["parcelas"])}x ·{" "}
                     {String(
                       formas.data?.find((f) => f["id"] === doc["forma_pagamento_id"])?.["nome"] ??
                         "sem forma de pagamento",
@@ -2444,6 +2513,15 @@ export function DocumentoPage({
                 <p className="mt-3 text-xs text-muted-foreground">
                   Simulação dos prazos para aceite hoje. Os vencimentos reais serão definidos após a
                   conversão e confirmação do pedido.
+                </p>
+              )}
+              {config.table === "pedidos" && !ehOrcamento && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {datasPedido.error
+                    ? "Não foi possível carregar a data base dos vencimentos."
+                    : datasPedido.data?.data_aprovacao
+                      ? `Prazos contados da aprovação em ${dataBr(datasPedido.data.data_aprovacao)}. Parcelas já emitidas mantêm os vencimentos registrados.`
+                      : "Simulação considerando aprovação hoje. Os vencimentos reais contarão da data em que o pedido for aprovado."}
                 </p>
               )}
               {previaParcelas.length > 0 ? (

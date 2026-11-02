@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.25.1 · 2026-11-02
+Versão 1.26.0 · 2026-11-02
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -376,6 +376,7 @@ Acompanhe clientes, atividades e resultados da carteira.
 9. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
 10. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
 11. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
+12. Dentro do pedido, Datas do pedido mostra a data original preservada, a data comercial atual e a aprovação do ciclo. A data comercial pode ser atualizada na retomada sem substituir a original. Os prazos da condição de pagamento começam na aprovação: aprovado em 02/11 com prazo de 30 dias vence em 02/12. Antes da aprovação, a prévia considera aprovação hoje e é identificada como simulação.
 
 Cuidados:
 
@@ -386,6 +387,7 @@ Cuidados:
 - O percentual configurado no produto tem prioridade sobre o percentual do representante. Exemplo: produto com 8% e representante com 5% gera comissão de 8% para esse produto; um pedido com percentuais diferentes apresenta a média ponderada dos itens.
 - A escolha Recebe comissão é registrada no pedido na aprovação. A mudança no cadastro vale para novos pedidos e pedidos ainda em digitação ou aguardando aprovação; pedidos aprovados e comissões pagas preservam o histórico. Ao habilitar, volta a valer a prioridade do produto sobre o percentual padrão do representante.
 - Pedidos antigos com histórico de aprovação usam a aprovação registrada; quando não há evidência histórica nem aprovação automática registrada, a leitura preserva a data comercial legada. A mudança de competência não altera os valores das comissões nem datas e registros de pagamentos realizados.
+- A confirmação fixa a aprovação antes de gerar a primeira parcela. Parcelas, recebimentos e boletos já emitidos mantêm seus vencimentos. A nova base vale para parcelas geradas após esta atualização, inclusive novos ciclos de pedidos reabertos; não há reemissão nem alteração automática de boletos antigos.
 
 ## Usuários, auditoria e backup
 
