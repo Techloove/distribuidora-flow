@@ -127,7 +127,7 @@ insert into pedido_itens(id,pedido_id,produto_id,quantidade,preco_unitario,total
     await assert.rejects(
       () =>
         db.query(
-          "select retomar_data_pedido_302($1,(now() at time zone 'America/Sao_Paulo')::date-2,$2)",
+          "select retomar_data_pedido_302($1,(now() at time zone 'America/Sao_Paulo')::date,$2)",
           [id(30), hoje],
         ),
       /mudou/,

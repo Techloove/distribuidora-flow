@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.25.0",
+    "data": "2026-11-02",
+    "titulo": "Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado",
+    "novidades": [
+      "Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado",
+      "Agendamento por recebimentos recolhido por padrão, com identificação de operação opcional que gera conta a pagar sem efetuar pagamento."
+    ]
+  },
+  {
     "versao": "1.24.1",
     "data": "2026-11-02",
     "titulo": "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador",

@@ -322,101 +322,113 @@ export function ComissaoProporcional() {
   });
   if (!perm.pode("comissao_ajustes_ver")) return null;
   return (
-    <section className="rounded border p-4 space-y-3">
-      <h2 className="font-semibold">Comissão proporcional ao recebimento</h2>
-      <p className="text-xs text-muted-foreground">
-        Agenda apenas o valor coberto por recebimentos e créditos aplicados ao pedido. Gera conta a
-        pagar; a baixa financeira comprova o pagamento. As parcelas impedem pagamento integral
-        duplicado.
-      </p>
-      {q.error && <p role="alert">{q.error.message}</p>}
-      <label className="text-sm">
-        Vencimento da comissão
-        <Input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} />
-      </label>
-      {q.data?.rows
-        .filter((r) => Number(r["disponivel"]) > 0 || Number(r["agendado"]) > 0)
-        .map((r) => {
-          const id = String(r["id"]);
-          return (
-            <div className="grid gap-2 sm:grid-cols-3 border-b py-2" key={id}>
-              <span className="text-sm">
-                Pedido{" "}
-                <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
-                  #{String(r["pedido_numero"])}
-                </ReferenciaRegistro>{" "}
-                · disponível {brl(r["disponivel"])} · agendado {brl(r["agendado"])}
-              </span>
-              <Input
-                aria-label={`Comissão proporcional do pedido ${r["pedido_numero"]}`}
-                type="number"
-                min="0.01"
-                max={Number(r["disponivel"])}
-                step="0.01"
-                value={valores[id] ?? String(r["disponivel"])}
-                onChange={(e) => setValores((s) => ({ ...s, [id]: e.target.value }))}
-              />
-              {perm.pode("comissao_proporcional_operar") && (
-                <Button
-                  disabled={rpc.isPending || !(Number(valores[id] ?? r["disponivel"]) > 0)}
-                  onClick={() => {
-                    const chave = chaves[id] ?? crypto.randomUUID();
-                    setChaves((s) => ({ ...s, [id]: chave }));
-                    rpc.mutate(
-                      {
-                        nome: "agendar_comissao_217",
-                        args: {
-                          _comissao: id,
-                          _valor: Number(valores[id] ?? r["disponivel"]),
-                          _vencimento: vencimento,
-                          _chave: chave,
+    <details className="rounded-xl border bg-card p-4">
+      <summary className="cursor-pointer font-semibold">
+        Agendamento por recebimentos{" "}
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          Opcional · gera conta a pagar
+        </span>
+      </summary>
+      <div className="mt-4 space-y-3">
+        <h2 className="font-semibold">Comissão proporcional ao recebimento</h2>
+        <p className="text-xs text-muted-foreground">
+          Agenda apenas o valor coberto por recebimentos e créditos aplicados ao pedido. Gera conta
+          a pagar; a baixa financeira comprova o pagamento. As parcelas impedem pagamento integral
+          duplicado.
+        </p>
+        {q.error && <p role="alert">{q.error.message}</p>}
+        <label className="text-sm">
+          Vencimento da comissão
+          <Input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} />
+        </label>
+        {q.data?.rows
+          .filter((r) => Number(r["disponivel"]) > 0 || Number(r["agendado"]) > 0)
+          .map((r) => {
+            const id = String(r["id"]);
+            return (
+              <div className="grid gap-2 sm:grid-cols-3 border-b py-2" key={id}>
+                <span className="text-sm">
+                  Pedido{" "}
+                  <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
+                    #{String(r["pedido_numero"])}
+                  </ReferenciaRegistro>{" "}
+                  · disponível {brl(r["disponivel"])} · agendado {brl(r["agendado"])}
+                </span>
+                <Input
+                  aria-label={`Comissão proporcional do pedido ${r["pedido_numero"]}`}
+                  type="number"
+                  min="0.01"
+                  max={Number(r["disponivel"])}
+                  step="0.01"
+                  value={valores[id] ?? String(r["disponivel"])}
+                  onChange={(e) => setValores((s) => ({ ...s, [id]: e.target.value }))}
+                />
+                {perm.pode("comissao_proporcional_operar") && (
+                  <Button
+                    disabled={rpc.isPending || !(Number(valores[id] ?? r["disponivel"]) > 0)}
+                    onClick={() => {
+                      const chave = chaves[id] ?? crypto.randomUUID();
+                      setChaves((s) => ({ ...s, [id]: chave }));
+                      rpc.mutate(
+                        {
+                          nome: "agendar_comissao_217",
+                          args: {
+                            _comissao: id,
+                            _valor: Number(valores[id] ?? r["disponivel"]),
+                            _vencimento: vencimento,
+                            _chave: chave,
+                          },
                         },
-                      },
-                      { onSuccess: () => setChaves((s) => ({ ...s, [id]: crypto.randomUUID() })) },
-                    );
-                  }}
-                >
-                  Agendar comissão
-                </Button>
+                        {
+                          onSuccess: () => setChaves((s) => ({ ...s, [id]: crypto.randomUUID() })),
+                        },
+                      );
+                    }}
+                  >
+                    Agendar comissão
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        {(q.data?.count ?? 0) > 100 && (
+          <p className="text-xs">Mostrando as 100 comissões mais recentes.</p>
+        )}
+        {pagamentos.error && <p role="alert">{pagamentos.error.message}</p>}
+        {pagamentos.data?.map((p) => {
+          const id = String(p["id"]),
+            t = p["contas_pagar"] as Registro;
+          return (
+            <div key={id} className="border-b py-2 text-sm">
+              {brl(p["valor"])} · {String(t?.["status"] ?? "")} · baixado {brl(t?.["valor_pago"])}
+              {perm.pode("comissao_proporcional_operar") && t?.["status"] !== "cancelado" && (
+                <div className="flex gap-2">
+                  <Input
+                    aria-label={`Motivo do estorno ${id}`}
+                    placeholder="Motivo do estorno"
+                    value={motivos[id] ?? ""}
+                    onChange={(e) => setMotivos((s) => ({ ...s, [id]: e.target.value }))}
+                  />
+                  <Button
+                    variant="outline"
+                    disabled={
+                      rpc.isPending || !motivos[id]?.trim() || Number(t?.["valor_pago"]) > 0
+                    }
+                    onClick={() =>
+                      rpc.mutate({
+                        nome: "estornar_comissao_217",
+                        args: { _parcela: id, _motivo: motivos[id] },
+                      })
+                    }
+                  >
+                    Estornar agendamento
+                  </Button>
+                </div>
               )}
             </div>
           );
         })}
-      {(q.data?.count ?? 0) > 100 && (
-        <p className="text-xs">Mostrando as 100 comissões mais recentes.</p>
-      )}
-      {pagamentos.error && <p role="alert">{pagamentos.error.message}</p>}
-      {pagamentos.data?.map((p) => {
-        const id = String(p["id"]),
-          t = p["contas_pagar"] as Registro;
-        return (
-          <div key={id} className="border-b py-2 text-sm">
-            {brl(p["valor"])} · {String(t?.["status"] ?? "")} · baixado {brl(t?.["valor_pago"])}
-            {perm.pode("comissao_proporcional_operar") && t?.["status"] !== "cancelado" && (
-              <div className="flex gap-2">
-                <Input
-                  aria-label={`Motivo do estorno ${id}`}
-                  placeholder="Motivo do estorno"
-                  value={motivos[id] ?? ""}
-                  onChange={(e) => setMotivos((s) => ({ ...s, [id]: e.target.value }))}
-                />
-                <Button
-                  variant="outline"
-                  disabled={rpc.isPending || !motivos[id]?.trim() || Number(t?.["valor_pago"]) > 0}
-                  onClick={() =>
-                    rpc.mutate({
-                      nome: "estornar_comissao_217",
-                      args: { _parcela: id, _motivo: motivos[id] },
-                    })
-                  }
-                >
-                  Estornar agendamento
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </section>
+      </div>
+    </details>
   );
 }

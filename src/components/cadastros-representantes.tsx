@@ -76,7 +76,7 @@ export function CadastrosRepresentantes() {
     mutationFn: async (autorizar: boolean) => {
       if (!alvo || !isAdmin) throw new Error("Solicitação indisponível.");
       if (autorizar && (!comissao.trim() || !Number.isFinite(Number(comissao.replace(",", ".")))))
-        throw new Error("Defina a comissão, incluindo 0 quando não houver comissão.");
+        throw new Error("Defina o percentual padrão de comissão.");
       const { error } = await client!.rpc("admin_decidir_cadastro_239", {
         _usuario: alvo["id"],
         _autorizar: autorizar,
@@ -256,7 +256,8 @@ export function CadastrosRepresentantes() {
               onChange={(e) => setComissao(e.target.value)}
             />
             <p id="comissao-aprovacao-ajuda" className="text-xs text-muted-foreground">
-              Obrigatória. Informe 0 explicitamente se o representante não receber comissão.
+              Informe o percentual padrão. Para desativar comissões, use Recebe comissão no Cadastro
+              Unificado.
             </p>
           </div>
           <Button

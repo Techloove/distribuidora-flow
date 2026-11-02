@@ -164,6 +164,12 @@ const fields: CrudField[] = [
     ],
   },
   {
+    name: "recebe_comissao",
+    label: "Recebe comissão",
+    type: "checkbox",
+    showIf: "is_representante",
+  },
+  {
     name: "comissao_percentual",
     label: "Comissão padrão (%)",
     showIf: "is_representante",
@@ -311,6 +317,7 @@ function PessoasPage() {
               ? (lojas.lista.find((l) => l.id === r["centro_id"])?.nome ?? "Loja específica")
               : "Compartilhado entre lojas",
       };
+    if (f.name === "recebe_comissao" && !roles.includes("admin")) return { ...f, auto: true };
     if (f.name === "limite_credito" && !roles.includes("admin")) return { ...f, auto: true };
     if (f.name === "condicao_pagamento")
       return {
@@ -348,7 +355,7 @@ function PessoasPage() {
         <CrudPage
           key={pendencia ?? "todos"}
           readAll
-          defaultValues={{ loja_pendente: true }}
+          defaultValues={{ loja_pendente: true, recebe_comissao: true }}
           decorate={decorarPendenciasClientes}
           initialFilters={filtroComercial ? { [filtroComercial.campo]: "sem" } : undefined}
           uppercase
@@ -461,7 +468,13 @@ function PessoasPage() {
             {
               id: "representante",
               label: "Dados Representante",
-              fields: ["tipo_representante", "comissao_percentual", "meta_mensal", "regiao"],
+              fields: [
+                "tipo_representante",
+                "recebe_comissao",
+                "comissao_percentual",
+                "meta_mensal",
+                "regiao",
+              ],
               extra: true,
             },
             { id: "historico", label: "Histórico", fields: [], extra: true },
@@ -537,6 +550,20 @@ function PessoasPage() {
                 <p className="text-sm text-muted-foreground">
                   Marque a função Cliente em Dados gerais para preencher as condições comerciais.
                 </p>
+              )}
+              {sectionId === "representante" && form["is_representante"] && (
+                <div className="rounded-xl border bg-primary/5 p-4 text-sm">
+                  <p className="font-medium">
+                    {form["recebe_comissao"] === false ? "Sem comissão" : "Comissão habilitada"}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Desmarque Recebe comissão para sócios ou vendedores sem comissão. Essa opção
+                    prevalece sobre os percentuais dos produtos. Quando habilitada, o percentual do
+                    produto tem prioridade sobre o padrão do representante. A alteração vale para
+                    pedidos ainda em digitação ou aguardando aprovação e novos pedidos; vendas
+                    aprovadas preservam o histórico.
+                  </p>
+                </div>
               )}
               {sectionId === "representante" && !form["is_representante"] && (
                 <p className="text-sm text-muted-foreground">

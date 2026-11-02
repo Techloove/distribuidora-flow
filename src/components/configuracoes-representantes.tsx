@@ -53,7 +53,7 @@ export function ConfiguracoesRepresentantes() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (!alvo || !comissao.trim() || !Number.isFinite(Number(comissao.replace(",", "."))))
-        throw new Error("Defina a comissão. Informe 0 quando não houver comissão.");
+        throw new Error("Defina o percentual padrão de comissão.");
       const { error } = await client!.rpc("admin_configurar_representante_239", {
         _representante: alvo.representante_id,
         _centros: centros,
@@ -93,8 +93,9 @@ export function ConfiguracoesRepresentantes() {
       <div>
         <h2 className="font-semibold">Centros de custo e comissão dos representantes</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Definição obrigatória do administrador. A confirmação de 0% registra que não há comissão.
-          Alterar o percentual pelo Cadastro Unificado exige nova confirmação aqui.
+          Definição do percentual padrão pelo administrador. Para desativar todas as comissões,
+          desmarque Recebe comissão no Cadastro Unificado. Alterar o percentual pelo Cadastro
+          Unificado exige nova confirmação aqui.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -236,7 +237,8 @@ export function ConfiguracoesRepresentantes() {
             onChange={(e) => setComissao(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Ao confirmar 0%, você declara que o representante não recebe comissão.
+            O produto tem prioridade sobre o percentual padrão. Para não receber comissão, desmarque
+            Recebe comissão no Cadastro Unificado.
           </p>
           <Button
             disabled={
