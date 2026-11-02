@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.24.0 · 2026-10-31
+Versão 1.24.1 · 2026-11-02
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -379,6 +379,8 @@ Cuidados:
 - Representantes consultam sua própria carteira, conforme as permissões atribuídas.
 - Comissão prevista, liberada e paga representam situações diferentes. Não trate uma previsão como pagamento realizado.
 - Confira filtros de loja, período e situação do pedido antes de comparar totais.
+- A atualização de um cadastro não reescreve automaticamente a comissão histórica de vendas aprovadas. Regularizações de valores antigos exigem conferência e auditoria; pagamentos realizados e devoluções devem ser tratados separadamente.
+- O percentual configurado no produto tem prioridade sobre o percentual do representante. Exemplo: produto com 8% e representante com 5% gera comissão de 8% para esse produto; um pedido com percentuais diferentes apresenta a média ponderada dos itens.
 
 ## Usuários, auditoria e backup
 

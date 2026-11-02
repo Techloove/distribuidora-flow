@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.24.1",
+    "data": "2026-11-02",
+    "titulo": "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador",
+    "novidades": [
+      "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador"
+    ]
+  },
+  {
     "versao": "1.24.0",
     "data": "2026-10-31",
     "titulo": "Comissões somente após aprovação, escolha da data ao retomar pedidos e exibição completa dos títulos pendentes",
