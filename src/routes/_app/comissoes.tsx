@@ -127,13 +127,13 @@ function ComissoesPage() {
     enabled: !!client,
     queryFn: async () => {
       let q = client!.from("vw_comissoes_detalhe").select("*");
-      if (filtros["de"]) q = q.gte("data_pedido", filtros["de"]);
-      if (filtros["ate"]) q = q.lte("data_pedido", filtros["ate"]);
+      if (filtros["de"]) q = q.gte("data_competencia", filtros["de"]);
+      if (filtros["ate"]) q = q.lte("data_competencia", filtros["ate"]);
       if (filtros["mes"]) q = q.eq("mes", filtros["mes"]);
       if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
       if (filtros["status"]) q = q.eq("status", filtros["status"]);
       if (centroFiltro) q = q.eq("centro_id", centroFiltro);
-      const { data, error } = await q.order("data_pedido", { ascending: false }).limit(5000);
+      const { data, error } = await q.order("data_competencia", { ascending: false }).limit(5000);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -320,9 +320,10 @@ function ComissoesPage() {
     >
       <div className="space-y-4">
         <p className="rounded-xl border bg-primary/5 p-4 text-sm text-muted-foreground">
-          A apuração considera somente pedidos aprovados e as etapas seguintes. Digitação, orçamento
-          e pedidos aguardando aprovação ficam fora dos totais. A liberação continua seguindo a
-          regra da loja; comissões canceladas permanecem no histórico.
+          A comissão entra no mês da aprovação do pedido, independentemente da entrega ou do
+          recebimento. A apuração considera somente pedidos aprovados e as etapas seguintes.
+          Digitação, orçamento e pedidos aguardando aprovação ficam fora dos totais. A liberação
+          continua seguindo a regra da loja; comissões canceladas permanecem no histórico.
         </p>
         <ComissaoProporcional />
         <AjustesComissao />
@@ -365,13 +366,13 @@ function ComissoesPage() {
             options={mesesDisponiveis.map((m) => ({ value: m, label: m }))}
           />
           <FilterText
-            label="De"
+            label="Aprovação de"
             type="date"
             value={filtros["de"] ?? ""}
             onChange={(v) => setF("de", v)}
           />
           <FilterText
-            label="Até"
+            label="Aprovação até"
             type="date"
             value={filtros["ate"] ?? ""}
             onChange={(v) => setF("ate", v)}
@@ -450,7 +451,7 @@ function ComissoesPage() {
                       <TableRow>
                         <TableHead className="no-print w-10"></TableHead>
                         <TableHead>Pedido</TableHead>
-                        <TableHead>Data</TableHead>
+                        <TableHead>Aprovação</TableHead>
                         <TableHead>Representante</TableHead>
                         <TableHead>Cliente</TableHead>
                         <TableHead>Centro</TableHead>
@@ -478,7 +479,9 @@ function ComissoesPage() {
                                 {String(r["pedido_numero"] ?? "—")}
                               </ReferenciaRegistro>
                             </TableCell>
-                            <TableCell data-label="Data">{fmtDate(r["data_pedido"])}</TableCell>
+                            <TableCell data-label="Aprovação">
+                              {fmtDate(r["data_competencia"])}
+                            </TableCell>
                             <TableCell
                               data-label="Representante"
                               className="max-w-[12rem] truncate"

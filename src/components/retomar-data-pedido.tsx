@@ -72,8 +72,8 @@ export function RetomarDataPedido({
         </DialogHeader>
         <div className="space-y-2 rounded-xl border bg-primary/5 p-4 text-sm">
           <p>
-            A data define o período de apuração da venda e das comissões quando o pedido for
-            aprovado, inclusive na virada do mês.
+            Esta escolha define a data comercial do pedido. A comissão pertence ao mês da aprovação,
+            mesmo quando a data original do pedido for mantida.
           </p>
           <p className="text-muted-foreground">
             Os itens e os preços gravados serão preservados. Nenhum recebimento ou pagamento será

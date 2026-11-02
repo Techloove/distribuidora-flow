@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.25.0 · 2026-11-02
+Versão 1.25.1 · 2026-11-02
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -372,9 +372,10 @@ Acompanhe clientes, atividades e resultados da carteira.
 5. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
 6. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
 7. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
-8. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. A escolha influencia o mês de apuração após a aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
+8. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. Essa escolha mantém ou atualiza somente a data comercial; a comissão usa a data da aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
 9. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
 10. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
+11. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
 
 Cuidados:
 
@@ -384,6 +385,7 @@ Cuidados:
 - A atualização de um cadastro não reescreve automaticamente a comissão histórica de vendas aprovadas. Regularizações de valores antigos exigem conferência e auditoria; pagamentos realizados e devoluções devem ser tratados separadamente.
 - O percentual configurado no produto tem prioridade sobre o percentual do representante. Exemplo: produto com 8% e representante com 5% gera comissão de 8% para esse produto; um pedido com percentuais diferentes apresenta a média ponderada dos itens.
 - A escolha Recebe comissão é registrada no pedido na aprovação. A mudança no cadastro vale para novos pedidos e pedidos ainda em digitação ou aguardando aprovação; pedidos aprovados e comissões pagas preservam o histórico. Ao habilitar, volta a valer a prioridade do produto sobre o percentual padrão do representante.
+- Pedidos antigos com histórico de aprovação usam a aprovação registrada; quando não há evidência histórica nem aprovação automática registrada, a leitura preserva a data comercial legada. A mudança de competência não altera os valores das comissões nem datas e registros de pagamentos realizados.
 
 ## Usuários, auditoria e backup
 
