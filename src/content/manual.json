@@ -274,6 +274,8 @@
     "passos": [
       "Consulte o planejamento de reposição da loja e confira estoque, pendências de venda e compras em trânsito.",
       "Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.",
+      "Na entrada manual, preencha na mesma linha Produto, Itens (quantidade), Compra por item e Frete por item. A tela calcula Custo final por item e Total do item. Cada produto pode ter um frete unitário diferente; não há margem de venda na compra. Lote e validade ficam em uma seção opcional.",
+      "O total de cada item é a quantidade multiplicada pela soma do custo de compra e do frete unitário. O frete geral adicional só deve conter cobranças extras, sem repetir o frete dos itens. Ao receber, o estoque incorpora o frete de cada produto e os ajustes gerais; os títulos a pagar usam o total da compra. Compras antigas mantêm frete unitário zero e não são reprocessadas.",
       "Confira os dados antes de confirmar o documento e siga a ação indicada pela tela.",
       "Após a operação, confira o histórico de estoque e os títulos financeiros gerados pelo fluxo.",
       "Em Compras → Planejamento e reposição, acompanhe itens para comprar, faltas, investimento estimado e produtos em trânsito. A lista mostra Estoque, Comprado (em trânsito), Mínimo, Média mês, 30d, 60d, 90d e 120d nessa ordem, seguidos da sugestão e dos indicadores. Use Colunas para personalizar e Cálculo para ver de onde veio cada quantidade.",

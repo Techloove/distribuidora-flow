@@ -1,3 +1,4 @@
+import { calcularItemCompra } from "@/lib/custo-compra";
 import { RetomarDataPedido } from "@/components/retomar-data-pedido";
 import { getModalidade } from "@/lib/modalidade-store";
 import {
@@ -85,6 +86,7 @@ const emptyItem = {
   quantidade: "1",
   preco: "0",
   desconto: "0",
+  frete: "0",
   lote: "",
   validade: "",
 };
@@ -760,6 +762,9 @@ export function DocumentoPage({
     return list;
   })();
 
+  const previaCompra =
+    config.table === "compras" ? calcularItemCompra(item.quantidade, item.preco, item.frete) : null;
+
   const addItem = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("Selecione um documento");
@@ -787,11 +792,12 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.rpc("adicionar_item_compra", {
+        const { error } = await client!.rpc("adicionar_item_compra_313", {
           _compra_id: selected,
           _produto_id: String(payload["produto_id"]),
           _quantidade: Number(payload["quantidade"]),
           _custo_unitario: Number(payload["custo_unitario"]),
+          _frete_unitario: Number(item.frete || 0),
           _lote: payload["lote"] ? String(payload["lote"]) : null,
           _validade: payload["validade"] ? String(payload["validade"]) : null,
         });
@@ -826,10 +832,11 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.rpc("atualizar_item_compra", {
+        const { error } = await client!.rpc("atualizar_item_compra_313", {
           _item_id: patch.id,
-          _quantidade: Number(patch.values["quantidade"] ?? 0),
-          _custo_unitario: Number(patch.values["custo_unitario"] ?? 0),
+          _quantidade: patch.values["quantidade"] ?? null,
+          _custo_unitario: patch.values["custo_unitario"] ?? null,
+          _frete_unitario: patch.values["frete_unitario"] ?? null,
         });
         if (error) throw new Error(error.message);
       }
@@ -2106,106 +2113,239 @@ export function DocumentoPage({
             ) : (
               <>
                 {["rascunho", "digitacao"].includes(String(doc["status"])) && propostaEditavel ? (
-                  <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,4fr)_1fr_1fr_1fr_auto]">
-                    <div className="space-y-1.5">
-                      <Label>Produto</Label>
-                      {config.table === "pedidos" && catalogoPedido.isError && (
-                        <p role="alert" className="text-sm text-destructive">
-                          Não foi possível consultar os produtos desta loja:{" "}
-                          {catalogoPedido.error.message}
-                        </p>
-                      )}
-                      {config.table === "pedidos" && catalogoPedido.isPending && (
-                        <p className="text-sm text-muted-foreground">
-                          Carregando produtos da loja…
-                        </p>
-                      )}
-                      <ProdutoPicker
-                        produtos={produtosDisponiveis}
-                        comprados={comprados.data ?? new Map()}
-                        value={item.produto_id}
-                        onPick={(id) => pickProduto(id)}
-                      />
+                  config.table === "compras" ? (
+                    <div
+                      role="group"
+                      aria-label="Inclusão de item da compra"
+                      className="@container space-y-3 rounded-lg border bg-muted/30 p-3"
+                    >
+                      <div className="grid grid-cols-2 items-end gap-2 @min-[600px]:grid-cols-4 @min-[900px]:grid-cols-[minmax(220px,2.5fr)_minmax(72px,.7fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(110px,1fr)_minmax(120px,1.1fr)_minmax(112px,1fr)]">
+                        <div className="col-span-2 min-w-0 space-y-1 @min-[900px]:col-span-1">
+                          <Label htmlFor="compra-produto" className="text-xs">
+                            Produto
+                          </Label>
+                          <ProdutoPicker
+                            inputId="compra-produto"
+                            inputClassName="h-11"
+                            produtos={produtosDisponiveis}
+                            comprados={comprados.data ?? new Map()}
+                            value={item.produto_id}
+                            onPick={(id) => pickProduto(id)}
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-qtd" className="text-xs">
+                            Itens
+                          </Label>
+                          <Input
+                            id="compra-qtd"
+                            aria-label="Quantidade de itens"
+                            type="number"
+                            inputMode="decimal"
+                            min="0.001"
+                            step="0.001"
+                            className="h-11 min-w-0 text-right"
+                            value={item.quantidade}
+                            onChange={(e) => setItem((s) => ({ ...s, quantidade: e.target.value }))}
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-custo" className="text-xs">
+                            Compra / item (R$)
+                          </Label>
+                          <Input
+                            id="compra-custo"
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.0001"
+                            className="h-11 min-w-0 text-right"
+                            value={item.preco}
+                            readOnly={!podeAlterarPreco}
+                            onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-frete" className="text-xs">
+                            Frete / item (R$)
+                          </Label>
+                          <Input
+                            id="compra-frete"
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.0001"
+                            className="h-11 min-w-0 text-right"
+                            value={item.frete}
+                            onChange={(e) => setItem((s) => ({ ...s, frete: e.target.value }))}
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-final" className="text-xs">
+                            Custo final / item
+                          </Label>
+                          <output
+                            id="compra-final"
+                            className="flex h-11 items-center justify-end overflow-x-auto whitespace-nowrap rounded-md border bg-primary/5 px-2 text-xs font-semibold tabular-nums text-primary"
+                          >
+                            {previaCompra ? brl(previaCompra.unitario) : "—"}
+                          </output>
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-total" className="text-xs">
+                            Total do item
+                          </Label>
+                          <output
+                            id="compra-total"
+                            className="flex h-11 items-center justify-end overflow-x-auto whitespace-nowrap rounded-md border bg-primary/5 px-2 text-xs font-semibold tabular-nums text-primary"
+                          >
+                            {previaCompra ? brl(previaCompra.total) : "—"}
+                          </output>
+                        </div>
+                        <div className="col-span-2 min-w-0 space-y-1 @min-[900px]:col-span-1">
+                          <span className="hidden text-xs font-medium @min-[900px]:block">
+                            Ação
+                          </span>
+                          <Button
+                            className="h-11 w-full px-2 text-xs"
+                            onClick={() => addItem.mutate()}
+                            disabled={addItem.isPending || !previaCompra || !item.produto_id}
+                          >
+                            Adicionar item
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Custo final = compra + frete por item. O frete geral da compra é um
+                        adicional; não repita nele o frete já informado nos itens.
+                      </p>
+                      <details className="border-t pt-2 text-sm">
+                        <summary className="cursor-pointer text-muted-foreground">
+                          Lote e validade (opcional)
+                        </summary>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="compra-lote">Lote</Label>
+                            <Input
+                              id="compra-lote"
+                              value={item.lote}
+                              onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="compra-validade">Validade</Label>
+                            <Input
+                              id="compra-validade"
+                              type="date"
+                              value={item.validade}
+                              onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                      </details>
                     </div>
-
-                    <div className="space-y-1.5">
-                      <Label>Qtd</Label>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        value={item.quantidade}
-                        onChange={(e) => setItem((s) => ({ ...s, quantidade: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>{config.itemPriceLabel}</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={item.preco}
-                        readOnly={!podeAlterarPreco || consultandoPreco}
-                        title={
-                          podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"
-                        }
-                        onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
-                      />
-                      {!podeAlterarPreco ? (
-                        <p className="text-[11px] text-muted-foreground">
-                          Preço definido pela tabela — seu perfil não permite alterar.
-                        </p>
-                      ) : null}
-                      {promo !== null ? (
-                        <p className="text-xs font-medium text-primary">
-                          {promo.nome}: {brl(promo.preco)}
-                          <br />
-                          {promo.fim ? `Válida até ${fmtDate(promo.fim)}` : "Sem data limite"}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    {config.itemsTable === "pedido_itens" ? (
+                  ) : (
+                    <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,4fr)_1fr_1fr_1fr_auto]">
                       <div className="space-y-1.5">
-                        <Label>Desc. %</Label>
+                        <Label>Produto</Label>
+                        {config.table === "pedidos" && catalogoPedido.isError && (
+                          <p role="alert" className="text-sm text-destructive">
+                            Não foi possível consultar os produtos desta loja:{" "}
+                            {catalogoPedido.error.message}
+                          </p>
+                        )}
+                        {config.table === "pedidos" && catalogoPedido.isPending && (
+                          <p className="text-sm text-muted-foreground">
+                            Carregando produtos da loja…
+                          </p>
+                        )}
+                        <ProdutoPicker
+                          produtos={produtosDisponiveis}
+                          comprados={comprados.data ?? new Map()}
+                          value={item.produto_id}
+                          onPick={(id) => pickProduto(id)}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label>Qtd</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={item.quantidade}
+                          onChange={(e) => setItem((s) => ({ ...s, quantidade: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>{config.itemPriceLabel}</Label>
                         <Input
                           type="number"
                           step="0.01"
-                          value={item.desconto}
-                          onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
+                          value={item.preco}
+                          readOnly={!podeAlterarPreco || consultandoPreco}
+                          title={
+                            podeAlterarPreco ? undefined : "Seu perfil não permite alterar o preço"
+                          }
+                          onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
                         />
+                        {!podeAlterarPreco ? (
+                          <p className="text-[11px] text-muted-foreground">
+                            Preço definido pela tabela — seu perfil não permite alterar.
+                          </p>
+                        ) : null}
+                        {promo !== null ? (
+                          <p className="text-xs font-medium text-primary">
+                            {promo.nome}: {brl(promo.preco)}
+                            <br />
+                            {promo.fim ? `Válida até ${fmtDate(promo.fim)}` : "Sem data limite"}
+                          </p>
+                        ) : null}
                       </div>
-                    ) : (
-                      <>
+
+                      {config.itemsTable === "pedido_itens" ? (
                         <div className="space-y-1.5">
-                          <Label>Lote</Label>
+                          <Label>Desc. %</Label>
                           <Input
-                            value={item.lote}
-                            onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                            type="number"
+                            step="0.01"
+                            value={item.desconto}
+                            onChange={(e) => setItem((s) => ({ ...s, desconto: e.target.value }))}
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <Label>Validade</Label>
-                          <Input
-                            type="date"
-                            value={item.validade}
-                            onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
-                          />
-                        </div>
-                      </>
-                    )}
-                    <div className="flex items-end">
-                      <Button
-                        onClick={() => addItem.mutate()}
-                        disabled={
-                          addItem.isPending ||
-                          consultandoPreco ||
-                          (config.table === "pedidos" &&
-                            (catalogoPedido.isPending || catalogoPedido.isError))
-                        }
-                      >
-                        <Plus className="size-4" /> Item
-                      </Button>
+                      ) : (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label>Lote</Label>
+                            <Input
+                              value={item.lote}
+                              onChange={(e) => setItem((s) => ({ ...s, lote: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>Validade</Label>
+                            <Input
+                              type="date"
+                              value={item.validade}
+                              onChange={(e) => setItem((s) => ({ ...s, validade: e.target.value }))}
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className="flex items-end">
+                        <Button
+                          onClick={() => addItem.mutate()}
+                          disabled={
+                            addItem.isPending ||
+                            consultandoPreco ||
+                            (config.table === "pedidos" &&
+                              (catalogoPedido.isPending || catalogoPedido.isError))
+                          }
+                        >
+                          <Plus className="size-4" /> Item
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )
                 ) : null}
 
                 <div className="overflow-x-auto rounded-lg border border-border bg-card">
@@ -2223,8 +2363,16 @@ export function DocumentoPage({
                         <TableRow>
                           {config.table === "pedidos" && <TableHead>Código</TableHead>}
                           <TableHead>Produto</TableHead>
-                          <TableHead className="text-right">Qtd</TableHead>
+                          <TableHead className="text-right">
+                            {config.table === "compras" ? "Itens" : "Qtd"}
+                          </TableHead>
                           <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
+                          {config.table === "compras" && (
+                            <>
+                              <TableHead className="text-right">Frete / item</TableHead>
+                              <TableHead className="text-right">Custo final / item</TableHead>
+                            </>
+                          )}
                           <TableHead className="text-right">Peso</TableHead>
                           <TableHead className="text-right">Total</TableHead>
                           <TableHead className="w-12" />
@@ -2241,7 +2389,10 @@ export function DocumentoPage({
                             <TableCell data-label="Produto">
                               {produtoName(it["produto_id"])}
                             </TableCell>
-                            <TableCell data-label="Quantidade" className="text-right">
+                            <TableCell
+                              data-label={config.table === "compras" ? "Itens" : "Quantidade"}
+                              className="text-right"
+                            >
                               {["rascunho", "digitacao"].includes(String(doc["status"])) &&
                               propostaEditavel ? (
                                 <Input
@@ -2265,7 +2416,10 @@ export function DocumentoPage({
                                 String(it["quantidade"])
                               )}
                             </TableCell>
-                            <TableCell data-label="Preço" className="text-right">
+                            <TableCell
+                              data-label={config.table === "compras" ? "Compra / item" : "Preço"}
+                              className="text-right"
+                            >
                               {["rascunho", "digitacao"].includes(String(doc["status"])) &&
                               propostaEditavel &&
                               podeAlterarPreco ? (
@@ -2290,6 +2444,38 @@ export function DocumentoPage({
                                 brl(it[config.itemPriceField])
                               )}
                             </TableCell>
+                            {config.table === "compras" && (
+                              <>
+                                <TableCell data-label="Frete / item" className="text-right">
+                                  {doc["status"] === "rascunho" && propostaEditavel ? (
+                                    <Input
+                                      aria-label={`Frete por item de ${produtoName(it["produto_id"])}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.0001"
+                                      className="ml-auto h-8 w-28 text-right"
+                                      defaultValue={String(it["frete_unitario"] ?? 0)}
+                                      onBlur={(e) => {
+                                        const frete = Number(e.target.value || 0);
+                                        if (frete !== Number(it["frete_unitario"] ?? 0))
+                                          updateItem.mutate({
+                                            id: String(it["id"]),
+                                            values: { frete_unitario: frete },
+                                          });
+                                      }}
+                                    />
+                                  ) : (
+                                    brl(it["frete_unitario"] ?? 0)
+                                  )}
+                                </TableCell>
+                                <TableCell data-label="Custo final / item" className="text-right">
+                                  {brl(
+                                    Number(it["custo_unitario"] ?? 0) +
+                                      Number(it["frete_unitario"] ?? 0),
+                                  )}
+                                </TableCell>
+                              </>
+                            )}
                             <TableCell
                               data-label="Peso"
                               className="text-right text-muted-foreground"
@@ -2321,6 +2507,12 @@ export function DocumentoPage({
                           </TableCell>
                           <TableCell />
                           <TableCell />
+                          {config.table === "compras" && (
+                            <>
+                              <TableCell />
+                              <TableCell />
+                            </>
+                          )}
                           <TableCell className="text-right font-semibold">
                             {kg(pesoTotal)}
                           </TableCell>
@@ -2438,7 +2630,11 @@ export function DocumentoPage({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{config.table === "pedidos" ? "Frete manual (R$)" : "Frete (R$)"}</Label>
+                  <Label>
+                    {config.table === "pedidos"
+                      ? "Frete manual (R$)"
+                      : "Frete geral adicional (R$)"}
+                  </Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -2780,11 +2976,15 @@ function ProdutoPicker({
   comprados,
   value,
   onPick,
+  inputId,
+  inputClassName = "h-9",
 }: {
   produtos: Row[];
   comprados: Map<string, number>;
   value: string;
   onPick: (id: string) => void;
+  inputId?: string;
+  inputClassName?: string;
 }) {
   const [q, setQ] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -2806,7 +3006,8 @@ function ProdutoPicker({
   return (
     <div className="relative">
       <Input
-        className="h-9"
+        id={inputId}
+        className={inputClassName}
         value={aberto ? q : rotulo}
         placeholder="Buscar por código ou nome"
         onFocus={() => {

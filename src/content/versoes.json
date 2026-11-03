@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.30.0",
+    "data": "2026-11-03",
+    "titulo": "Incluir itens de compra em linha com frete unitário e custo final por produto",
+    "novidades": ["Incluir itens de compra em linha com frete unitário e custo final por produto"]
+  },
+  {
     "versao": "1.29.1",
     "data": "2026-11-03",
     "titulo": "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis",
