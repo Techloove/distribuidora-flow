@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -286,7 +287,7 @@ function ContasPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Conta de origem</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.origem}
                 onChange={(e) => setForm((f) => ({ ...f, origem: e.target.value }))}
@@ -297,11 +298,11 @@ function ContasPage() {
                     {o.label}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Conta de destino</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.destino}
                 onChange={(e) => setForm((f) => ({ ...f, destino: e.target.value }))}
@@ -312,7 +313,7 @@ function ContasPage() {
                     {o.label}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Valor</Label>

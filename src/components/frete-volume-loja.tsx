@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { Table } from "@/components/ui/table";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -219,7 +220,7 @@ export function FreteVolumeLoja({
             <Label htmlFor="frete-alvo">
               {modo === "produto" ? "Produto" : modo === "grupo" ? "Grupo" : "Categoria"}
             </Label>
-            <select
+            <SearchSelect
               id="frete-alvo"
               className="h-10 w-full rounded-md border bg-background px-3"
               value={alvo}
@@ -252,7 +253,7 @@ export function FreteVolumeLoja({
                   </option>
                 ))
               )}
-            </select>
+            </SearchSelect>
             {modo === "produto" && (
               <p className="text-xs text-muted-foreground">Até 100 resultados por busca.</p>
             )}

@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react";
@@ -275,7 +276,7 @@ function UsuariosPage() {
                         </TableCell>
                         <TableCell data-label="E-mail">{String(p["email"] ?? "—")}</TableCell>
                         <TableCell data-label="Representante / vendedor">
-                          <select
+                          <SearchSelect
                             value={String(
                               representantes.data?.find((r) => r["profile_id"] === p["id"])?.[
                                 "id"
@@ -299,7 +300,7 @@ function UsuariosPage() {
                                   {String(r["nome"])}
                                 </option>
                               ))}
-                          </select>
+                          </SearchSelect>
                         </TableCell>
                         <TableCell data-label="Papéis">
                           <div className="flex flex-wrap gap-1.5">

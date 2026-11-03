@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -120,7 +121,7 @@ export function ImportarCompraXml() {
           <p className="text-xs break-all">Chave: {xml.chave}</p>
           <label className="text-sm">
             Fornecedor
-            <select
+            <SearchSelect
               className="block w-full rounded border bg-background p-2"
               aria-label="Fornecedor do XML"
               value={fornecedor}
@@ -135,14 +136,14 @@ export function ImportarCompraXml() {
                   {String(f["razao_social"])} · {String(f["cnpj_cpf"] ?? "")}
                 </option>
               ))}
-            </select>
+            </SearchSelect>
           </label>
           {xml.itens.map((i, n) => (
             <div key={n} className="grid gap-2 sm:grid-cols-3 border-b py-2">
               <span className="text-sm">
                 {i.codigo} · {i.descricao} · {i.quantidade} {i.unidade}
               </span>
-              <select
+              <SearchSelect
                 aria-label={`Produto para ${i.codigo}`}
                 className="rounded border bg-background p-2"
                 value={mapa[n]?.produto ?? ""}
@@ -160,7 +161,7 @@ export function ImportarCompraXml() {
                     {String(p["descricao"])} · {String(p["unidade"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
               <label className="text-xs">
                 Unidades do ERP por unidade do XML
                 <Input

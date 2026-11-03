@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -207,7 +208,7 @@ export function CadastrosRepresentantes() {
           {opcoes.error && <p role="alert">{opcoes.error.message}</p>}
           <label className="text-sm">
             Carteira / representante
-            <select
+            <SearchSelect
               aria-label="Representante para autorização"
               className="block w-full rounded border bg-background p-2"
               disabled={decidir.isPending || opcoes.isPending}
@@ -222,7 +223,7 @@ export function CadastrosRepresentantes() {
                     {String(r["nome"])}
                   </option>
                 ))}
-            </select>
+            </SearchSelect>
           </label>
           <fieldset disabled={decidir.isPending} className="space-y-2">
             <legend className="text-sm font-medium">Centros de custo permitidos</legend>

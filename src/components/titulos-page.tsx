@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { recalcularBaixa } from "@/lib/baixa-titulo";
 import { NovoTituloDialog } from "@/components/novo-titulo-dialog";
 import { setCentro } from "@/lib/centro-store";
@@ -128,7 +129,7 @@ export function TitulosPage({
       lerPaginas<Row>((inicio, fim) =>
         client!
           .from(config.partnerTable)
-          .select("id, razao_social")
+          .select("id, codigo, razao_social, nome_fantasia, cnpj_cpf")
           .order("razao_social")
           .order("id")
           .range(inicio, fim),
@@ -449,6 +450,7 @@ export function TitulosPage({
           options={(partners.data ?? []).map((p) => ({
             value: String(p["id"]),
             label: String(p["razao_social"]),
+            search: [p["codigo"], p["nome_fantasia"], p["cnpj_cpf"]].filter(Boolean).join(" "),
           }))}
         />
         <FilterSelect
@@ -824,7 +826,7 @@ export function TitulosPage({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="baixa-banco">Banco/caixa *</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 id="baixa-banco"
                 value={contaId}
@@ -836,11 +838,11 @@ export function TitulosPage({
                     {String(c["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Forma de pagamento</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={formaId}
                 onChange={(e) => setFormaId(e.target.value)}
@@ -851,7 +853,7 @@ export function TitulosPage({
                     {String(c["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="baixa-juros">Juros (R$)</Label>
@@ -986,7 +988,8 @@ export function TitulosPage({
           lojas={lojasPermitidas}
           parceiros={(partners.data ?? []).map((p) => ({
             id: String(p["id"]),
-            nome: String(p["razao_social"]),
+            nome: `${p["codigo"] ? `${String(p["codigo"])} · ` : ""}${String(p["razao_social"])}`,
+            busca: [p["nome_fantasia"], p["cnpj_cpf"]].filter(Boolean).join(" "),
           }))}
           parceirosCarregando={partners.isPending}
           parceirosErro={partners.error?.message}
@@ -1053,7 +1056,7 @@ export function TitulosPage({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="baixa-lote-banco">Banco/caixa *</Label>
-            <select
+            <SearchSelect
               id="baixa-lote-banco"
               className="h-11 w-full rounded-xl border bg-background px-3"
               value={contaId}
@@ -1066,7 +1069,7 @@ export function TitulosPage({
                   {String(c["nome"])}
                 </option>
               ))}
-            </select>
+            </SearchSelect>
             {!contasBaixaLote.length && (
               <p role="alert" className="text-xs text-destructive">
                 Não há banco/caixa disponível para todas as lojas selecionadas. Faça a baixa por
@@ -1076,7 +1079,7 @@ export function TitulosPage({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="baixa-lote-forma">Forma de pagamento</Label>
-            <select
+            <SearchSelect
               id="baixa-lote-forma"
               className="h-11 w-full rounded-xl border bg-background px-3"
               value={formaId}
@@ -1089,7 +1092,7 @@ export function TitulosPage({
                   {String(f["nome"])}
                 </option>
               ))}
-            </select>
+            </SearchSelect>
           </div>
           <DialogFooter>
             <Button

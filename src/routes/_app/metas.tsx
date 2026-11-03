@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -188,7 +189,7 @@ function MetasPage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-5">
               <div className="sm:col-span-2">
                 <Label>Representante</Label>
-                <select
+                <SearchSelect
                   className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={form.representante_id}
                   onChange={(e) => setForm((f) => ({ ...f, representante_id: e.target.value }))}
@@ -199,7 +200,7 @@ function MetasPage() {
                       {String(r["nome"])}
                     </option>
                   ))}
-                </select>
+                </SearchSelect>
               </div>
               <div>
                 <Label>Ano</Label>

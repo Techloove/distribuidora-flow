@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { HistoricoIntermediacaoCliente } from "./historico-intermediacao-cliente";
 import { useEffect, useState, useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -849,7 +850,7 @@ export function ItensIntermediacao({
               <Label htmlFor="inter-produto" className="text-xs">
                 Cimento / produto
               </Label>
-              <select
+              <SearchSelect
                 id="inter-produto"
                 className="h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-2 text-sm"
                 title={form.produto ? nome(form.produto) : "Selecione o produto"}
@@ -871,7 +872,7 @@ export function ItensIntermediacao({
                     {String(p["codigo"] ?? "")} · {String(p["descricao"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="min-w-0 space-y-1">
               <Label htmlFor="inter-qtd" className="text-xs">

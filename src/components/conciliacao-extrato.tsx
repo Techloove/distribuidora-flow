@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { lerExtratoOfx } from "@/lib/importacoes-distribuidora";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -140,7 +141,7 @@ export function ConciliacaoExtrato() {
       <AvisoRotina erro={contas.error} />
       <label className="block text-sm">
         Conta bancária
-        <select
+        <SearchSelect
           aria-label="Conta para conciliação"
           className="mt-1 w-full rounded border bg-background p-2"
           value={conta}
@@ -156,7 +157,7 @@ export function ConciliacaoExtrato() {
               {String(c["nome"])}
             </option>
           ))}
-        </select>
+        </SearchSelect>
       </label>
       {conta && (
         <>
@@ -254,7 +255,7 @@ export function ConciliacaoExtrato() {
                     </>
                   ) : (
                     <>
-                      <select
+                      <SearchSelect
                         aria-label={`Movimento para ${l["referencia"]}`}
                         className="w-full rounded border bg-background p-2"
                         value={escolhas[id] ?? ""}
@@ -271,7 +272,7 @@ export function ConciliacaoExtrato() {
                             {String(m["descricao"] ?? "Movimento")} · {brl(m["valor"])}
                           </option>
                         ))}
-                      </select>
+                      </SearchSelect>
                       <Button
                         size="sm"
                         disabled={

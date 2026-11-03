@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -407,7 +408,7 @@ export function RomaneiosEntrega() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Transportadora</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form["transportadora_id"] ?? ""}
                 onChange={(e) => setForm({ ...form, transportadora_id: e.target.value })}
@@ -418,11 +419,11 @@ export function RomaneiosEntrega() {
                     {String(t["razao_social"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Rota</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form["rota_id"] ?? ""}
                 onChange={(e) => setForm({ ...form, rota_id: e.target.value })}
@@ -433,7 +434,7 @@ export function RomaneiosEntrega() {
                     {String(r["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Nº do romaneio</Label>

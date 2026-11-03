@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -249,7 +250,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
             </p>
             <div className="space-y-1">
               <Label htmlFor="api-tarifa-conta">Conta financeira do Sicredi</Label>
-              <select
+              <SearchSelect
                 id="api-tarifa-conta"
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                 value={valorConta}
@@ -261,11 +262,11 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
                     {String(c.nome)}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="api-tarifa-categoria">Categoria em Despesas Financeiras</Label>
-              <select
+              <SearchSelect
                 id="api-tarifa-categoria"
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                 value={valorCategoria}
@@ -277,7 +278,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
                     {String(c.nome)}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="api-tarifa-inicio">Contabilizar tarifas a partir de</Label>

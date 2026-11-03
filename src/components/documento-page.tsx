@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { calcularItemCompra } from "@/lib/custo-compra";
 import { RetomarDataPedido } from "@/components/retomar-data-pedido";
 import { getModalidade } from "@/lib/modalidade-store";
@@ -166,14 +167,17 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, razao_social, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id"
-          : "id, razao_social";
-      const { data, error } = await client!
-        .from(config.partnerTable)
-        .select(columns)
-        .order("razao_social");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as Row[];
+          ? "id, codigo, razao_social, nome_fantasia, cnpj_cpf, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id"
+          : "id, codigo, razao_social, nome_fantasia, cnpj_cpf";
+      return lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from(config.partnerTable)
+          .select(columns as string)
+          .order("razao_social")
+          .order("id")
+          .range(inicio, fim)
+          .returns<Row[]>(),
+      );
     },
   });
 
@@ -181,12 +185,14 @@ export function DocumentoPage({
     queryKey: [...["produtos", "options", "documentos"], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from("produtos")
-        .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
-        .order("descricao");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+      return lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("produtos")
+          .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
+          .order("descricao")
+          .order("id")
+          .range(inicio, fim),
+      );
     },
   });
 
@@ -1583,6 +1589,7 @@ export function DocumentoPage({
             options={(partners.data ?? []).map((p) => ({
               value: String(p["id"]),
               label: String(p["razao_social"]),
+              search: [p["codigo"], p["nome_fantasia"], p["cnpj_cpf"]].filter(Boolean).join(" "),
             }))}
           />
 
@@ -2623,7 +2630,7 @@ export function DocumentoPage({
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Forma</Label>
-                  <select
+                  <SearchSelect
                     value={pagamento["forma"] ?? String(doc["forma_pagamento_id"] ?? "")}
                     onChange={(e) => pickForma(e.target.value)}
                     disabled={doc["status"] !== "rascunho" || !propostaEditavel}
@@ -2635,7 +2642,7 @@ export function DocumentoPage({
                         {formaLabel(f)}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1.5">
                   <Label>
@@ -2812,25 +2819,35 @@ export function DocumentoPage({
               </label>
             )}
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>{config.partnerLabel}</Label>
-              <select
+              <Label htmlFor="documento-parceiro">{config.partnerLabel}</Label>
+              <SearchSelect
+                id="documento-parceiro"
+                aria-label={config.partnerLabel}
+                disabled={partners.isPending || partners.isError}
                 value={header["partner"] ?? ""}
                 onChange={(e) => pickPartner(e.target.value)}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">—</option>
                 {partners.data?.map((p) => (
-                  <option key={String(p["id"])} value={String(p["id"])}>
+                  <option
+                    key={String(p["id"])}
+                    value={String(p["id"])}
+                    data-search={[p["codigo"], p["nome_fantasia"], p["cnpj_cpf"]]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {p["codigo"] ? `${String(p["codigo"])} · ` : ""}
                     {String(p["razao_social"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             {clienteFoco ? <div className="sm:col-span-2">{creditoPainel}</div> : null}
 
             <div className="space-y-1.5">
               <Label>Centro{config.table === "pedidos" ? " *" : ""}</Label>
-              <select
+              <SearchSelect
                 value={header["centro"] ?? ""}
                 onChange={(e) => setHeader((h) => ({ ...h, centro: e.target.value }))}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -2841,7 +2858,7 @@ export function DocumentoPage({
                     {String(c["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             {config.table === "pedidos" && (
               <div className="sm:col-span-2">
@@ -2896,7 +2913,7 @@ export function DocumentoPage({
               <>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Representante / vendedor</Label>
-                  <select
+                  <SearchSelect
                     value={header["representante"] ?? meuRepresentante}
                     onChange={(e) => setHeader((h) => ({ ...h, representante: e.target.value }))}
                     disabled={
@@ -2911,14 +2928,14 @@ export function DocumentoPage({
                         {r["profile_id"] ? " (com login)" : ""}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                   <p className="text-[11px] text-muted-foreground">
                     Vem do login quando o usuário está vinculado a um representante.
                   </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Rota de entrega *</Label>
-                  <select
+                  <SearchSelect
                     value={header["rota"] ?? ""}
                     onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -2929,11 +2946,11 @@ export function DocumentoPage({
                         {String(r["nome"])}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Forma de pagamento *</Label>
-                  <select
+                  <SearchSelect
                     value={header["forma"] ?? ""}
                     onChange={(e) => setHeader((h) => ({ ...h, forma: e.target.value }))}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -2944,7 +2961,7 @@ export function DocumentoPage({
                         {formaLabel(f)}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Previsão de entrega</Label>
@@ -2997,74 +3014,26 @@ function ProdutoPicker({
   inputId?: string;
   inputClassName?: string;
 }) {
-  const [q, setQ] = useState("");
-  const [aberto, setAberto] = useState(false);
-  const sel = produtos.find((p) => String(p["id"]) === value);
-  const rotulo = sel ? `${String(sel["codigo"] ?? "")} · ${String(sel["descricao"])}` : "";
-  const termo = q.trim().toLowerCase();
-  const lista = (
-    termo
-      ? produtos.filter(
-          (p) =>
-            String(p["descricao"]).toLowerCase().includes(termo) ||
-            String(p["codigo"] ?? "")
-              .toLowerCase()
-              .includes(termo),
-        )
-      : produtos
-  ).slice(0, 50);
-
   return (
-    <div className="relative">
-      <Input
-        id={inputId}
-        className={inputClassName}
-        value={aberto ? q : rotulo}
-        placeholder="Buscar por código ou nome"
-        onFocus={() => {
-          setQ("");
-          setAberto(true);
-        }}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setAberto(true);
-        }}
-        onBlur={() => window.setTimeout(() => setAberto(false), 150)}
-      />
-      {aberto ? (
-        <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
-          {lista.length === 0 ? (
-            <p className="p-3 text-sm text-muted-foreground">Nenhum produto encontrado.</p>
-          ) : (
-            lista.map((p) => (
-              <button
-                key={String(p["id"])}
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onPick(String(p["id"]));
-                  setAberto(false);
-                }}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent"
-              >
-                <span className="truncate">
-                  <span className="font-semibold">{String(p["codigo"] ?? "—")}</span> ·{" "}
-                  {String(p["descricao"])}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  est. {String(p["estoque_atual"] ?? 0)}
-                  {(comprados.get(String(p["id"])) ?? 0) > 0 ? (
-                    <span className="ml-2 font-semibold text-primary">
-                      C {comprados.get(String(p["id"]))}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      ) : null}
-    </div>
+    <SearchSelect
+      id={inputId}
+      aria-label="Produto"
+      className={inputClassName}
+      value={value}
+      onChange={(e) => onPick(e.target.value)}
+    >
+      <option value="">Buscar por código ou nome</option>
+      {produtos.map((p) => (
+        <option
+          key={String(p["id"])}
+          value={String(p["id"])}
+          data-search={[p["codigo"], p["ean"], p["sku"]].filter(Boolean).join(" ")}
+          data-detail={`est. ${String(p["estoque_atual"] ?? 0)}${(comprados.get(String(p["id"])) ?? 0) > 0 ? ` · C ${comprados.get(String(p["id"]))}` : ""}`}
+        >
+          {String(p["codigo"] ?? "—")} · {String(p["descricao"])}
+        </option>
+      ))}
+    </SearchSelect>
   );
 }
 

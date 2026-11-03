@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useId, useState } from "react";
 import { ChevronDown, Filter, X } from "lucide-react";
 
@@ -73,12 +74,12 @@ export function FilterSelect({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; search?: string }[];
   allLabel?: string;
 }) {
   return (
     <FilterField label={label}>
-      <select
+      <SearchSelect
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -86,11 +87,11 @@ export function FilterSelect({
       >
         <option value="">{allLabel}</option>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} data-search={o.search}>
             {o.label}
           </option>
         ))}
-      </select>
+      </SearchSelect>
     </FilterField>
   );
 }

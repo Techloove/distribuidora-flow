@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ConsultaCep } from "@/components/consulta-cep";
 import {
@@ -491,7 +492,7 @@ function PessoasPage() {
                   <label htmlFor="vinculo-loja-cliente" className="text-sm font-medium">
                     Vínculo de loja do cliente
                   </label>
-                  <select
+                  <SearchSelect
                     id="vinculo-loja-cliente"
                     className="h-11 w-full rounded-md border bg-background px-3 text-sm"
                     disabled={representante || lojas.isLoading || !!lojas.error}
@@ -514,7 +515,7 @@ function PessoasPage() {
                         </option>
                       ))}
                     </optgroup>
-                  </select>
+                  </SearchSelect>
                   <p className="text-xs text-muted-foreground">
                     Sem loja indica cadastro pendente. Defina uma loja ou o compartilhamento antes
                     de iniciar novos pedidos. O histórico existente é preservado.

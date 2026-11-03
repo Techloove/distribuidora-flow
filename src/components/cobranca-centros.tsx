@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,7 +41,7 @@ export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
       {lojaId === undefined && (
         <div className="mt-4 max-w-lg">
           <Label htmlFor="cobranca-centro">Loja</Label>
-          <select
+          <SearchSelect
             id="cobranca-centro"
             className="h-10 w-full rounded-md border bg-background px-3"
             value={centro}
@@ -52,7 +53,7 @@ export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
                 {c.nome}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         </div>
       )}
       {centros.isError && (
@@ -182,7 +183,7 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
         </div>
         <div>
           <Label htmlFor="cobranca-conta">Conta financeira para recebimento</Label>
-          <select
+          <SearchSelect
             id="cobranca-conta"
             className="h-10 w-full rounded-md border bg-background px-3"
             value={conta}
@@ -195,7 +196,7 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
                 {c.nome}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         </div>
       </div>
       {contas.isError && (

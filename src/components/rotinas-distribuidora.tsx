@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { EntregaPorItem, AbrirComprovante } from "@/components/entrega-por-item";
@@ -533,7 +534,7 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
       <AvisoRotina erro={q.error} />
       {canManage && permissoes.pode("troca_vincular") && (
         <div className="flex flex-wrap gap-2">
-          <select
+          <SearchSelect
             aria-label="Novo pedido da troca"
             className="max-w-full rounded border bg-background p-2"
             value={pedido}
@@ -545,7 +546,7 @@ export function TrocaDevolucao({ devolucao }: { devolucao: Registro }) {
                 #{String(p["numero"])} · {brl(p["total_liquido"])}
               </option>
             ))}
-          </select>
+          </SearchSelect>
           <Button
             disabled={!pedido || rpc.isPending}
             onClick={() =>

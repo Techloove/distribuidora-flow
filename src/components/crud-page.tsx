@@ -1,3 +1,5 @@
+import { correspondeBuscaSelecao } from "@/lib/busca-selecao";
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { brl } from "@/lib/formatacao";
 import { useColumnPreferences } from "@/lib/use-column-preferences";
@@ -108,18 +110,29 @@ function LookupList({ id, table }: { id: string; table: string }) {
 
 /** Opções de um campo de referência (FK). */
 function useRefOptions(field: CrudField) {
-  const { client } = useSupabase();
+  const { client, user } = useSupabase();
   const ref = field.ref;
   return useQuery({
-    queryKey: [...["ref", ref?.table], getModalidade()],
+    queryKey: [...["ref", ref?.table, ref?.labelField, user?.id], getModalidade()],
     enabled: !!client && !!ref,
     queryFn: async () => {
-      const { data, error } = await client!
-        .from(ref!.table)
-        .select(`id, ${ref!.labelField}`)
-        .order(ref!.labelField);
-      if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as Record<string, unknown>[];
+      const extras = ["clientes", "fornecedores", "pessoas"].includes(ref!.table)
+        ? ["codigo", "nome_fantasia", "cnpj_cpf"]
+        : ref!.table === "produtos"
+          ? ["codigo", "ean", "sku"]
+          : ref!.table === "representantes"
+            ? ["codigo"]
+            : [];
+      const colunas = [...new Set(["id", ref!.labelField, ...extras])].join(",");
+      return lerPaginas<Record<string, unknown>>((inicio, fim) =>
+        client!
+          .from(ref!.table)
+          .select(colunas)
+          .order(ref!.labelField)
+          .order("id")
+          .range(inicio, fim)
+          .returns<Record<string, unknown>[]>(),
+      );
     },
   });
 }
@@ -146,20 +159,26 @@ function RefSelect({
 }) {
   const options = useRefOptions(field);
   return (
-    <select
+    <SearchSelect
       id={field.name}
       value={value}
-      disabled={disabled}
+      disabled={disabled || options.isPending || options.isError}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
     >
       <option value="">{field.ref?.emptyLabel ?? "—"}</option>
       {(options.data ?? []).map((o) => (
-        <option key={String(o["id"])} value={String(o["id"])}>
+        <option
+          key={String(o["id"])}
+          value={String(o["id"])}
+          data-search={[o["codigo"], o["nome_fantasia"], o["cnpj_cpf"], o["ean"], o["sku"]]
+            .filter(Boolean)
+            .join(" ")}
+        >
           {String(o[field.ref!.labelField] ?? "")}
         </option>
       ))}
-    </select>
+    </SearchSelect>
   );
 }
 
@@ -353,11 +372,7 @@ export function CrudPage({
     const term = search.trim().toLowerCase();
     if (!term) return list;
     return list.filter((row) =>
-      searchColumns.some((col) =>
-        String(row[col] ?? "")
-          .toLowerCase()
-          .includes(term),
-      ),
+      searchColumns.some((col) => correspondeBuscaSelecao(String(row[col] ?? ""), term)),
     );
   }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate, table]);
 
@@ -1031,7 +1046,7 @@ export function CrudPage({
                           onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))}
                         />
                       ) : field.type === "select" ? (
-                        <select
+                        <SearchSelect
                           id={field.name}
                           value={String(form[field.name] ?? "")}
                           onChange={(e) => setForm((f) => ({ ...f, [field.name]: e.target.value }))}
@@ -1043,7 +1058,7 @@ export function CrudPage({
                               {opt.label}
                             </option>
                           ))}
-                        </select>
+                        </SearchSelect>
                       ) : field.type === "checkbox" ? (
                         <div className="flex h-9 items-center">
                           <input

@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ConciliacaoExtrato } from "@/components/conciliacao-extrato";
@@ -373,7 +374,7 @@ function MovimentacoesPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Conta</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.conta_id}
                 onChange={(e) => setForm((f) => ({ ...f, conta_id: e.target.value }))}
@@ -384,7 +385,7 @@ function MovimentacoesPage() {
                     {String(c["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Tipo</Label>
@@ -417,7 +418,7 @@ function MovimentacoesPage() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Categoria</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.categoria_id}
                 onChange={(e) => setForm((f) => ({ ...f, categoria_id: e.target.value }))}
@@ -428,7 +429,7 @@ function MovimentacoesPage() {
                     {c["parent_id"] ? `— ${String(c["nome"])}` : String(c["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Histórico</Label>

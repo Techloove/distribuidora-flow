@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { brl as moeda } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
@@ -427,7 +428,7 @@ function CargasPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1 sm:col-span-2">
               <Label>Rota</Label>
-              <select
+              <SearchSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.rota_id}
                 onChange={(e) => setForm({ ...form, rota_id: e.target.value })}
@@ -438,7 +439,7 @@ function CargasPage() {
                     {String(r["nome"])}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-1">
               <Label>Data</Label>

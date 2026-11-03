@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -229,7 +230,7 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
           tributária, devolução e exportação não usam necessariamente o mesmo CFOP.
         </p>
         <Label htmlFor="fiscal-produto">Produto (opcional)</Label>
-        <select
+        <SearchSelect
           id="fiscal-produto"
           className="h-10 w-full rounded-md border bg-background px-3"
           value={produto}
@@ -244,7 +245,7 @@ export function FiscalLoja({ loja, editar }: { loja: string; editar: boolean }) 
               {p.codigo} · {p.descricao}
             </option>
           ))}
-        </select>
+        </SearchSelect>
         <Label htmlFor="fiscal-cep">CEP do cliente</Label>
         <Input
           id="fiscal-cep"

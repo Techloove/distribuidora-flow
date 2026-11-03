@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building2, ChevronDown, FileText, Layers3, Loader2, Wallet } from "lucide-react";
@@ -18,7 +19,7 @@ import {
   type CategoriaTitulo,
 } from "@/lib/lancamento-titulo";
 
-type Opcao = { id: string; nome: string };
+type Opcao = { id: string; nome: string; busca?: string };
 const selectCls =
   "h-11 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50";
 export function NovoTituloDialog({
@@ -165,7 +166,7 @@ export function NovoTituloDialog({
                   </Label>
                   <div className="relative">
                     <Building2 className="pointer-events-none absolute left-3 top-3.5 size-4 text-muted-foreground" />
-                    <select
+                    <SearchSelect
                       autoFocus
                       required
                       id="titulo-loja"
@@ -179,14 +180,14 @@ export function NovoTituloDialog({
                           {l.nome}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="titulo-parceiro">
                     {receber ? "Cliente" : "Fornecedor"} <span className="text-destructive">*</span>
                   </Label>
-                  <select
+                  <SearchSelect
                     required
                     id="titulo-parceiro"
                     className={selectCls}
@@ -202,11 +203,11 @@ export function NovoTituloDialog({
                           : `Selecione o ${receber ? "cliente" : "fornecedor"}`}
                     </option>
                     {parceiros.map((p) => (
-                      <option key={p.id} value={p.id}>
+                      <option key={p.id} value={p.id} data-search={p.busca}>
                         {p.nome}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                   {parceirosErro && (
                     <p role="alert" className="text-xs text-destructive">
                       {parceirosErro}
@@ -272,7 +273,7 @@ export function NovoTituloDialog({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="titulo-categoria">Categoria *</Label>
-                    <select
+                    <SearchSelect
                       required
                       id="titulo-categoria"
                       className={selectCls}
@@ -288,13 +289,13 @@ export function NovoTituloDialog({
                           {c.nome}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="titulo-subcategoria">
                       Subcategoria{subs.length ? " *" : ""}
                     </Label>
-                    <select
+                    <SearchSelect
                       required={subs.length > 0}
                       id="titulo-subcategoria"
                       className={selectCls}
@@ -314,7 +315,7 @@ export function NovoTituloDialog({
                           {c.nome}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                 </div>
                 {categorias.error && (

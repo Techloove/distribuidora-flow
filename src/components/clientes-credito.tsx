@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -121,7 +122,7 @@ export function CadastrarClienteRepresentante() {
               ))}
               <div className="space-y-1">
                 <Label htmlFor="novo-cliente-loja">Loja *</Label>
-                <select
+                <SearchSelect
                   id="novo-cliente-loja"
                   required
                   className="h-10 w-full rounded-md border bg-background px-3 text-sm"
@@ -134,11 +135,11 @@ export function CadastrarClienteRepresentante() {
                       {c.nome}
                     </option>
                   ))}
-                </select>
+                </SearchSelect>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="novo-cliente-rota">Rota *</Label>
-                <select
+                <SearchSelect
                   id="novo-cliente-rota"
                   required
                   className="h-10 w-full rounded-md border bg-background px-3 text-sm"
@@ -151,7 +152,7 @@ export function CadastrarClienteRepresentante() {
                       {r.nome}
                     </option>
                   ))}
-                </select>
+                </SearchSelect>
               </div>
             </fieldset>
             {(rotas.error || centros.error) && (

@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
@@ -102,7 +103,7 @@ export function AcoesFinanceirasTitulo({ titulo }: { titulo: Registro }) {
               {contas.error && <p role="alert">{contas.error.message}</p>}
               <label className="text-sm">
                 Conta Sicredi
-                <select
+                <SearchSelect
                   aria-label="Conta para Pix"
                   className="block w-full rounded border bg-background p-2"
                   value={conta}
@@ -124,7 +125,7 @@ export function AcoesFinanceirasTitulo({ titulo }: { titulo: Registro }) {
                         {String(c["nome"])}
                       </option>
                     ))}
-                </select>
+                </SearchSelect>
               </label>
               <Button
                 disabled={!conta || rpc.isPending}

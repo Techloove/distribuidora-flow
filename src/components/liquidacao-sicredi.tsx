@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { TarifasFinanceiro } from "@/components/tarifas-financeiro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -249,7 +250,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="tarifa-categoria">Categoria da despesa bancária</Label>
-                    <select
+                    <SearchSelect
                       id="tarifa-categoria"
                       className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                       value={categoria}
@@ -262,7 +263,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
                           {String(c.nome)}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                     {categorias.error && (
                       <p role="alert">Não foi possível carregar as categorias.</p>
                     )}

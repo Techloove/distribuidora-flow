@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { ProvedorFiscalLoja } from "@/components/provedor-fiscal-loja";
 import { FiscalLoja } from "@/components/fiscal-loja";
 import { FreteVolumeLoja } from "@/components/frete-volume-loja";
@@ -65,7 +66,7 @@ export function ConfiguracaoLoja({
         copiadas do sistema e podem ser personalizadas separadamente.
       </p>
       <Label htmlFor="configuracao-loja">Loja</Label>
-      <select
+      <SearchSelect
         id="configuracao-loja"
         className="h-10 w-full max-w-lg rounded-md border bg-background px-3"
         value={valida}
@@ -78,7 +79,7 @@ export function ConfiguracaoLoja({
             {l.nome}
           </option>
         ))}
-      </select>
+      </SearchSelect>
       {acesso.error && (
         <p role="alert" className="text-destructive">
           {acesso.error.message}

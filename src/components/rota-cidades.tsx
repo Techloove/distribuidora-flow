@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, MapPin, Plus, Trash2, Wand2 } from "lucide-react";
 import { useState } from "react";
@@ -151,7 +152,7 @@ export function RotaCidades() {
       <div className="grid gap-2 border-b border-border p-4 sm:grid-cols-5">
         <label className="space-y-1 text-xs text-muted-foreground sm:col-span-2">
           <span>Rota</span>
-          <select
+          <SearchSelect
             value={rotaId}
             onChange={(e) => setRotaId(e.target.value)}
             className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
@@ -162,7 +163,7 @@ export function RotaCidades() {
                 {String(r["nome"])}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         </label>
         <label className="space-y-1 text-xs text-muted-foreground">
           <span>Cidade</span>

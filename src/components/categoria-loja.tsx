@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -69,7 +70,7 @@ export function CategoriaLoja({ loja, editar }: { loja: string; editar: boolean 
       ) : (
         <>
           <Label htmlFor="categoria-produtos-loja">Categoria Centro Custo / Loja</Label>
-          <select
+          <SearchSelect
             id="categoria-produtos-loja"
             className="h-10 w-full max-w-lg rounded-md border bg-background px-3"
             value={categoria}
@@ -85,7 +86,7 @@ export function CategoriaLoja({ loja, editar }: { loja: string; editar: boolean 
                   {!c.ativo ? " (inativa)" : ""}
                 </option>
               ))}
-          </select>
+          </SearchSelect>
           <p className="text-xs text-muted-foreground">
             Preços e descontos continuam próprios da loja. Suspensões individuais já feitas são
             preservadas. Mudar a categoria não altera itens ou valores já salvos; pedidos em aberto

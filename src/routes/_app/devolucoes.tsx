@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { idReferencia } from "@/lib/referencias-registros";
@@ -368,7 +369,7 @@ function DevolucoesPage() {
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label>Cliente</Label>
-                  <select
+                  <SearchSelect
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={head.cliente_id}
                     onChange={(e) =>
@@ -381,11 +382,11 @@ function DevolucoesPage() {
                         {String(c["razao_social"])}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <Label>Pedido de origem (opcional)</Label>
-                  <select
+                  <SearchSelect
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={head.pedido_id}
                     onChange={(e) => setHead((f) => ({ ...f, pedido_id: e.target.value }))}
@@ -396,11 +397,11 @@ function DevolucoesPage() {
                         #{String(p["numero"])} — {brl(p["total_liquido"])}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <Label>Centro</Label>
-                  <select
+                  <SearchSelect
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={head.centro_id}
                     onChange={(e) => setHead((f) => ({ ...f, centro_id: e.target.value }))}
@@ -411,7 +412,7 @@ function DevolucoesPage() {
                         {String(c["nome"])}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <Label>Data</Label>
@@ -520,7 +521,7 @@ function DevolucoesPage() {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <Label>Produto</Label>
-                      <select
+                      <SearchSelect
                         className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                         value={item.produto_id}
                         onChange={(e) => {
@@ -538,7 +539,7 @@ function DevolucoesPage() {
                             {nomeProduto(p["id"])}
                           </option>
                         ))}
-                      </select>
+                      </SearchSelect>
                     </div>
                     <div>
                       <Label>Quantidade</Label>

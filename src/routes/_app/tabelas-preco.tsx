@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -520,7 +521,7 @@ function TabelasPrecoPage() {
     >
       <div className="mb-5 space-y-2">
         <Label htmlFor="promocoes-loja">Loja das promoções</Label>
-        <select
+        <SearchSelect
           id="promocoes-loja"
           className="h-10 w-full max-w-lg rounded-md border bg-background px-3"
           value={cv.centro}
@@ -532,7 +533,7 @@ function TabelasPrecoPage() {
               {l.nome}
             </option>
           ))}
-        </select>
+        </SearchSelect>
         <p className="text-sm text-muted-foreground">
           Campanhas e preços desta loja. Selecione uma loja para consultar ou configurar suas
           ofertas.
@@ -1029,7 +1030,7 @@ function TabelasPrecoPage() {
                 <div className="mt-3 space-y-3">
                   <div>
                     <Label htmlFor="promo-cliente">Cliente</Label>
-                    <select
+                    <SearchSelect
                       id="promo-cliente"
                       disabled={clientes.isPending || clientes.isError}
                       className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
@@ -1042,7 +1043,7 @@ function TabelasPrecoPage() {
                           {c.razao_social}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                     {clientes.isError && (
                       <p className="mt-1 text-xs text-destructive">
                         Não foi possível carregar os clientes.

@@ -1,3 +1,4 @@
+import { SearchSelect } from "@/components/ui/search-select";
 import { SeletorProdutoEstoque } from "@/components/seletor-produto-estoque";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -369,7 +370,7 @@ function EstoquePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estoque-loja">Loja do lançamento</Label>
-                  <select
+                  <SearchSelect
                     id="estoque-loja"
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                     value={centro}
@@ -383,7 +384,7 @@ function EstoquePage() {
                         {l.nome}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                   <p className="text-xs text-muted-foreground">
                     Entradas e saídas usam somente o depósito desta loja.
                   </p>
