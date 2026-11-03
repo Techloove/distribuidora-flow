@@ -835,13 +835,22 @@ export function ItensIntermediacao({
         </p>
       </div>
       {editavel && podePreco && (
-        <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="inter-produto">Cimento / produto</Label>
+        <div
+          role="group"
+          aria-label={
+            form.id ? "Edição de item de intermediação" : "Inclusão de item de intermediação"
+          }
+          className="@container space-y-3 rounded-lg border bg-muted/30 p-3"
+        >
+          <div className="grid grid-cols-2 items-end gap-2 @min-[600px]:grid-cols-4 @min-[900px]:grid-cols-[minmax(180px,2.2fr)_minmax(64px,.65fr)_minmax(90px,.9fr)_minmax(80px,.8fr)_minmax(84px,.85fr)_minmax(96px,.95fr)_minmax(110px,1.1fr)_minmax(108px,1.1fr)]">
+            <div className="col-span-2 min-w-0 space-y-1 @min-[900px]:col-span-1">
+              <Label htmlFor="inter-produto" className="text-xs">
+                Cimento / produto
+              </Label>
               <select
                 id="inter-produto"
-                className="h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-2"
+                className="h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-2 text-sm"
+                title={form.produto ? nome(form.produto) : "Selecione o produto"}
                 value={form.produto}
                 disabled={!!form.id}
                 onChange={(e) => {
@@ -862,83 +871,125 @@ export function ItensIntermediacao({
                 ))}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="inter-qtd">Quantidade de sacos</Label>
+            <div className="min-w-0 space-y-1">
+              <Label htmlFor="inter-qtd" className="text-xs">
+                Sacos
+              </Label>
               <Input
                 id="inter-qtd"
+                aria-label="Quantidade de sacos"
                 type="number"
+                inputMode="numeric"
                 step="1"
                 min="1"
+                className="h-11 min-w-0 text-right"
                 value={form.quantidade}
                 onChange={(e) => setForm((s) => ({ ...s, quantidade: e.target.value }))}
               />
             </div>
-            <div className="space-y-1">
-              <Label>Fábrica / saco</Label>
-              <p className="py-2 text-sm font-semibold">
-                {form.cotacao ? brl(form.fabrica) : "Sem cotação nesta data"}
-              </p>
-              {form.produto && atual(form.produto)?.id !== form.cotacao && atual(form.produto) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const c = atual(form.produto)!;
-                    setForm((s) => ({ ...s, cotacao: c.id, fabrica: Number(c.custo_fabrica) }));
-                  }}
-                >
-                  Aplicar cotação atual: {brl(atual(form.produto)?.custo_fabrica)}
-                </Button>
-              )}
+            <div className="min-w-0 space-y-1">
+              <Label htmlFor="inter-fabrica" className="text-xs">
+                Fábrica / saco
+              </Label>
+              <output
+                id="inter-fabrica"
+                aria-label="Custo de fábrica por saco"
+                className="flex h-11 min-w-0 items-center justify-end overflow-x-auto whitespace-nowrap rounded-md border bg-muted/40 px-2 text-xs font-semibold tabular-nums"
+              >
+                {form.cotacao ? brl(form.fabrica) : form.produto ? "Sem cotação" : "—"}
+              </output>
             </div>
             {(["frete", "margem"] as const).map((k) => (
-              <div key={k} className="space-y-1">
-                <Label htmlFor={"inter-" + k}>
-                  {k === "frete" ? "Frete por saco (R$)" : "Margem por saco (R$)"}
+              <div key={k} className="min-w-0 space-y-1">
+                <Label htmlFor={"inter-" + k} className="text-xs">
+                  {k === "frete" ? "Frete / saco" : "Margem / saco"}
                 </Label>
                 <Input
                   id={"inter-" + k}
+                  aria-label={k === "frete" ? "Frete por saco (R$)" : "Margem por saco (R$)"}
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   min="0"
+                  className="h-11 min-w-0 text-right"
                   value={form[k]}
                   onChange={(e) => setForm((s) => ({ ...s, [k]: e.target.value }))}
                 />
               </div>
             ))}
-            <div className="space-y-1">
-              <Label>Preço final por saco</Label>
-              <p className="py-2 font-semibold text-primary">
+            <div className="min-w-0 space-y-1">
+              <Label htmlFor="inter-preco" className="text-xs">
+                Preço / saco
+              </Label>
+              <output
+                id="inter-preco"
+                aria-label="Preço final por saco"
+                className="flex h-11 min-w-0 items-center justify-end overflow-x-auto whitespace-nowrap rounded-md border bg-primary/5 px-2 text-xs font-semibold tabular-nums text-primary"
+              >
                 {calculo ? brl(calculo.precoSaca) : "—"}
-              </p>
+              </output>
+            </div>
+            <div className="min-w-0 space-y-1">
+              <Label htmlFor="inter-total" className="text-xs">
+                Total do item
+              </Label>
+              <output
+                id="inter-total"
+                aria-label="Total do item"
+                className="flex h-11 min-w-0 items-center justify-end overflow-x-auto whitespace-nowrap rounded-md border bg-primary/5 px-2 text-xs font-semibold tabular-nums text-primary"
+              >
+                {calculo ? brl(calculo.total) : "—"}
+              </output>
+            </div>
+            <div className="col-span-2 min-w-0 space-y-1 @min-[900px]:col-span-1">
+              <span className="hidden text-xs font-medium @min-[900px]:block">Ação</span>
+              <Button
+                className="h-11 w-full px-2 text-xs"
+                disabled={
+                  !calculo ||
+                  !form.cotacao ||
+                  salvar.isPending ||
+                  cotacoes.isPending ||
+                  cotacoes.isError
+                }
+                onClick={() => salvar.mutate()}
+              >
+                {form.id ? "Salvar item" : "Adicionar item"}
+              </Button>
             </div>
           </div>
-          {calculo && (
-            <p className="text-sm">
-              Custo total: <strong>{brl(calculo.custoTotal)}</strong> · Margem total:{" "}
-              <strong>{brl(calculo.margemTotal)}</strong> · Venda:{" "}
-              <strong>{brl(calculo.total)}</strong>
-            </p>
+          {(calculo || form.produto) && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+              {calculo && (
+                <p className="text-xs text-muted-foreground">
+                  Custo do item:{" "}
+                  <strong className="text-foreground">{brl(calculo.custoTotal)}</strong> · Margem do
+                  item: <strong className="text-foreground">{brl(calculo.margemTotal)}</strong>
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {form.produto &&
+                  atual(form.produto)?.id !== form.cotacao &&
+                  atual(form.produto) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const c = atual(form.produto)!;
+                        setForm((s) => ({ ...s, cotacao: c.id, fabrica: Number(c.custo_fabrica) }));
+                      }}
+                    >
+                      Aplicar cotação atual: {brl(atual(form.produto)?.custo_fabrica)}
+                    </Button>
+                  )}
+                {form.produto && (
+                  <Button size="sm" variant="outline" onClick={() => setForm({ ...vazio })}>
+                    Descartar edição
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={
-                !calculo ||
-                !form.cotacao ||
-                salvar.isPending ||
-                cotacoes.isPending ||
-                cotacoes.isError
-              }
-              onClick={() => salvar.mutate()}
-            >
-              {form.id ? "Salvar item" : "Adicionar item"}
-            </Button>
-            {form.produto && (
-              <Button variant="outline" onClick={() => setForm({ ...vazio })}>
-                Descartar edição
-              </Button>
-            )}
-          </div>
         </div>
       )}
       {editavel && !podePreco && (

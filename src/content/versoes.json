@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.29.1",
+    "data": "2026-11-03",
+    "titulo": "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis",
+    "novidades": [
+      "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis"
+    ]
+  },
+  {
     "versao": "1.29.0",
     "data": "2026-11-03",
     "titulo": "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto",
