@@ -1,3 +1,4 @@
+import { dataBr } from "@/lib/formatacao";
 import { aproveitarCacheCadastral } from "@/lib/consulta-endereco";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -422,9 +423,13 @@ export function ConsultaCadastral({
                       </TableCell>
                       <TableCell className="text-xs font-medium">{c.label}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {atual || "—"}
+                        {["data_abertura", "data_nascimento"].includes(nome)
+                          ? dataBr(atual)
+                          : atual || "—"}
                       </TableCell>
-                      <TableCell className="text-xs">{novo}</TableCell>
+                      <TableCell className="text-xs">
+                        {["data_abertura", "data_nascimento"].includes(nome) ? dataBr(novo) : novo}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

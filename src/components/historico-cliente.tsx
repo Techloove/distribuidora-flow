@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useQuery } from "@tanstack/react-query";
@@ -19,8 +20,7 @@ import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
-const fmtDate = (v: unknown) =>
-  v ? new Date(String(v)).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—";
+const fmtDate = (v: unknown) => dataPadrao(v);
 
 const num = (v: unknown) => Number(v ?? 0);
 

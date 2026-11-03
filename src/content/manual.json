@@ -30,7 +30,8 @@
       "Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.",
       "Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.",
       "As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.",
-      "O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular."
+      "O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.",
+      "Datas são exibidas em DD/MM/AAAA; competências e períodos mensais, em MM/AAAA. Exemplo: 05/10/2026 e 10/2026. Campos mensais aceitam digitação de mês/ano; os filtros, cálculos e integrações preservam os valores técnicos de armazenamento."
     ],
     "cuidados": [
       "Cada perfil vê somente os módulos liberados. A ausência de um menu deve ser tratada com o administrador; o manual não concede acesso.",
@@ -83,15 +84,7 @@
     "titulo": "Clientes, fornecedores e outros cadastros",
     "grupo": "Cadastros",
     "resumo": "Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.",
-    "modulos": [
-      "/pessoas",
-      "/cadastros-padrao",
-      "/rotas",
-      "/clientes",
-      "/fornecedores",
-      "/representantes",
-      "/transportadoras"
-    ],
+    "modulos": ["/pessoas", "/cadastros-padrao", "/rotas", "/representantes"],
     "passos": [
       "Abra Cadastro Unificado e procure pelo nome ou documento antes de criar um registro novo.",
       "Informe o tipo de cadastro e os dados exigidos: nome, CPF/CNPJ, endereço e contatos.",
@@ -283,7 +276,7 @@
     "titulo": "Planejamento e registro de compras",
     "grupo": "Estoque",
     "resumo": "Planeje a reposição e acompanhe a entrada das mercadorias.",
-    "modulos": ["/compras", "/planejamento-compras"],
+    "modulos": ["/compras"],
     "passos": [
       "Consulte o planejamento de reposição da loja e confira estoque, pendências de venda e compras em trânsito.",
       "Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.",
@@ -327,7 +320,7 @@
     "titulo": "Montar carga, sair em rota e confirmar entrega",
     "grupo": "Entregas",
     "resumo": "Organize o transporte e formalize o recebimento do cliente.",
-    "modulos": ["/cargas", "/entregas", "/expedicao"],
+    "modulos": ["/cargas", "/entregas"],
     "passos": [
       "Em Cargas de entrega, crie a carga e informe rota, motorista, veículo e os dados exigidos.",
       "Inclua pedidos liberados da operação correspondente e confira capacidade, peso e documentos.",
@@ -423,7 +416,7 @@
     "titulo": "Boletos e notas fiscais",
     "grupo": "Financeiro",
     "resumo": "Entenda os cuidados com documentos bancários e fiscais.",
-    "modulos": ["/boletos", "/notas", "/faturamento"],
+    "modulos": ["/boletos", "/notas"],
     "passos": [
       "Para boletos, localize o título elegível e confira loja, cliente, valor, vencimento e a configuração bancária correspondente.",
       "Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.",
@@ -501,11 +494,7 @@
       "/comissoes",
       "/relatorio-vendas",
       "/pendencias",
-      "/notificacoes",
-      "/clientes-inativos",
-      "/cobranca",
-      "/lead-rota",
-      "/relatorios"
+      "/notificacoes"
     ],
     "passos": [
       "Na Agenda comercial, organize visitas, contatos e acompanhamento dos clientes da sua carteira.",
@@ -537,7 +526,7 @@
     "titulo": "Gestão, regras e faixas de comissão",
     "grupo": "Gestão",
     "resumo": "Consulte a apuração e configure regras e faixas conforme o acesso concedido.",
-    "modulos": ["/gestao-comissoes", "/regras-comissao", "/comissao-faixas"],
+    "modulos": ["/comissoes"],
     "passos": [
       "Em Gestão de comissões, consulte as abas Apuração por pedido, Metas e atingimento e Pagamentos gerados. Confira loja, representante e período antes de selecionar valores.",
       "A apuração considera pedidos aprovados e etapas seguintes. A competência usa a aprovação do ciclo, não a entrega nem a data comercial. O cadastro Recebe comissão pode desabilitar a comissão do representante.",
@@ -602,7 +591,7 @@
     "titulo": "Manual e histórico de versões",
     "grupo": "Começar",
     "resumo": "Encontre orientações e consulte o motivo de cada atualização.",
-    "modulos": ["/ajuda"],
+    "modulos": [],
     "passos": [
       "Abra Manual do Usuário no menu lateral. Na aba Manual, use a busca e o filtro de assunto para encontrar instruções; os atalhos respeitam o acesso do seu perfil.",
       "Abra Histórico de versões para consultar número, data, motivo e alterações. Busque pelo número da versão ou por um termo, como Sicoob, comissão ou estoque.",

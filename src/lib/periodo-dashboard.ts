@@ -1,3 +1,4 @@
+import { mesBr } from "./formatacao";
 import { hojeSaoPaulo } from "./painel-trabalho";
 export const mesDashboardAtual = (agora = new Date()) => hojeSaoPaulo(agora).slice(0, 7);
 export function moverMesDashboard(mes: string, deslocamento: number) {
@@ -7,9 +8,5 @@ export function moverMesDashboard(mes: string, deslocamento: number) {
   return `${data.getUTCFullYear()}-${String(data.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 export function rotuloMesDashboard(mes: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${mes}-01T12:00:00Z`));
+  return mesBr(mes);
 }

@@ -1,3 +1,4 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mesDashboardAtual, moverMesDashboard, rotuloMesDashboard } from "@/lib/periodo-dashboard";
@@ -147,7 +148,7 @@ function Dashboard() {
             <label className="sr-only" htmlFor="mes-dashboard">
               Mês do dashboard
             </label>
-            <input
+            <Input
               id="mes-dashboard"
               type="month"
               min="2000-01"

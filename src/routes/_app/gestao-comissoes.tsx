@@ -1,3 +1,4 @@
+import { mesBr as mesPadrao, dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,8 +66,7 @@ export const Route = createFileRoute("/_app/gestao-comissoes")({
 type Row = Record<string, unknown>;
 
 const num = (v: unknown) => Number(v ?? 0);
-const fmtDate = (v: unknown) =>
-  v ? new Date(String(v)).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—";
+const fmtDate = (v: unknown) => dataPadrao(v);
 
 const hoje = new Date();
 const inicioAno = new Date(hoje.getFullYear(), 0, 1).toISOString().slice(0, 10);
@@ -358,7 +358,7 @@ function GestaoComissoesPage() {
             label="Mês"
             value={filtros["mes"] ?? ""}
             onChange={(v) => setF("mes", v)}
-            options={mesesDisponiveis.map((m) => ({ value: m, label: m }))}
+            options={mesesDisponiveis.map((m) => ({ value: m, label: mesPadrao(m) }))}
           />
           <FilterText
             label="Aprovação de"
@@ -547,7 +547,7 @@ function GestaoComissoesPage() {
                           <TableCell data-label="Representante" className="max-w-[14rem] truncate">
                             {String(r["representante"] ?? "—")}
                           </TableCell>
-                          <TableCell data-label="Mês">{String(r["mes"])}</TableCell>
+                          <TableCell data-label="Mês">{mesPadrao(r["mes"])}</TableCell>
                           <TableCell data-label="Pedidos" className="text-right">
                             {num(r["pedidos"])}
                           </TableCell>

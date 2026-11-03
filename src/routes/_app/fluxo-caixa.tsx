@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -149,8 +150,8 @@ function FluxoCaixaPage() {
               </TableHeader>
               <TableBody>
                 {linhas.map((l) => (
-                  <TableRow key={l.periodo}>
-                    <TableCell data-label="Período">{l.periodo}</TableCell>
+                  <TableRow key={dataPadrao(l.periodo)}>
+                    <TableCell data-label="Período">{dataPadrao(l.periodo)}</TableCell>
                     <TableCell data-label="Entradas previstas" className="text-right">
                       {brl(l.previstoEntrada)}
                     </TableCell>

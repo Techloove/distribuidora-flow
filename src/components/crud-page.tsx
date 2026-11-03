@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { correspondeBuscaSelecao } from "@/lib/busca-selecao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
@@ -873,6 +874,8 @@ export function CrudPage({
                       ) : f.type === "select" && f.options?.length ? (
                         (f.options.find((o) => o.value === String(row[f.name] ?? ""))?.label ??
                         String(row[f.name] ?? "—"))
+                      ) : f.type === "date" ? (
+                        dataPadrao(row[f.name])
                       ) : f.currency ? (
                         row[f.name] === null || row[f.name] === undefined || row[f.name] === "" ? (
                           "—"

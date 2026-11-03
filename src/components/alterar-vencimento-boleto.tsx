@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -96,7 +97,7 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
           </DialogHeader>
           <p className="text-sm">
             Nosso número: {String(boleto["nosso_numero"])} · Vencimento atual:{" "}
-            {String(boleto["vencimento"])}
+            {dataPadrao(boleto["vencimento"])}
           </p>
           {pending ? (
             <p className="text-sm">

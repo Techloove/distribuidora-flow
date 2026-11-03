@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { InputMes } from "./input-mes";
 import { InputMoeda } from "./input-moeda";
 
 import { cn } from "@/lib/utils";
@@ -8,7 +9,7 @@ const Input = React.forwardRef<
   HTMLInputElement,
   React.ComponentProps<"input"> & { currency?: boolean | undefined }
 >(({ className, type, currency, ...props }, ref) => {
-  const Component = currency ? InputMoeda : "input";
+  const Component = currency ? InputMoeda : type === "month" ? InputMes : "input";
   return (
     <Component
       type={type}

@@ -1,3 +1,4 @@
+import { dataBr } from "./formatacao";
 import { brl as money } from "@/lib/formatacao";
 import { logoLojaValida } from "@/lib/identidade-loja";
 import { nomeStatusPedido, statusVisivelPedido } from "@/lib/status-pedido";
@@ -52,18 +53,8 @@ export function gerarHtmlPedidos(dados: PedidoImpressao[], css: string) {
       const tipoBase = orcamento ? "ORÇAMENTO" : "PEDIDO";
       const tipo =
         p["modalidade_venda"] === "intermediacao" ? `${tipoBase} • INTERMEDIAÇÃO` : tipoBase;
-      const validade = String(p["orcamento_validade"] ?? "")
-        .slice(0, 10)
-        .split("-")
-        .reverse()
-        .join("/");
-      const date = String(
-        (orcamento ? p["orcamento_data"] : p["data_pedido"]) ?? p["data_pedido"] ?? "",
-      )
-        .slice(0, 10)
-        .split("-")
-        .reverse()
-        .join("/");
+      const validade = dataBr(p["orcamento_validade"]);
+      const date = dataBr((orcamento ? p["orcamento_data"] : p["data_pedido"]) ?? p["data_pedido"]);
       const company =
         e["nome_fantasia"] || e["razao_social"] || centro["nome"] || "Pedido de venda";
       const logo = logoLojaValida(e["logo_url"]);

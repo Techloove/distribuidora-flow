@@ -1,3 +1,4 @@
+import { dataBr } from "./formatacao";
 export type AgendaAba = "comercial" | "reativacao" | "cobranca" | "rotas";
 export type AgendaFiltros = {
   busca: string;
@@ -18,7 +19,7 @@ export function abaAgenda(value: unknown): AgendaAba {
 }
 
 export function dataAgenda(value: unknown) {
-  return value ? String(value).slice(0, 10).split("-").reverse().join("/") : "—";
+  return dataBr(value);
 }
 
 export const RESULTADOS_CONTATO = [

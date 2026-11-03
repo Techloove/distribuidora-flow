@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { lerExtratoOfx } from "@/lib/importacoes-distribuidora";
@@ -221,7 +222,7 @@ export function ConciliacaoExtrato() {
               return (
                 <article className="rounded border p-3 space-y-2 text-sm" key={id}>
                   <strong>
-                    {String(l["data"])} · {brl(l["valor"])} · {String(l["referencia"])}
+                    {dataPadrao(l["data"])} · {brl(l["valor"])} · {String(l["referencia"])}
                   </strong>
                   <p>{String(l["descricao"] ?? "")}</p>
                   {l["movimento_id"] != null ? (
@@ -268,7 +269,7 @@ export function ConciliacaoExtrato() {
                         </option>
                         {candidatos.map((m) => (
                           <option key={String(m["id"])} value={String(m["id"])}>
-                            {String(m["data"])} · {String(m["documento"] ?? "")} ·{" "}
+                            {dataPadrao(m["data"])} · {String(m["documento"] ?? "")} ·{" "}
                             {String(m["descricao"] ?? "Movimento")} · {brl(m["valor"])}
                           </option>
                         ))}

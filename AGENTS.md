@@ -26,3 +26,4 @@
 - Valores monetários exibidos em telas, relatórios e impressões usam `brl` de `src/lib/formatacao.ts` (BRL, duas casas e separadores brasileiros). Campos monetários de `CrudPage` devem declarar `currency: true`; percentuais, quantidades e códigos não são moeda. Preserve a precisão numérica dos dados e os formatos técnicos de APIs, CNAB e integrações.
 
 - Ao entregar mudanças, revise as instruções da rotina no manual e o motivo/novidades da versão. `npm run check:manual` verifica cobertura das telas; o build também exige esse controle. Preserve as notas antigas e diferencie respostas simuladas de integrações operacionais.
+- Datas exibidas usam `dataBr` (DD/MM/AAAA) e competências mensais usam `mesBr` (MM/AAAA), de `src/lib/formatacao.ts`. Use `Input type="month"` para edição mensal em formato brasileiro. Preserve ISO nos valores enviados a filtros, banco e APIs; não use o texto formatado para ordenar, calcular ou comparar datas.

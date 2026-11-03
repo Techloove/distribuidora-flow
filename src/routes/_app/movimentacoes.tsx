@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -316,7 +317,7 @@ function MovimentacoesPage() {
               <TableBody>
                 {rows.map((m) => (
                   <TableRow key={String(m["id"])}>
-                    <TableCell>{String(m["data"])}</TableCell>
+                    <TableCell>{dataPadrao(m["data"])}</TableCell>
                     <TableCell>{String(m["conta_nome"] ?? "—")}</TableCell>
                     <TableCell>
                       <ReferenciaRegistro

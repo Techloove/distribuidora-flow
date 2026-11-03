@@ -50,6 +50,7 @@ export function previsaoTitulo(
     !Number.isSafeInteger(intervalo) ||
     intervalo < 0 ||
     (parcelas > 1 && intervalo < 1) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(vencimento) ||
     dataBr(vencimento) === "—"
   )
     return null;

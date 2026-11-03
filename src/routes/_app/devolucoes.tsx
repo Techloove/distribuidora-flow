@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -484,7 +485,7 @@ function DevolucoesPage() {
                           {cliName(d["cliente_id"])}
                         </ReferenciaRegistro>
                       </TableCell>
-                      <TableCell>{String(d["data_devolucao"])}</TableCell>
+                      <TableCell>{dataPadrao(d["data_devolucao"])}</TableCell>
                       <TableCell className="text-right">{brl(d["valor_total"])}</TableCell>
                       <TableCell>{String(d["status"])}</TableCell>
                     </TableRow>

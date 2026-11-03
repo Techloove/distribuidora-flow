@@ -22,7 +22,7 @@ import { Copy, Loader2, Printer, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { brl } from "@/components/documento-page";
+import { brl, dataBr } from "@/lib/formatacao";
 import { ErpLayout } from "@/components/erp-layout";
 import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
@@ -73,11 +73,6 @@ const statusLabel: Record<string, string> = {
   cancelado: "Cancelado",
   erro: "Erro",
 };
-
-function dataBr(v: unknown) {
-  const s = dataBoleto(v);
-  return s ? s.split("-").reverse().join("/") : "—";
-}
 
 export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const { client, roles, session } = useSupabase();

@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import type { ReactNode } from "react";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -52,8 +53,7 @@ type Row = Record<string, unknown>;
 
 const num = (v: unknown) => Number(v ?? 0);
 const txt = (v: unknown) => (v == null ? "" : String(v));
-const fmtDate = (v: unknown) =>
-  v ? new Date(String(v)).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—";
+const fmtDate = (v: unknown) => dataPadrao(v);
 
 const PAGE_SIZE = 24;
 

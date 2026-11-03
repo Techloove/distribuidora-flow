@@ -1,4 +1,4 @@
-import { brl } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,8 +22,7 @@ import {
 } from "@/lib/sicredi.functions";
 import type { InstrucaoSicredi, CondicoesSicredi } from "@/lib/sicredi-condicoes";
 
-const dia = (s: string) =>
-  /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10).split("-").reverse().join("/") : s;
+const dia = dataBr;
 const nomes = {
   abatimento: "Conceder abatimento",
   cancelar_abatimento: "Cancelar abatimento",

@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -105,8 +106,7 @@ const hojeLocal = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-const dataBR = (valor: string | null) =>
-  valor ? valor.slice(0, 10).split("-").reverse().join("/") : "Sem data final";
+const dataBR = (valor: string | null) => (valor ? dataPadrao(valor) : "Sem data final");
 const status = (c: Campanha, hoje: string): Status =>
   !c.ativo
     ? "Pausada"

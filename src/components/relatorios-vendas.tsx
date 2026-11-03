@@ -1,3 +1,4 @@
+import { mesBr as mesPadrao, dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -68,7 +69,8 @@ function formatar(key: string, value: unknown) {
   if (dinheiro.has(key)) return brl(value);
   if (key === "margem") return percentual(value);
   if (key === "peso") return peso(value);
-  if (key === "data_pedido") return dataAgenda(value);
+  if (key === "mes") return mesPadrao(value);
+  if (["data_pedido", "data_aprovacao"].includes(key)) return dataPadrao(value);
   return String(value).replace(key === "status" ? /_/g : /$^/g, " ");
 }
 export function RelatoriosVendas() {
@@ -498,7 +500,7 @@ export function RelatoriosVendas() {
                         margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="mes" fontSize={11} />
+                        <XAxis tickFormatter={mesPadrao} dataKey="mes" fontSize={11} />
                         <YAxis
                           width={72}
                           fontSize={11}
@@ -506,7 +508,10 @@ export function RelatoriosVendas() {
                             Number(v).toLocaleString("pt-BR", { notation: "compact" })
                           }
                         />
-                        <Tooltip formatter={(value) => brl(value)} />
+                        <Tooltip
+                          labelFormatter={(label) => mesPadrao(label)}
+                          formatter={(value) => brl(value)}
+                        />
                         <Legend wrapperStyle={{ fontSize: 12 }} />
                         <Bar
                           dataKey="vendas"

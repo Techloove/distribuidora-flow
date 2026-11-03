@@ -87,8 +87,8 @@ function RegrasComissaoPage() {
       inTable: true,
     },
     { name: "prioridade", label: "Prioridade", type: "number", inTable: true },
-    { name: "vigencia_inicio", label: "Vigência início (AAAA-MM-DD)" },
-    { name: "vigencia_fim", label: "Vigência fim (AAAA-MM-DD)" },
+    { name: "vigencia_inicio", label: "Vigência início", type: "date" },
+    { name: "vigencia_fim", label: "Vigência fim", type: "date" },
     { name: "ativo", label: "Ativa", type: "checkbox", inTable: true },
   ];
 

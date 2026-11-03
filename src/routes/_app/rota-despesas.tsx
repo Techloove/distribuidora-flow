@@ -1,3 +1,4 @@
+import { mesBr as mesPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -204,7 +205,7 @@ function RotaDespesasPage() {
                 {(resultado.data ?? []).map((r, idx) => (
                   <TableRow key={`${String(r["rota_id"])}-${String(r["periodo"])}-${idx}`}>
                     <TableCell>{String(r["rota"] ?? "—")}</TableCell>
-                    <TableCell>{String(r["periodo"] ?? "—").slice(0, 7)}</TableCell>
+                    <TableCell>{mesPadrao(r["periodo"])}</TableCell>
                     <TableCell className="text-right">{String(r["clientes"])}</TableCell>
                     <TableCell className="text-right">{String(r["pedidos"])}</TableCell>
                     <TableCell className="text-right">{brl(r["faturamento"])}</TableCell>

@@ -6,13 +6,20 @@ const files = (await readdir(new URL("src/routes/_app/", root))).filter(
 );
 const paths = new Set(files.map((f) => "/" + f.replace(/\.tsx$/, "")));
 const covered = new Set(manual.flatMap((t) => t.modulos));
+const permissoes = await readFile(new URL("src/lib/permissoes.ts", root), "utf8");
+const bloco = /const ALIASES[^=]*= \{([\s\S]*?)\};/.exec(permissoes)?.[1] ?? "";
+const aliases = Object.fromEntries(
+  [...bloco.matchAll(/"([^"]+)":\s*"([^"]+)"/g)].map((m) => [m[1], m[2]]),
+);
+
 for (const p of covered) if (!paths.has(p)) throw Error("Atalho inexistente no manual: " + p);
 const missing = [];
 for (const f of files) {
   const code = await readFile(new URL("src/routes/_app/" + f, root), "utf8");
   if (/throw redirect\(|<Navigate\s/.test(code)) continue;
   const path = "/" + f.replace(/\.tsx$/, "");
-  if (!covered.has(path)) missing.push(path);
+  if (path === "/ajuda" && manual.some((t) => t.id === "manual-versoes")) continue;
+  if (!covered.has(aliases[path] ?? path)) missing.push(path);
 }
 if (missing.length) throw Error("Telas sem orientação no manual: " + missing.join(", "));
 console.log(

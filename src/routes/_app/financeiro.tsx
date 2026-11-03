@@ -1,3 +1,4 @@
+import { mesBr as mesPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -205,9 +206,12 @@ function FinanceiroPage() {
           <Grafico titulo="Fluxo de caixa realizado (12 meses)">
             <LineChart data={porMes}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="periodo" fontSize={11} />
+              <XAxis tickFormatter={mesPadrao} dataKey="periodo" fontSize={11} />
               <YAxis fontSize={11} />
-              <Tooltip formatter={(v) => brl(v as number)} />
+              <Tooltip
+                labelFormatter={(label) => mesPadrao(label)}
+                formatter={(v) => brl(v as number)}
+              />
               <Legend />
               <Line type="monotone" dataKey="entradas" name="Entradas" stroke="#16a34a" />
               <Line type="monotone" dataKey="saidas" name="Saídas" stroke="#dc2626" />
@@ -218,9 +222,12 @@ function FinanceiroPage() {
           <Grafico titulo="Receitas x despesas por mês">
             <BarChart data={resultadoMes}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="periodo" fontSize={11} />
+              <XAxis tickFormatter={mesPadrao} dataKey="periodo" fontSize={11} />
               <YAxis fontSize={11} />
-              <Tooltip formatter={(v) => brl(v as number)} />
+              <Tooltip
+                labelFormatter={(label) => mesPadrao(label)}
+                formatter={(v) => brl(v as number)}
+              />
               <Legend />
               <Bar dataKey="receita" name="Receitas" fill="#16a34a" />
               <Bar dataKey="despesa" name="Despesas" fill="#dc2626" />
@@ -240,9 +247,12 @@ function FinanceiroPage() {
           <Grafico titulo="Entradas e saídas por mês">
             <BarChart data={porMes}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="periodo" fontSize={11} />
+              <XAxis tickFormatter={mesPadrao} dataKey="periodo" fontSize={11} />
               <YAxis fontSize={11} />
-              <Tooltip formatter={(v) => brl(v as number)} />
+              <Tooltip
+                labelFormatter={(label) => mesPadrao(label)}
+                formatter={(v) => brl(v as number)}
+              />
               <Legend />
               <Bar dataKey="entradas" name="Entradas" fill="#2563eb" />
               <Bar dataKey="saidas" name="Saídas" fill="#94a3b8" />

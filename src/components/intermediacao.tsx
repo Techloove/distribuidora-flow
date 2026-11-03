@@ -12,7 +12,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { usePodeAlterarPreco } from "@/lib/papeis";
 import { lerPaginas } from "@/lib/paginacao";
-import { brl } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { calcularIntermediacao, dataBaseIntermediacao } from "@/lib/intermediacao";
 
@@ -339,7 +339,7 @@ export function CotacoesIntermediacao({
     </section>
   );
 }
-const dataBr = (dia: string) => dia?.split("-").reverse().join("/");
+
 function useAcessoIntermediacao(loja: string, habilitada = false) {
   const { client, user } = useSupabase();
   return useQuery({

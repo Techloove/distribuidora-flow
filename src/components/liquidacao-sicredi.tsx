@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { TarifasFinanceiro } from "@/components/tarifas-financeiro";
 import { useState } from "react";
@@ -192,7 +193,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
             <div className="space-y-2 rounded-lg border p-4 text-sm">
               <p>
                 Tarifa vinculada: <strong>{brl(q.data["valor"])}</strong> ·{" "}
-                {String(q.data["data_cobranca"])}
+                {dataPadrao(q.data["data_cobranca"])}
               </p>
               <p>Referência: {String(q.data["referencia"])}</p>
               <p>

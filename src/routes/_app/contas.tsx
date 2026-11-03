@@ -1,3 +1,4 @@
+import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -389,7 +390,7 @@ function ContasPage() {
               <TableBody>
                 {(lancamentos.data ?? []).map((m) => (
                   <TableRow key={String(m["id"])}>
-                    <TableCell data-label="Data">{String(m["data"])}</TableCell>
+                    <TableCell data-label="Data">{dataPadrao(m["data"])}</TableCell>
                     <TableCell data-label="Histórico">{String(m["descricao"] ?? "—")}</TableCell>
                     <TableCell data-label="Origem">{String(m["origem"])}</TableCell>
                     <TableCell

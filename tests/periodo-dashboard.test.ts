@@ -12,5 +12,5 @@ test("navegação atravessa anos e retorna exatamente ao mês de origem", () => 
   expect(moverMesDashboard("2026-01", -1)).toBe("2025-12");
   expect(moverMesDashboard("2025-12", 1)).toBe("2026-01");
   expect(moverMesDashboard(moverMesDashboard("2026-11", -1), 1)).toBe("2026-11");
-  expect(rotuloMesDashboard("2026-11")).toBe("novembro de 2026");
+  expect(rotuloMesDashboard("2026-11")).toBe("11/2026");
 });

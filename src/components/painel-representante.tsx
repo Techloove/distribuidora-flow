@@ -131,9 +131,7 @@ export function PainelRepresentante({ mesSelecionado }: { mesSelecionado?: strin
               <tbody>
                 {q.data.meses.map((m) => (
                   <tr key={m.mes} className="border-t">
-                    <td className="p-2">
-                      {new Date(ano, m.mes - 1, 1).toLocaleDateString("pt-BR", { month: "long" })}
-                    </td>
+                    <td className="p-2">{`${String(m.mes).padStart(2, "0")}/${ano}`}</td>
                     <td className="p-2 text-right">{m.pedidos}</td>
                     <td className="relative p-2 text-right">
                       <span

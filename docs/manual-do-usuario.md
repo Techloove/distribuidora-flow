@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.34.0 · 2026-11-03
+Versão 1.34.1 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -33,6 +33,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 23. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
 24. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
 25. O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.
+26. Datas são exibidas em DD/MM/AAAA; competências e períodos mensais, em MM/AAAA. Exemplo: 05/10/2026 e 10/2026. Campos mensais aceitam digitação de mês/ano; os filtros, cálculos e integrações preservam os valores técnicos de armazenamento.
 
 Cuidados:
 
@@ -521,6 +522,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.34.1 · 2026-11-03 · Padroniza datas em DD/MM/AAAA e competências em MM/AAAA nas telas, gráficos, filtros e impressões
+
+Motivo da atualização: Padroniza datas em DD/MM/AAAA e competências em MM/AAAA nas telas, gráficos, filtros e impressões
+
+- Padroniza datas em DD/MM/AAAA e competências em MM/AAAA nas telas, gráficos, filtros e impressões
 
 ### v1.34.0 · 2026-11-03 · Revisa manual por módulo e adiciona histórico pesquisável com motivo e data de cada atualização
 
