@@ -1,11 +1,24 @@
 [
   {
+    "versao": "1.34.0",
+    "data": "2026-11-03",
+    "titulo": "Revisa manual por módulo e adiciona histórico pesquisável com motivo e data de cada atualização",
+    "motivo": "Facilitar a consulta das funções existentes e permitir que o usuário identifique o motivo de cada atualização sem perder o histórico anterior.",
+    "novidades": [
+      "Manual revisado com 24 assuntos e orientações para todas as telas operacionais, incluindo categorias financeiras, gestão de comissões e Sicoob.",
+      "Histórico de versões separado do manual, com busca por número, data ou assunto, motivo da atualização e lista de alterações.",
+      "Impressão e cópia do manual incluem o histórico. Notas das versões anteriores são preservadas.",
+      "Publicação passa a verificar cobertura das telas pelo manual e exigir motivo em cada versão."
+    ]
+  },
+  {
     "versao": "1.33.0",
     "data": "2026-11-03",
     "titulo": "Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos",
     "novidades": [
       "Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos"
-    ]
+    ],
+    "motivo": "Aplicar às demais telas o padrão visual aprovado nos lançamentos financeiros, melhorando consistência e leitura."
   },
   {
     "versao": "1.32.4",
@@ -13,7 +26,8 @@
     "titulo": "Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente",
     "novidades": [
       "Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente"
-    ]
+    ],
+    "motivo": "O sandbox devolvia dados fixos que eram rejeitados como identificação inválida e deixavam a tentativa pendente."
   },
   {
     "versao": "1.32.3",
@@ -21,7 +35,8 @@
     "titulo": "Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção",
     "novidades": [
       "Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção"
-    ]
+    ],
+    "motivo": "A conta financeira de produção interferia indevidamente na habilitação dos testes sandbox."
   },
   {
     "versao": "1.32.2",
@@ -29,7 +44,8 @@
     "titulo": "Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional",
     "novidades": [
       "Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional"
-    ]
+    ],
+    "motivo": "A conexão recusava o identificador negativo usado no exemplo oficial do sandbox."
   },
   {
     "versao": "1.32.1",
@@ -37,7 +53,8 @@
     "titulo": "Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade",
     "novidades": [
       "Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade"
-    ]
+    ],
+    "motivo": "O teste usava o endpoint de saúde e classificava qualquer falha como erro de credenciais."
   },
   {
     "versao": "1.32.0",
@@ -45,7 +62,8 @@
     "titulo": "Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos",
     "novidades": [
       "Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos"
-    ]
+    ],
+    "motivo": "Preparar a cobrança Sicoob da loja Cimento e testar a integração separadamente das cobranças reais."
   },
   {
     "versao": "1.31.0",
@@ -53,7 +71,8 @@
     "titulo": "Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema",
     "novidades": [
       "Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema"
-    ]
+    ],
+    "motivo": "Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema"
   },
   {
     "versao": "1.30.1",
@@ -61,13 +80,15 @@
     "titulo": "Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero",
     "novidades": [
       "Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero"
-    ]
+    ],
+    "motivo": "Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero"
   },
   {
     "versao": "1.30.0",
     "data": "2026-11-03",
     "titulo": "Incluir itens de compra em linha com frete unitário e custo final por produto",
-    "novidades": ["Incluir itens de compra em linha com frete unitário e custo final por produto"]
+    "novidades": ["Incluir itens de compra em linha com frete unitário e custo final por produto"],
+    "motivo": "Incluir itens de compra em linha com frete unitário e custo final por produto"
   },
   {
     "versao": "1.29.1",
@@ -75,7 +96,8 @@
     "titulo": "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis",
     "novidades": [
       "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis"
-    ]
+    ],
+    "motivo": "Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis"
   },
   {
     "versao": "1.29.0",
@@ -83,7 +105,8 @@
     "titulo": "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto",
     "novidades": [
       "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto"
-    ]
+    ],
+    "motivo": "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto"
   },
   {
     "versao": "1.28.0",
@@ -91,13 +114,15 @@
     "titulo": "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto",
     "novidades": [
       "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto"
-    ]
+    ],
+    "motivo": "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto"
   },
   {
     "versao": "1.27.1",
     "data": "2026-11-03",
     "titulo": "Padronizar saco e sacos nas telas, instruções e mensagens da intermediação",
-    "novidades": ["Padronizar saco e sacos nas telas, instruções e mensagens da intermediação"]
+    "novidades": ["Padronizar saco e sacos nas telas, instruções e mensagens da intermediação"],
+    "motivo": "Padronizar saco e sacos nas telas, instruções e mensagens da intermediação"
   },
   {
     "versao": "1.27.0",
@@ -105,7 +130,8 @@
     "titulo": "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período",
     "novidades": [
       "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período"
-    ]
+    ],
+    "motivo": "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período"
   },
   {
     "versao": "1.26.0",
@@ -113,13 +139,15 @@
     "titulo": "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação",
     "novidades": [
       "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação"
-    ]
+    ],
+    "motivo": "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação"
   },
   {
     "versao": "1.25.1",
     "data": "2026-11-02",
     "titulo": "Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido",
-    "novidades": ["Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido"]
+    "novidades": ["Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido"],
+    "motivo": "Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido"
   },
   {
     "versao": "1.25.0",
@@ -128,7 +156,8 @@
     "novidades": [
       "Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado",
       "Agendamento por recebimentos recolhido por padrão, com identificação de operação opcional que gera conta a pagar sem efetuar pagamento."
-    ]
+    ],
+    "motivo": "Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado"
   },
   {
     "versao": "1.24.1",
@@ -136,7 +165,8 @@
     "titulo": "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador",
     "novidades": [
       "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador"
-    ]
+    ],
+    "motivo": "Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador"
   },
   {
     "versao": "1.24.0",
@@ -146,7 +176,8 @@
       "Comissões apuradas somente para pedidos aprovados e etapas seguintes, com bloqueio de liberação e pagamento de previsões ligadas à digitação, orçamento ou análise.",
       "Ao retomar um pedido em digitação de outro dia, escolha manter a data original ou atualizar para hoje, preservando os itens e os preços gravados.",
       "A aba Em aberto reúne títulos vencidos e parciais. Novo atalho limpa os filtros para conferir todos os títulos da loja selecionada."
-    ]
+    ],
+    "motivo": "Comissões somente após aprovação, escolha da data ao retomar pedidos e exibição completa dos títulos pendentes"
   },
   {
     "versao": "1.23.2",
@@ -154,7 +185,8 @@
     "titulo": "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar",
     "novidades": [
       "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar"
-    ]
+    ],
+    "motivo": "Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar"
   },
   {
     "versao": "1.23.1",
@@ -162,7 +194,8 @@
     "titulo": "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa",
     "novidades": [
       "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa"
-    ]
+    ],
+    "motivo": "Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa"
   },
   {
     "versao": "1.23.0",
@@ -170,7 +203,8 @@
     "titulo": "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos",
     "novidades": [
       "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos"
-    ]
+    ],
+    "motivo": "Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos"
   },
   {
     "versao": "1.22.0",
@@ -178,31 +212,38 @@
     "titulo": "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação",
     "novidades": [
       "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação"
-    ]
+    ],
+    "motivo": "Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação"
   },
   {
     "versao": "1.21.1",
     "data": "2026-10-30",
     "titulo": "Preparar a cotação de intermediação no orçamento e preservar custos no aceite",
-    "novidades": ["Preparar a cotação de intermediação no orçamento e preservar custos no aceite"]
+    "novidades": ["Preparar a cotação de intermediação no orçamento e preservar custos no aceite"],
+    "motivo": "Preparar a cotação de intermediação no orçamento e preservar custos no aceite"
   },
   {
     "versao": "1.21.0",
     "data": "2026-10-30",
     "titulo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saco",
-    "novidades": ["Adicionar intermediação por loja com cotações diárias, frete e margem por saco"]
+    "novidades": ["Adicionar intermediação por loja com cotações diárias, frete e margem por saco"],
+    "motivo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saco"
   },
   {
     "versao": "1.20.3",
     "data": "2026-10-30",
     "titulo": "Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa",
-    "novidades": ["Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa"]
+    "novidades": [
+      "Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa"
+    ],
+    "motivo": "Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa"
   },
   {
     "versao": "1.20.2",
     "data": "2026-10-30",
     "titulo": "Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro",
-    "novidades": ["Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro"]
+    "novidades": ["Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro"],
+    "motivo": "Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro"
   },
   {
     "versao": "1.20.1",
@@ -211,7 +252,8 @@
     "novidades": [
       "Aplicar o filtro global de loja ao planejamento e revisar listagens e totais",
       "Retirar Pendência da listagem de compras, mantendo pedidos aprovados nos cálculos sem duplicar baixas de estoque."
-    ]
+    ],
+    "motivo": "Aplicar o filtro global de loja ao planejamento e revisar listagens e totais"
   },
   {
     "versao": "1.20.0",
@@ -219,43 +261,50 @@
     "titulo": "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados",
     "novidades": [
       "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados"
-    ]
+    ],
+    "motivo": "Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados"
   },
   {
     "versao": "1.19.6",
     "data": "2026-10-30",
     "titulo": "Padronizar valores monetários em reais com duas casas decimais",
-    "novidades": ["Padronizar valores monetários em reais com duas casas decimais"]
+    "novidades": ["Padronizar valores monetários em reais com duas casas decimais"],
+    "motivo": "Padronizar valores monetários em reais com duas casas decimais"
   },
   {
     "versao": "1.19.5",
     "data": "2026-10-30",
     "titulo": "Destacar abatimento confirmado em amarelo e apresentar motivo em Opções",
-    "novidades": ["Destacar abatimento confirmado em amarelo e apresentar motivo em Opções"]
+    "novidades": ["Destacar abatimento confirmado em amarelo e apresentar motivo em Opções"],
+    "motivo": "Destacar abatimento confirmado em amarelo e apresentar motivo em Opções"
   },
   {
     "versao": "1.19.4",
     "data": "2026-10-30",
     "titulo": "Corrigir consulta ao histórico de desconto e abatimento Sicredi",
-    "novidades": ["Corrigir consulta ao histórico de desconto e abatimento Sicredi"]
+    "novidades": ["Corrigir consulta ao histórico de desconto e abatimento Sicredi"],
+    "motivo": "Corrigir consulta ao histórico de desconto e abatimento Sicredi"
   },
   {
     "versao": "1.19.3",
     "data": "2026-10-30",
     "titulo": "Compactar a lista de boletos para manter Opções visível",
-    "novidades": ["Compactar a lista de boletos para manter Opções visível"]
+    "novidades": ["Compactar a lista de boletos para manter Opções visível"],
+    "motivo": "Compactar a lista de boletos para manter Opções visível"
   },
   {
     "versao": "1.19.2",
     "data": "2026-10-30",
     "titulo": "Identificar boletos cancelados com tag vermelha junto ao vencimento",
-    "novidades": ["Identificar boletos cancelados com tag vermelha junto ao vencimento"]
+    "novidades": ["Identificar boletos cancelados com tag vermelha junto ao vencimento"],
+    "motivo": "Identificar boletos cancelados com tag vermelha junto ao vencimento"
   },
   {
     "versao": "1.19.1",
     "data": "2026-10-30",
     "titulo": "Mover aviso e motivo de cancelamento do boleto para Opções",
-    "novidades": ["Mover aviso e motivo de cancelamento do boleto para Opções"]
+    "novidades": ["Mover aviso e motivo de cancelamento do boleto para Opções"],
+    "motivo": "Mover aviso e motivo de cancelamento do boleto para Opções"
   },
   {
     "versao": "1.19.0",
@@ -263,19 +312,22 @@
     "titulo": "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária",
     "novidades": [
       "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária"
-    ]
+    ],
+    "motivo": "Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária"
   },
   {
     "versao": "1.18.2",
     "data": "2026-10-29",
     "titulo": "Corrigir exposição de crédito para contar cada pedido uma única vez",
-    "novidades": ["Corrigir exposição de crédito para contar cada pedido uma única vez"]
+    "novidades": ["Corrigir exposição de crédito para contar cada pedido uma única vez"],
+    "motivo": "Corrigir exposição de crédito para contar cada pedido uma única vez"
   },
   {
     "versao": "1.18.1",
     "data": "2026-10-29",
     "titulo": "Corrigir retorno para digitação ao sincronizar o cancelamento da expedição",
-    "novidades": ["Corrigir retorno para digitação ao sincronizar o cancelamento da expedição"]
+    "novidades": ["Corrigir retorno para digitação ao sincronizar o cancelamento da expedição"],
+    "motivo": "Corrigir retorno para digitação ao sincronizar o cancelamento da expedição"
   },
   {
     "versao": "1.18.0",
@@ -283,19 +335,22 @@
     "titulo": "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas",
     "novidades": [
       "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas"
-    ]
+    ],
+    "motivo": "Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas"
   },
   {
     "versao": "1.17.3",
     "data": "2026-10-29",
     "titulo": "Restaurar clientes e Cadastro unificado em lista com colunas",
-    "novidades": ["Restaurar clientes e Cadastro unificado em lista com colunas"]
+    "novidades": ["Restaurar clientes e Cadastro unificado em lista com colunas"],
+    "motivo": "Restaurar clientes e Cadastro unificado em lista com colunas"
   },
   {
     "versao": "1.17.2",
     "data": "2026-10-29",
     "titulo": "Restaurar exibição de Produtos em lista com colunas",
-    "novidades": ["Restaurar exibição de Produtos em lista com colunas"]
+    "novidades": ["Restaurar exibição de Produtos em lista com colunas"],
+    "motivo": "Restaurar exibição de Produtos em lista com colunas"
   },
   {
     "versao": "1.17.1",
@@ -304,7 +359,8 @@
     "novidades": [
       "Imprimir pedido ao lado do total, sem abrir seus detalhes.",
       "Campos selecionados em Produtos e Cadastro unificado se reorganizam em blocos, sem rolagem lateral."
-    ]
+    ],
+    "motivo": "Impressão direta dos pedidos e cadastros sem rolagem lateral"
   },
   {
     "versao": "1.17.0",
@@ -314,7 +370,8 @@
       "Colunas salvas por usuário nas listagens, sincronizadas entre computadores.",
       "Padrão de leitura em todas as tabelas: nomes completos, valores e códigos sem partir, rolagem interna e cartões no celular.",
       "Financeiro com Emitir boleto ou Reimprimir boleto e seleção de PDFs por parcela, pedido ou cliente."
-    ]
+    ],
+    "motivo": "Colunas por usuário, leitura de produtos e impressão de boletos por cliente ou pedido"
   },
   {
     "versao": "1.16.0",
@@ -325,7 +382,8 @@
       "Nova pendência e filtro de clientes sem loja; escolha do vínculo em Dados gerais no Cadastro unificado.",
       "Clientes sem loja precisam ser regularizados para iniciar novas vendas, preservando pedidos e financeiros anteriores.",
       "Títulos financeiros exibem valores e documentos inteiros, datas DD/MM/AAAA e ações secundárias em Opções."
-    ]
+    ],
+    "motivo": "Vínculos de loja dos clientes e leitura dos títulos financeiros"
   },
   {
     "versao": "1.15.0",
@@ -336,37 +394,43 @@
       "Filtros combináveis no Cadastro unificado e abertura da lista pela categoria da Central.",
       "Filtros por loja específica, pelo nome da loja e por cadastro compartilhado entre lojas; a regra atual de Todos os centros é preservada.",
       "Consulta paginada do Cadastro unificado para incluir pendências além dos primeiros mil registros."
-    ]
+    ],
+    "motivo": "Pendências de clientes e filtros por rota, representante, limite e loja"
   },
   {
     "versao": "1.14.5",
     "data": "2026-10-29",
     "titulo": "Destacar vencimentos alterados e exibir histórico nas opções do boleto",
-    "novidades": ["Destacar vencimentos alterados e exibir histórico nas opções do boleto"]
+    "novidades": ["Destacar vencimentos alterados e exibir histórico nas opções do boleto"],
+    "motivo": "Destacar vencimentos alterados e exibir histórico nas opções do boleto"
   },
   {
     "versao": "1.14.4",
     "data": "2026-10-29",
     "titulo": "Corrigir identificação do beneficiário na alteração e baixa Sicredi",
-    "novidades": ["Corrigir identificação do beneficiário na alteração e baixa Sicredi"]
+    "novidades": ["Corrigir identificação do beneficiário na alteração e baixa Sicredi"],
+    "motivo": "Corrigir identificação do beneficiário na alteração e baixa Sicredi"
   },
   {
     "versao": "1.14.3",
     "data": "2026-10-29",
     "titulo": "Melhorar leitura e navegação no celular, cartões, filtros e formulários",
-    "novidades": ["Melhorar leitura e navegação no celular, cartões, filtros e formulários"]
+    "novidades": ["Melhorar leitura e navegação no celular, cartões, filtros e formulários"],
+    "motivo": "Melhorar leitura e navegação no celular, cartões, filtros e formulários"
   },
   {
     "versao": "1.14.2",
     "data": "2026-10-29",
     "titulo": "Mostrar representante e rota na impressão e orientar PDF no celular",
-    "novidades": ["Mostrar representante e rota na impressão e orientar PDF no celular"]
+    "novidades": ["Mostrar representante e rota na impressão e orientar PDF no celular"],
+    "motivo": "Mostrar representante e rota na impressão e orientar PDF no celular"
   },
   {
     "versao": "1.14.1",
     "data": "2026-10-29",
     "titulo": "Permitir ao representante cancelar somente o próprio pedido aprovado",
-    "novidades": ["Permitir ao representante cancelar somente o próprio pedido aprovado"]
+    "novidades": ["Permitir ao representante cancelar somente o próprio pedido aprovado"],
+    "motivo": "Permitir ao representante cancelar somente o próprio pedido aprovado"
   },
   {
     "versao": "1.14.0",
@@ -374,7 +438,8 @@
     "titulo": "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo",
     "novidades": [
       "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo"
-    ]
+    ],
+    "motivo": "Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo"
   },
   {
     "versao": "1.13.0",
@@ -382,49 +447,57 @@
     "titulo": "Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial",
     "novidades": [
       "Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial"
-    ]
+    ],
+    "motivo": "Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial"
   },
   {
     "versao": "1.12.0",
     "data": "2026-10-28",
     "titulo": "Recuperação de senha pelo próprio usuário e orientação após aprovação",
-    "novidades": ["Recuperação de senha pelo próprio usuário e orientação após aprovação"]
+    "novidades": ["Recuperação de senha pelo próprio usuário e orientação após aprovação"],
+    "motivo": "Recuperação de senha pelo próprio usuário e orientação após aprovação"
   },
   {
     "versao": "1.11.1",
     "data": "2026-10-28",
     "titulo": "Corrigir publicação do manifesto de versão e cache na Vercel",
-    "novidades": ["Corrigir publicação do manifesto de versão e cache na Vercel"]
+    "novidades": ["Corrigir publicação do manifesto de versão e cache na Vercel"],
+    "motivo": "Corrigir publicação do manifesto de versão e cache na Vercel"
   },
   {
     "versao": "1.11.0",
     "data": "2026-10-28",
     "titulo": "Adicionar ensaio isolado de restauração dos backups",
-    "novidades": ["Adicionar ensaio isolado de restauração dos backups"]
+    "novidades": ["Adicionar ensaio isolado de restauração dos backups"],
+    "motivo": "Adicionar ensaio isolado de restauração dos backups"
   },
   {
     "versao": "1.10.3",
     "data": "2026-10-28",
     "titulo": "Validar certificado Supabase e tratar respostas vazias no backup",
-    "novidades": ["Validar certificado Supabase e tratar respostas vazias no backup"]
+    "novidades": ["Validar certificado Supabase e tratar respostas vazias no backup"],
+    "motivo": "Validar certificado Supabase e tratar respostas vazias no backup"
   },
   {
     "versao": "1.10.2",
     "data": "2026-10-28",
     "titulo": "Identificar configurações incompletas na rotina de backup",
-    "novidades": ["Identificar configurações incompletas na rotina de backup"]
+    "novidades": ["Identificar configurações incompletas na rotina de backup"],
+    "motivo": "Identificar configurações incompletas na rotina de backup"
   },
   {
     "versao": "1.10.1",
     "data": "2026-10-28",
     "titulo": "Corrigir validação da rotina de backup no GitHub",
-    "novidades": ["Corrigir validação da rotina de backup no GitHub"]
+    "novidades": ["Corrigir validação da rotina de backup no GitHub"],
+    "motivo": "Corrigir validação da rotina de backup no GitHub"
   },
   {
     "versao": "1.10.0",
     "data": "2026-10-28",
     "titulo": "Automatizar backups no GitHub sem servidor separado",
-    "novidades": ["Automatizar backups no GitHub sem servidor separado"]
+    "novidades": ["Automatizar backups no GitHub sem servidor separado"],
+    "motivo": "Automatizar backups no GitHub sem servidor separado"
   },
   {
     "versao": "1.9.0",
@@ -432,7 +505,8 @@
     "titulo": "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador",
     "novidades": [
       "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador"
-    ]
+    ],
+    "motivo": "Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador"
   },
   {
     "versao": "1.8.0",
@@ -440,31 +514,36 @@
     "titulo": "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências",
     "novidades": [
       "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências"
-    ]
+    ],
+    "motivo": "Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências"
   },
   {
     "versao": "1.7.3",
     "data": "2026-10-27",
     "titulo": "Exibir primeiro vencimento no topo da lista de boletos por padrão",
-    "novidades": ["Exibir primeiro vencimento no topo da lista de boletos por padrão"]
+    "novidades": ["Exibir primeiro vencimento no topo da lista de boletos por padrão"],
+    "motivo": "Exibir primeiro vencimento no topo da lista de boletos por padrão"
   },
   {
     "versao": "1.7.2",
     "data": "2026-10-27",
     "titulo": "Esclarecer confirmação de cancelamento do boleto sem senha",
-    "novidades": ["Esclarecer confirmação de cancelamento do boleto sem senha"]
+    "novidades": ["Esclarecer confirmação de cancelamento do boleto sem senha"],
+    "motivo": "Esclarecer confirmação de cancelamento do boleto sem senha"
   },
   {
     "versao": "1.7.1",
     "data": "2026-10-27",
     "titulo": "Mover cancelamento para Opções e destacar reimpressão individual do boleto",
-    "novidades": ["Mover cancelamento para Opções e destacar reimpressão individual do boleto"]
+    "novidades": ["Mover cancelamento para Opções e destacar reimpressão individual do boleto"],
+    "motivo": "Mover cancelamento para Opções e destacar reimpressão individual do boleto"
   },
   {
     "versao": "1.7.0",
     "data": "2026-10-27",
     "titulo": "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE",
-    "novidades": ["Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"]
+    "novidades": ["Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"],
+    "motivo": "Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE"
   },
   {
     "versao": "1.6.0",
@@ -472,7 +551,8 @@
     "titulo": "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação",
     "novidades": [
       "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação"
-    ]
+    ],
+    "motivo": "Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação"
   },
   {
     "versao": "1.5.0",
@@ -482,7 +562,8 @@
       "Lista com emissão, vencimento, liquidação, filtros por cliente e períodos e ações expandidas por boleto.",
       "Consulta automática de débitos pela Francesinha, com tarifas identificadas pela descrição, isolamento por loja e reconsulta sem duplicar valores.",
       "A captura de tarifas não gera despesas automaticamente e preserva a liquidação existente."
-    ]
+    ],
+    "motivo": "Melhorar lista de boletos e consultar tarifas automaticamente pela API Sicredi"
   },
   {
     "versao": "1.4.0",
@@ -490,55 +571,64 @@
     "titulo": "Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento",
     "novidades": [
       "Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento"
-    ]
+    ],
+    "motivo": "Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento"
   },
   {
     "versao": "1.3.5",
     "data": "2026-10-27",
     "titulo": "Corrigir consulta automática Sicredi após salvar token com resposta vazia",
-    "novidades": ["Corrigir consulta automática Sicredi após salvar token com resposta vazia"]
+    "novidades": ["Corrigir consulta automática Sicredi após salvar token com resposta vazia"],
+    "motivo": "Corrigir consulta automática Sicredi após salvar token com resposta vazia"
   },
   {
     "versao": "1.3.4",
     "data": "2026-10-27",
     "titulo": "Identificar falhas da consulta automática Sicredi sem expor credenciais",
-    "novidades": ["Identificar falhas da consulta automática Sicredi sem expor credenciais"]
+    "novidades": ["Identificar falhas da consulta automática Sicredi sem expor credenciais"],
+    "motivo": "Identificar falhas da consulta automática Sicredi sem expor credenciais"
   },
   {
     "versao": "1.3.3",
     "data": "2026-10-27",
     "titulo": "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio",
-    "novidades": ["Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"]
+    "novidades": ["Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"],
+    "motivo": "Atualizar diagnóstico de integridade por loja e validar fluxos de negócio"
   },
   {
     "versao": "1.3.2",
     "data": "2026-10-27",
     "titulo": "Ampliar Cadastro Unificado e dividir formulário em seções",
-    "novidades": ["Ampliar Cadastro Unificado e dividir formulário em seções"]
+    "novidades": ["Ampliar Cadastro Unificado e dividir formulário em seções"],
+    "motivo": "Ampliar Cadastro Unificado e dividir formulário em seções"
   },
   {
     "versao": "1.3.1",
     "data": "2026-10-27",
     "titulo": "Ampliar edição de produtos e organizar campos e histórico em seções",
-    "novidades": ["Ampliar edição de produtos e organizar campos e histórico em seções"]
+    "novidades": ["Ampliar edição de produtos e organizar campos e histórico em seções"],
+    "motivo": "Ampliar edição de produtos e organizar campos e histórico em seções"
   },
   {
     "versao": "1.3.0",
     "data": "2026-10-27",
     "titulo": "Sincronizar preço normal entre Produtos e catálogo das lojas",
-    "novidades": ["Sincronizar preço normal entre Produtos e catálogo das lojas"]
+    "novidades": ["Sincronizar preço normal entre Produtos e catálogo das lojas"],
+    "motivo": "Sincronizar preço normal entre Produtos e catálogo das lojas"
   },
   {
     "versao": "1.2.1",
     "data": "2026-10-27",
     "titulo": "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos",
-    "novidades": ["Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"]
+    "novidades": ["Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"],
+    "motivo": "Corrigir repetição de cartões e carregamento da margem ao abrir pedidos"
   },
   {
     "versao": "1.2.0",
     "data": "2026-10-27",
     "titulo": "Nome fantasia do cliente e observações na impressão dos pedidos",
-    "novidades": ["Nome fantasia do cliente e observações na impressão dos pedidos"]
+    "novidades": ["Nome fantasia do cliente e observações na impressão dos pedidos"],
+    "motivo": "Nome fantasia do cliente e observações na impressão dos pedidos"
   },
   {
     "versao": "1.1.0",
@@ -550,7 +640,8 @@
       "Botão Atualizar agora confirma o recarregamento e preserva a tela e os filtros da URL.",
       "O aviso pode ser recolhido e reaparece expandido quando outra versão é detectada.",
       "A atualização aguarda as operações em andamento; salve campos ainda não enviados antes de confirmar."
-    ]
+    ],
+    "motivo": "Atualização automática ao entrar e aviso de nova versão durante o uso"
   },
   {
     "versao": "1.0.0",
@@ -563,6 +654,7 @@
       "Regularização administrativa de pedidos antigos com motivo, data e auditoria.",
       "Solicitação de backup com histórico; a execução depende da infraestrutura configurada.",
       "Integração Forecast Fiscal em homologação; emissão em produção permanece bloqueada."
-    ]
+    ],
+    "motivo": "Versão inicial com manual do usuário"
   }
 ]

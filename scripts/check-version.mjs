@@ -14,6 +14,8 @@ for (const v of historico) {
     vistos.has(v.versao) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(v.data) ||
     !v.titulo?.trim() ||
+    typeof v.motivo !== "string" ||
+    !v.motivo.trim() ||
     !Array.isArray(v.novidades) ||
     !v.novidades.length ||
     v.novidades.some((n) => typeof n !== "string" || !n.trim())

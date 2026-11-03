@@ -4,13 +4,21 @@ import { resolve } from "node:path";
 const root = new URL("../", import.meta.url);
 export async function textoManual() {
   const topicos = JSON.parse(await readFile(new URL("src/content/manual.json", root), "utf8"));
-  const [atual] = JSON.parse(await readFile(new URL("src/content/versoes.json", root), "utf8"));
+  const historico = JSON.parse(await readFile(new URL("src/content/versoes.json", root), "utf8"));
+  const [atual] = historico;
   const texto =
     `# Manual do usuário — Caparaó System\n\nVersão ${atual.versao} · ${atual.data}\n\nEste manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.\n\n` +
     topicos
       .map(
         (t) =>
           `## ${t.titulo}\n\n${t.resumo}\n\n${t.passos.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nCuidados:\n\n${t.cuidados.map((c) => `- ${c}`).join("\n")}`,
+      )
+      .join("\n\n") +
+    "\n\n## Histórico de versões\n\nNotas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.\n\n" +
+    historico
+      .map(
+        (v) =>
+          `### v${v.versao} · ${v.data} · ${v.titulo}\n\nMotivo da atualização: ${v.motivo}\n\n${v.novidades.map((n) => `- ${n}`).join("\n")}`,
       )
       .join("\n\n") +
     "\n";

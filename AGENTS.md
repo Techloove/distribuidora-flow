@@ -24,3 +24,5 @@
 - Preserve o manifesto público `/versao.json` gerado pelo build e sua política sem cache. O aviso de atualização deve usar esse manifesto, manter a versão no pacote/histórico e recarregar automaticamente somente na verificação inicial, antes dos formulários; durante o uso, preservar o aviso e a confirmação do usuário.
 
 - Valores monetários exibidos em telas, relatórios e impressões usam `brl` de `src/lib/formatacao.ts` (BRL, duas casas e separadores brasileiros). Campos monetários de `CrudPage` devem declarar `currency: true`; percentuais, quantidades e códigos não são moeda. Preserve a precisão numérica dos dados e os formatos técnicos de APIs, CNAB e integrações.
+
+- Ao entregar mudanças, revise as instruções da rotina no manual e o motivo/novidades da versão. `npm run check:manual` verifica cobertura das telas; o build também exige esse controle. Preserve as notas antigas e diferencie respostas simuladas de integrações operacionais.

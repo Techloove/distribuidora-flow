@@ -46,6 +46,7 @@ try {
     assert.equal(run("check-version.mjs").status, 0);
     const historico = JSON.parse(await readFile(join(temp, "src/content/versoes.json"), "utf8"));
     assert.equal(historico[0].versao, esperado);
+    assert.equal(historico[0].motivo, "Atualização sintética " + tipo);
     assert.match(historico[0].data, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(
       historico.at(-1).versao,
@@ -110,6 +111,13 @@ try {
   assert.notEqual(run("check-version.mjs").status, 0);
   assert.equal(run("gerar-manual.mjs").status, 0);
   assert.equal(run("check-version.mjs").status, 0);
+  const historyPath = join(temp, "src/content/versoes.json");
+  const historyBefore = await readFile(historyPath, "utf8");
+  const semMotivo = JSON.parse(historyBefore);
+  delete semMotivo[0].motivo;
+  await writeFile(historyPath, JSON.stringify(semMotivo));
+  assert.notEqual(run("check-version.mjs").status, 0, "Publicação sem motivo deve falhar");
+  await writeFile(historyPath, historyBefore);
   const dados = await manifest();
   dados.version = "999.0.0";
   await writeFile(join(temp, "package.json"), JSON.stringify(dados));

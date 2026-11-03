@@ -29,7 +29,7 @@ const versao = [major, minor, patch].join("."),
     day: "2-digit",
   }).format(new Date());
 pacote.version = versao;
-historico.unshift({ versao, data, titulo: resumo, novidades: [resumo] });
+historico.unshift({ versao, data, titulo: resumo, motivo: resumo, novidades: [resumo] });
 await writeFile(packageFile, JSON.stringify(pacote, null, 2) + "\n");
 await writeFile(historyFile, JSON.stringify(historico, null, 2) + "\n");
 await gerarManual();

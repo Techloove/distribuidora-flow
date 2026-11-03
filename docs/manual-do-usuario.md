@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.33.0 · 2026-11-03
+Versão 1.34.0 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -91,6 +91,7 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 11. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
 12. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
 13. No Cadastro Unificado, a busca livre também aceita nomes sem acento e CPF/CNPJ sem pontuação. Os campos de referência e filtros usam a seleção por digitação, conservando os vínculos existentes e as permissões de loja e carteira.
+14. Os atalhos antigos de Clientes, Fornecedores, Representantes e Transportadoras levam ao Cadastro Unificado. Confira as funções marcadas no cadastro. Uma pessoa pode ter mais de uma função; revise o cadastro existente antes de duplicá-la.
 
 Cuidados:
 
@@ -339,6 +340,20 @@ Cuidados:
 - O lançamento apenas cadastra os títulos; não movimenta banco/caixa e não representa pagamento ou recebimento. Confira os dados e escolha o banco ao confirmar a baixa.
 - Juros, multa e desconto são valores em reais, não percentuais. O saldo inicial da baixa já considera ajustes anteriores e valores recebidos/pagos. Não repita os encargos de uma baixa anterior; o valor confirmado deve ser positivo e não pode exceder o total atualizado.
 
+## Categorias e subcategorias financeiras
+
+Organize receitas e despesas para classificar títulos e resultados.
+
+1. Abra Categorias financeiras e escolha Despesas ou Receitas. Confira se a categoria já existe antes de criar outra.
+2. Informe o nome para criar a categoria. Expanda o cartão para adicionar subcategorias; elas pertencem à categoria escolhida.
+3. Use Renomear para ajustar nomes e confira o grupo de DRE da categoria. As subcategorias herdam o grupo da categoria principal.
+4. Nos lançamentos de contas a pagar e receber, escolha a categoria e depois a subcategoria correspondente. Na baixa, confira também a conta financeira.
+
+Cuidados:
+
+- Revise os vínculos antes de excluir uma categoria. Se o sistema bloquear a exclusão, preserve o histórico e revise os lançamentos vinculados.
+- Classificação financeira não representa pagamento ou recebimento. A conta bancária é definida no fluxo da baixa.
+
 ## Boletos e notas fiscais
 
 Entenda os cuidados com documentos bancários e fiscais.
@@ -366,9 +381,6 @@ Entenda os cuidados com documentos bancários e fiscais.
 21. Alterar desconto existente mantém o tipo cadastrado no Sicredi: valor em reais ou percentual. Escolha o desconto e informe o novo valor. Alterar prazo do desconto muda somente a data daquele desconto; valor e data são solicitações separadas. Um boleto sem desconto cadastrado pode receber abatimento. Não há alteração direta do valor nominal nem mudança do tipo de desconto por este atalho.
 22. Após a confirmação de um abatimento, a listagem mostra uma marcação amarela com o valor e o atalho ver Opções. Dentro de Opções aparecem valor nominal, abatimento, valor após abatimento, data de confirmação e motivo, conforme a permissão do administrador para consultar o histórico. Um cancelamento de abatimento confirmado remove a marcação ativa, mantendo o histórico. Após solicitar, use Conferir no Sicredi. Envio aceito ou resposta indisponível permanece pendente até o banco devolver as condições solicitadas. Não reenvie uma instrução pendente. O histórico mostra as últimas 30 solicitações com motivo, condições anteriores, condições solicitadas e situação. Respostas inconclusivas ou recusas assíncronas exigem conferência com o banco e, quando necessário, suporte técnico.
 23. O valor após abatimento mostrado no diálogo não inclui desconto condicionado à data, juros ou multa. O financeiro preserva o valor nominal até a liquidação: desconto e abatimento efetivamente informados pelo Sicredi são contabilizados uma única vez no recebimento. A concessão não marca o título como pago nem reduz antecipadamente a exposição de crédito. Para alterar o principal para maior valor, regularize o boleto antigo e gere nova cobrança pelo fluxo existente.
-24. Sicoob: em Lojas → Cobrança por loja, selecione Sicoob e Sandbox. Cadastre Client ID e token de teste nos campos protegidos, salve, teste a conexão e habilite o ambiente. O token não é exibido novamente. Produção possui configuração separada e exige certificado A1 e conta financeira.
-25. No menu Boletos, selecione a loja e o banco. A área Sandbox Sicoob permite emitir testes, consultar, obter PDF original, alterar vencimento, solicitar baixa e configurar desconto ou abatimento, sem criar títulos ou movimentações financeiras reais.
-26. Nos boletos Sicoob de produção, use Opções para consultar e alterar vencimento. Desconto, abatimento e baixa exigem administrador, motivo e confirmação. Uma resposta inconclusiva exige consulta antes de nova instrução; o sistema preserva o histórico e impede reenvio duplicado.
 
 Cuidados:
 
@@ -387,12 +399,26 @@ Cuidados:
 - Se o banco informar pagamento depois do ajuste do pedido, o boleto mostra o recebimento bancário e um aviso para conciliação. O título cancelado não é reaberto automaticamente nem se cria uma entrada de caixa sem tratamento financeiro.
 - Reconsultar a API não duplica despesas. Tarifas manuais conhecidas com data, valor, conta e categoria correspondentes podem ser vinculadas sem novo lançamento. Uma saída avulsa semelhante, divergência no retorno, conta/categoria inativa, responsável sem acesso ou estorno exige conferência. Não há correção ou relançamento automático de movimentos estornados.
 - A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
-- Sicoob permanece desativado em produção até configurar e validar as credenciais próprias desse ambiente. Os testes desta entrega usaram respostas simuladas; a homologação com os dados bancários deve ser concluída pelo responsável.
-- A consulta Sicoob pode identificar boleto liquidado, mas não registra recebimento financeiro automaticamente: confira valor e data efetivos em Contas a receber. Baixa bancária não quita o título; desconto ou abatimento concedido não cria recebimento. A automação de tarifas Sicredi não se aplica ao Sicoob.
-- O teste de conexão do sandbox Sicoob consulta um boleto de exemplo, sem emitir cobrança. Se aparecer HTTP 401 ou 403, copie novamente Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica instabilidade ou limite. Use Preencher números de exemplo do sandbox quando o portal não fornecer beneficiário e conta próprios. O token já salvo é preservado se o campo permanecer vazio.
-- O sandbox Sicoob fornece respostas simuladas e pode usar um nosso número negativo de exemplo. O teste de conexão aceita esse formato sem tratá-lo como boleto operacional ou homologação de produção. A confirmação e a movimentação de boletos continuam exigindo identificadores válidos e dados correspondentes ao pedido.
-- Habilitar testes Sicoob usa somente os dados e a validação do sandbox. A conta financeira da seção de produção não interfere nessa ativação. Se a conexão já estiver testada e os dados sandbox não mudaram, clique Habilitar testes; não é necessário substituir o token.
-- Se a emissão de teste retornar o identificador fixo negativo do sandbox, a lista mostra Resposta simulada recebida e encerra a pendência sem registrar boleto. O valor e vencimento da linha continuam sendo os enviados; a resposta do banco fica separada no histórico. Para uma tentativa antiga em processamento com Identificação bancária inválida, use Consultar Sicoob, sem emitir novamente. Respostas fixas não permitem confirmar PDF, baixa, desconto, abatimento ou mudança de vencimento desse teste.
+
+## Sicoob: sandbox e preparação de produção
+
+Configure a cobrança da loja e entenda a diferença entre resposta de teste e boleto registrado.
+
+1. Em Lojas → Cobrança por loja, selecione a loja, escolha Sicoob e abra Sandbox · testes. Cadastre Client ID e token do portal Sicoob. Use Preencher números de exemplo do sandbox se o portal não fornecer outros números de beneficiário e conta. Salve a configuração.
+2. Clique Testar conexão e, após o sucesso, Habilitar testes. A validação pertence à configuração salva: alterações de credenciais ou convênio exigem novo teste. A conta financeira de produção não participa da ativação do sandbox. O campo vazio do token preserva o segredo já salvo.
+3. Em Boletos, selecione a loja no topo e abra Sicoob · testes sandbox por loja. Use Preencher pagador de exemplo ou os dados definidos no portal, informe valor e vencimento e clique Emitir no sandbox.
+4. O sandbox público pode devolver dados fixos com nosso número negativo, diferentes dos enviados. O sistema identifica esse caso como Resposta simulada recebida. A linha mantém o valor e vencimento solicitados e a resposta fica no histórico; não é um boleto registrado. Para tentativa antiga em processamento com Identificação bancária inválida, clique Consultar Sicoob, sem emitir novamente.
+5. Respostas fixas comprovam comunicação, mas não confirmam PDF, alteração de vencimento, desconto, abatimento ou baixa daquele teste. As ações operacionais não são oferecidas sobre esse exemplo. Se houver boleto válido com resposta correspondente no ambiente contratado, as ações dependem de consulta e confirmação bancária.
+6. Para produção, solicite ao banco a liberação da API Cobrança Bancária v3, Client ID de produção, certificado A1 vinculado ao aplicativo e números do beneficiário, conta e contrato. Em Lojas → Cobrança por loja → Sicoob → Produção, configure também a conta financeira, salve desativado e teste a autenticação. Siga a homologação orientada pelo Sicoob antes de habilitar cobranças reais.
+7. Em Pedidos ou Contas a receber, Emitir boleto usa o banco configurado na loja do título. Essa emissão é de produção; ela não usa automaticamente o sandbox. Uma loja sem produção habilitada permanece bloqueada para emissão real. Boletos já emitidos preservam o banco original para consulta e PDF.
+8. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
+
+Cuidados:
+
+- Token e senha não são exibidos novamente. Sandbox e produção usam configurações e credenciais separadas. Certificado A1 é exigido na produção; não é exigido para o token sandbox.
+- Testes ficam em registros separados e não criam contas a receber, recebimentos, estoque ou comissões. Baixa de boleto real não cancela venda nem quita o título. Desconto ou abatimento concedido não cria recebimento.
+- A consulta Sicoob pode identificar liquidação, mas o recebimento financeiro não é automático nesta integração. Confira data e valor efetivamente recebidos em Contas a receber. A automação de tarifas Sicredi não se aplica ao Sicoob.
+- HTTP 401/403 indica recusa de autorização: recopie Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica limite ou instabilidade. Sucesso da conexão não homologa produção.
 
 ## Agenda, metas, comissões e relatórios
 
@@ -421,6 +447,22 @@ Cuidados:
 - A escolha Recebe comissão é registrada no pedido na aprovação. A mudança no cadastro vale para novos pedidos e pedidos ainda em digitação ou aguardando aprovação; pedidos aprovados e comissões pagas preservam o histórico. Ao habilitar, volta a valer a prioridade do produto sobre o percentual padrão do representante.
 - Pedidos antigos com histórico de aprovação usam a aprovação registrada; quando não há evidência histórica nem aprovação automática registrada, a leitura preserva a data comercial legada. A mudança de competência não altera os valores das comissões nem datas e registros de pagamentos realizados.
 - A confirmação fixa a aprovação antes de gerar a primeira parcela. Parcelas, recebimentos e boletos já emitidos mantêm seus vencimentos. A nova base vale para parcelas geradas após esta atualização, inclusive novos ciclos de pedidos reabertos; não há reemissão nem alteração automática de boletos antigos.
+
+## Gestão, regras e faixas de comissão
+
+Consulte a apuração e configure regras e faixas conforme o acesso concedido.
+
+1. Em Gestão de comissões, consulte as abas Apuração por pedido, Metas e atingimento e Pagamentos gerados. Confira loja, representante e período antes de selecionar valores.
+2. A apuração considera pedidos aprovados e etapas seguintes. A competência usa a aprovação do ciclo, não a entrega nem a data comercial. O cadastro Recebe comissão pode desabilitar a comissão do representante.
+3. Em Regras de comissão, informe nome, representante e cliente quando específicos, UF, percentual, prioridade e vigência. Confira a marcação Ativa. Campos de representante e cliente vazios ampliam a abrangência da regra.
+4. Em Comissão escalonada, configure representante, período de apuração, base de cálculo, limites De/Até e percentual. Até vazio representa ausência de limite superior; Progressiva identifica faixas por trechos de volume.
+5. Antes de gerar pagamento, confira os pedidos selecionados e os dados pedidos pelo diálogo Pagar comissões. A geração de conta a pagar não comprova a transferência ao representante; a baixa ocorre no financeiro.
+
+Cuidados:
+
+- O percentual do produto tem prioridade sobre o percentual padrão do representante. Confira a apuração efetiva dos itens ao combinar regras e faixas.
+- Alterações de regras e cadastros não autorizam reescrever comissões aprovadas ou pagas. Confira o histórico e trate ajustes pelo fluxo permitido.
+- Metas são consolidadas por representante; use Todas as lojas para avaliar a meta global.
 
 ## Usuários, auditoria e backup
 
@@ -461,3 +503,522 @@ Cuidados:
 
 - Antes de repetir uma operação após erro ou demora, confira se ela já foi registrada no histórico.
 - Se a tela publicada estiver antiga, o responsável deve conferir a sincronização com o GitHub e a publicação no Lovable.
+
+## Manual e histórico de versões
+
+Encontre orientações e consulte o motivo de cada atualização.
+
+1. Abra Manual do Usuário no menu lateral. Na aba Manual, use a busca e o filtro de assunto para encontrar instruções; os atalhos respeitam o acesso do seu perfil.
+2. Abra Histórico de versões para consultar número, data, motivo e alterações. Busque pelo número da versão ou por um termo, como Sicoob, comissão ou estoque.
+3. A versão atual aparece no menu e no topo do manual. Informe esse número, a loja e a mensagem apresentada ao pedir suporte.
+4. Imprimir manual / salvar PDF inclui as orientações e o histórico. Novas versões atualizam a documentação e preservam as notas anteriores.
+
+Cuidados:
+
+- Versões antigas mantêm as notas registradas na publicação; elas descrevem o comportamento da época. Siga as orientações atuais do manual para operar o sistema.
+- A documentação não concede acesso a módulos, lojas ou carteiras. Credenciais, senhas e tokens não devem ser incluídos em pedidos de suporte.
+
+## Histórico de versões
+
+Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.34.0 · 2026-11-03 · Revisa manual por módulo e adiciona histórico pesquisável com motivo e data de cada atualização
+
+Motivo da atualização: Facilitar a consulta das funções existentes e permitir que o usuário identifique o motivo de cada atualização sem perder o histórico anterior.
+
+- Manual revisado com 24 assuntos e orientações para todas as telas operacionais, incluindo categorias financeiras, gestão de comissões e Sicoob.
+- Histórico de versões separado do manual, com busca por número, data ou assunto, motivo da atualização e lista de alterações.
+- Impressão e cópia do manual incluem o histórico. Notas das versões anteriores são preservadas.
+- Publicação passa a verificar cobertura das telas pelo manual e exigir motivo em cada versão.
+
+### v1.33.0 · 2026-11-03 · Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos
+
+Motivo da atualização: Aplicar às demais telas o padrão visual aprovado nos lançamentos financeiros, melhorando consistência e leitura.
+
+- Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos
+
+### v1.32.4 · 2026-11-03 · Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente
+
+Motivo da atualização: O sandbox devolvia dados fixos que eram rejeitados como identificação inválida e deixavam a tentativa pendente.
+
+- Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente
+
+### v1.32.3 · 2026-11-03 · Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção
+
+Motivo da atualização: A conta financeira de produção interferia indevidamente na habilitação dos testes sandbox.
+
+- Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção
+
+### v1.32.2 · 2026-11-03 · Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional
+
+Motivo da atualização: A conexão recusava o identificador negativo usado no exemplo oficial do sandbox.
+
+- Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional
+
+### v1.32.1 · 2026-11-03 · Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade
+
+Motivo da atualização: O teste usava o endpoint de saúde e classificava qualquer falha como erro de credenciais.
+
+- Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade
+
+### v1.32.0 · 2026-11-03 · Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos
+
+Motivo da atualização: Preparar a cobrança Sicoob da loja Cimento e testar a integração separadamente das cobranças reais.
+
+- Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos
+
+### v1.31.0 · 2026-11-03 · Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema
+
+Motivo da atualização: Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema
+
+- Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema
+
+### v1.30.1 · 2026-11-03 · Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero
+
+Motivo da atualização: Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero
+
+- Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero
+
+### v1.30.0 · 2026-11-03 · Incluir itens de compra em linha com frete unitário e custo final por produto
+
+Motivo da atualização: Incluir itens de compra em linha com frete unitário e custo final por produto
+
+- Incluir itens de compra em linha com frete unitário e custo final por produto
+
+### v1.29.1 · 2026-11-03 · Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis
+
+Motivo da atualização: Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis
+
+- Organizar a inclusão dos itens de intermediação em uma linha no computador, com preço e total visíveis
+
+### v1.29.0 · 2026-11-03 · Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto
+
+Motivo da atualização: Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto
+
+- Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto
+
+### v1.28.0 · 2026-11-03 · Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto
+
+Motivo da atualização: Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto
+
+- Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto
+
+### v1.27.1 · 2026-11-03 · Padronizar saco e sacos nas telas, instruções e mensagens da intermediação
+
+Motivo da atualização: Padronizar saco e sacos nas telas, instruções e mensagens da intermediação
+
+- Padronizar saco e sacos nas telas, instruções e mensagens da intermediação
+
+### v1.27.0 · 2026-11-03 · Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período
+
+Motivo da atualização: Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período
+
+- Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período
+
+### v1.26.0 · 2026-11-02 · Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação
+
+Motivo da atualização: Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação
+
+- Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação
+
+### v1.25.1 · 2026-11-02 · Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido
+
+Motivo da atualização: Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido
+
+- Apurar comissões pelo mês da aprovação, preservando a data comercial do pedido
+
+### v1.25.0 · 2026-11-02 · Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado
+
+Motivo da atualização: Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado
+
+- Permitir desativar comissão de sócios e representantes, preservando a prioridade dos produtos e o histórico aprovado
+- Agendamento por recebimentos recolhido por padrão, com identificação de operação opcional que gera conta a pagar sem efetuar pagamento.
+
+### v1.24.1 · 2026-11-02 · Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador
+
+Motivo da atualização: Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador
+
+- Regularizar comissões legadas dos pedidos conferidos para os 5% confirmados pelo administrador
+
+### v1.24.0 · 2026-10-31 · Comissões somente após aprovação, escolha da data ao retomar pedidos e exibição completa dos títulos pendentes
+
+Motivo da atualização: Comissões somente após aprovação, escolha da data ao retomar pedidos e exibição completa dos títulos pendentes
+
+- Comissões apuradas somente para pedidos aprovados e etapas seguintes, com bloqueio de liberação e pagamento de previsões ligadas à digitação, orçamento ou análise.
+- Ao retomar um pedido em digitação de outro dia, escolha manter a data original ou atualizar para hoje, preservando os itens e os preços gravados.
+- A aba Em aberto reúne títulos vencidos e parciais. Novo atalho limpa os filtros para conferir todos os títulos da loja selecionada.
+
+### v1.23.2 · 2026-10-31 · Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar
+
+Motivo da atualização: Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar
+
+- Retirar forma prevista, recalcular juros e descontos na baixa e corrigir identificação do banco ao pagar
+
+### v1.23.1 · 2026-10-31 · Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa
+
+Motivo da atualização: Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa
+
+- Reorganizar contas a pagar e receber: loja primeiro, categoria e subcategoria, prévia de parcelas e banco somente na baixa
+
+### v1.23.0 · 2026-10-31 · Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos
+
+Motivo da atualização: Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos
+
+- Filtro global Vendas Estoque, Vendas Intermediação e Todos nas vendas e apuração financeira; nomes unificados nos pedidos
+
+### v1.22.0 · 2026-10-30 · Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação
+
+Motivo da atualização: Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação
+
+- Intermediação com preço vigente, autorização por vendedor, modalidade revisável e frete informativo; venda de estoque como padrão e atraso somente após aprovação
+
+### v1.21.1 · 2026-10-30 · Preparar a cotação de intermediação no orçamento e preservar custos no aceite
+
+Motivo da atualização: Preparar a cotação de intermediação no orçamento e preservar custos no aceite
+
+- Preparar a cotação de intermediação no orçamento e preservar custos no aceite
+
+### v1.21.0 · 2026-10-30 · Adicionar intermediação por loja com cotações diárias, frete e margem por saco
+
+Motivo da atualização: Adicionar intermediação por loja com cotações diárias, frete e margem por saco
+
+- Adicionar intermediação por loja com cotações diárias, frete e margem por saco
+
+### v1.20.3 · 2026-10-30 · Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa
+
+Motivo da atualização: Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa
+
+- Renovar consultas de CNPJ com endereço incompleto e usar CNPJá como alternativa
+
+### v1.20.2 · 2026-10-30 · Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro
+
+Motivo da atualização: Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro
+
+- Completar consulta de endereço do CNPJ e permitir consulta por CEP no cadastro
+
+### v1.20.1 · 2026-10-30 · Aplicar o filtro global de loja ao planejamento e revisar listagens e totais
+
+Motivo da atualização: Aplicar o filtro global de loja ao planejamento e revisar listagens e totais
+
+- Aplicar o filtro global de loja ao planejamento e revisar listagens e totais
+- Retirar Pendência da listagem de compras, mantendo pedidos aprovados nos cálculos sem duplicar baixas de estoque.
+
+### v1.20.0 · 2026-10-30 · Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados
+
+Motivo da atualização: Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados
+
+- Modernizar planejamento de compras com quatro métodos e critério de pedidos aprovados
+
+### v1.19.6 · 2026-10-30 · Padronizar valores monetários em reais com duas casas decimais
+
+Motivo da atualização: Padronizar valores monetários em reais com duas casas decimais
+
+- Padronizar valores monetários em reais com duas casas decimais
+
+### v1.19.5 · 2026-10-30 · Destacar abatimento confirmado em amarelo e apresentar motivo em Opções
+
+Motivo da atualização: Destacar abatimento confirmado em amarelo e apresentar motivo em Opções
+
+- Destacar abatimento confirmado em amarelo e apresentar motivo em Opções
+
+### v1.19.4 · 2026-10-30 · Corrigir consulta ao histórico de desconto e abatimento Sicredi
+
+Motivo da atualização: Corrigir consulta ao histórico de desconto e abatimento Sicredi
+
+- Corrigir consulta ao histórico de desconto e abatimento Sicredi
+
+### v1.19.3 · 2026-10-30 · Compactar a lista de boletos para manter Opções visível
+
+Motivo da atualização: Compactar a lista de boletos para manter Opções visível
+
+- Compactar a lista de boletos para manter Opções visível
+
+### v1.19.2 · 2026-10-30 · Identificar boletos cancelados com tag vermelha junto ao vencimento
+
+Motivo da atualização: Identificar boletos cancelados com tag vermelha junto ao vencimento
+
+- Identificar boletos cancelados com tag vermelha junto ao vencimento
+
+### v1.19.1 · 2026-10-30 · Mover aviso e motivo de cancelamento do boleto para Opções
+
+Motivo da atualização: Mover aviso e motivo de cancelamento do boleto para Opções
+
+- Mover aviso e motivo de cancelamento do boleto para Opções
+
+### v1.19.0 · 2026-10-29 · Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária
+
+Motivo da atualização: Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária
+
+- Conceder abatimento e alterar desconto de boletos Sicredi com confirmação bancária
+
+### v1.18.2 · 2026-10-29 · Corrigir exposição de crédito para contar cada pedido uma única vez
+
+Motivo da atualização: Corrigir exposição de crédito para contar cada pedido uma única vez
+
+- Corrigir exposição de crédito para contar cada pedido uma única vez
+
+### v1.18.1 · 2026-10-29 · Corrigir retorno para digitação ao sincronizar o cancelamento da expedição
+
+Motivo da atualização: Corrigir retorno para digitação ao sincronizar o cancelamento da expedição
+
+- Corrigir retorno para digitação ao sincronizar o cancelamento da expedição
+
+### v1.18.0 · 2026-10-29 · Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas
+
+Motivo da atualização: Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas
+
+- Reabrir pedidos para trocar pagamento após baixa dos boletos e gerar novas parcelas
+
+### v1.17.3 · 2026-10-29 · Restaurar clientes e Cadastro unificado em lista com colunas
+
+Motivo da atualização: Restaurar clientes e Cadastro unificado em lista com colunas
+
+- Restaurar clientes e Cadastro unificado em lista com colunas
+
+### v1.17.2 · 2026-10-29 · Restaurar exibição de Produtos em lista com colunas
+
+Motivo da atualização: Restaurar exibição de Produtos em lista com colunas
+
+- Restaurar exibição de Produtos em lista com colunas
+
+### v1.17.1 · 2026-10-29 · Impressão direta dos pedidos e cadastros sem rolagem lateral
+
+Motivo da atualização: Impressão direta dos pedidos e cadastros sem rolagem lateral
+
+- Imprimir pedido ao lado do total, sem abrir seus detalhes.
+- Campos selecionados em Produtos e Cadastro unificado se reorganizam em blocos, sem rolagem lateral.
+
+### v1.17.0 · 2026-10-29 · Colunas por usuário, leitura de produtos e impressão de boletos por cliente ou pedido
+
+Motivo da atualização: Colunas por usuário, leitura de produtos e impressão de boletos por cliente ou pedido
+
+- Colunas salvas por usuário nas listagens, sincronizadas entre computadores.
+- Padrão de leitura em todas as tabelas: nomes completos, valores e códigos sem partir, rolagem interna e cartões no celular.
+- Financeiro com Emitir boleto ou Reimprimir boleto e seleção de PDFs por parcela, pedido ou cliente.
+
+### v1.16.0 · 2026-10-29 · Vínculos de loja dos clientes e leitura dos títulos financeiros
+
+Motivo da atualização: Vínculos de loja dos clientes e leitura dos títulos financeiros
+
+- Cadastro de clientes separa Sem loja, Uma loja e Compartilhado entre lojas, preservando os vínculos existentes.
+- Nova pendência e filtro de clientes sem loja; escolha do vínculo em Dados gerais no Cadastro unificado.
+- Clientes sem loja precisam ser regularizados para iniciar novas vendas, preservando pedidos e financeiros anteriores.
+- Títulos financeiros exibem valores e documentos inteiros, datas DD/MM/AAAA e ações secundárias em Opções.
+
+### v1.15.0 · 2026-10-29 · Pendências de clientes e filtros por rota, representante, limite e loja
+
+Motivo da atualização: Pendências de clientes e filtros por rota, representante, limite e loja
+
+- Contadores separados para clientes sem rota, sem representante e sem limite cadastrado, com atalhos para revisão.
+- Filtros combináveis no Cadastro unificado e abertura da lista pela categoria da Central.
+- Filtros por loja específica, pelo nome da loja e por cadastro compartilhado entre lojas; a regra atual de Todos os centros é preservada.
+- Consulta paginada do Cadastro unificado para incluir pendências além dos primeiros mil registros.
+
+### v1.14.5 · 2026-10-29 · Destacar vencimentos alterados e exibir histórico nas opções do boleto
+
+Motivo da atualização: Destacar vencimentos alterados e exibir histórico nas opções do boleto
+
+- Destacar vencimentos alterados e exibir histórico nas opções do boleto
+
+### v1.14.4 · 2026-10-29 · Corrigir identificação do beneficiário na alteração e baixa Sicredi
+
+Motivo da atualização: Corrigir identificação do beneficiário na alteração e baixa Sicredi
+
+- Corrigir identificação do beneficiário na alteração e baixa Sicredi
+
+### v1.14.3 · 2026-10-29 · Melhorar leitura e navegação no celular, cartões, filtros e formulários
+
+Motivo da atualização: Melhorar leitura e navegação no celular, cartões, filtros e formulários
+
+- Melhorar leitura e navegação no celular, cartões, filtros e formulários
+
+### v1.14.2 · 2026-10-29 · Mostrar representante e rota na impressão e orientar PDF no celular
+
+Motivo da atualização: Mostrar representante e rota na impressão e orientar PDF no celular
+
+- Mostrar representante e rota na impressão e orientar PDF no celular
+
+### v1.14.1 · 2026-10-29 · Permitir ao representante cancelar somente o próprio pedido aprovado
+
+Motivo da atualização: Permitir ao representante cancelar somente o próprio pedido aprovado
+
+- Permitir ao representante cancelar somente o próprio pedido aprovado
+
+### v1.14.0 · 2026-10-29 · Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo
+
+Motivo da atualização: Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo
+
+- Cancelamento administrativo até a carga, devolução proporcional e baixa de boletos com motivo
+
+### v1.13.0 · 2026-10-28 · Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial
+
+Motivo da atualização: Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial
+
+- Cadastro de clientes pelo representante com limite administrativo e painel mensal integrado à Agenda Comercial
+
+### v1.12.0 · 2026-10-28 · Recuperação de senha pelo próprio usuário e orientação após aprovação
+
+Motivo da atualização: Recuperação de senha pelo próprio usuário e orientação após aprovação
+
+- Recuperação de senha pelo próprio usuário e orientação após aprovação
+
+### v1.11.1 · 2026-10-28 · Corrigir publicação do manifesto de versão e cache na Vercel
+
+Motivo da atualização: Corrigir publicação do manifesto de versão e cache na Vercel
+
+- Corrigir publicação do manifesto de versão e cache na Vercel
+
+### v1.11.0 · 2026-10-28 · Adicionar ensaio isolado de restauração dos backups
+
+Motivo da atualização: Adicionar ensaio isolado de restauração dos backups
+
+- Adicionar ensaio isolado de restauração dos backups
+
+### v1.10.3 · 2026-10-28 · Validar certificado Supabase e tratar respostas vazias no backup
+
+Motivo da atualização: Validar certificado Supabase e tratar respostas vazias no backup
+
+- Validar certificado Supabase e tratar respostas vazias no backup
+
+### v1.10.2 · 2026-10-28 · Identificar configurações incompletas na rotina de backup
+
+Motivo da atualização: Identificar configurações incompletas na rotina de backup
+
+- Identificar configurações incompletas na rotina de backup
+
+### v1.10.1 · 2026-10-28 · Corrigir validação da rotina de backup no GitHub
+
+Motivo da atualização: Corrigir validação da rotina de backup no GitHub
+
+- Corrigir validação da rotina de backup no GitHub
+
+### v1.10.0 · 2026-10-28 · Automatizar backups no GitHub sem servidor separado
+
+Motivo da atualização: Automatizar backups no GitHub sem servidor separado
+
+- Automatizar backups no GitHub sem servidor separado
+
+### v1.9.0 · 2026-10-27 · Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador
+
+Motivo da atualização: Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador
+
+- Corrigir backup no Cloudflare e disponibilizar cópia criptografada para salvar no computador
+
+### v1.8.0 · 2026-10-27 · Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências
+
+Motivo da atualização: Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências
+
+- Navegar entre clientes, pedidos, boletos e títulos financeiros pelas referências
+
+### v1.7.3 · 2026-10-27 · Exibir primeiro vencimento no topo da lista de boletos por padrão
+
+Motivo da atualização: Exibir primeiro vencimento no topo da lista de boletos por padrão
+
+- Exibir primeiro vencimento no topo da lista de boletos por padrão
+
+### v1.7.2 · 2026-10-27 · Esclarecer confirmação de cancelamento do boleto sem senha
+
+Motivo da atualização: Esclarecer confirmação de cancelamento do boleto sem senha
+
+- Esclarecer confirmação de cancelamento do boleto sem senha
+
+### v1.7.1 · 2026-10-27 · Mover cancelamento para Opções e destacar reimpressão individual do boleto
+
+Motivo da atualização: Mover cancelamento para Opções e destacar reimpressão individual do boleto
+
+- Mover cancelamento para Opções e destacar reimpressão individual do boleto
+
+### v1.7.0 · 2026-10-27 · Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE
+
+Motivo da atualização: Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE
+
+- Contabilizar tarifas Sicredi por loja em Despesas Financeiras no DRE
+
+### v1.6.0 · 2026-10-27 · Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação
+
+Motivo da atualização: Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação
+
+- Ordenar boletos por emissão e vencimento e destacar cancelamento com confirmação
+
+### v1.5.0 · 2026-10-27 · Melhorar lista de boletos e consultar tarifas automaticamente pela API Sicredi
+
+Motivo da atualização: Melhorar lista de boletos e consultar tarifas automaticamente pela API Sicredi
+
+- Lista com emissão, vencimento, liquidação, filtros por cliente e períodos e ações expandidas por boleto.
+- Consulta automática de débitos pela Francesinha, com tarifas identificadas pela descrição, isolamento por loja e reconsulta sem duplicar valores.
+- A captura de tarifas não gera despesas automaticamente e preserva a liquidação existente.
+
+### v1.4.0 · 2026-10-27 · Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento
+
+Motivo da atualização: Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento
+
+- Detalhar liquidação Sicredi e registrar tarifa de cobrança separada do recebimento
+
+### v1.3.5 · 2026-10-27 · Corrigir consulta automática Sicredi após salvar token com resposta vazia
+
+Motivo da atualização: Corrigir consulta automática Sicredi após salvar token com resposta vazia
+
+- Corrigir consulta automática Sicredi após salvar token com resposta vazia
+
+### v1.3.4 · 2026-10-27 · Identificar falhas da consulta automática Sicredi sem expor credenciais
+
+Motivo da atualização: Identificar falhas da consulta automática Sicredi sem expor credenciais
+
+- Identificar falhas da consulta automática Sicredi sem expor credenciais
+
+### v1.3.3 · 2026-10-27 · Atualizar diagnóstico de integridade por loja e validar fluxos de negócio
+
+Motivo da atualização: Atualizar diagnóstico de integridade por loja e validar fluxos de negócio
+
+- Atualizar diagnóstico de integridade por loja e validar fluxos de negócio
+
+### v1.3.2 · 2026-10-27 · Ampliar Cadastro Unificado e dividir formulário em seções
+
+Motivo da atualização: Ampliar Cadastro Unificado e dividir formulário em seções
+
+- Ampliar Cadastro Unificado e dividir formulário em seções
+
+### v1.3.1 · 2026-10-27 · Ampliar edição de produtos e organizar campos e histórico em seções
+
+Motivo da atualização: Ampliar edição de produtos e organizar campos e histórico em seções
+
+- Ampliar edição de produtos e organizar campos e histórico em seções
+
+### v1.3.0 · 2026-10-27 · Sincronizar preço normal entre Produtos e catálogo das lojas
+
+Motivo da atualização: Sincronizar preço normal entre Produtos e catálogo das lojas
+
+- Sincronizar preço normal entre Produtos e catálogo das lojas
+
+### v1.2.1 · 2026-10-27 · Corrigir repetição de cartões e carregamento da margem ao abrir pedidos
+
+Motivo da atualização: Corrigir repetição de cartões e carregamento da margem ao abrir pedidos
+
+- Corrigir repetição de cartões e carregamento da margem ao abrir pedidos
+
+### v1.2.0 · 2026-10-27 · Nome fantasia do cliente e observações na impressão dos pedidos
+
+Motivo da atualização: Nome fantasia do cliente e observações na impressão dos pedidos
+
+- Nome fantasia do cliente e observações na impressão dos pedidos
+
+### v1.1.0 · 2026-10-26 · Atualização automática ao entrar e aviso de nova versão durante o uso
+
+Motivo da atualização: Atualização automática ao entrar e aviso de nova versão durante o uso
+
+- Ao entrar no sistema, a versão é verificada e atualizada antes de abrir formulários.
+- Balão avisa quando uma versão mais nova é publicada, sem recarregar automaticamente.
+- Botão Atualizar agora confirma o recarregamento e preserva a tela e os filtros da URL.
+- O aviso pode ser recolhido e reaparece expandido quando outra versão é detectada.
+- A atualização aguarda as operações em andamento; salve campos ainda não enviados antes de confirmar.
+
+### v1.0.0 · 2026-10-26 · Versão inicial com manual do usuário
+
+Motivo da atualização: Versão inicial com manual do usuário
+
+- Número da versão visível no sistema e histórico das atualizações.
+- Manual com busca, orientações das rotinas e atalhos conforme o acesso do usuário.
+- Estoque próprio por loja, com depósito selecionado automaticamente.
+- Regularização administrativa de pedidos antigos com motivo, data e auditoria.
+- Solicitação de backup com histórico; a execução depende da infraestrutura configurada.
+- Integração Forecast Fiscal em homologação; emissão em produção permanece bloqueada.
