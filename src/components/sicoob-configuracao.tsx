@@ -77,7 +77,7 @@ export function SicoobConfiguracao({
               data: {
                 ...form,
                 centroId,
-                contaId,
+                contaId: modo === "producao" ? contaId : "",
                 ambiente: modo,
                 versao: q.data?.versao ?? 0,
                 ativo: acao === "ativar" || (acao === "salvar" && !dirty && q.data?.ativo === true),

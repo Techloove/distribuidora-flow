@@ -49,6 +49,9 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
     const migration = fs.readFileSync("db/fase316_sicoob_cobranca_v3.sql", "utf8");
     await db.exec(migration);
     await db.exec(migration);
+    const fix = fs.readFileSync("db/fase319_sicoob_ativacao_sandbox.sql", "utf8");
+    await db.exec(fix);
+    await db.exec(fix);
     assert.deepEqual(
       await scalar(`select to_jsonb(c) from cobranca_centros c where centro_id='${id(11)}'`),
       antesSicredi,
@@ -82,7 +85,25 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
     await assert.rejects(() => salvar("homologacao", 0), /outra sessão/);
     await assert.rejects(() => salvar("homologacao", 1, true), /teste a autenticação/);
     await q("select sicoob_autenticado_316($1,$2,1,$3)", [id(1), id(10), "homologacao"]);
-    await salvar("homologacao", 1, true);
+    // A conta escolhida na seção de produção não participa da ativação sandbox.
+    await q("select sicoob_config_salvar_316($1,$2,$3,$4,true,1,null,'homologacao')", [
+      id(1),
+      id(10),
+      cfg,
+      id(70),
+    ]);
+    assert.equal(
+      await scalar(
+        `select versao from sicoob_config_316 where centro_id='${id(10)}' and ambiente='homologacao'`,
+      ),
+      1,
+    );
+    assert.equal(
+      await scalar(
+        `select ativo from sicoob_config_316 where centro_id='${id(10)}' and ambiente='homologacao'`,
+      ),
+      true,
+    );
     assert.equal(
       await scalar(`select ativo from cobranca_centros where centro_id='${id(10)}'`),
       false,

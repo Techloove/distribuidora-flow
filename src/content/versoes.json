@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.32.3",
+    "data": "2026-11-03",
+    "titulo": "Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção",
+    "novidades": [
+      "Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção"
+    ]
+  },
+  {
     "versao": "1.32.2",
     "data": "2026-11-03",
     "titulo": "Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional",

@@ -187,7 +187,7 @@ export const sicoobConfigSalvar = createServerFn({ method: "POST" })
         numero_conta: numero(d.numeroConta, true),
         numero_contrato: numero(d.numeroContrato, true),
       },
-      _conta: d.contaId ? uuid(d.contaId) : null,
+      _conta: modo === "producao" && d.contaId ? uuid(d.contaId) : null,
       _ativo: d.ativo,
       _esperada: d.versao,
       _segredo: segredo,
