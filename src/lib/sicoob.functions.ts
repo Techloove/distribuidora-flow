@@ -9,6 +9,7 @@ import {
 } from "./server-sicoob-http";
 import {
   condicoesSicoob,
+  respostaSimuladaSicoob,
   dataSicoob,
   dinheiroSicoob,
   instrucaoSicoob,
@@ -275,8 +276,31 @@ function queryBanco(cfg: SicoobConfig, b: Row, pdf = false) {
   if (pdf) q.set("gerarPdf", "true");
   return q.toString();
 }
+const mensagemMock =
+  "Resposta simulada recebida do Sicoob. O sandbox devolve dados fixos; isso não confirma registro ou alteração de um boleto.";
+async function registrarMock(actor: string, testeId: string, raw: Row) {
+  await rpc("sicoob_mock_recebido_320", { _actor: actor, _teste: uuid(testeId), _resposta: raw });
+  return {
+    situacao: "simulado",
+    confirmado: false,
+    pendente: false,
+    nota: mensagemMock,
+    condicoes: null,
+  };
+}
 async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<typeof contexto>>) {
   let raw: Row;
+  if (
+    d.sandbox &&
+    !p.b["nosso_numero"] &&
+    ["em_processamento", "simulado"].includes(String(p.b["status"]))
+  ) {
+    const r = await p.api("/boletos?" + queryBanco(p.config, { nosso_numero: "1" }));
+    if (r.status === 200) {
+      const mock = obj(r.json["resultado"]);
+      if (respostaSimuladaSicoob(mock)) return registrarMock(actor, String(p.b["id"]), mock);
+    }
+  }
   if (p.b["nosso_numero"]) {
     const r = await p.api("/boletos?" + queryBanco(p.config, p.b));
     if (r.status !== 200) throw Error("Sicoob não retornou o boleto. Nenhum reenvio foi feito.");
@@ -366,6 +390,7 @@ export const sicoobAlterarBoleto = createServerFn({ method: "POST" })
       };
     }
     const atual = await consultarContexto(d, actor.id, p);
+    if (!atual.condicoes) throw Error(mensagemMock);
     if (JSON.stringify(atual.condicoes) !== JSON.stringify(d.anterior))
       throw Error("As condições bancárias mudaram. Atualize a prévia antes de confirmar.");
     const i = instrucaoSicoob(
@@ -516,8 +541,12 @@ async function emitirReserva(
       });
       throw Error(`Emissão Sicoob retornou HTTP ${r.status}. Consulte antes de repetir.`);
     }
-    const raw = obj(r.json["resultado"]),
-      c = condicoesSicoob({ ...raw, situacaoBoleto: raw["situacaoBoleto"] ?? "Em Aberto" });
+    const raw = obj(r.json["resultado"]);
+    if (sandbox && respostaSimuladaSicoob(raw)) {
+      await registrarMock(actor, String(b["id"]), raw);
+      return { boletoId: String(b["id"]), mensagem: mensagemMock };
+    }
+    const c = condicoesSicoob({ ...raw, situacaoBoleto: raw["situacaoBoleto"] ?? "Em Aberto" });
     validaIdentidade(c, b, p.config, raw);
     await rpc(sandbox ? "sicoob_sandbox_sincronizar_316" : "sicoob_sincronizar_316", {
       _actor: actor,

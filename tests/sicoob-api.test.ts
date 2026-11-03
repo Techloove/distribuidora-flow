@@ -10,6 +10,7 @@ import {
   SICOOB_AUTH,
   SICOOB_SCOPES,
   condicoesSicoob,
+  respostaSimuladaSicoob,
   instrucaoSicoob,
   confereSicoob,
 } from "../src/lib/sicoob-api";
@@ -302,4 +303,18 @@ test("conexão aceita o identificador negativo do mock oficial sem permitir bole
         25546454,
       ),
     ).rejects.toThrow("sem os dados esperados");
+});
+
+test("mock oficial é reconhecido separadamente e continua inválido como boleto operacional", () => {
+  const mock = { ...raw, nossoNumero: -2147483648 };
+  expect(respostaSimuladaSicoob(mock)).toBe(true);
+  expect(respostaSimuladaSicoob(raw)).toBe(false);
+  expect(() => condicoesSicoob(mock)).toThrow();
+  for (const extra of [
+    { codigoModalidade: 2 },
+    { valor: -1 },
+    { numeroCliente: null },
+    { nossoNumero: "-2147483648" },
+  ])
+    expect(respostaSimuladaSicoob({ ...mock, ...extra })).toBe(false);
 });

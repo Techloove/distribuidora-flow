@@ -98,7 +98,9 @@ export function SicoobSandbox({ centroId }: { centroId: string }) {
       <div className="mt-4 space-y-4">
         <p className="rounded-lg border bg-muted/30 p-3 text-sm">
           <strong>SANDBOX · sem efeito financeiro.</strong> Os registros abaixo são testes do banco.
-          Não criam títulos a receber, pagamentos, estoque ou comissões.
+          Não criam títulos a receber, pagamentos, estoque ou comissões. O Sicoob pode devolver
+          respostas fixas de exemplo: nesses casos, mostramos Resposta simulada recebida. Esses
+          dados não comprovam registro de boleto ou alterações bancárias.
         </p>
         {!centroId ? (
           <p role="status" className="text-sm">
@@ -261,7 +263,9 @@ export function SicoobSandbox({ centroId }: { centroId: string }) {
                         <TableCell data-label="Vencimento">{dataBr(b["vencimento"])}</TableCell>
                         <TableCell data-label="Valor">{brl(b["valor"])}</TableCell>
                         <TableCell data-label="Situação">
-                          {String(b["status"])}
+                          {b["status"] === "simulado"
+                            ? "Resposta simulada recebida"
+                            : String(b["status"])}
                           {b["erro"] ? (
                             <p className="mt-1 max-w-xs text-xs text-destructive">
                               {String(b["erro"])}
@@ -269,7 +273,15 @@ export function SicoobSandbox({ centroId }: { centroId: string }) {
                           ) : null}
                         </TableCell>
                         <TableCell data-label="Ações">
-                          <AcoesBoletoSicoob boleto={b} sandbox />
+                          {b["status"] === "simulado" ? (
+                            <p className="max-w-md text-sm text-muted-foreground">
+                              Comunicação validada com resposta fixa do sandbox. Valor e vencimento
+                              nesta linha são os enviados no teste. O mock não confirma registro,
+                              PDF ou alterações desse boleto.
+                            </p>
+                          ) : (
+                            <AcoesBoletoSicoob boleto={b} sandbox />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

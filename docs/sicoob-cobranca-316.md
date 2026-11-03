@@ -33,3 +33,7 @@ scripts/check-sicoob-316.cjs testa migração repetível, cofre, permissões, lo
 ## Verificação do sandbox — 03/11/2026
 
 Uma consulta GET autenticada no sandbox oficial, com as credenciais já salvas da loja Cimento, confirmou HTTP 200 e `resultado.nossoNumero = -2147483648`: identificador simulado do mock. A versão 1.32.2 valida a estrutura numérica da resposta no teste de conexão, aceitando esse identificador exclusivamente nesse teste. O parser operacional continua rejeitando identificadores negativos. Nenhum boleto foi emitido nem título alterado nessa verificação. O sucesso da conexão não confirma a homologação das operações mutáveis ou a liberação de produção.
+
+## Respostas fixas de emissão — fase320
+
+A sentinela numérica do mock é reconhecida somente em homologação. A resposta é preservada em `retorno` e na operação, que passa a `encerrado`, com teste `simulado`, sem nosso número operacional. Não é uma confirmação bancária: a lista conserva valores solicitados e não oferece alterações/PDF como se esse boleto existisse. Consultar uma emissão antiga sem identificação permite reconhecer o mock por GET sem reemitir. Produção mantém integralmente o parser, a correspondência de identidade e a confirmação das condições bancárias. O sandbox público de mocks não substitui um ambiente bancário com estado para homologação completa dessas operações.

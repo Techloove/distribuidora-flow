@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.32.3 · 2026-11-03
+Versão 1.32.4 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -391,6 +391,7 @@ Cuidados:
 - O teste de conexão do sandbox Sicoob consulta um boleto de exemplo, sem emitir cobrança. Se aparecer HTTP 401 ou 403, copie novamente Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica instabilidade ou limite. Use Preencher números de exemplo do sandbox quando o portal não fornecer beneficiário e conta próprios. O token já salvo é preservado se o campo permanecer vazio.
 - O sandbox Sicoob fornece respostas simuladas e pode usar um nosso número negativo de exemplo. O teste de conexão aceita esse formato sem tratá-lo como boleto operacional ou homologação de produção. A confirmação e a movimentação de boletos continuam exigindo identificadores válidos e dados correspondentes ao pedido.
 - Habilitar testes Sicoob usa somente os dados e a validação do sandbox. A conta financeira da seção de produção não interfere nessa ativação. Se a conexão já estiver testada e os dados sandbox não mudaram, clique Habilitar testes; não é necessário substituir o token.
+- Se a emissão de teste retornar o identificador fixo negativo do sandbox, a lista mostra Resposta simulada recebida e encerra a pendência sem registrar boleto. O valor e vencimento da linha continuam sendo os enviados; a resposta do banco fica separada no histórico. Para uma tentativa antiga em processamento com Identificação bancária inválida, use Consultar Sicoob, sem emitir novamente. Respostas fixas não permitem confirmar PDF, baixa, desconto, abatimento ou mudança de vencimento desse teste.
 
 ## Agenda, metas, comissões e relatórios
 

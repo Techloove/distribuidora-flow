@@ -52,6 +52,9 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
     const fix = fs.readFileSync("db/fase319_sicoob_ativacao_sandbox.sql", "utf8");
     await db.exec(fix);
     await db.exec(fix);
+    const mockFix = fs.readFileSync("db/fase320_sicoob_resposta_simulada.sql", "utf8");
+    await db.exec(mockFix);
+    await db.exec(mockFix);
     assert.deepEqual(
       await scalar(`select to_jsonb(c) from cobranca_centros c where centro_id='${id(11)}'`),
       antesSicredi,
@@ -303,6 +306,50 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
       /permission denied/,
     );
     await db.exec("reset role");
+    await db.exec("set test.jwtrole='service_role'");
+    const mockAntes = await q("select to_jsonb(b) dados from boletos b order by id"),
+      titAntes = await q("select to_jsonb(t) dados from contas_receber t order by id");
+    const m = await scalar("select sicoob_sandbox_reservar_316($1,$2,$3,$4)", [
+      id(1),
+      id(10),
+      id(95),
+      payload,
+    ]);
+    await send(m.operacao);
+    const mock = {
+      nossoNumero: -2147483648,
+      codigoModalidade: 1,
+      numeroCliente: 12345,
+      valor: 156.23,
+    };
+    await q("select sicoob_mock_recebido_320($1,$2,$3)", [id(1), m.boleto.id, mock]);
+    await q("select sicoob_mock_recebido_320($1,$2,$3)", [id(1), m.boleto.id, mock]);
+    assert.equal(
+      await scalar("select status from sicoob_sandbox_316 where id=$1", [m.boleto.id]),
+      "simulado",
+    );
+    assert.equal(
+      await scalar("select nosso_numero from sicoob_sandbox_316 where id=$1", [m.boleto.id]),
+      null,
+    );
+    assert.equal(
+      await scalar("select estado from sicoob_operacoes_316 where id=$1", [m.operacao.id]),
+      "encerrado",
+    );
+    await assert.rejects(() =>
+      q("select sicoob_mock_recebido_320($1,$2,$3)", [id(1), original.id, mock]),
+    );
+    assert.deepEqual(await q("select to_jsonb(b) dados from boletos b order by id"), mockAntes);
+    assert.deepEqual(
+      await q("select to_jsonb(t) dados from contas_receber t order by id"),
+      titAntes,
+    );
+    assert.equal(
+      await scalar(
+        "select has_function_privilege('authenticated','sicoob_mock_recebido_320(uuid,uuid,jsonb)','execute')",
+      ),
+      false,
+    );
     console.log(
       "OK: configuração por loja/ambiente, cofre privado, permissões, idempotência, aprovação/liberação, confirmações bancárias, vencimentos, cancelamento, descontos e sandbox isolado do financeiro.",
     );

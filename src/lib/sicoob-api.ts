@@ -224,3 +224,17 @@ export function confereSicoob(
       : atual.tipoDesconto === esperado.tipoDesconto &&
         JSON.stringify(atual.descontos) === JSON.stringify(esperado.descontos);
 }
+
+/** Sentinela observada no mock oficial; nunca é um identificador operacional. */
+export function respostaSimuladaSicoob(raw: Record<string, unknown>) {
+  return (
+    raw["nossoNumero"] === -2147483648 &&
+    raw["codigoModalidade"] === 1 &&
+    typeof raw["numeroCliente"] === "number" &&
+    Number.isSafeInteger(raw["numeroCliente"]) &&
+    raw["numeroCliente"] > 0 &&
+    typeof raw["valor"] === "number" &&
+    Number.isFinite(raw["valor"]) &&
+    raw["valor"] >= 0
+  );
+}

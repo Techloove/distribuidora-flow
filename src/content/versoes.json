@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.32.4",
+    "data": "2026-11-03",
+    "titulo": "Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente",
+    "novidades": [
+      "Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente"
+    ]
+  },
+  {
     "versao": "1.32.3",
     "data": "2026-11-03",
     "titulo": "Corrige ativação do sandbox Sicoob para não depender da conta financeira de produção",
