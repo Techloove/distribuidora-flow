@@ -438,7 +438,7 @@ export function ErpLayout({
       </Sheet>
 
       <main id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 outline-none">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-card/90 px-5 py-5 sm:items-center lg:px-9 lg:py-6">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-primary/[0.04] px-5 py-5 sm:items-center lg:px-9 lg:py-6">
           <div className="flex min-w-0 items-start gap-2">
             <button
               type="button"

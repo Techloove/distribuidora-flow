@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.32.4 · 2026-11-03
+Versão 1.33.0 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -32,6 +32,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 22. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
 23. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
 24. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
+25. O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.
 
 Cuidados:
 

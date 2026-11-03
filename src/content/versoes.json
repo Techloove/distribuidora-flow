@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.33.0",
+    "data": "2026-11-03",
+    "titulo": "Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos",
+    "novidades": [
+      "Padroniza o visual do sistema com o estilo dos lançamentos financeiros em campos, botões, cartões, janelas e cabeçalhos"
+    ]
+  },
+  {
     "versao": "1.32.4",
     "data": "2026-11-03",
     "titulo": "Identifica respostas fixas do sandbox Sicoob sem registrar boleto nem manter emissão simulada pendente",

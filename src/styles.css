@@ -218,8 +218,8 @@ body {
   font-family: "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-.erp-shell main section,
-.erp-shell main .bg-card {
+.erp-shell main section.border,
+.erp-shell main .bg-card.border {
   box-shadow: 0 2px 8px oklch(0.25 0.02 250 / 3%);
 }
 .erp-shell table {
@@ -546,5 +546,43 @@ body {
   }
   .planejamento-print .overflow-auto {
     overflow: visible;
+  }
+}
+
+/* Padrão visual compartilhado com o lançamento financeiro. Somente apresentação em tela. */
+@media screen {
+  .erp-shell main :is(section, article, div).rounded-xl.border {
+    border-radius: 1rem;
+  }
+  .erp-shell
+    main
+    :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]):not([type="hidden"]),
+  :is([role="dialog"], [role="alertdialog"])
+    :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]):not([type="hidden"]) {
+    border-radius: 0.875rem;
+    background-color: var(--background);
+    border-color: var(--input);
+    box-shadow: 0 1px 2px oklch(0.22 0.03 235 / 6%);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .erp-shell main :is(input, select, textarea):focus-visible,
+  :is([role="dialog"], [role="alertdialog"]) :is(input, select, textarea):focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px oklch(0.47 0.13 245 / 12%);
+  }
+  .erp-shell main :is(input, select, textarea)[aria-invalid="true"],
+  :is([role="dialog"], [role="alertdialog"]) :is(input, select, textarea)[aria-invalid="true"] {
+    border-color: var(--destructive);
+    box-shadow: 0 0 0 2px oklch(0.577 0.245 27.325 / 12%);
+  }
+  .erp-shell main :is(input, select, textarea):disabled,
+  :is([role="dialog"], [role="alertdialog"]) :is(input, select, textarea):disabled {
+    background-color: var(--muted);
   }
 }
