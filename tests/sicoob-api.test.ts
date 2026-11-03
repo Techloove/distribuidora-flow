@@ -284,3 +284,22 @@ test("teste sandbox consulta boletos sem depender de health e só aprova retorno
       testarSandboxSicoob(async () => ({ status: 200, json: { resultado } }), 123),
     ).rejects.toThrow("sem os dados esperados");
 });
+
+test("conexão aceita o identificador negativo do mock oficial sem permitir boleto operacional inválido", async () => {
+  const mock = {
+    ...raw,
+    nossoNumero: -2147483648,
+    numeroCliente: 25546454,
+    codigoModalidade: 1,
+    valor: 156.23,
+  };
+  await testarSandboxSicoob(async () => ({ status: 200, json: { resultado: mock } }), 25546454);
+  expect(() => condicoesSicoob(mock)).toThrow();
+  for (const campo of ["numeroCliente", "codigoModalidade", "valor", "nossoNumero"])
+    await expect(
+      testarSandboxSicoob(
+        async () => ({ status: 200, json: { resultado: { ...mock, [campo]: null } } }),
+        25546454,
+      ),
+    ).rejects.toThrow("sem os dados esperados");
+});

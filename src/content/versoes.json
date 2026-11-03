@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.32.2",
+    "data": "2026-11-03",
+    "titulo": "Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional",
+    "novidades": [
+      "Aceita o identificador simulado retornado pelo sandbox Sicoob no teste de conexão, preservando validação operacional"
+    ]
+  },
+  {
     "versao": "1.32.1",
     "data": "2026-11-03",
     "titulo": "Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade",

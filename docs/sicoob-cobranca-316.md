@@ -29,3 +29,7 @@ O portal oficial não pôde ser consultado pela rede do ambiente. O contrato foi
 ## Validação
 
 scripts/check-sicoob-316.cjs testa migração repetível, cofre, permissões, lojas, idempotência, confirmação, alterações e isolamento financeiro. tests/sicoob-api.test.ts testa parsing, instruções e validação PFX no runtime Node. Telas foram verificadas com Playwright em 1366 e 390 pixels com HTTP simulado.
+
+## Verificação do sandbox — 03/11/2026
+
+Uma consulta GET autenticada no sandbox oficial, com as credenciais já salvas da loja Cimento, confirmou HTTP 200 e `resultado.nossoNumero = -2147483648`: identificador simulado do mock. A versão 1.32.2 valida a estrutura numérica da resposta no teste de conexão, aceitando esse identificador exclusivamente nesse teste. O parser operacional continua rejeitando identificadores negativos. Nenhum boleto foi emitido nem título alterado nessa verificação. O sucesso da conexão não confirma a homologação das operações mutáveis ou a liberação de produção.

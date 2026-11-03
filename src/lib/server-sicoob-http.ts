@@ -192,12 +192,22 @@ export async function testarSandboxSicoob(
       `Não foi possível validar a consulta no sandbox Sicoob (HTTP ${r.status}). Confira os números de exemplo do beneficiário e os dados disponíveis no portal.`,
     );
   const resultado = r.json["resultado"];
+  // O sandbox oficial devolve mocks com nossoNumero=-2147483648.
+  // Valida o contrato da consulta; não certifica esse número como boleto operacional.
+  const b = resultado as Record<string, unknown> | null;
   if (
-    !resultado ||
-    typeof resultado !== "object" ||
-    Array.isArray(resultado) ||
-    !Number.isSafeInteger(Number((resultado as Record<string, unknown>)["nossoNumero"])) ||
-    Number((resultado as Record<string, unknown>)["nossoNumero"]) <= 0
+    !b ||
+    typeof b !== "object" ||
+    Array.isArray(b) ||
+    typeof b["nossoNumero"] !== "number" ||
+    !Number.isSafeInteger(b["nossoNumero"]) ||
+    typeof b["numeroCliente"] !== "number" ||
+    !Number.isSafeInteger(b["numeroCliente"]) ||
+    b["numeroCliente"] <= 0 ||
+    b["codigoModalidade"] !== 1 ||
+    typeof b["valor"] !== "number" ||
+    !Number.isFinite(b["valor"]) ||
+    b["valor"] < 0
   )
     throw Error(
       "O sandbox Sicoob retornou uma resposta sem os dados esperados de boleto. A conexão não foi habilitada.",
