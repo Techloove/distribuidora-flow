@@ -4,6 +4,7 @@ import { fetchWithTimeout } from "./fetch-timeout";
 import {
   clienteSicoob,
   validarCertificadoSicoob,
+  testarSandboxSicoob,
   type CertificadoSicoob,
 } from "./server-sicoob-http";
 import {
@@ -200,9 +201,7 @@ export const sicoobTestarConexao = createServerFn({ method: "POST" })
       modo = ambiente(d.ambiente),
       p = await privado(actor.id, d.centroId, modo);
     if (modo === "homologacao") {
-      const r = await p.api("/health");
-      if (r.status !== 200)
-        throw Error("Sandbox Sicoob não autorizou a consulta. Confira Client ID e token de teste.");
+      await testarSandboxSicoob(p.api, p.config.numero_cliente);
     }
     await rpc("sicoob_autenticado_316", {
       _actor: actor.id,

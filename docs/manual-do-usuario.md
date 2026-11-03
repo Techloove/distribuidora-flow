@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.32.0 · 2026-11-03
+Versão 1.32.1 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -388,6 +388,7 @@ Cuidados:
 - A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
 - Sicoob permanece desativado em produção até configurar e validar as credenciais próprias desse ambiente. Os testes desta entrega usaram respostas simuladas; a homologação com os dados bancários deve ser concluída pelo responsável.
 - A consulta Sicoob pode identificar boleto liquidado, mas não registra recebimento financeiro automaticamente: confira valor e data efetivos em Contas a receber. Baixa bancária não quita o título; desconto ou abatimento concedido não cria recebimento. A automação de tarifas Sicredi não se aplica ao Sicoob.
+- O teste de conexão do sandbox Sicoob consulta um boleto de exemplo, sem emitir cobrança. Se aparecer HTTP 401 ou 403, copie novamente Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica instabilidade ou limite. Use Preencher números de exemplo do sandbox quando o portal não fornecer beneficiário e conta próprios. O token já salvo é preservado se o campo permanecer vazio.
 
 ## Agenda, metas, comissões e relatórios
 

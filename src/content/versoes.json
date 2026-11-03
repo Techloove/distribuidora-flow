@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.32.1",
+    "data": "2026-11-03",
+    "titulo": "Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade",
+    "novidades": [
+      "Corrige teste de conexão do sandbox Sicoob e diferencia falhas de autorização, endpoint e disponibilidade"
+    ]
+  },
+  {
     "versao": "1.32.0",
     "data": "2026-11-03",
     "titulo": "Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos",

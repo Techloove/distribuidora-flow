@@ -15,6 +15,7 @@ import {
 } from "../src/lib/sicoob-api";
 import {
   clienteSicoob,
+  testarSandboxSicoob,
   validarCertificadoSicoob,
   type CertificadoSicoob,
   type TransporteSicoob,
@@ -257,4 +258,29 @@ test("produção exige A1 válido e obtém OAuth com escopos bancários, sem man
   expect(calls[1]!.url).toBe(SICOOB_BASE + "/boletos/123");
   expect(calls[1]!.headers["Authorization"]).toBe("Bearer oauth-falso");
   expect(calls[1]!.headers["client_id"]).toBe("client-prod");
+});
+
+test("teste sandbox consulta boletos sem depender de health e só aprova retorno esperado", async () => {
+  const paths: string[] = [];
+  await testarSandboxSicoob(async (path) => {
+    paths.push(path);
+    return { status: 200, json: { resultado: raw } };
+  }, null);
+  expect(paths).toEqual(["/boletos?numeroCliente=25546454&codigoModalidade=1&nossoNumero=1"]);
+  for (const [status, texto] of [
+    [401, "autorização"],
+    [403, "autorização"],
+    [404, "não está disponível"],
+    [405, "não está disponível"],
+    [429, "temporariamente"],
+    [503, "temporariamente"],
+    [400, "números de exemplo"],
+  ] as const)
+    await expect(testarSandboxSicoob(async () => ({ status, json: {} }), 123)).rejects.toThrow(
+      texto,
+    );
+  for (const resultado of [null, undefined, [], "ok", {}, { nossoNumero: 0 }])
+    await expect(
+      testarSandboxSicoob(async () => ({ status: 200, json: { resultado } }), 123),
+    ).rejects.toThrow("sem os dados esperados");
 });

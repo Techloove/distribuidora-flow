@@ -167,3 +167,39 @@ export async function clienteSicoob(
     );
   };
 }
+
+/** Consulta de leitura: sandbox publica mocks de boletos, não necessariamente /health. */
+export async function testarSandboxSicoob(
+  api: (path: string) => Promise<RespostaSicoob>,
+  numeroCliente: number | null,
+) {
+  const cliente = numeroCliente ?? 25546454;
+  const r = await api(`/boletos?numeroCliente=${cliente}&codigoModalidade=1&nossoNumero=1`);
+  if (r.status === 401 || r.status === 403)
+    throw Error(
+      `Sandbox Sicoob recusou a autorização (HTTP ${r.status}). Copie novamente o Client ID e o Access token (Bearer) da mesma sessão do portal, salve e teste novamente.`,
+    );
+  if (r.status === 404 || r.status === 405)
+    throw Error(
+      `A consulta de boletos não está disponível no sandbox Sicoob (HTTP ${r.status}). Confira a disponibilidade da API Cobrança Bancária v3 no portal.`,
+    );
+  if (r.status === 429 || r.status >= 500)
+    throw Error(
+      `Sandbox Sicoob temporariamente indisponível (HTTP ${r.status}). Aguarde e teste novamente.`,
+    );
+  if (r.status !== 200)
+    throw Error(
+      `Não foi possível validar a consulta no sandbox Sicoob (HTTP ${r.status}). Confira os números de exemplo do beneficiário e os dados disponíveis no portal.`,
+    );
+  const resultado = r.json["resultado"];
+  if (
+    !resultado ||
+    typeof resultado !== "object" ||
+    Array.isArray(resultado) ||
+    !Number.isSafeInteger(Number((resultado as Record<string, unknown>)["nossoNumero"])) ||
+    Number((resultado as Record<string, unknown>)["nossoNumero"]) <= 0
+  )
+    throw Error(
+      "O sandbox Sicoob retornou uma resposta sem os dados esperados de boleto. A conexão não foi habilitada.",
+    );
+}
