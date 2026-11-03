@@ -463,6 +463,7 @@ export function AgendaClientes({
                   <label className="text-sm">
                     Valor prometido
                     <Input
+                      currency
                       type="number"
                       min="0.01"
                       step="0.01"

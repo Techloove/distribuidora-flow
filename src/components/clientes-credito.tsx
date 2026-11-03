@@ -316,6 +316,7 @@ export function CreditosClientesPendentes() {
             <Label htmlFor="limite-cliente">Limite autorizado (R$)</Label>
             <Input
               id="limite-cliente"
+              currency
               type="number"
               min="0.01"
               step="0.01"

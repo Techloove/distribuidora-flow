@@ -223,6 +223,7 @@ export function AcoesFinanceirasTitulo({ titulo }: { titulo: Registro }) {
               <label className="text-sm">
                 Acréscimo do acordo
                 <Input
+                  currency
                   type="number"
                   min="0"
                   step="0.01"
@@ -233,6 +234,7 @@ export function AcoesFinanceirasTitulo({ titulo }: { titulo: Registro }) {
               <label className="text-sm">
                 Desconto do acordo
                 <Input
+                  currency
                   type="number"
                   min="0"
                   step="0.01"
@@ -356,6 +358,7 @@ export function ComissaoProporcional() {
                 </span>
                 <Input
                   aria-label={`Comissão proporcional do pedido ${r["pedido_numero"]}`}
+                  currency
                   type="number"
                   min="0.01"
                   max={Number(r["disponivel"])}

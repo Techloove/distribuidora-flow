@@ -140,6 +140,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
                   Tributos estimados (R$)
                   <Input
                     aria-label="Tributos estimados do pedido"
+                    currency
                     type="number"
                     min="0"
                     step="0.01"
@@ -151,6 +152,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
                   Despesas variáveis (R$)
                   <Input
                     aria-label="Despesas variáveis do pedido"
+                    currency
                     type="number"
                     min="0"
                     step="0.01"
@@ -185,6 +187,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
                   Custo do transporte (R$)
                   <Input
                     aria-label="Custo do transporte"
+                    currency
                     type="number"
                     min="0"
                     step="0.01"

@@ -476,12 +476,14 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           />
           <FilterText
             label="Valor mínimo"
+            currency
             type="number"
             value={filtros["min"] ?? ""}
             onChange={(v) => setF("min", v)}
           />
           <FilterText
             label="Valor máximo"
+            currency
             type="number"
             value={filtros["max"] ?? ""}
             onChange={(v) => setF("max", v)}

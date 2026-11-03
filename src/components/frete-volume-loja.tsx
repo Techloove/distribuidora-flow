@@ -362,6 +362,7 @@ export function FreteVolumeLoja({
                     </td>
                     <td className="p-3">
                       <Input
+                        currency
                         type="number"
                         min="0"
                         step="0.01"

@@ -1230,6 +1230,7 @@ function TabelasPrecoPage() {
                   <Input
                     id="promo-preco"
                     className="mt-1 max-w-48"
+                    currency
                     type="number"
                     min="0"
                     step="0.0001"

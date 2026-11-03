@@ -552,6 +552,7 @@ function DevolucoesPage() {
                     <div>
                       <Label>Preço unitário</Label>
                       <Input
+                        currency
                         type="number"
                         step="0.01"
                         value={item.preco_unitario}

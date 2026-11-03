@@ -797,21 +797,33 @@ export function CrudPage({
                           <Input
                             key={`${String(row["id"])}-${String(row[f.name] ?? "")}`}
                             type="number"
+                            currency={f.currency}
                             step={f.step ?? "0.01"}
                             aria-label={f.label}
                             disabled={inlineUpdate.isPending}
                             defaultValue={
                               row[f.name] === null || row[f.name] === undefined
                                 ? ""
-                                : Number(row[f.name]).toFixed(2)
+                                : f.currency
+                                  ? String(row[f.name])
+                                  : Number(row[f.name]).toFixed(2)
                             }
                             className={cn("h-8 w-24", f.currency && "w-28 pl-8 tabular-nums")}
                             onBlur={(e) => {
                               const antes =
                                 row[f.name] === null || row[f.name] === undefined
                                   ? ""
-                                  : Number(row[f.name]).toFixed(2);
-                              if (e.target.value === antes) return;
+                                  : f.currency
+                                    ? String(row[f.name])
+                                    : Number(row[f.name]).toFixed(2);
+                              if (
+                                e.target.value === antes ||
+                                (f.currency &&
+                                  e.target.value !== "" &&
+                                  antes !== "" &&
+                                  Number(e.target.value) === Number(antes))
+                              )
+                                return;
                               const patch = onInlineSave
                                 ? onInlineSave(row, f.name, e.target.value)
                                 : {
@@ -1061,6 +1073,7 @@ export function CrudPage({
                             )}
                             <Input
                               id={field.name}
+                              currency={field.currency}
                               className={field.currency ? "pl-10 tabular-nums" : undefined}
                               list={field.lookup ? `lk-${field.name}` : undefined}
                               autoComplete={field.lookup ? "off" : undefined}
@@ -1069,7 +1082,8 @@ export function CrudPage({
                               value={String(form[field.name] ?? "")}
                               disabled={directWriteBlocked}
                               onBlur={(e) => {
-                                if (field.type !== "number" || !field.step) return;
+                                if (field.currency || field.type !== "number" || !field.step)
+                                  return;
                                 const dec = (field.step.split(".")[1] ?? "").length;
                                 const raw = e.target.value;
                                 if (raw === "" || Number.isNaN(Number(raw))) return;

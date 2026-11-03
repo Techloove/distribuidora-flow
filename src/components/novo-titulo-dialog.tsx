@@ -238,15 +238,13 @@ export function NovoTituloDialog({
                     <Input
                       required
                       id="titulo-valor"
+                      currency
                       className="h-11 rounded-xl tabular-nums"
                       inputMode="decimal"
                       autoComplete="off"
                       placeholder="0,00"
                       value={form.valor}
                       onChange={(e) => set("valor", e.target.value)}
-                      onBlur={() => {
-                        if (Number.isFinite(valor)) set("valor", brl(valor).replace(/^R\$\s*/, ""));
-                      }}
                     />
                   </div>
                   <div className="space-y-1.5">

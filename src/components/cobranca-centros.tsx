@@ -245,6 +245,10 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
                       <Input
                         id={`sicredi-${c.name}`}
                         type={c.type ?? "text"}
+                        currency={
+                          (c.name === "juros" && sic["tipo_juro"] === "VALOR") ||
+                          (c.name === "valor_desconto1" && sic["tipo_desconto"] === "VALOR")
+                        }
                         autoComplete={c.type === "password" ? "new-password" : "off"}
                         step={
                           c.type === "number"

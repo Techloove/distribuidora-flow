@@ -128,8 +128,7 @@ export function ComissaoRepresentante({ representanteId }: { representanteId: st
       <div>
         <h3 className="text-sm font-semibold">Comissão do representante</h3>
         <p className="text-xs text-muted-foreground">
-          Ordem de aplicação no pedido: percentual do produto → regra específica → faixa
-          escalonada.
+          Ordem de aplicação no pedido: percentual do produto → regra específica → faixa escalonada.
         </p>
       </div>
 
@@ -359,6 +358,7 @@ export function ComissaoRepresentante({ representanteId }: { representanteId: st
             </select>
             <Input
               className="sm:col-span-2"
+              currency
               type="number"
               step="0.01"
               aria-label="De (R$)"
@@ -375,6 +375,7 @@ export function ComissaoRepresentante({ representanteId }: { representanteId: st
             />
             <Input
               className="sm:col-span-1"
+              currency
               type="number"
               step="0.01"
               aria-label="Até (R$)"
@@ -458,6 +459,7 @@ export function ComissaoRepresentante({ representanteId }: { representanteId: st
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs">De (R$)</Label>
             <Input
+              currency
               type="number"
               step="0.01"
               value={novaFaixa["valor_min"] ?? ""}
@@ -467,6 +469,7 @@ export function ComissaoRepresentante({ representanteId }: { representanteId: st
           <div className="space-y-1 sm:col-span-1">
             <Label className="text-xs">Até</Label>
             <Input
+              currency
               type="number"
               step="0.01"
               value={novaFaixa["valor_max"] ?? ""}

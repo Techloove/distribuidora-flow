@@ -260,6 +260,7 @@ export function CondicoesBoletoSicredi({ boleto }: { boleto: Record<string, unkn
                       </Label>
                       <Input
                         id="sicredi-valor"
+                        currency={operacao === "abatimento" || c.tipoDesconto !== "PERCENTUAL"}
                         inputMode="decimal"
                         placeholder="0,00"
                         value={valor}

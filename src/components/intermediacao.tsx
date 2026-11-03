@@ -230,6 +230,7 @@ export function CotacoesIntermediacao({
                     <TableCell data-label="Fábrica / saco (R$)">
                       <Input
                         aria-label={`Custo fábrica por saco de ${String(p["descricao"])}`}
+                        currency
                         inputMode="decimal"
                         value={e.custo}
                         disabled={!liberado}
@@ -517,6 +518,7 @@ function TrocaModalidade({
                         </Label>
                         <Input
                           id={`previa-${c}-${i.id}`}
+                          currency
                           type="number"
                           step="0.01"
                           min="0"
@@ -907,6 +909,7 @@ export function ItensIntermediacao({
                 <Input
                   id={"inter-" + k}
                   aria-label={k === "frete" ? "Frete por saco (R$)" : "Margem por saco (R$)"}
+                  currency
                   type="number"
                   inputMode="decimal"
                   step="0.01"

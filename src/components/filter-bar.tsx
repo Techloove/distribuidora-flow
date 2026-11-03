@@ -101,16 +101,19 @@ export function FilterText({
   onChange,
   placeholder,
   type = "text",
+  currency,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  currency?: boolean;
 }) {
   return (
     <FilterField label={label}>
       <Input
+        currency={currency}
         type={type}
         value={value}
         placeholder={placeholder}

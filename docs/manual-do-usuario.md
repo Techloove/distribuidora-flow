@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.30.0 · 2026-11-03
+Versão 1.30.1 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -30,6 +30,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 20. Os valores monetários das telas, relatórios e impressões seguem o padrão brasileiro: R$ 2,90, sempre com duas casas decimais. Em Produtos, Custo Compra, Custo Médio e preços seguem esse padrão; os campos editáveis de preço são identificados por R$. Quantidades, pesos, códigos e percentuais mantêm seus formatos próprios. Essa apresentação não altera os valores nem a precisão dos cálculos gravados no sistema.
 21. O seletor de loja do topo controla o planejamento de compras, indicadores, produtos e listagens operacionais. Escolha Cimento, Ferragem ou Todas as lojas, conforme seu acesso. Cadastros realmente compartilhados continuam disponíveis nas lojas permitidas; documentos sem loja não são atribuídos a uma loja específica pelo filtro. Históricos e documentos já abertos mantêm sua loja de origem.
 22. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
+23. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
 
 Cuidados:
 

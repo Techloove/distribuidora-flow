@@ -317,6 +317,7 @@ function ContasPage() {
             <div className="space-y-1.5">
               <Label>Valor</Label>
               <Input
+                currency
                 type="number"
                 step="0.01"
                 value={form.valor}

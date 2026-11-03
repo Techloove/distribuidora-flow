@@ -222,6 +222,7 @@ function MetasPage() {
               <div>
                 <Label>Meta (R$)</Label>
                 <Input
+                  currency
                   type="number"
                   step="0.01"
                   value={form.valor_meta}

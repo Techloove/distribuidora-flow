@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.30.1",
+    "data": "2026-11-03",
+    "titulo": "Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero",
+    "novidades": [
+      "Padronizar campos monetários em todo o sistema com vírgula e duas casas decimais, inclusive zero"
+    ]
+  },
+  {
     "versao": "1.30.0",
     "data": "2026-11-03",
     "titulo": "Incluir itens de compra em linha com frete unitário e custo final por produto",

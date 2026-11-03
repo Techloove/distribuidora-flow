@@ -158,6 +158,7 @@ export function EncargosPedido({
           <Label htmlFor="pedido-outras-despesas">Outras despesas cobradas (R$)</Label>
           <Input
             id="pedido-outras-despesas"
+            currency
             type="number"
             min="0"
             step="0.01"

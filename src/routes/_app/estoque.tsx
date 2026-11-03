@@ -400,6 +400,7 @@ function EstoquePage() {
                         <Label htmlFor="estoque-custo">Custo por unidade (R$)</Label>
                         <Input
                           id="estoque-custo"
+                          currency
                           type="number"
                           min="0"
                           step="0.01"

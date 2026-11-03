@@ -228,6 +228,7 @@ export function LiquidacaoSicredi({ boleto }: { boleto: Row }) {
                       <Label htmlFor="tarifa-valor">Tarifa cobrada (R$)</Label>
                       <Input
                         id="tarifa-valor"
+                        currency
                         type="number"
                         min="0.01"
                         step="0.01"

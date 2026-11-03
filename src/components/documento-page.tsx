@@ -1632,12 +1632,14 @@ export function DocumentoPage({
 
           <FilterText
             label="Valor mínimo"
+            currency
             type="number"
             value={filtros["min"] ?? ""}
             onChange={(v) => setF("min", v)}
           />
           <FilterText
             label="Valor máximo"
+            currency
             type="number"
             value={filtros["max"] ?? ""}
             onChange={(v) => setF("max", v)}
@@ -2072,6 +2074,7 @@ export function DocumentoPage({
                     <div className="min-w-0 w-full flex-1 space-y-1.5 sm:min-w-48">
                       <Label>Valor do crédito</Label>
                       <Input
+                        currency
                         type="number"
                         min="0.01"
                         step="0.01"
@@ -2155,6 +2158,7 @@ export function DocumentoPage({
                           </Label>
                           <Input
                             id="compra-custo"
+                            currency
                             type="number"
                             inputMode="decimal"
                             min="0"
@@ -2171,6 +2175,7 @@ export function DocumentoPage({
                           </Label>
                           <Input
                             id="compra-frete"
+                            currency
                             type="number"
                             inputMode="decimal"
                             min="0"
@@ -2279,6 +2284,7 @@ export function DocumentoPage({
                       <div className="space-y-1.5">
                         <Label>{config.itemPriceLabel}</Label>
                         <Input
+                          currency
                           type="number"
                           step="0.01"
                           value={item.preco}
@@ -2425,6 +2431,7 @@ export function DocumentoPage({
                               podeAlterarPreco ? (
                                 <Input
                                   aria-label={`Preço de ${produtoName(it["produto_id"])}`}
+                                  currency
                                   type="number"
                                   step="0.01"
                                   min="0"
@@ -2450,6 +2457,7 @@ export function DocumentoPage({
                                   {doc["status"] === "rascunho" && propostaEditavel ? (
                                     <Input
                                       aria-label={`Frete por item de ${produtoName(it["produto_id"])}`}
+                                      currency
                                       type="number"
                                       min="0"
                                       step="0.0001"
@@ -2636,6 +2644,7 @@ export function DocumentoPage({
                       : "Frete geral adicional (R$)"}
                   </Label>
                   <Input
+                    currency
                     type="number"
                     step="0.01"
                     disabled={doc["status"] !== "rascunho" || !propostaEditavel}
@@ -2646,6 +2655,7 @@ export function DocumentoPage({
                 <div className="space-y-1.5">
                   <Label>Desconto (R$)</Label>
                   <Input
+                    currency
                     type="number"
                     step="0.01"
                     disabled={doc["status"] !== "rascunho" || !propostaEditavel}
@@ -2874,6 +2884,7 @@ export function DocumentoPage({
                 <div className="space-y-1.5">
                   <Label>Valor de impostos (R$)</Label>
                   <Input
+                    currency
                     type="number"
                     step="0.01"
                     value={header["impostos"] ?? ""}

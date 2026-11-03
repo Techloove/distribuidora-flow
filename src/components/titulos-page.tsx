@@ -474,12 +474,14 @@ export function TitulosPage({
         />
         <FilterText
           label="Saldo mínimo"
+          currency
           type="number"
           value={filtros["min"] ?? ""}
           onChange={(v) => setF("min", v)}
         />
         <FilterText
           label="Saldo máximo"
+          currency
           type="number"
           value={filtros["max"] ?? ""}
           onChange={(v) => setF("max", v)}
@@ -804,6 +806,7 @@ export function TitulosPage({
             <div className="space-y-1.5">
               <Label htmlFor="baixa-valor">Valor a {isReceber ? "receber" : "pagar"} (R$)</Label>
               <Input
+                currency
                 type="number"
                 step="0.01"
                 id="baixa-valor"
@@ -853,6 +856,7 @@ export function TitulosPage({
             <div className="space-y-1.5">
               <Label htmlFor="baixa-juros">Juros (R$)</Label>
               <Input
+                currency
                 type="number"
                 step="0.01"
                 id="baixa-juros"
@@ -864,6 +868,7 @@ export function TitulosPage({
             <div className="space-y-1.5">
               <Label htmlFor="baixa-multa">Multa (R$)</Label>
               <Input
+                currency
                 type="number"
                 step="0.01"
                 id="baixa-multa"
@@ -875,6 +880,7 @@ export function TitulosPage({
             <div className="space-y-1.5">
               <Label htmlFor="baixa-desconto">Desconto (R$)</Label>
               <Input
+                currency
                 type="number"
                 step="0.01"
                 id="baixa-desconto"

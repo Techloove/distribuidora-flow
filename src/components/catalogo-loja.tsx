@@ -208,6 +208,7 @@ export function CatalogoLoja({ loja, nome }: { loja: string; nome: string }) {
           <Label htmlFor="produto-loja-preco">Preço normal do produto (R$)</Label>
           <Input
             id="produto-loja-preco"
+            currency
             type="number"
             min="0"
             step="0.0001"
