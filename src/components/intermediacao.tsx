@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -34,6 +34,20 @@ function useCotacoes(loja: string, dia: string) {
       ),
   });
 }
+type EdicaoCotacao = { dia: string; custo: string; esperada: string | null; dataEditada: boolean };
+const formatarCustoCotacao = (valor: number) =>
+  valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+    useGrouping: false,
+  });
+function lerCustoCotacao(valor: string) {
+  const texto = valor.trim().replace(/^R\$\s*/, "");
+  if (/^\d+(?:\.\d{1,4})?$/.test(texto)) return Number(texto);
+  if (/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,4}$/.test(texto))
+    return Number(texto.replace(/\./g, "").replace(",", "."));
+  return NaN;
+}
 export function CotacoesIntermediacao({
   loja,
   diaInicial = hojeSaoPaulo(),
@@ -48,28 +62,12 @@ export function CotacoesIntermediacao({
     permissoes = usePermissoesRotinas();
   const podeCotar =
     usePodeAlterarPreco() || (canManage && permissoes.pode("configuracao_rotinas_editar"));
-  const [dia, setDia] = useState(diaInicial),
-    [produto, setProduto] = useState(""),
-    [custo, setCusto] = useState(""),
+  const prefixo = useId();
+  const [edicoes, setEdicoes] = useState<Record<string, EdicaoCotacao>>({}),
+    [busca, setBusca] = useState(""),
     [historicoAberto, setHistoricoAberto] = useState(false);
   const acesso = useAcessoIntermediacao(loja);
-  const historico = useQuery({
-    queryKey: ["intermediacao-cotacoes-historico", user?.id, loja, dia],
-    enabled: !!client && historicoAberto && acesso.data === true,
-    queryFn: async () => {
-      const r = await client!
-        .from("intermediacao_cotacoes_296")
-        .select("*")
-        .eq("centro_id", loja)
-        .lte("dia", dia)
-        .order("dia", { ascending: false })
-        .order("revisao", { ascending: false })
-        .limit(100);
-      if (r.error) throw Error(r.error.message);
-      return r.data as Cotacao[];
-    },
-  });
-  const cotacoes = useCotacoes(loja, dia);
+  const cotacoes = useCotacoes(loja, diaInicial);
   const produtos = useQuery({
     queryKey: ["cotacoes-catalogo", user?.id, loja],
     enabled: !!client && !!loja,
@@ -80,130 +78,248 @@ export function CotacoesIntermediacao({
           .range(a, b),
       ),
   });
+  const historico = useQuery({
+    queryKey: ["intermediacao-cotacoes-historico", user?.id, loja, diaInicial],
+    enabled: !!client && historicoAberto && acesso.data === true,
+    queryFn: async () => {
+      const r = await client!
+        .from("intermediacao_cotacoes_296")
+        .select("*")
+        .eq("centro_id", loja)
+        .lte("dia", diaInicial)
+        .order("dia", { ascending: false })
+        .order("revisao", { ascending: false })
+        .limit(100);
+      if (r.error) throw Error(r.error.message);
+      return r.data as Cotacao[];
+    },
+  });
+  const atualizar = () => {
+    for (const key of [
+      "intermediacao-cotacoes",
+      "intermediacao-cotacoes-historico",
+      "previa-modalidade",
+    ])
+      void qc.invalidateQueries({ queryKey: [key] });
+  };
   const salvar = useMutation({
-    mutationFn: async () => {
-      const r = await client!.rpc("salvar_cotacao_intermediacao_296", {
+    mutationFn: async ({ produto, edicao }: { produto: string; edicao: EdicaoCotacao }) => {
+      const r = await client!.rpc("salvar_cotacao_lista_309", {
         _loja: loja,
         _produto: produto,
-        _dia: dia,
-        _custo: Number(custo),
+        _dia: edicao.dia,
+        _custo: lerCustoCotacao(edicao.custo),
+        _ate: dataFixa ? diaInicial : edicao.dia > diaInicial ? edicao.dia : diaInicial,
+        _esperada: edicao.esperada,
       });
       if (r.error) throw Error(r.error.message);
+      const cotacao = (Array.isArray(r.data) ? r.data[0] : r.data) as Cotacao | null;
+      if (!cotacao?.id || !cotacao.dia)
+        throw Error(
+          "Não foi possível confirmar a cotação salva. Atualize a lista antes de tentar novamente.",
+        );
+      return { produto, cotacao };
     },
-    onSuccess: () => {
+    onSuccess: ({ produto, cotacao }) => {
+      if (cotacao.dia <= diaInicial)
+        qc.setQueryData<Cotacao[]>(
+          ["intermediacao-cotacoes", user?.id, loja, diaInicial],
+          (atuais) => [...(atuais ?? []).filter((c) => c.produto_id !== produto), cotacao],
+        );
+      setEdicoes((atual) => {
+        const novas = { ...atual };
+        delete novas[produto];
+        return novas;
+      });
+      atualizar();
       toast.success("Cotação salva. Pedidos anteriores mantêm o custo gravado.");
-      setCusto("");
-      void qc.invalidateQueries({ queryKey: ["intermediacao-cotacoes"] });
-      void qc.invalidateQueries({ queryKey: ["intermediacao-cotacoes-historico"] });
-      void qc.invalidateQueries({ queryKey: ["previa-modalidade"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      atualizar();
+      toast.error(e.message);
+    },
   });
   const ultimas = cotacoes.data ?? [];
   const nome = (id: string) =>
     String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? id);
+  const lista = (produtos.data ?? []).filter((p) =>
+    `${p["codigo"] ?? ""} ${p["descricao"] ?? ""}`
+      .toLocaleLowerCase("pt-BR")
+      .includes(busca.trim().toLocaleLowerCase("pt-BR")),
+  );
+  const cotacaoPorProduto = new Map(ultimas.map((c) => [c.produto_id, c]));
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-4 rounded-xl border bg-card p-4">
       <div>
         <h3 className="font-semibold">Cotação de fábrica • Intermediação</h3>
-        <p className="text-xs text-muted-foreground">
-          O último preço continua válido nos dias seguintes até uma nova cotação. Pedidos já
-          lançados mantêm o custo gravado.
+        <p className="mt-1 text-xs text-muted-foreground">
+          Altere o valor ou a data na linha do produto e clique em Salvar. Ao mudar o valor,
+          sugerimos a data base do pedido. Pedidos já lançados mantêm o custo gravado.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Preços vigentes até {dataBr(diaInicial)}. O último preço continua válido até uma nova
+          cotação.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-1">
-          <Label htmlFor={"cotacao-dia-" + loja}>Data da cotação</Label>
-          <Input
-            id={"cotacao-dia-" + loja}
-            type="date"
-            readOnly={dataFixa}
-            value={dia}
-            onChange={(e) => setDia(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={"cotacao-produto-" + loja}>Cimento / produto</Label>
-          <select
-            id={"cotacao-produto-" + loja}
-            className="h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-2"
-            value={produto}
-            onChange={(e) => setProduto(e.target.value)}
-          >
-            <option value="">Selecione</option>
-            {(produtos.data ?? []).map((p) => (
-              <option key={String(p["id"])} value={String(p["id"])}>
-                {String(p["codigo"] ?? "")} · {String(p["descricao"])}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={"cotacao-custo-" + loja}>Custo fábrica por saco (R$)</Label>
-          <Input
-            id={"cotacao-custo-" + loja}
-            type="number"
-            min="0.0001"
-            step="0.01"
-            value={custo}
-            onChange={(e) => setCusto(e.target.value)}
-          />
-        </div>
-        <div className="flex items-end">
-          <Button
-            disabled={
-              !podeCotar ||
-              !acesso.data ||
-              salvar.isPending ||
-              !dia ||
-              !produto ||
-              !(Number(custo) > 0)
-            }
-            onClick={() => salvar.mutate()}
-          >
-            Salvar cotação
-          </Button>
-        </div>
+      <div className="max-w-md space-y-1">
+        <Label htmlFor={`${prefixo}-busca`}>Buscar produto na lista</Label>
+        <Input
+          id={`${prefixo}-busca`}
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Código ou nome do produto"
+        />
       </div>
-      {(cotacoes.error || produtos.error) && (
+      {(cotacoes.error || produtos.error || acesso.error) && (
         <p role="alert" className="text-sm text-destructive">
-          {(cotacoes.error ?? produtos.error)?.message}
+          {(cotacoes.error ?? produtos.error ?? acesso.error)?.message}
         </p>
       )}
-      {cotacoes.isPending ? (
-        <p className="text-sm">Carregando cotações…</p>
+      {cotacoes.isPending || produtos.isPending ? (
+        <p className="text-sm">Carregando produtos e cotações…</p>
       ) : (
-        <div className="overflow-x-auto">
+        <>
           <Table className="mobile-cards">
             <TableHeader>
               <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead data-column-key="Fábrica / saca">Fábrica / saco</TableHead>
-                <TableHead>Data do último preço</TableHead>
-                <TableHead>Revisão</TableHead>
+                <TableHead className="min-w-[220px]">Produto</TableHead>
+                <TableHead data-column-key="Fábrica / saca" className="min-w-[170px]">
+                  Fábrica / saco (R$)
+                </TableHead>
+                <TableHead data-column-key="Data do último preço" className="min-w-[170px]">
+                  Data da cotação
+                </TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ultimas.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell data-label="Produto">{nome(c.produto_id)}</TableCell>
-                  <TableCell data-label="Fábrica / saco" className="whitespace-nowrap">
-                    {brl(c.custo_fabrica)}
-                  </TableCell>
-                  <TableCell data-label="Data do último preço">{dataBr(c.dia)}</TableCell>
-                  <TableCell data-label="Revisão">{c.revisao}</TableCell>
-                </TableRow>
-              ))}
+              {lista.map((p) => {
+                const id = String(p["id"]),
+                  c = cotacaoPorProduto.get(id),
+                  padrao: EdicaoCotacao = {
+                    dia: c?.dia ?? diaInicial,
+                    custo: c ? formatarCustoCotacao(Number(c.custo_fabrica)) : "",
+                    esperada: c?.id ?? null,
+                    dataEditada: false,
+                  },
+                  e = edicoes[id] ?? padrao,
+                  valor = lerCustoCotacao(e.custo),
+                  mudou =
+                    !!edicoes[id] && (!c || valor !== Number(c.custo_fabrica) || e.dia !== c.dia),
+                  enviando = salvar.isPending && salvar.variables?.produto === id,
+                  liberado = podeCotar && acesso.data === true && !enviando,
+                  valido =
+                    Number.isFinite(valor) &&
+                    valor > 0 &&
+                    valor < 10000000000 &&
+                    !!e.dia &&
+                    (!c || e.dia >= c.dia) &&
+                    (!dataFixa || e.dia <= diaInicial);
+                return (
+                  <TableRow key={id} className={mudou ? "bg-primary/5" : undefined}>
+                    <TableCell data-label="Produto">
+                      <p className="font-medium">{String(p["descricao"])}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {p["codigo"] ? `${p["codigo"]} · ` : ""}
+                        {c
+                          ? `Último preço: ${dataBr(c.dia)} · ${brl(c.custo_fabrica)}`
+                          : "Sem cotação cadastrada"}
+                      </p>
+                    </TableCell>
+                    <TableCell data-label="Fábrica / saco (R$)">
+                      <Input
+                        aria-label={`Custo fábrica por saco de ${String(p["descricao"])}`}
+                        inputMode="decimal"
+                        value={e.custo}
+                        disabled={!liberado}
+                        placeholder="0,00"
+                        className="w-full sm:max-w-44"
+                        onChange={(event) => {
+                          const custo = event.target.value;
+                          setEdicoes((antes) => {
+                            const base = antes[id] ?? padrao;
+                            return {
+                              ...antes,
+                              [id]: {
+                                ...base,
+                                custo,
+                                dia: base.dataEditada ? base.dia : diaInicial,
+                              },
+                            };
+                          });
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell data-label="Data da cotação">
+                      <Input
+                        aria-label={`Data da cotação de ${String(p["descricao"])}`}
+                        type="date"
+                        value={e.dia}
+                        min={c?.dia}
+                        max={dataFixa ? diaInicial : undefined}
+                        disabled={!liberado}
+                        className="w-full sm:max-w-44"
+                        onChange={(event) => {
+                          const dia = event.target.value;
+                          setEdicoes((antes) => ({
+                            ...antes,
+                            [id]: { ...(antes[id] ?? padrao), dia, dataEditada: true },
+                          }));
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell data-label="Ações">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          disabled={!liberado || salvar.isPending || !mudou || !valido}
+                          onClick={() => salvar.mutate({ produto: id, edicao: e })}
+                        >
+                          {enviando ? "Salvando…" : "Salvar"}
+                        </Button>
+                        {edicoes[id] && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={enviando}
+                            onClick={() =>
+                              setEdicoes((antes) => {
+                                const novas = { ...antes };
+                                delete novas[id];
+                                return novas;
+                              })
+                            }
+                          >
+                            Descartar
+                          </Button>
+                        )}
+                      </div>
+                      {mudou && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {valido ? "Alteração pendente" : "Confira o valor e a data informados."}
+                        </p>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
-          {!ultimas.length && (
+          {!lista.length && (
             <p className="p-2 text-sm text-muted-foreground">
-              Nenhuma cotação vigente até esta data. Cadastre antes de incluir itens.
+              {busca
+                ? "Nenhum produto encontrado."
+                : "Nenhum produto disponível no catálogo desta loja."}
             </p>
           )}
-        </div>
+        </>
       )}
-      {cotacoes.data && cotacoes.data.length > 0 && (
+      {!podeCotar && (
+        <p className="text-xs text-muted-foreground">
+          Seu perfil permite apenas consultar as cotações.
+        </p>
+      )}
+      {ultimas.length > 0 && (
         <details className="text-xs" onToggle={(e) => setHistoricoAberto(e.currentTarget.open)}>
           <summary>Histórico de preços e revisões (últimos 100)</summary>
           {historico.error && <p role="alert">{historico.error.message}</p>}
@@ -431,6 +547,7 @@ function TrocaModalidade({
             </Button>
             {mostrarCotas && (
               <CotacoesIntermediacao
+                key={`${doc["id"]}-${doc["centro_id"]}-${dataBaseIntermediacao(doc)}`}
                 loja={String(doc["centro_id"])}
                 diaInicial={dataBaseIntermediacao(doc)}
                 dataFixa
@@ -579,6 +696,7 @@ export function ModalidadePedido({
       )}
       {cotas && editar && inter && q.data && (
         <CotacoesIntermediacao
+          key={`${doc["id"]}-${doc["centro_id"]}-${dataBaseIntermediacao(doc)}`}
           loja={String(doc["centro_id"])}
           diaInicial={dataBaseIntermediacao(doc)}
           dataFixa

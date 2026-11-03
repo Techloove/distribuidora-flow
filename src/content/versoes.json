@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.28.0",
+    "data": "2026-11-03",
+    "titulo": "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto",
+    "novidades": [
+      "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto"
+    ]
+  },
+  {
     "versao": "1.27.1",
     "data": "2026-11-03",
     "titulo": "Padronizar saco e sacos nas telas, instruções e mensagens da intermediação",
