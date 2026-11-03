@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.27.0",
+    "data": "2026-11-03",
+    "titulo": "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período",
+    "novidades": [
+      "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período"
+    ]
+  },
+  {
     "versao": "1.26.0",
     "data": "2026-11-02",
     "titulo": "Mostrar datas original e de aprovação no pedido e contar os prazos de pagamento a partir da aprovação",

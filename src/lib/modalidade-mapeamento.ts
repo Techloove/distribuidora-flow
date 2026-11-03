@@ -72,6 +72,8 @@ export const tabelasModalidade: Record<string, string> = {
   vw_vendas_rota_cidade: "vw_vendas_rota_cidade_mod_300",
 };
 export const rpcsModalidade: Record<string, string> = {
+  dashboard_resumo_mes_307: "dashboard_resumo_mes_307_mod_300",
+  dashboard_rankings_mes_307: "dashboard_rankings_mes_307_mod_300",
   dashboard_resumo: "dashboard_resumo_mod_300",
   dashboard_financeiro: "dashboard_financeiro_mod_300",
   dashboard_rankings: "dashboard_rankings_mod_300",

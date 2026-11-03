@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { mesDashboardAtual, moverMesDashboard, rotuloMesDashboard } from "@/lib/periodo-dashboard";
+import { Button } from "@/components/ui/button";
 import { getModalidade } from "@/lib/modalidade-store";
 import { CentralPendencias } from "@/components/central-pendencias";
 import { PainelRepresentante } from "@/components/painel-representante";
-import { perfilPainel, hojeSaoPaulo } from "@/lib/painel-trabalho";
+import { perfilPainel } from "@/lib/painel-trabalho";
 import { useAcesso } from "@/lib/permissoes";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -34,6 +38,23 @@ type Row = Record<string, unknown>;
 
 function Dashboard() {
   const qc = useQueryClient();
+  const [mesAtual, setMesAtual] = useState(mesDashboardAtual);
+  const [mes, setMes] = useState(mesDashboardAtual);
+  useEffect(() => {
+    const atualizar = () => {
+      const atual = mesDashboardAtual();
+      if (atual !== mesAtual) {
+        setMes((selecionado) => (selecionado === mesAtual ? atual : selecionado));
+        setMesAtual(atual);
+      }
+    };
+    const timer = window.setInterval(atualizar, 60_000);
+    window.addEventListener("focus", atualizar);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", atualizar);
+    };
+  }, [mesAtual]);
   const { client, user, roles } = useSupabase();
   const acesso = useAcesso();
   const perfil = perfilPainel(roles);
@@ -46,10 +67,13 @@ function Dashboard() {
   const { centro, isLoading: centrosLoading, error: centroError } = useCentroValido();
 
   const data = useQuery({
-    queryKey: [...["dashboard", user?.id, centro], getModalidade()],
+    queryKey: [...["dashboard", user?.id, centro, mes], getModalidade()],
     enabled: !!client && !centrosLoading && !centroError,
     queryFn: async () => {
-      const result = await client!.rpc("dashboard_resumo", { _centro_id: centro || null });
+      const result = await client!.rpc("dashboard_resumo_mes_307", {
+        _centro_id: centro || null,
+        _mes: `${mes}-01`,
+      });
       if (result.error) throw new Error("Não foi possível atualizar os indicadores.");
       return result.data as {
         clientes: number;
@@ -93,12 +117,72 @@ function Dashboard() {
           onClick={() => {
             void data.refetch();
             void qc.invalidateQueries({ queryKey: ["painel-representante"] });
+            void qc.invalidateQueries({ queryKey: ["dashboard_rankings_mes_307"] });
+            void qc.invalidateQueries({ queryKey: ["vw_fluxo_operacional"] });
           }}
           disabled={data.isFetching}
           className="rounded-xl border border-white/30 px-4 py-2 text-sm hover:bg-white/10 disabled:opacity-50"
         >
           {data.isFetching ? "Atualizando…" : "Atualizar painel"}
         </button>
+      </section>
+      <section aria-label="Período do dashboard" className="mb-6 rounded-2xl border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold capitalize">{rotuloMesDashboard(mes)}</h2>
+            <p className="text-xs text-muted-foreground">
+              {mes === mesAtual ? "Mês atual" : "Consulta de mês anterior"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mês anterior"
+              disabled={mes <= "2000-01"}
+              onClick={() => setMes(moverMesDashboard(mes, -1))}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <label className="sr-only" htmlFor="mes-dashboard">
+              Mês do dashboard
+            </label>
+            <input
+              id="mes-dashboard"
+              type="month"
+              min="2000-01"
+              max={mesAtual}
+              value={mes}
+              className="h-10 min-w-0 rounded-lg border bg-background px-3 text-sm"
+              onChange={(e) => {
+                const valor = e.target.value;
+                if (
+                  /^\d{4}-(0[1-9]|1[0-2])$/.test(valor) &&
+                  valor >= "2000-01" &&
+                  valor <= mesAtual
+                )
+                  setMes(valor);
+              }}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mês seguinte"
+              disabled={mes >= mesAtual}
+              onClick={() => setMes(moverMesDashboard(mes, 1))}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+            <Button variant="outline" disabled={mes === mesAtual} onClick={() => setMes(mesAtual)}>
+              Mês atual
+            </Button>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Vendas pela data comercial do pedido; financeiro pelos vencimentos do mês, com saldo
+          pendente atual; comissões pela data de aprovação. Cadastros, estoque e pendências mostram
+          a situação atual.
+        </p>
       </section>
       {(data.isError || centroError) && (
         <div
@@ -109,20 +193,20 @@ function Dashboard() {
           administrador.
         </div>
       )}
-      {perfil === "representante" && <PainelRepresentante />}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {perfil === "representante" && <PainelRepresentante mesSelecionado={mes} />}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {acesso.pode("/pedidos") && perfil !== "representante" && (
           <Kpi
-            label="Vendas confirmadas"
+            label="Vendas aprovadas no mês"
             value={d ? brl(d.vendasConfirmadas) : "—"}
             icon={ClipboardList}
             to="/pedidos"
-            hint={d ? `${d.pedidosAbertos} pedidos em rascunho` : undefined}
+            hint={d ? `${d.pedidosAbertos} pedidos em digitação/análise no mês` : undefined}
           />
         )}
         {acesso.pode("/receber") && perfil !== "representante" && (
           <Kpi
-            label="A receber em aberto"
+            label="A receber · vencimentos do mês"
             value={d ? brl(d.receber) : "—"}
             icon={Wallet}
             to="/receber"
@@ -131,7 +215,7 @@ function Dashboard() {
         )}
         {acesso.pode("/pagar") && perfil !== "representante" && (
           <Kpi
-            label="A pagar em aberto"
+            label="A pagar · vencimentos do mês"
             value={d ? brl(d.pagar) : "—"}
             icon={Coins}
             to="/pagar"
@@ -140,30 +224,46 @@ function Dashboard() {
         )}
         {acesso.pode("/comissoes") && (
           <Kpi
-            label="Comissões a liberar"
+            label="Comissões pendentes do mês"
             value={d ? brl(d.comissoes) : "—"}
             icon={Users}
             to="/comissoes"
-          />
-        )}
-        {acesso.pode("/pessoas") && perfil !== "representante" && (
-          <Kpi label="Clientes" value={d ? String(d.clientes) : "—"} icon={Users} to="/pessoas" />
-        )}
-        {acesso.pode("/produtos") && perfil !== "representante" && (
-          <Kpi
-            label="Produtos"
-            value={d ? String(d.produtos) : "—"}
-            icon={Package}
-            to="/produtos"
+            hint="Previstas e liberadas · aprovação no mês"
           />
         )}
       </div>
+      {perfil !== "representante" && (acesso.pode("/pessoas") || acesso.pode("/produtos")) && (
+        <section className="mt-6 space-y-3" aria-label="Cadastros atuais">
+          <h2 className="font-semibold">Cadastros atuais</h2>
+          <p className="text-xs text-muted-foreground">
+            Totais atuais, sem recorte pelo mês selecionado.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {acesso.pode("/pessoas") && (
+              <Kpi
+                label="Clientes"
+                value={d ? String(d.clientes) : "—"}
+                icon={Users}
+                to="/pessoas"
+              />
+            )}
+            {acesso.pode("/produtos") && (
+              <Kpi
+                label="Produtos"
+                value={d ? String(d.produtos) : "—"}
+                icon={Package}
+                to="/produtos"
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       <div className="mt-6">
         <CentralPendencias compact />
       </div>
       {(perfil === "gestao" || perfil === "operacao") && <FluxoOperacional />}
-      {perfil === "gestao" && <RankingRotas />}
+      {perfil === "gestao" && <RankingRotas mes={mes} />}
 
       {acesso.pode("/estoque") && (
         <section className="mt-6 rounded-lg border border-border bg-card p-5">
@@ -240,18 +340,17 @@ const ETAPAS: { campo: string; label: string; to: string }[] = [
 ];
 
 /** Ranking do mês calculado no PostgreSQL para evitar limite REST e somas no cliente. */
-function RankingRotas() {
+function RankingRotas({ mes }: { mes: string }) {
   const { client } = useSupabase();
   const { centro } = useCentroValido();
-  const de = `${hojeSaoPaulo().slice(0, 7)}-01`;
 
   const ranking = useQuery({
-    queryKey: [...["dashboard_rankings", centro, de], getModalidade()],
+    queryKey: [...["dashboard_rankings_mes_307", centro, mes], getModalidade()],
     enabled: !!client,
     queryFn: async () => {
-      const { data, error } = await client!.rpc("dashboard_rankings", {
+      const { data, error } = await client!.rpc("dashboard_rankings_mes_307", {
         _centro_id: centro || null,
-        _de: de,
+        _mes: `${mes}-01`,
       });
       if (error) throw new Error(error.message);
       return (data ?? {}) as {
@@ -298,7 +397,9 @@ function RankingRotas() {
 
   return (
     <section className="mt-6 rounded-lg border border-border bg-card p-5">
-      <h2 className="text-sm font-semibold text-foreground">Desempenho do mês por rota</h2>
+      <h2 className="text-sm font-semibold text-foreground">
+        Desempenho de {rotuloMesDashboard(mes)}
+      </h2>
       <div className="mt-3 grid gap-3 lg:grid-cols-3">
         {lista("Vendas por rota", ranking.data?.rotas, brl, "/relatorios")}
         {lista("Vendas por representante", ranking.data?.representantes, brl, "/relatorios")}
@@ -328,7 +429,8 @@ function FluxoOperacional() {
     <section className="mt-6 rounded-lg border border-border bg-card p-5">
       <h2 className="text-sm font-semibold text-foreground">Fluxo operacional</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Pedido → aprovação → separação → conferência → faturamento → nota fiscal → carga → entrega.
+        Situação atual, sem recorte mensal: pedido → aprovação → separação → conferência →
+        faturamento → nota fiscal → carga → entrega.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-4">
         {ETAPAS.filter((e) => acesso.pode(e.to)).map((e) => (

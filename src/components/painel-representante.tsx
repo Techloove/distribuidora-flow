@@ -19,14 +19,15 @@ type Vendas = {
   credito_pendente: number;
   meses: { mes: number; valor: number; pedidos: number }[];
 };
-export function PainelRepresentante() {
+export function PainelRepresentante({ mesSelecionado }: { mesSelecionado?: string } = {}) {
   const { client, user } = useSupabase();
   const acesso = useAcesso();
   const perm = usePermissoesRotinas();
   const cv = useCentroValido();
   const hoje = hojeSaoPaulo();
   const anoAtual = Number(hoje.slice(0, 4));
-  const [ano, setAno] = useState(anoAtual);
+  const [anoEscolhido, setAno] = useState(anoAtual);
+  const ano = mesSelecionado ? Number(mesSelecionado.slice(0, 4)) : anoEscolhido;
   const q = useQuery({
     queryKey: [...["painel-representante", "vendas", user?.id, ano, cv.centro], getModalidade()],
     enabled: !!client && !cv.isLoading && !cv.error,
@@ -66,7 +67,7 @@ export function PainelRepresentante() {
       return { semCompras, atrasos };
     },
   });
-  const mes = Number(hoje.slice(5, 7));
+  const mes = Number((mesSelecionado ?? hoje).slice(5, 7));
   return (
     <div className="mb-6 space-y-5">
       <section
@@ -75,21 +76,23 @@ export function PainelRepresentante() {
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">Minhas vendas por mês</h2>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="ano-vendas-representante">Ano</Label>
-            <select
-              id="ano-vendas-representante"
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-              value={ano}
-              onChange={(e) => setAno(Number(e.target.value))}
-            >
-              {Array.from({ length: 6 }, (_, i) => anoAtual - i).map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!mesSelecionado && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="ano-vendas-representante">Ano</Label>
+              <select
+                id="ano-vendas-representante"
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={ano}
+                onChange={(e) => setAno(Number(e.target.value))}
+              >
+                {Array.from({ length: 6 }, (_, i) => anoAtual - i).map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Somente seus pedidos e clientes da sua carteira, na loja selecionada. Clientes de outros

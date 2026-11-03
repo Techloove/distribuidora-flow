@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.26.0 · 2026-11-02
+Versão 1.27.0 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -37,6 +37,21 @@ Cuidados:
 - Representantes continuam restritos à própria carteira. Selecionar outra loja não libera clientes ou operações fora da sua permissão.
 - Todas as lojas é uma visão de consulta quando disponível. Para movimentar estoque, escolha uma loja específica.
 - O aviso pode ser recolhido em Depois; ele continua disponível no canto da tela. A consulta é feita enquanto a página está aberta e com conexão. O manifesto de versão deve ser publicado sem cache no provedor de hospedagem, inclusive na Vercel, para que a consulta reconheça as atualizações.
+
+## Dashboard por mês
+
+Abra no mês atual e consulte períodos anteriores sem misturar os indicadores.
+
+1. O Dashboard abre sempre no mês atual de São Paulo. O mês consultado aparece acima dos cartões. Use Mês anterior, Mês seguinte, o seletor de mês ou Mês atual para navegar. Meses futuros ficam bloqueados.
+2. Vendas aprovadas considera a data comercial do pedido no mês selecionado. Em digitação/análise mostra somente pedidos desse período; orçamentos não entram. As comissões pendentes usam o mês da aprovação, conforme a regra de competência.
+3. A receber e A pagar mostram o saldo pendente atual dos títulos com vencimento no mês consultado. O destaque vencido também pertence a esse mês. A consulta de um mês passado não reconstitui o saldo bancário ou a situação de pagamentos naquela época.
+4. O ranking de rotas, representantes e produtos usa o início e o fim do mês selecionado. Loja e modalidade continuam limitando os indicadores. No painel do representante, o cartão mensal acompanha o seletor; o total e a tabela anual continuam identificados pelo ano.
+5. Cadastros, pendências, fluxo operacional e alertas de estoque mostram a situação atual, identificada separadamente. Ao atualizar o painel, os indicadores e o ranking são consultados novamente.
+
+Cuidados:
+
+- Um mês sem movimentos mostra zero, sem substituir pelos valores do mês anterior. A troca de mês não altera pedidos, títulos, pagamentos ou estoque.
+- Ao reabrir a tela, o período volta ao mês atual. Se a tela continuar aberta na virada do mês, o período atual acompanha o novo mês; uma consulta histórica escolhida permanece selecionada.
 
 ## Filtrar Vendas Estoque e Vendas Intermediação
 
