@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.29.0",
+    "data": "2026-11-03",
+    "titulo": "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto",
+    "novidades": [
+      "Consultar histórico de frete e margem por saco do cliente nas Vendas Intermediação, com campo de frete compacto"
+    ]
+  },
+  {
     "versao": "1.28.0",
     "data": "2026-11-03",
     "titulo": "Editar cotações diretamente na lista de produtos, com valor e data por linha, sem selecionar produto",

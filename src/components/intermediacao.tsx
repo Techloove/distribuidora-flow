@@ -1,3 +1,4 @@
+import { HistoricoIntermediacaoCliente } from "./historico-intermediacao-cliente";
 import { useEffect, useState, useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -676,19 +677,28 @@ export function ModalidadePedido({
           : "Venda com estoque da loja. É possível revisar a modalidade durante a digitação; documentos com itens exigem conferência da prévia."}
       </p>
       {inter && (
-        <div className="space-y-1">
-          <Label htmlFor={`frete-pagador-${doc["id"]}`}>Quem paga o frete</Label>
-          <select
-            id={`frete-pagador-${doc["id"]}`}
-            className="h-11 w-full rounded-md border bg-background px-3 sm:max-w-md"
-            value={String(doc["responsavel_frete_intermediacao"] ?? "")}
-            disabled={!editar || frete.isPending}
-            onChange={(e) => frete.mutate(e.target.value)}
-          >
-            <option value="">Não informado</option>
-            <option value="loja">Loja vendedora</option>
-            <option value="cliente">Cliente</option>
-          </select>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-full space-y-1 sm:w-52">
+              <Label htmlFor={`frete-pagador-${doc["id"]}`}>Quem paga o frete</Label>
+              <select
+                id={`frete-pagador-${doc["id"]}`}
+                className="block h-11 w-full rounded-md border bg-background px-3"
+                value={String(doc["responsavel_frete_intermediacao"] ?? "")}
+                disabled={!editar || frete.isPending}
+                onChange={(e) => frete.mutate(e.target.value)}
+              >
+                <option value="">Não informado</option>
+                <option value="loja">Loja vendedora</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </div>
+            <HistoricoIntermediacaoCliente
+              key={`${doc["id"]}-${doc["cliente_id"]}-${doc["centro_id"]}`}
+              doc={doc}
+              autorizado={acesso.data === true}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
             Informação para a operação. Não altera o preço, o custo nem a cobrança do pedido.
           </p>
