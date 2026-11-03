@@ -1,3 +1,6 @@
+import { AcoesBoletoSicoob } from "./acoes-boleto-sicoob";
+import { SicoobSandbox } from "./sicoob-sandbox";
+import { sicoobConsultarBoleto } from "@/lib/sicoob.functions";
 import { getModalidade } from "@/lib/modalidade-store";
 import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
 import { ContextoReferencia } from "@/components/contexto-referencia";
@@ -88,12 +91,31 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const [expandido, setExpandido] = useState<string | null>(null);
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
-  const consultarFn = useServerFn(sicrediConsultarBoleto);
+  const consultarFn = useServerFn(sicrediConsultarBoleto),
+    consultarSicoob = useServerFn(sicoobConsultarBoleto);
+  const bancoLoja = useQuery({
+    queryKey: ["cobranca-status-loja", session?.user.id, centro],
+    enabled: !!client && !!session && canFinance && !!centro,
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("cobranca_centros")
+        .select("banco,canal,ativo")
+        .eq("centro_id", centro!)
+        .maybeSingle();
+      if (error) throw Error("Não foi possível consultar o banco da loja.");
+      return data as Row | null;
+    },
+  });
   const baixarFn = useServerFn(sicrediBaixarBoleto);
 
   const config = useQuery({
     queryKey: [...["sicredi", "status", session?.user.id, centro], getModalidade()],
-    enabled: !!session && canFinance && !!centro,
+    enabled:
+      !!session &&
+      canFinance &&
+      !!centro &&
+      bancoLoja.isSuccess &&
+      bancoLoja.data?.["banco"] !== "sicoob",
     queryFn: () =>
       sicrediStatus({
         data: {
@@ -174,7 +196,11 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     () =>
       ordenarBoletos(
         filtrarBoletos(
-          daLoja.filter((r) => !referencia || correspondeReferencia(r, referencia, true)),
+          daLoja.filter(
+            (r) =>
+              (!referencia || correspondeReferencia(r, referencia, true)) &&
+              (!filtros["banco"] || r["banco"] === filtros["banco"]),
+          ),
           filtros,
           cliName,
         ),
@@ -275,16 +301,23 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
   const consultar = useMutation({
     mutationFn: async (b: Row) => {
-      const res = await consultarFn({
+      const res = await (b["banco"] === "sicoob" ? consultarSicoob : consultarFn)({
         data: {
           boletoId: String(b["id"]),
-          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+          accessToken: session?.access_token ?? "",
         },
       });
-      return res.situacao || (res.liquidado ? "liquidado" : res.baixado ? "baixado" : "registrado");
+      return (
+        res.situacao ||
+        ("liquidado" in res && res.liquidado
+          ? "liquidado"
+          : "baixado" in res && res.baixado
+            ? "baixado"
+            : "registrado")
+      );
     },
     onSuccess: (s) => {
-      toast.success(`Situação no Sicredi: ${s}`);
+      toast.success(`Situação bancária: ${s}`);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -324,7 +357,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   return (
     <ErpLayout
       title="Boletos"
-      description="Cobrança por centro de custo, com emissão Sicredi via API e acompanhamento das parcelas."
+      description="Boletos por loja, com cobrança Sicredi e Sicoob via API e acompanhamento das parcelas."
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => window.print()}>
@@ -381,7 +414,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         </AlertDialogContent>
       </AlertDialog>
       <div className="space-y-6">
-        <SicrediAutomatico />
+        <SicoobSandbox key={centro || "todas"} centroId={centro || ""} />
+        {bancoLoja.data?.["banco"] !== "sicoob" && <SicrediAutomatico />}
         <p className="text-sm text-muted-foreground">
           Emita boletos em{" "}
           <Link to="/pedidos" search={{ pedido: undefined }} className="font-medium underline">
@@ -391,10 +425,16 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           <Link to="/receber" className="font-medium underline">
             Contas a receber
           </Link>
-          . Configure banco e regras em Centros de custo.
+          . Configure banco e regras em Lojas.
         </p>
-        <SicrediCnabPanel />
-        {config.data && !config.data.configurado ? (
+        {bancoLoja.data?.["banco"] !== "sicoob" && <SicrediCnabPanel />}
+        {bancoLoja.data?.["banco"] === "sicoob" ? (
+          <p className="rounded-lg border p-3 text-sm">
+            Sicoob · produção {bancoLoja.data["ativo"] === true ? "habilitada" : "desativada"}.
+            Testes isolados estão na área Sandbox acima. Configure os ambientes em Lojas → Cobrança
+            por loja.
+          </p>
+        ) : config.data && !config.data.configurado ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
             <p className="font-medium text-destructive">Registro direto pela API não configurado</p>
             <p className="mt-1 text-muted-foreground">{config.data.erro}</p>
@@ -408,6 +448,16 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         ) : null}
 
         <FilterBar onClear={() => setFiltros({})}>
+          <FilterSelect
+            label="Banco"
+            value={filtros["banco"] ?? ""}
+            onChange={(v) => setF("banco", v)}
+            options={[
+              { value: "sicredi", label: "Sicredi" },
+              { value: "sicoob", label: "Sicoob" },
+            ]}
+            allLabel="Todos os bancos da loja"
+          />
           <FilterText
             label="Busca (cliente/nº)"
             value={filtros["busca"] ?? ""}
@@ -500,7 +550,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             filtro.
           </p>
         )}
-        {canFinance && tarifas.isError && (
+        {bancoLoja.data?.["banco"] !== "sicoob" && canFinance && tarifas.isError && (
           <p role="alert" className="text-sm text-destructive">
             {tarifas.error.message}
           </p>
@@ -519,24 +569,35 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
 
         <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
-          <p className="text-xs text-muted-foreground">
-            Valores e totais consideram os filtros selecionados. Tarifas identificadas pelo banco
-            chegam pela consulta automática de movimentações financeiras. Configure conta e
-            categoria por loja em Liquidação e tarifa para contabilizar as despesas. Débitos sem
-            identificação de tarifa ficam para conferência; a ausência de informação não significa
-            tarifa zero.
-          </p>
-          {canFinance && (tarifasApi.isError || statusTarifas.isError) && (
-            <p role="alert" className="text-sm text-destructive">
-              {tarifasApi.error?.message ?? statusTarifas.error?.message}
+          {bancoLoja.data?.["banco"] === "sicoob" ? (
+            <p className="text-xs text-muted-foreground">
+              Valores e totais consideram os filtros selecionados. A consulta confirma a situação
+              bancária do boleto Sicoob; confira recebimentos e tarifas no financeiro antes de
+              registrar a baixa financeira.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Valores e totais consideram os filtros selecionados. Tarifas identificadas pelo banco
+              chegam pela consulta automática de movimentações financeiras. Configure conta e
+              categoria por loja em Liquidação e tarifa para contabilizar as despesas. Débitos sem
+              identificação de tarifa ficam para conferência; a ausência de informação não significa
+              tarifa zero.
             </p>
           )}
-          {financeiroTarifas.error && (
+
+          {bancoLoja.data?.["banco"] !== "sicoob" &&
+            canFinance &&
+            (tarifasApi.isError || statusTarifas.isError) && (
+              <p role="alert" className="text-sm text-destructive">
+                {tarifasApi.error?.message ?? statusTarifas.error?.message}
+              </p>
+            )}
+          {bancoLoja.data?.["banco"] !== "sicoob" && financeiroTarifas.error && (
             <p role="alert" className="text-sm text-destructive">
               {financeiroTarifas.error.message}
             </p>
           )}
-          {statusTarifas.data && (
+          {bancoLoja.data?.["banco"] !== "sicoob" && statusTarifas.data && (
             <p className="text-xs text-muted-foreground">
               Tarifas API ·{" "}
               {statusTarifas.data.ultima_consulta
@@ -707,7 +768,9 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 <strong className="whitespace-nowrap">
                                   {brl(tarifaApi.valor)}
                                 </strong>
-                                <span className="block text-muted-foreground">API Sicredi</span>
+                                <span className="block text-muted-foreground">
+                                  API {b["banco"] === "sicoob" ? "Sicoob" : "Sicredi"}
+                                </span>
                                 {financeiro && (
                                   <span className="block text-muted-foreground">
                                     {financeiro.every(
@@ -893,6 +956,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   )}
                                 <AlterarVencimentoBoleto boleto={b} />
                                 <CondicoesBoletoSicredi boleto={b} />
+                                <AcoesBoletoSicoob boleto={b} />
                                 {b["pedido_id"] ? (
                                   <EmitirBoletosPedido
                                     pedidoId={String(b["pedido_id"])}
@@ -940,7 +1004,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      title="Consultar situação no Sicredi"
+                                      title="Consultar situação no banco"
                                       disabled={consultar.isPending || !b["nosso_numero"]}
                                       onClick={() => consultar.mutate(b)}
                                     >

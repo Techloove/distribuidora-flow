@@ -40,10 +40,12 @@ export function boletoImprimivel(
 ) {
   return (
     !!b &&
-    b.banco === "sicredi" &&
+    ["sicredi", "sicoob"].includes(b.banco) &&
     b.canal === "api" &&
     ["registrado", "liquidado"].includes(b.status) &&
-    /^748\d{44}$/.test(String(b.linha_digitavel ?? "").replace(/[ .-]/g, ""))
+    (b.banco === "sicoob" ? /^756\d{44}$/ : /^748\d{44}$/).test(
+      String(b.linha_digitavel ?? "").replace(/[ .-]/g, ""),
+    )
   );
 }
 /** Mantém as páginas originais dos PDFs bancários; não reconstrói código de barras ou QR Code. */

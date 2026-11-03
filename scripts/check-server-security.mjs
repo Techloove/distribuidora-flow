@@ -9,6 +9,7 @@ const files = [
   "src/lib/consulta-cadastral.functions.ts",
   "src/lib/inscricao-estadual.functions.ts",
   "src/lib/sicredi.functions.ts",
+  "src/lib/sicoob.functions.ts",
   "src/lib/sicredi-config.functions.ts",
   "src/lib/sicredi-cnab.functions.ts",
 ];

@@ -1,3 +1,4 @@
+import { SicoobConfiguracao } from "./sicoob-configuracao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,8 +36,7 @@ export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
     <section className="mt-6 rounded-xl border bg-card p-5" id="cobranca">
       <h2 className="font-semibold">Cobrança por loja</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Selecione Ferragem para vincular o Sicredi via API. Configure a outra loja separadamente; o
-        Sicoob permanece pendente até definir a integração.
+        Cada loja mantém seu banco e convênio. Configure Sicredi ou Sicoob separadamente; o sandbox Sicoob não ativa cobranças em produção.
       </p>
       {lojaId === undefined && (
         <div className="mt-4 max-w-lg">
@@ -178,11 +178,11 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
             <option value="sicredi" disabled={!config.data?.convenio_disponivel}>
               Sicredi · API
             </option>
-            <option value="sicoob">Sicoob · integração a definir</option>
+            <option value="sicoob">Sicoob · API v3</option>
           </select>
         </div>
         <div>
-          <Label htmlFor="cobranca-conta">Conta financeira para recebimento</Label>
+          <Label htmlFor="cobranca-conta">Conta financeira para recebimento (produção)</Label>
           <SearchSelect
             id="cobranca-conta"
             className="h-10 w-full rounded-md border bg-background px-3"
@@ -204,10 +204,11 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
           Não foi possível carregar as contas financeiras.
         </p>
       )}
-      {banco !== "sicredi" ? (
+      {banco === "sicoob" ? (
+        <SicoobConfiguracao key={centro} centroId={centro} contaId={conta} editar={editar} />
+      ) : banco !== "sicredi" ? (
         <p className="rounded-lg border p-4 text-sm text-muted-foreground">
-          Emissão indisponível para este centro. A integração Sicoob será configurada após definir
-          API ou CNAB; nenhum boleto será enviado ao Sicredi.
+          Selecione o banco da loja para configurar a cobrança.
         </p>
       ) : (
         <>
@@ -317,10 +318,12 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
           Somente administradores autorizados podem alterar a cobrança.
         </p>
       )}
-      <Button disabled={disabled || contas.isError} onClick={() => salvar.mutate()}>
-        <Save className="size-4" />
-        {salvar.isPending ? "Salvando…" : "Salvar cobrança deste centro"}
-      </Button>
+      {banco !== "sicoob" && (
+        <Button disabled={disabled || contas.isError} onClick={() => salvar.mutate()}>
+          <Save className="size-4" />
+          {salvar.isPending ? "Salvando…" : "Salvar cobrança deste centro"}
+        </Button>
+      )}
     </div>
   );
 }

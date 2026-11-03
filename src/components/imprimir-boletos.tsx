@@ -1,3 +1,4 @@
+import { sicoobPdfBoleto } from "@/lib/sicoob.functions";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -73,7 +74,8 @@ export function PainelImpressaoBoletos({
 }: Contexto & { onBusy?: (busy: boolean) => void; onVoltar?: () => void }) {
   const { client, user, session } = useSupabase();
   const { centro } = useCentro();
-  const obterPdf = useServerFn(sicrediPdfBoleto);
+  const obterPdf = useServerFn(sicrediPdfBoleto),
+    obterPdfSicoob = useServerFn(sicoobPdfBoleto);
   const [scope, setScope] = useState<"parcela" | "pedido" | "cliente">(
     contaId ? "parcela" : "pedido",
   );
@@ -174,14 +176,18 @@ export function PainelImpressaoBoletos({
         setProgress(`Obtendo PDF ${i + 1} de ${chosen.length}…`);
         let result;
         try {
-          result = await obterPdf({ data: { boletoId: b.id, accessToken: session.access_token } });
+          result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
+            data: { boletoId: b.id, accessToken: session.access_token },
+          });
         } catch (e) {
           if (!(e instanceof Error) || !e.message.includes("Limite de consultas atingido")) throw e;
           setProgress("Limite de consultas atingido. Aguardando para continuar…");
           for (let second = 0; second < 61 && !cancel.current; second++)
             await new Promise((resolve) => setTimeout(resolve, 1000));
           if (cancel.current) throw new Error("Impressão interrompida.");
-          result = await obterPdf({ data: { boletoId: b.id, accessToken: session.access_token } });
+          result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
+            data: { boletoId: b.id, accessToken: session.access_token },
+          });
         }
         files.push(result.base64);
       }

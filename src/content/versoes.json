@@ -1,5 +1,13 @@
 [
   {
+    "versao": "1.32.0",
+    "data": "2026-11-03",
+    "titulo": "Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos",
+    "novidades": [
+      "Cobrança Sicoob v3 por loja com sandbox isolado, credenciais protegidas e operações de boletos"
+    ]
+  },
+  {
     "versao": "1.31.0",
     "data": "2026-11-03",
     "titulo": "Padronizar busca por digitação em clientes, produtos, cadastros e filtros do sistema",

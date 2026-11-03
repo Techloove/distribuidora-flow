@@ -3,6 +3,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 
 export const ACOES_ROTINAS = {
+  sicoob_operar: "/boletos",
   clientes_cadastrar: "/pessoas",
   boletos_tarifa_registrar: "/boletos",
   faturamento_emitir_nfe: "/notas",
@@ -62,6 +63,7 @@ const CAPACIDADES: Partial<Record<AcaoRotina, readonly string[]>> = {
   cargas_operar: ["expedicao", "estoque"],
   entregas_operar: ["expedicao", "estoque"],
   receber_renegociar: ["financeiro"],
+  sicoob_operar: ["financeiro"],
   pix_gerar: ["financeiro"],
   comissao_proporcional_operar: ["financeiro"],
   compra_xml_importar: ["estoque", "expedicao", "financeiro"],

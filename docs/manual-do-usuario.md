@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.31.0 · 2026-11-03
+Versão 1.32.0 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -365,6 +365,9 @@ Entenda os cuidados com documentos bancários e fiscais.
 21. Alterar desconto existente mantém o tipo cadastrado no Sicredi: valor em reais ou percentual. Escolha o desconto e informe o novo valor. Alterar prazo do desconto muda somente a data daquele desconto; valor e data são solicitações separadas. Um boleto sem desconto cadastrado pode receber abatimento. Não há alteração direta do valor nominal nem mudança do tipo de desconto por este atalho.
 22. Após a confirmação de um abatimento, a listagem mostra uma marcação amarela com o valor e o atalho ver Opções. Dentro de Opções aparecem valor nominal, abatimento, valor após abatimento, data de confirmação e motivo, conforme a permissão do administrador para consultar o histórico. Um cancelamento de abatimento confirmado remove a marcação ativa, mantendo o histórico. Após solicitar, use Conferir no Sicredi. Envio aceito ou resposta indisponível permanece pendente até o banco devolver as condições solicitadas. Não reenvie uma instrução pendente. O histórico mostra as últimas 30 solicitações com motivo, condições anteriores, condições solicitadas e situação. Respostas inconclusivas ou recusas assíncronas exigem conferência com o banco e, quando necessário, suporte técnico.
 23. O valor após abatimento mostrado no diálogo não inclui desconto condicionado à data, juros ou multa. O financeiro preserva o valor nominal até a liquidação: desconto e abatimento efetivamente informados pelo Sicredi são contabilizados uma única vez no recebimento. A concessão não marca o título como pago nem reduz antecipadamente a exposição de crédito. Para alterar o principal para maior valor, regularize o boleto antigo e gere nova cobrança pelo fluxo existente.
+24. Sicoob: em Lojas → Cobrança por loja, selecione Sicoob e Sandbox. Cadastre Client ID e token de teste nos campos protegidos, salve, teste a conexão e habilite o ambiente. O token não é exibido novamente. Produção possui configuração separada e exige certificado A1 e conta financeira.
+25. No menu Boletos, selecione a loja e o banco. A área Sandbox Sicoob permite emitir testes, consultar, obter PDF original, alterar vencimento, solicitar baixa e configurar desconto ou abatimento, sem criar títulos ou movimentações financeiras reais.
+26. Nos boletos Sicoob de produção, use Opções para consultar e alterar vencimento. Desconto, abatimento e baixa exigem administrador, motivo e confirmação. Uma resposta inconclusiva exige consulta antes de nova instrução; o sistema preserva o histórico e impede reenvio duplicado.
 
 Cuidados:
 
@@ -383,6 +386,8 @@ Cuidados:
 - Se o banco informar pagamento depois do ajuste do pedido, o boleto mostra o recebimento bancário e um aviso para conciliação. O título cancelado não é reaberto automaticamente nem se cria uma entrada de caixa sem tratamento financeiro.
 - Reconsultar a API não duplica despesas. Tarifas manuais conhecidas com data, valor, conta e categoria correspondentes podem ser vinculadas sem novo lançamento. Uma saída avulsa semelhante, divergência no retorno, conta/categoria inativa, responsável sem acesso ou estorno exige conferência. Não há correção ou relançamento automático de movimentos estornados.
 - A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
+- Sicoob permanece desativado em produção até configurar e validar as credenciais próprias desse ambiente. Os testes desta entrega usaram respostas simuladas; a homologação com os dados bancários deve ser concluída pelo responsável.
+- A consulta Sicoob pode identificar boleto liquidado, mas não registra recebimento financeiro automaticamente: confira valor e data efetivos em Contas a receber. Baixa bancária não quita o título; desconto ou abatimento concedido não cria recebimento. A automação de tarifas Sicredi não se aplica ao Sicoob.
 
 ## Agenda, metas, comissões e relatórios
 

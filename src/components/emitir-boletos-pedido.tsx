@@ -1,3 +1,5 @@
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
+import { sicoobEmitirBoleto } from "@/lib/sicoob.functions";
 import { brl as money } from "@/lib/formatacao";
 import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
 import { useRef, useState } from "react";
@@ -73,8 +75,10 @@ function BoletosDocumento(props: Props) {
 }
 function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBoleto }: Props) {
   const { client, session, user } = useSupabase();
+  const permissoes = usePermissoesRotinas();
   const qc = useQueryClient();
-  const emitirApi = useServerFn(sicrediEmitirBoleto);
+  const emitirApi = useServerFn(sicrediEmitirBoleto),
+    emitirSicoob = useServerFn(sicoobEmitirBoleto);
   const [open, setOpen] = useState(false),
     [modo, setModo] = useState<"emitir" | "imprimir">("emitir");
   const [selected, setSelected] = useState<string[]>([]),
@@ -97,7 +101,8 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
     },
   });
   const habilitado =
-    cobranca.data?.banco === "sicredi" &&
+    ["sicredi", "sicoob"].includes(cobranca.data?.banco ?? "") &&
+    (cobranca.data?.banco !== "sicoob" || permissoes.pode("sicoob_operar")) &&
     cobranca.data?.canal === "api" &&
     cobranca.data?.ativo === true;
   const consulta = useQuery({
@@ -196,7 +201,9 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
     try {
       for (const [i, l] of escolhidas.entries()) {
         setProgresso(`Emitindo ${i + 1} de ${escolhidas.length}…`);
-        await emitirApi({ data: { contaId: l.titulo.id, accessToken: session.access_token } });
+        await (cobranca.data?.banco === "sicoob" ? emitirSicoob : emitirApi)({
+          data: { contaId: l.titulo.id, accessToken: session.access_token },
+        });
         emitidos++;
       }
       toast.success(`${emitidos} boleto(s) emitido(s). Selecione os boletos para obter o PDF.`);
