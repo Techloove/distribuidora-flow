@@ -107,7 +107,7 @@ export function EncargosPedido({
         </h3>
         <p className="text-sm text-muted-foreground">
           {inter ? (
-            "O frete por saca já compõe o preço dos itens. O frete por volume está desativado para evitar cobrança duplicada."
+            "O frete por saco já compõe o preço dos itens. O frete por volume está desativado para evitar cobrança duplicada."
           ) : (
             <>
               Frete calculado pela quantidade na unidade de venda do produto e pela cidade/UF do

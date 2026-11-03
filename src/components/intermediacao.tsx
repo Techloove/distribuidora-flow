@@ -139,7 +139,7 @@ export function CotacoesIntermediacao({
           </select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor={"cotacao-custo-" + loja}>Custo fábrica por saca (R$)</Label>
+          <Label htmlFor={"cotacao-custo-" + loja}>Custo fábrica por saco (R$)</Label>
           <Input
             id={"cotacao-custo-" + loja}
             type="number"
@@ -178,7 +178,7 @@ export function CotacoesIntermediacao({
             <TableHeader>
               <TableRow>
                 <TableHead>Produto</TableHead>
-                <TableHead>Fábrica / saca</TableHead>
+                <TableHead data-column-key="Fábrica / saca">Fábrica / saco</TableHead>
                 <TableHead>Data do último preço</TableHead>
                 <TableHead>Revisão</TableHead>
               </TableRow>
@@ -187,7 +187,7 @@ export function CotacoesIntermediacao({
               {ultimas.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell data-label="Produto">{nome(c.produto_id)}</TableCell>
-                  <TableCell data-label="Fábrica / saca" className="whitespace-nowrap">
+                  <TableCell data-label="Fábrica / saco" className="whitespace-nowrap">
                     {brl(c.custo_fabrica)}
                   </TableCell>
                   <TableCell data-label="Data do último preço">{dataBr(c.dia)}</TableCell>
@@ -369,7 +369,7 @@ function TrocaModalidade({
         </DialogHeader>
         <p className="text-sm">
           {inter
-            ? "Confira fábrica, frete e margem por saca. A sugestão mantém o preço líquido atual quando ele cobre o custo da fábrica; ajuste a margem se necessário. Descontos dos itens serão incorporados ao preço."
+            ? "Confira fábrica, frete e margem por saco. A sugestão mantém o preço líquido atual quando ele cobre o custo da fábrica; ajuste a margem se necessário. Descontos dos itens serão incorporados ao preço."
             : "Os preços negociados serão preservados; o custo e a movimentação voltarão a seguir o estoque da loja após a aprovação."}
         </p>
         {q.error && (
@@ -389,14 +389,14 @@ function TrocaModalidade({
                 <>
                   <p className="text-sm">
                     {i.cotacao
-                      ? `Fábrica: ${brl(i.fabrica)} / saca · último preço: ${dataBr(i.data_preco)}`
+                      ? `Fábrica: ${brl(i.fabrica)} / saco · último preço: ${dataBr(i.data_preco)}`
                       : "Sem cotação vigente. Cadastre um preço e atualize a prévia."}
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {(["frete", "margem"] as const).map((c) => (
                       <div key={c}>
                         <Label htmlFor={`previa-${c}-${i.id}`}>
-                          {c === "frete" ? "Frete" : "Margem"} / saca (R$)
+                          {c === "frete" ? "Frete" : "Margem"} / saco (R$)
                         </Label>
                         <Input
                           id={`previa-${c}-${i.id}`}
@@ -555,7 +555,7 @@ export function ModalidadePedido({
       </div>
       <p className="text-xs text-muted-foreground">
         {inter
-          ? "Fábrica + frete + margem por saca, sem margem mínima configurada e sem movimentar estoque da loja. A cobrança é integral; carga e entrega seguem o fluxo usual."
+          ? "Fábrica + frete + margem por saco, sem margem mínima configurada e sem movimentar estoque da loja. A cobrança é integral; carga e entrega seguem o fluxo usual."
           : "Venda com estoque da loja. É possível revisar a modalidade durante a digitação; documentos com itens exigem conferência da prévia."}
       </p>
       {inter && (
@@ -652,7 +652,7 @@ export function ItensIntermediacao({
   };
   const salvar = useMutation({
     mutationFn: async () => {
-      if (!calculo || !form.cotacao) throw Error("Informe cotação, sacas, frete e margem válidos.");
+      if (!calculo || !form.cotacao) throw Error("Informe cotação, sacos, frete e margem válidos.");
       const r = await client!.rpc("salvar_item_intermediacao_296", {
         _pedido: String(doc["id"]),
         _item: form.id || null,
@@ -703,7 +703,7 @@ export function ItensIntermediacao({
         <h3 className="font-semibold">Itens de intermediação</h3>
         <p className="text-xs text-muted-foreground">
           Data base da cotação: {dataBaseIntermediacao(doc).split("-").reverse().join("/")}. A
-          margem é um valor em reais por saca.
+          margem é um valor em reais por saco.
         </p>
       </div>
       {editavel && podePreco && (
@@ -735,7 +735,7 @@ export function ItensIntermediacao({
               </select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="inter-qtd">Quantidade de sacas</Label>
+              <Label htmlFor="inter-qtd">Quantidade de sacos</Label>
               <Input
                 id="inter-qtd"
                 type="number"
@@ -746,7 +746,7 @@ export function ItensIntermediacao({
               />
             </div>
             <div className="space-y-1">
-              <Label>Fábrica / saca</Label>
+              <Label>Fábrica / saco</Label>
               <p className="py-2 text-sm font-semibold">
                 {form.cotacao ? brl(form.fabrica) : "Sem cotação nesta data"}
               </p>
@@ -766,7 +766,7 @@ export function ItensIntermediacao({
             {(["frete", "margem"] as const).map((k) => (
               <div key={k} className="space-y-1">
                 <Label htmlFor={"inter-" + k}>
-                  {k === "frete" ? "Frete por saca (R$)" : "Margem por saca (R$)"}
+                  {k === "frete" ? "Frete por saco (R$)" : "Margem por saco (R$)"}
                 </Label>
                 <Input
                   id={"inter-" + k}
@@ -779,7 +779,7 @@ export function ItensIntermediacao({
               </div>
             ))}
             <div className="space-y-1">
-              <Label>Preço final por saca</Label>
+              <Label>Preço final por saco</Label>
               <p className="py-2 font-semibold text-primary">
                 {calculo ? brl(calculo.precoSaca) : "—"}
               </p>
@@ -832,15 +832,20 @@ export function ItensIntermediacao({
               <TableRow>
                 {[
                   "Produto",
-                  "Sacas",
-                  "Fábrica / saca",
-                  "Frete / saca",
-                  "Margem / saca",
-                  "Preço / saca",
+                  "Sacos",
+                  "Fábrica / saco",
+                  "Frete / saco",
+                  "Margem / saco",
+                  "Preço / saco",
                   "Total",
                   "Ações",
                 ].map((t) => (
-                  <TableHead key={t}>{t}</TableHead>
+                  <TableHead
+                    key={t}
+                    data-column-key={t.replace(/saco/g, "saca").replace(/Saco/g, "Saca")}
+                  >
+                    {t}
+                  </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
@@ -848,7 +853,7 @@ export function ItensIntermediacao({
               {itens.map((i) => (
                 <TableRow key={String(i["id"])}>
                   <TableCell data-label="Produto">{nome(i["produto_id"])}</TableCell>
-                  <TableCell data-label="Sacas">{String(i["quantidade"])}</TableCell>
+                  <TableCell data-label="Sacos">{String(i["quantidade"])}</TableCell>
                   {(
                     [
                       "custo_fabrica_saca",
@@ -862,10 +867,10 @@ export function ItensIntermediacao({
                       key={k}
                       data-label={
                         [
-                          "Fábrica / saca",
-                          "Frete / saca",
-                          "Margem / saca",
-                          "Preço / saca",
+                          "Fábrica / saco",
+                          "Frete / saco",
+                          "Margem / saco",
+                          "Preço / saco",
                           "Total",
                         ][index]
                       }

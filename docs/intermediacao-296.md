@@ -4,9 +4,9 @@ A venda do estoque continua sendo o padrão. O parâmetro `intermediacao_habilit
 
 ## Preço, custo e histórico
 
-A cotação é versionada por loja, produto e data, com usuário e data de gravação. A edição cria revisão; repetir o mesmo custo é idempotente. Não altera produtos, custo médio, preço de venda ou estoque. O item registra o identificador da cotação, fábrica, frete e margem por saca. A data do pedido precisa ter cotação própria. Nova cotação nunca recalcula itens anteriores. Reaplicar uma revisão é ação explícita e permitida somente na digitação. Não é permitido mudar data, loja ou modalidade com itens já lançados.
+A cotação é versionada por loja, produto e data, com usuário e data de gravação. A edição cria revisão; repetir o mesmo custo é idempotente. Não altera produtos, custo médio, preço de venda ou estoque. O item registra o identificador da cotação, fábrica, frete e margem por saco. A data do pedido precisa ter cotação própria. Nova cotação nunca recalcula itens anteriores. Reaplicar uma revisão é ação explícita e permitida somente na digitação. Não é permitido mudar data, loja ou modalidade com itens já lançados.
 
-Preço unitário = fábrica + frete + margem; custo unitário base = fábrica + frete. A quantidade é inteira em sacas. Valores unitários preservam quatro casas; totais monetários têm duas casas. A margem dos itens é apresentada separada do resultado após descontos, encargos, comissões, tributos e despesas. Frete por volume fica dispensado para não cobrar novamente o frete dos itens. O frete manual permanece ajuste separado. Custos extras de transporte devem excluir o frete por saca já contabilizado.
+Preço unitário = fábrica + frete + margem; custo unitário base = fábrica + frete. A quantidade é inteira em sacos. Valores unitários preservam quatro casas; totais monetários têm duas casas. A margem dos itens é apresentada separada do resultado após descontos, encargos, comissões, tributos e despesas. Frete por volume fica dispensado para não cobrar novamente o frete dos itens. O frete manual permanece ajuste separado. Custos extras de transporte devem excluir o frete por saco já contabilizado.
 
 ## Confirmação, estoque e financeiro
 

@@ -125,7 +125,7 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
           )}
           <p className="text-xs text-muted-foreground">
             {pedido["modalidade_venda"] === "intermediacao"
-              ? "O custo já inclui fábrica e frete por saca da cotação gravada. Informe aqui somente custos extras de transporte, sem repetir o frete dos itens."
+              ? "O custo já inclui fábrica e frete por saco da cotação gravada. Informe aqui somente custos extras de transporte, sem repetir o frete dos itens."
               : "Descontos já estão na receita. Frete cobrado é receita; informe o custo efetivo do transporte."}{" "}
             Contribuição antes de tributos e despesas fixas. A comissão segue o valor calculado no
             pedido. Custo atual até confirmar; pedidos antigos sem captura usam custo atual.

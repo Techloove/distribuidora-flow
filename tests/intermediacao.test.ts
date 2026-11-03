@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { calcularIntermediacao, dataBaseIntermediacao } from "../src/lib/intermediacao";
-test("cem sacas cobram fábrica, frete e margem, mas o ganho dos itens é somente a margem", () => {
+test("cem sacos cobram fábrica, frete e margem, mas o ganho dos itens é somente a margem", () => {
   expect(calcularIntermediacao({ quantidade: 100, fabrica: 28.5, frete: 3, margem: 2.5 })).toEqual({
     custoSaca: 31.5,
     precoSaca: 34,
@@ -23,7 +23,7 @@ test("precificação conserva quatro casas unitárias e arredonda total monetár
   expect(c.total).toBe(95.11);
   expect(c.margemTotal).toBe(7.04);
 });
-test("não sugere preço com cotação ausente, fração de saca ou custos inválidos", () => {
+test("não sugere preço com cotação ausente, fração de saco ou custos inválidos", () => {
   const base = { quantidade: 1, fabrica: 20, frete: 0, margem: 0 };
   expect(calcularIntermediacao(base)?.total).toBe(20);
   for (const patch of [

@@ -31,13 +31,15 @@ export function TablePreferences({
             const name = (h.getAttribute("data-column-label") ?? h.textContent ?? "")
               .replace(/\s+/g, " ")
               .trim();
+            // Preserva preferências quando somente o rótulo de uma coluna muda.
+            const keyName = h.getAttribute("data-column-key") ?? name;
             return !name || /^(ações|ação|selecionar|seleção|opções)$/i.test(name)
               ? []
               : [
                   {
                     name,
                     index: index + 1,
-                    key: `${name}:${heads.slice(0, index).filter((x) => x.textContent?.trim() === name).length}`,
+                    key: `${keyName}:${heads.slice(0, index).filter((x) => (x.getAttribute("data-column-key") ?? x.textContent?.trim()) === keyName).length}`,
                   },
                 ];
           });

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.27.0 · 2026-11-03
+Versão 1.27.1 · 2026-11-03
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -161,12 +161,12 @@ Cuidados:
 
 ## Vender por intermediação com preço de fábrica vigente
 
-Entrega direta da fábrica ao cliente, com custo e margem por saca preservados no pedido.
+Entrega direta da fábrica ao cliente, com custo e margem por saco preservados no pedido.
 
 1. Em Lojas → Configurações da loja, selecione a loja e salve Habilitar vendas por intermediação. A implantação habilita inicialmente apenas Cimento; outras lojas e novas lojas permanecem desabilitadas. Desabilitar impede novos pedidos da modalidade e novas cotações; o histórico e pedidos já criados são preservados.
 2. Em Lojas → Configurações da loja, habilite a modalidade e selecione Vendedores autorizados • Intermediação. Administradores e gestores mantêm acesso. A seleção não concede acesso a outras lojas ou carteiras. As cotações ficam dentro do orçamento ou pedido, não nas configurações.
 3. Novo orçamento e Novo pedido sempre começam em Vendas Estoque, inclusive em Cimento. Na abertura, escolha explicitamente Vendas Intermediação quando desejado. Durante a digitação, é possível trocar a modalidade. Se houver itens, confira a prévia e confirme; nada muda antes da confirmação. Salve as edições pendentes antes de trocar.
-4. A cotação usa o último preço cadastrado do produto na mesma loja até a data base da proposta. Ele continua válido nos dias seguintes até uma nova cotação; a lista mostra a Data do último preço. Cotações futuras não são antecipadas. Salvar o mesmo valor preserva a data original. O aceite não recalcula custos. Informe sacas inteiras, frete e margem em reais por saca. Preço = fábrica + frete + margem; custo = fábrica + frete; ganho dos itens = margem × sacas.
+4. A cotação usa o último preço cadastrado do produto na mesma loja até a data base da proposta. Ele continua válido nos dias seguintes até uma nova cotação; a lista mostra a Data do último preço. Cotações futuras não são antecipadas. Salvar o mesmo valor preserva a data original. O aceite não recalcula custos. Informe sacos inteiros, frete e margem em reais por saco. Preço = fábrica + frete + margem; custo = fábrica + frete; ganho dos itens = margem × sacos.
 5. Clique Adicionar item. Para editar um item, use Editar e Salvar item. Uma nova cotação não recalcula itens anteriores. Para trocar o custo de um item ainda em digitação, use explicitamente Aplicar cotação atual, confira a prévia e salve.
 6. Na intermediação, informe Quem paga o frete: Loja vendedora ou Cliente. O campo é apenas informativo, aparece na impressão e não altera valores, custo ou cobrança.
 7. Confira o fechamento e a forma de pagamento. A empresa cobra o valor inteiro: fábrica, frete e margem. Parcelas, boletos, crédito do cliente e comissão seguem os controles atuais. Não há recebimento ou pagamento bancário automático ao salvar uma cotação.
@@ -176,11 +176,11 @@ Cuidados:
 
 - Aprovar, confirmar, cancelar e devolver uma intermediação não reserva, baixa ou repõe estoque da loja. A modalidade não integra o consumo nem as pendências do planejamento de reposição físico. Vendas comuns permanecem com estoque normal.
 - É obrigatório ter uma cotação vigente até a data base do documento. Na troca para intermediação, confira todos os produtos, frete e margem; se faltar cotação, cadastre e atualize a prévia. Descontos dos itens são incorporados ao preço líquido. O retorno para estoque preserva preços negociados e usa o custo do estoque. A troca só ocorre em documentos ainda em digitação, sem vínculos ativos de confirmação.
-- O frete por saca já compõe custo e preço dos itens. O frete automático por volume fica dispensado para evitar duplicação. Frete manual, outras despesas e regras da forma de pagamento permanecem ajustes separados. No resultado estimado, informe somente custos extras de transporte, sem repetir o frete dos itens.
-- Margem dos itens é o ganho bruto por saca. Descontos, encargos de pagamento, comissão, tributos e despesas podem alterar o resultado após ajustes. O custo congelado da intermediação também é usado na margem e no CPV da DRE. Cotações e custos previstos não criam contas a pagar à fábrica ou ao transportador automaticamente.
+- O frete por saco já compõe custo e preço dos itens. O frete automático por volume fica dispensado para evitar duplicação. Frete manual, outras despesas e regras da forma de pagamento permanecem ajustes separados. No resultado estimado, informe somente custos extras de transporte, sem repetir o frete dos itens.
+- Margem dos itens é o ganho bruto por saco. Descontos, encargos de pagamento, comissão, tributos e despesas podem alterar o resultado após ajustes. O custo congelado da intermediação também é usado na margem e no CPV da DRE. Cotações e custos previstos não criam contas a pagar à fábrica ou ao transportador automaticamente.
 - Na devolução, confirme o retorno físico à fábrica/fornecedor. O financeiro é ajustado proporcionalmente, preservando os títulos e vínculos de boletos, sem gerar entrada física na loja. Cobranças pagas e documentos fiscais continuam exigindo o tratamento específico existente.
 - A permissão para alterar preços continua valendo para definir frete e margem dos itens. As restrições de loja, carteira, crédito, aprovação, carga e emissão fiscal são mantidas.
-- Os mínimos de acréscimo e margem de contribuição da loja valem apenas para venda de estoque. Intermediação aceita margem por saca a partir de zero; custos, quantidades, crédito e demais aprovações continuam validados.
+- Os mínimos de acréscimo e margem de contribuição da loja valem apenas para venda de estoque. Intermediação aceita margem por saco a partir de zero; custos, quantidades, crédito e demais aprovações continuam validados.
 
 ## Regularizar o status de um pedido antigo
 

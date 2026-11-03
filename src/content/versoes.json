@@ -1,5 +1,11 @@
 [
   {
+    "versao": "1.27.1",
+    "data": "2026-11-03",
+    "titulo": "Padronizar saco e sacos nas telas, instruções e mensagens da intermediação",
+    "novidades": ["Padronizar saco e sacos nas telas, instruções e mensagens da intermediação"]
+  },
+  {
     "versao": "1.27.0",
     "data": "2026-11-03",
     "titulo": "Dashboard abre no mês atual e permite navegar pelos meses anteriores, com indicadores e ranking limitados ao período",
@@ -89,8 +95,8 @@
   {
     "versao": "1.21.0",
     "data": "2026-10-30",
-    "titulo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saca",
-    "novidades": ["Adicionar intermediação por loja com cotações diárias, frete e margem por saca"]
+    "titulo": "Adicionar intermediação por loja com cotações diárias, frete e margem por saco",
+    "novidades": ["Adicionar intermediação por loja com cotações diárias, frete e margem por saco"]
   },
   {
     "versao": "1.20.3",
