@@ -59,6 +59,42 @@
     ]
   },
   {
+    "id": "filtros-periodo",
+    "titulo": "Filtros rápidos de datas e meses anteriores",
+    "grupo": "Começar",
+    "resumo": "Escolha dia, semana, mês ou um intervalo personalizado nas listagens.",
+    "modulos": [
+      "/pedidos",
+      "/compras",
+      "/receber",
+      "/pagar",
+      "/boletos",
+      "/estoque",
+      "/separacao",
+      "/comissoes",
+      "/devolucoes",
+      "/movimentacoes",
+      "/auditoria",
+      "/notificacoes",
+      "/dre",
+      "/relatorio-vendas",
+      "/relatorios-financeiros"
+    ],
+    "passos": [
+      "Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período.",
+      "Esta semana considera segunda-feira a domingo no calendário de São Paulo. Últimos 7 dias inclui hoje e os seis dias anteriores; Últimos 30 dias inclui hoje e os 29 anteriores. Este mês usa o primeiro e último dia do mês; Mês anterior usa o mês de calendário anterior completo.",
+      "Para consultar outros meses, digite MM/AAAA no campo Mês ou use as setas para navegar. A seleção preenche as datas inicial e final, inclusive fevereiro de anos bissextos. Os campos de data continuam aceitando intervalos personalizados.",
+      "Esse padrão aparece também nas barras de filtros com pares de datas, como compras, contas, boletos, estoque, separação, comissões, devoluções e relatórios. Os atalhos aplicam-se ao campo indicado: data do pedido, vencimento, pagamento, emissão, liquidação ou aprovação.",
+      "Quando há mais de um intervalo, use Aplicar atalhos em para escolher o campo. Um atalho altera somente as datas desse campo; loja, cliente, situação, modalidade e demais filtros permanecem aplicados. Confira os outros filtros se a lista ficar vazia.",
+      "No celular, os atalhos de período ficam disponíveis sem abrir a grade completa. Use Mostrar filtros para consultar ou editar os campos individuais. Limpar mantém o comportamento da tela: em Pedidos volta para Hoje.",
+      "Relatórios de vendas e comparativos que exigem um intervalo fechado oferecem os atalhos e a escolha de meses, mas não Todo o período. As datas escolhidas alimentam as consultas e os totais já existentes; nenhum pedido ou título é alterado por filtrar."
+    ],
+    "cuidados": [
+      "O filtro usa a data indicada na tela. Em Comissões, a competência continua baseada na aprovação; escolher um período não altera a data dos pedidos nem a regra de apuração.",
+      "Os resultados continuam limitados pelas lojas, carteira e permissões do usuário. Selecionar Todo o período não remove os outros filtros nem libera registros de outras lojas."
+    ]
+  },
+  {
     "id": "filtro-modalidade",
     "titulo": "Filtrar Vendas Estoque e Vendas Intermediação",
     "grupo": "Começar",

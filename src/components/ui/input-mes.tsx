@@ -53,7 +53,7 @@ export const InputMes = React.forwardRef<HTMLInputElement, React.ComponentProps<
           }
         }}
         onBlur={(e) => {
-          if (!e.target.validity.valid) {
+          if (!e.target.validity.valid || (!e.target.value && original)) {
             setTexto(original ? mesBr(original) : "");
             e.target.setCustomValidity("");
           }

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.34.2 · 2026-11-04
+Versão 1.35.0 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -56,6 +56,23 @@ Cuidados:
 
 - Um mês sem movimentos mostra zero, sem substituir pelos valores do mês anterior. A troca de mês não altera pedidos, títulos, pagamentos ou estoque.
 - Ao reabrir a tela, o período volta ao mês atual. Se a tela continuar aberta na virada do mês, o período atual acompanha o novo mês; uma consulta histórica escolhida permanece selecionada.
+
+## Filtros rápidos de datas e meses anteriores
+
+Escolha dia, semana, mês ou um intervalo personalizado nas listagens.
+
+1. Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período.
+2. Esta semana considera segunda-feira a domingo no calendário de São Paulo. Últimos 7 dias inclui hoje e os seis dias anteriores; Últimos 30 dias inclui hoje e os 29 anteriores. Este mês usa o primeiro e último dia do mês; Mês anterior usa o mês de calendário anterior completo.
+3. Para consultar outros meses, digite MM/AAAA no campo Mês ou use as setas para navegar. A seleção preenche as datas inicial e final, inclusive fevereiro de anos bissextos. Os campos de data continuam aceitando intervalos personalizados.
+4. Esse padrão aparece também nas barras de filtros com pares de datas, como compras, contas, boletos, estoque, separação, comissões, devoluções e relatórios. Os atalhos aplicam-se ao campo indicado: data do pedido, vencimento, pagamento, emissão, liquidação ou aprovação.
+5. Quando há mais de um intervalo, use Aplicar atalhos em para escolher o campo. Um atalho altera somente as datas desse campo; loja, cliente, situação, modalidade e demais filtros permanecem aplicados. Confira os outros filtros se a lista ficar vazia.
+6. No celular, os atalhos de período ficam disponíveis sem abrir a grade completa. Use Mostrar filtros para consultar ou editar os campos individuais. Limpar mantém o comportamento da tela: em Pedidos volta para Hoje.
+7. Relatórios de vendas e comparativos que exigem um intervalo fechado oferecem os atalhos e a escolha de meses, mas não Todo o período. As datas escolhidas alimentam as consultas e os totais já existentes; nenhum pedido ou título é alterado por filtrar.
+
+Cuidados:
+
+- O filtro usa a data indicada na tela. Em Comissões, a competência continua baseada na aprovação; escolher um período não altera a data dos pedidos nem a regra de apuração.
+- Os resultados continuam limitados pelas lojas, carteira e permissões do usuário. Selecionar Todo o período não remove os outros filtros nem libera registros de outras lojas.
 
 ## Filtrar Vendas Estoque e Vendas Intermediação
 
@@ -523,6 +540,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.35.0 · 2026-11-04 · Amplia filtros de datas com semana, mês atual, mês anterior e navegação mensal em pedidos e demais listagens
+
+Motivo da atualização: Facilitar consultas por semana e mês, inclusive meses anteriores, sem precisar preencher manualmente o intervalo de datas.
+
+- Pedidos mantêm Hoje como padrão e ganham Esta semana, Este mês, Mês anterior e navegação por mês/ano, preservando 7 dias, 30 dias e Todo o período.
+- Barras de filtros com intervalos de datas recebem os mesmos atalhos; quando há mais de um campo, é possível escolher vencimento, pagamento, emissão, liquidação ou aprovação.
+- Semana de segunda a domingo, meses completos e fevereiro bissexto; os outros filtros e permissões continuam aplicados.
+- Manual atualizado com as regras dos períodos e dos relatórios que exigem intervalo fechado.
 
 ### v1.34.2 · 2026-11-04 · Restringe custos e markup de produtos para representantes sem perfil administrador, inclusive nas consultas do servidor
 

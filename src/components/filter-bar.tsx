@@ -1,5 +1,7 @@
+import { FiltroPeriodo } from "./filtro-periodo";
+import { paresDataFiltro, type CampoDataFiltro } from "@/lib/periodos-filtro";
 import { SearchSelect } from "@/components/ui/search-select";
-import { useId, useState } from "react";
+import { Children, Fragment, isValidElement, useId, useState } from "react";
 import { ChevronDown, Filter, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,13 +12,41 @@ export function FilterBar({
   children,
   onClear,
   extra,
+  periodosRapidos = true,
+  permitirTodoPeriodo = true,
 }: {
   children: React.ReactNode;
   onClear?: () => void;
   extra?: React.ReactNode;
+  periodosRapidos?: boolean;
+  permitirTodoPeriodo?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
+  const [periodoSelecionado, setPeriodoSelecionado] = useState("");
+  const campos: CampoDataFiltro[] = [];
+  const ler = (nodes: React.ReactNode) =>
+    Children.forEach(nodes, (n) => {
+      if (!isValidElement(n)) return;
+      const props = n.props as {
+        children?: React.ReactNode;
+        type?: string;
+        label?: string;
+        value?: string;
+        onChange?: (v: string) => void;
+      };
+      if (n.type === Fragment) ler(props.children);
+      else if (
+        n.type === FilterText &&
+        props.type === "date" &&
+        typeof props.label === "string" &&
+        props.onChange
+      )
+        campos.push({ label: props.label, value: props.value ?? "", onChange: props.onChange });
+    });
+  if (periodosRapidos) ler(children);
+  const periodos = paresDataFiltro(campos);
+  const periodo = periodos.find((p) => p.label === periodoSelecionado) ?? periodos[0];
   return (
     <div className="no-print rounded-lg border border-border bg-card p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -45,6 +75,42 @@ export function FilterBar({
           ) : null}
         </div>
       </div>
+      {periodo && (
+        <div className="mb-3 space-y-2">
+          {periodos.length > 1 && (
+            <div className="max-w-sm space-y-1">
+              <label htmlFor={`${id}-periodo`} className="text-xs text-muted-foreground">
+                Aplicar atalhos em
+              </label>
+              <select
+                id={`${id}-periodo`}
+                className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                value={periodo.label}
+                onChange={(e) => setPeriodoSelecionado(e.target.value)}
+              >
+                {periodos.map((p) => (
+                  <option key={p.label} value={p.label}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Os atalhos alteram somente esse campo; os demais filtros continuam aplicados.
+              </p>
+            </div>
+          )}
+          <FiltroPeriodo
+            permitirTodoPeriodo={permitirTodoPeriodo}
+            label={periodo.label}
+            de={periodo.de.value}
+            ate={periodo.ate.value}
+            onChange={(de, ate) => {
+              periodo.de.onChange(de);
+              periodo.ate.onChange(ate);
+            }}
+          />
+        </div>
+      )}
       <div
         id={id}
         className={`${expanded ? "grid" : "hidden sm:grid"} min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0`}

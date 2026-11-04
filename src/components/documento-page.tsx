@@ -1,3 +1,4 @@
+import { FiltroPeriodo } from "@/components/filtro-periodo";
 import { SearchSelect } from "@/components/ui/search-select";
 import { calcularItemCompra } from "@/lib/custo-compra";
 import { RetomarDataPedido } from "@/components/retomar-data-pedido";
@@ -307,7 +308,6 @@ export function DocumentoPage({
 
   /** Presets rápidos de período. */
   const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
-  const diasAtras = (n: number) => deslocarDataISO(hoje, -n);
 
   /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
   const soMeusPedidos =
@@ -1530,33 +1530,18 @@ export function DocumentoPage({
           </Button>
         </div>
 
-        {config.table === "pedidos" ? (
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { label: "Hoje", de: hoje, ate: hoje },
-              { label: "Últimos 7 dias", de: diasAtras(6), ate: hoje },
-              { label: "Últimos 30 dias", de: diasAtras(29), ate: hoje },
-              { label: "Todo o período", de: "", ate: "" },
-            ].map((p) => {
-              const ativo = (filtros["de"] ?? "") === p.de && (filtros["ate"] ?? "") === p.ate;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => setPeriodo(p.de, p.ate)}
-                  className={`rounded-full px-3 py-1 text-[11px] transition-colors ${
-                    ativo
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        {config.table === "pedidos" && (
+          <FiltroPeriodo
+            label="Data do pedido"
+            hoje={hoje}
+            de={filtros["de"] ?? ""}
+            ate={filtros["ate"] ?? ""}
+            onChange={setPeriodo}
+          />
+        )}
 
         <FilterBar
+          periodosRapidos={config.table !== "pedidos"}
           onClear={() => setFiltros(config.table === "pedidos" ? { de: hoje, ate: hoje } : {})}
         >
           <FilterText

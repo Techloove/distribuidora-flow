@@ -28,7 +28,6 @@ import {
   filtrosVendasIniciais,
   GRUPOS_VENDAS,
   numeroVendas as n,
-  periodoMesVendas,
   variacaoVendas,
   type LinhaRelatorio as Linha,
   type RelatorioVendas,
@@ -97,12 +96,6 @@ export function RelatoriosVendas() {
   const restrita = roles.includes("representante") && !roles.includes("admin");
   const permitido = perm.pode("vendas_relatorio_ver");
   const centro = cv.centro || filtros.centro || null;
-  const mesCompleto =
-    filtros.inicio &&
-    filtros.inicio.endsWith("-01") &&
-    periodoMesVendas(filtros.inicio.slice(0, 7)).fim === filtros.fim
-      ? filtros.inicio.slice(0, 7)
-      : "";
   const escopo = roles.slice().sort().join(",");
   const valido =
     !!filtros.inicio &&
@@ -188,13 +181,6 @@ export function RelatoriosVendas() {
     setPagina(0);
     setPaginaPedidos(0);
   };
-  const selecionarMes = (mes: string) => {
-    if (mes) {
-      setFiltros((f) => ({ ...f, ...periodoMesVendas(mes) }));
-      setPagina(0);
-      setPaginaPedidos(0);
-    }
-  };
   const colunasRanking: Coluna[] = [
     { key: "nome", label: GRUPOS_VENDAS.find((g) => g.value === grupo)?.label ?? "Grupo" },
     { key: "pedidos", label: "Pedidos" },
@@ -250,7 +236,7 @@ export function RelatoriosVendas() {
     );
   return (
     <div className="print-area space-y-5">
-      <FilterBar onClear={limpar}>
+      <FilterBar onClear={limpar} permitirTodoPeriodo={false}>
         <FilterText
           label="De"
           type="date"
@@ -258,12 +244,6 @@ export function RelatoriosVendas() {
           onChange={(v) => setF("inicio", v)}
         />
         <FilterText label="Até" type="date" value={filtros.fim} onChange={(v) => setF("fim", v)} />
-        <FilterText
-          label="Selecionar mês completo"
-          type="month"
-          value={mesCompleto}
-          onChange={selecionarMes}
-        />
         <FilterText
           label="Cliente ou código"
           value={filtros.busca}

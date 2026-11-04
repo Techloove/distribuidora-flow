@@ -1,3 +1,4 @@
+import { FiltroPeriodo } from "./filtro-periodo";
 import { getModalidade } from "@/lib/modalidade-store";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -37,6 +38,16 @@ export function ComparativoCentros() {
         desconta tributos e despesas variáveis informados, antes das despesas fixas. Não é lucro
         contábil.
       </p>
+      <FiltroPeriodo
+        label="Comparativo"
+        permitirTodoPeriodo={false}
+        de={inicio}
+        ate={fim}
+        onChange={(de, ate) => {
+          setInicio(de);
+          setFim(ate);
+        }}
+      />
       <div className="flex flex-wrap gap-2">
         <Input
           aria-label="Início do comparativo"

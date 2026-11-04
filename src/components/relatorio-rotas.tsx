@@ -1,3 +1,4 @@
+import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -16,8 +17,8 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 type Row = Record<string, unknown>;
 
-const hojeIso = () => new Date().toISOString().slice(0, 10);
-const inicioMes = () => `${new Date().toISOString().slice(0, 7)}-01`;
+const hojeIso = hojeSaoPaulo;
+const inicioMes = () => `${hojeSaoPaulo().slice(0, 7)}-01`;
 
 /** Relatórios de vendas e produtos por rota, cidade e representante. */
 export function RelatorioRotas() {
@@ -94,6 +95,7 @@ export function RelatorioRotas() {
   return (
     <div className="space-y-6">
       <FilterBar
+        permitirTodoPeriodo={false}
         onClear={() => {
           setDe(inicioMes());
           setAte(hojeIso());
