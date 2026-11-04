@@ -1,6 +1,6 @@
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { sicoobEmitirBoleto } from "@/lib/sicoob.functions";
-import { brl as money } from "@/lib/formatacao";
+import { brl as money, dataBr } from "@/lib/formatacao";
 import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -370,8 +370,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
                           />
                           <span className="min-w-0">
                             <span className="block font-medium">
-                              Parcela {l.titulo.parcela} ·{" "}
-                              {l.titulo.vencimento.split("-").reverse().join("/")} ·{" "}
+                              Parcela {l.titulo.parcela} · {dataBr(l.titulo.vencimento)} ·{" "}
                               {money(saldoTituloBoleto(l.titulo))}
                             </span>
                             <span className="block text-xs text-muted-foreground">

@@ -68,7 +68,11 @@ export function ComparativoCentros() {
             exportarCsv(
               "comparativo-centros",
               ["centro", "periodo", "pedidos", "vendas", "contribuicao", "resultado_estimado"].map(
-                (key) => ({ key, label: key }),
+                (key) => ({
+                  key,
+                  label: key,
+                  ...(key === "periodo" ? { formato: "mes" as const } : {}),
+                }),
               ),
               q.data ?? [],
             )

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSupabase } from "@/lib/supabase-provider";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
-import { brl } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { tarifaIdentificada } from "@/lib/sicredi-francesinha";
 import { Button } from "@/components/ui/button";
@@ -179,7 +179,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
               <strong>
                 {Number(d["tarifa_total"]) > 0 ? brl(d["tarifa_total"]) : "Tarifa não identificada"}
               </strong>{" "}
-              · Data do débito: {dia.split("-").reverse().join("/")}
+              · Data do débito: {dataBr(dia)}
             </p>
             {itens
               .filter((x) => tarifaIdentificada(String(x["descricao"])))
@@ -222,7 +222,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
         ?.filter((l) => !dados.some((d) => d["data_lancamento"] === l["data_lancamento"]))
         .map((l) => (
           <p key={String(l["data_lancamento"])} className="rounded-lg border p-3 text-sm">
-            {String(l["data_lancamento"])} · Retorno da API não disponível nesta consulta.{" "}
+            {dataBr(l["data_lancamento"])} · Retorno da API não disponível nesta consulta.{" "}
             {estadosTarifa[
               (l["movimento"] as Row | null)?.["status"] === "estornado"
                 ? "estornado"

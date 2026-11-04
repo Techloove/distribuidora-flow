@@ -767,7 +767,7 @@ export function DocumentoPage({
       const v = n === qtd ? Math.round(saldo * 100) / 100 : valor;
       saldo = Math.round((saldo - v) * 100) / 100;
       const vencimento = deslocarDataISO(base, dias1 + (n - 1) * intervalo);
-      list.push({ parcela: n, valor: v, vencimento: vencimento.split("-").reverse().join("/") });
+      list.push({ parcela: n, valor: v, vencimento });
     }
     return list;
   })();
@@ -1180,7 +1180,7 @@ export function DocumentoPage({
                         {String(t["documento"] ?? "—")}/{String(t["parcela"] ?? 1)}
                       </TableCell>
                       <TableCell className={atrasado ? "text-destructive" : ""}>
-                        {venc ? new Date(`${venc}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+                        {dataBr(venc)}
                       </TableCell>
                       <TableCell className="text-right">{brl(saldo)}</TableCell>
                     </TableRow>
@@ -1265,10 +1265,7 @@ export function DocumentoPage({
       return "bg-amber-500/15 text-amber-600";
     return "bg-secondary text-secondary-foreground";
   };
-  const fmtDate = (v: unknown) => {
-    const s = String(v ?? "");
-    return s ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString("pt-BR") : "—";
-  };
+  const fmtDate = dataBr;
   const ticket = docsFiltrados.length ? totalFiltrado / docsFiltrados.length : 0;
   const abertos = docsFiltrados.filter((d) =>
     config.table === "pedidos"
@@ -1892,7 +1889,7 @@ export function DocumentoPage({
             {config.table === "pedidos" && !!doc["status_regularizado_em"] && (
               <p className="rounded-lg border bg-muted/30 p-3 text-sm">
                 Status regularizado administrativamente. Ocorrência:{" "}
-                {String(doc["status_regularizado_data"] ?? "—")}.
+                {dataBr(doc["status_regularizado_data"])}.
                 {roles.includes("admin") && (
                   <> Motivo: {String(doc["status_regularizado_motivo"] ?? "—")}</>
                 )}
@@ -2764,7 +2761,7 @@ export function DocumentoPage({
                             {String(doc?.["numero"] ?? "")}/{p.parcela}
                           </TableCell>
 
-                          <TableCell>{p.vencimento}</TableCell>
+                          <TableCell>{dataBr(p.vencimento)}</TableCell>
                           <TableCell className="text-right">{brl(p.valor)}</TableCell>
                         </TableRow>
                       ))}

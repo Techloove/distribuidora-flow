@@ -25,7 +25,29 @@ export function dataBr(value: unknown): string {
 }
 /** Competência mensal em MM/AAAA, sem alterar ordenação ou agrupamentos. */
 export function mesBr(value: unknown): string {
-  const match = /^(\d{4})-(\d{1,2})(?:$|-)/.exec(String(value ?? "").trim());
+  const texto = String(value ?? "").trim();
+  const brasileiro = /^(\d{1,2})\/(\d{4})$/.exec(texto);
+  const match = /^(\d{4})-(\d{1,2})(?:$|-)/.exec(
+    brasileiro ? `${brasileiro[2]}-${brasileiro[1]}` : texto,
+  );
   if (!match || Number(match[2]) < 1 || Number(match[2]) > 12) return "—";
   return `${match[2]!.padStart(2, "0")}/${match[1]}`;
+}
+
+/** Eventos com horário usam calendário brasileiro e o fuso da operação. */
+export function dataHoraBr(value: unknown): string {
+  const texto = String(value ?? "").trim();
+  if (!/[T ]\d{2}:\d{2}/.test(texto)) return dataBr(texto);
+  const data = new Date(texto);
+  return Number.isFinite(data.getTime())
+    ? data.toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "—";
 }

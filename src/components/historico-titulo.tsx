@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock3 } from "lucide-react";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
-import { brl } from "@/lib/formatacao";
+import { brl, dataBr } from "@/lib/formatacao";
 import { OCORRENCIAS } from "@/lib/sicredi-cnab";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,7 +111,7 @@ export function HistoricoTitulo({ titulo }: { titulo: Row }) {
               id: `venc:${c["id"]}`,
               data: String(c["created_at"]),
               titulo: "Alteração de vencimento solicitada",
-              detalhe: `${c["vencimento_anterior"]} → ${c["vencimento_novo"]} · situação atual: ${c["estado"]}`,
+              detalhe: `${dataBr(c["vencimento_anterior"])} → ${dataBr(c["vencimento_novo"])} · situação atual: ${c["estado"]}`,
             });
       }
       return {

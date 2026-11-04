@@ -55,7 +55,8 @@
     ],
     "cuidados": [
       "Um mês sem movimentos mostra zero, sem substituir pelos valores do mês anterior. A troca de mês não altera pedidos, títulos, pagamentos ou estoque.",
-      "Ao reabrir a tela, o período volta ao mês atual. Se a tela continuar aberta na virada do mês, o período atual acompanha o novo mês; uma consulta histórica escolhida permanece selecionada."
+      "Ao reabrir a tela, o período volta ao mês atual. Se a tela continuar aberta na virada do mês, o período atual acompanha o novo mês; uma consulta histórica escolhida permanece selecionada.",
+      "Datas nas mensagens de pendências, inclusive vencimentos de parcelas e próximas ações, aparecem em DD/MM/AAAA. Competências mensais seguem MM/AAAA. Essa apresentação não muda as datas gravadas nem a ordenação dos registros."
     ]
   },
   {
@@ -558,7 +559,8 @@
       "O percentual configurado no produto tem prioridade sobre o percentual do representante. Exemplo: produto com 8% e representante com 5% gera comissão de 8% para esse produto; um pedido com percentuais diferentes apresenta a média ponderada dos itens.",
       "A escolha Recebe comissão é registrada no pedido na aprovação. A mudança no cadastro vale para novos pedidos e pedidos ainda em digitação ou aguardando aprovação; pedidos aprovados e comissões pagas preservam o histórico. Ao habilitar, volta a valer a prioridade do produto sobre o percentual padrão do representante.",
       "Pedidos antigos com histórico de aprovação usam a aprovação registrada; quando não há evidência histórica nem aprovação automática registrada, a leitura preserva a data comercial legada. A mudança de competência não altera os valores das comissões nem datas e registros de pagamentos realizados.",
-      "A confirmação fixa a aprovação antes de gerar a primeira parcela. Parcelas, recebimentos e boletos já emitidos mantêm seus vencimentos. A nova base vale para parcelas geradas após esta atualização, inclusive novos ciclos de pedidos reabertos; não há reemissão nem alteração automática de boletos antigos."
+      "A confirmação fixa a aprovação antes de gerar a primeira parcela. Parcelas, recebimentos e boletos já emitidos mantêm seus vencimentos. A nova base vale para parcelas geradas após esta atualização, inclusive novos ciclos de pedidos reabertos; não há reemissão nem alteração automática de boletos antigos.",
+      "Datas nas mensagens de pendências, inclusive vencimentos de parcelas e próximas ações, aparecem em DD/MM/AAAA. Competências mensais seguem MM/AAAA. Essa apresentação não muda as datas gravadas nem a ordenação dos registros."
     ]
   },
   {

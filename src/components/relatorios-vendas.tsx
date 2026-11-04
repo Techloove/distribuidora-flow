@@ -202,7 +202,7 @@ export function RelatoriosVendas() {
   }));
   const colunasPedidos: Coluna[] = [
     { key: "numero", label: "Pedido" },
-    { key: "data_pedido", label: "Data" },
+    { key: "data_pedido", label: "Data", formato: "data" },
     { key: "cliente", label: "Cliente" },
     { key: "representante", label: "Representante" },
     { key: "centro", label: "Centro" },
@@ -518,7 +518,7 @@ export function RelatoriosVendas() {
                 titulo="Evolução mensal"
                 linhas={dados.mensal}
                 colunas={[
-                  { key: "mes", label: "Mês" },
+                  { key: "mes", label: "Mês", formato: "mes" },
                   { key: "pedidos", label: "Pedidos" },
                   { key: "vendas", label: "Vendas líquidas" },
                   { key: "comissao", label: "Comissão" },

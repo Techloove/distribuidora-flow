@@ -1,6 +1,6 @@
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
-import { brl as moeda } from "@/lib/formatacao";
+import { brl as moeda, dataBr } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { SelecionarPedidosLote, DespacharCarga } from "@/components/logistica-pratica";
@@ -224,9 +224,7 @@ function CargasPage() {
                         #{String(c["numero"])}
                       </td>
                       <td data-label="Data" className="px-4 py-2.5">
-                        {c["data"]
-                          ? new Date(`${String(c["data"])}T00:00:00`).toLocaleDateString("pt-BR")
-                          : "—"}
+                        {dataBr(c["data"])}
                       </td>
                       <td data-label="Rota" className="px-4 py-2.5">
                         {String(c["rota"] ?? "—")}

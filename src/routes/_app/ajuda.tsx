@@ -1,3 +1,4 @@
+import { dataBr } from "@/lib/formatacao";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, History, Printer, Search } from "lucide-react";
@@ -23,14 +24,7 @@ function ManualPage() {
   const [buscaVersao, setBuscaVersao] = useState("");
   const versoes = HISTORICO_VERSOES.filter((v) =>
     normalizar(
-      [
-        v.versao,
-        v.data,
-        v.data.split("-").reverse().join("/"),
-        v.titulo,
-        v.motivo,
-        ...v.novidades,
-      ].join(" "),
+      [v.versao, v.data, dataBr(v.data), v.titulo, v.motivo, ...v.novidades].join(" "),
     ).includes(normalizar(buscaVersao).trim()),
   );
   const [busca, setBusca] = useState(""),
@@ -193,7 +187,7 @@ function ManualPage() {
             <h2 className="text-xl font-semibold">Histórico de versões</h2>
             <p className="text-sm text-muted-foreground">
               Versão instalada: <strong>{VERSAO_SISTEMA}</strong> · Publicação de referência:{" "}
-              {VERSAO_ATUAL.data.split("-").reverse().join("/")}. Informe a versão ao pedir suporte.
+              {dataBr(VERSAO_ATUAL.data)}. Informe a versão ao pedir suporte.
             </p>
             <p className="text-sm text-muted-foreground">
               Consulte o motivo e as alterações de cada publicação. Notas antigas preservam o
@@ -221,9 +215,7 @@ function ManualPage() {
                 <summary className="cursor-pointer py-2 text-sm font-medium">
                   v{v.versao} · {v.titulo}
                 </summary>
-                <p className="mb-2 text-xs text-muted-foreground">
-                  Publicado em {v.data.split("-").reverse().join("/")}
-                </p>
+                <p className="mb-2 text-xs text-muted-foreground">Publicado em {dataBr(v.data)}</p>
                 <p className="mb-3 text-sm">
                   <strong>Motivo da atualização:</strong> {v.motivo}
                 </p>
@@ -241,7 +233,7 @@ function ManualPage() {
       <div className="hidden print:block print-area">
         <h1 className="text-2xl font-semibold">Manual do usuário — Caparaó System</h1>
         <p>
-          Versão {VERSAO_SISTEMA} · {VERSAO_ATUAL.data.split("-").reverse().join("/")}
+          Versão {VERSAO_SISTEMA} · {dataBr(VERSAO_ATUAL.data)}
         </p>
         <p className="my-4 text-sm">
           Orientações de uso. As permissões do seu perfil continuam sendo aplicadas no sistema.
@@ -267,7 +259,7 @@ function ManualPage() {
         {HISTORICO_VERSOES.map((v) => (
           <section key={v.versao} className="mb-5">
             <h3 className="font-semibold">
-              v{v.versao} · {v.data.split("-").reverse().join("/")} · {v.titulo}
+              v{v.versao} · {dataBr(v.data)} · {v.titulo}
             </h3>
             <p className="my-2 text-sm">Motivo da atualização: {v.motivo}</p>
             <ul className="list-disc pl-5 text-sm">

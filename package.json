@@ -1,13 +1,13 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.35.3",
+  "version": "1.35.4",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
     "dev": "node scripts/gerar-versao-publica.mjs && vite dev",
-    "build": "node scripts/check-version.mjs && node scripts/check-manual.mjs && node scripts/gerar-versao-publica.mjs && vite build && node scripts/gerar-versao-publica.mjs --finalizar",
-    "build:dev": "node scripts/check-version.mjs && node scripts/check-manual.mjs && node scripts/gerar-versao-publica.mjs && vite build --mode development && node scripts/gerar-versao-publica.mjs --finalizar",
+    "build": "node scripts/check-version.mjs && node scripts/check-manual.mjs && node scripts/check-datas-exibicao.mjs && node scripts/gerar-versao-publica.mjs && vite build && node scripts/gerar-versao-publica.mjs --finalizar",
+    "build:dev": "node scripts/check-version.mjs && node scripts/check-manual.mjs && node scripts/check-datas-exibicao.mjs && node scripts/gerar-versao-publica.mjs && vite build --mode development && node scripts/gerar-versao-publica.mjs --finalizar",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -27,7 +27,8 @@
     "backup:verify": "node scripts/verificar-backup.mjs",
     "check:backup": "node scripts/check-backup.cjs && node scripts/check-backup-rotina.mjs && node scripts/check-backup-executor.mjs",
     "check:database": "node scripts/check-business-database.mjs",
-    "check:manual": "node scripts/check-manual.mjs"
+    "check:manual": "node scripts/check-manual.mjs",
+    "check:dates": "node scripts/check-datas-exibicao.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

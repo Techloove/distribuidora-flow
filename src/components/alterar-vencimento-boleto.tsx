@@ -101,8 +101,8 @@ export function AlterarVencimentoBoleto({ boleto }: { boleto: Row }) {
           </p>
           {pending ? (
             <p className="text-sm">
-              Vencimento solicitado: {String(boleto["vencimento_solicitado"])}. Consulte o Sicredi
-              para conferir a confirmação; não reenvie a solicitação.
+              Vencimento solicitado: {dataPadrao(boleto["vencimento_solicitado"])}. Consulte o
+              Sicredi para conferir a confirmação; não reenvie a solicitação.
             </p>
           ) : (
             <div className="space-y-2">

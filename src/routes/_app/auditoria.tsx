@@ -1,4 +1,5 @@
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
+import { dataBr, mesBr, dataHoraBr } from "@/lib/formatacao";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Printer } from "lucide-react";
@@ -206,8 +207,13 @@ function DetalheAuditoria({ detalhe }: { detalhe: unknown }) {
   const antes = (d["antes"] ?? {}) as Record<string, unknown>;
   const depois = (d["depois"] ?? {}) as Record<string, unknown>;
   const campos = [...new Set([...Object.keys(antes), ...Object.keys(depois)])];
-  const texto = (v: unknown) =>
-    v === null || v === undefined ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v);
+  const texto = (v: unknown, campo: string) => {
+    if (v === null || v === undefined) return "—";
+    if (["competencia", "mes"].includes(campo)) return mesBr(v);
+    if (/^(data(?:_|$)|vencimento|vigencia_|periodo_(inicio|fim))|(_em|_at)$/.test(campo))
+      return /(_em|_at)$/.test(campo) ? dataHoraBr(v) : dataBr(v);
+    return typeof v === "object" ? JSON.stringify(v) : String(v);
+  };
   return (
     <details>
       <summary className="cursor-pointer font-medium">
@@ -218,8 +224,8 @@ function DetalheAuditoria({ detalhe }: { detalhe: unknown }) {
           {campos.map((c) => (
             <div key={c} className="rounded border p-2 break-words">
               <strong>{c.replaceAll("_", " ")}</strong>
-              <p>Antes: {texto(antes[c])}</p>
-              <p>Depois: {texto(depois[c])}</p>
+              <p>Antes: {texto(antes[c], c)}</p>
+              <p>Depois: {texto(depois[c], c)}</p>
             </div>
           ))}
         </div>

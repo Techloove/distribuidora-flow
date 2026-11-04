@@ -1,4 +1,5 @@
 import { podeVerCustosProduto, CAMPOS_CUSTO_PRODUTO } from "@/lib/produtos-acesso";
+import { dataBr } from "@/lib/formatacao";
 import { lerPaginas } from "@/lib/paginacao";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes } from "lucide-react";
@@ -170,8 +171,7 @@ function recalcularPreco(
 const fmtDate = (v: unknown) => {
   const s = String(v ?? "");
   if (!s) return "sem limite";
-  const [y, m, d] = s.slice(0, 10).split("-");
-  return `${d}/${m}/${y}`;
+  return dataBr(s);
 };
 
 function ProdutosPage() {

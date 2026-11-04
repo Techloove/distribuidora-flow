@@ -1,5 +1,5 @@
 import { getModalidade } from "@/lib/modalidade-store";
-import { brl as moeda } from "@/lib/formatacao";
+import { brl as moeda, dataBr } from "@/lib/formatacao";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -168,11 +168,7 @@ function NotasPage() {
                         </ReferenciaRegistro>
                       </td>
                       <td data-label="Data" className="px-4 py-2.5">
-                        {p["data_pedido"]
-                          ? new Date(`${String(p["data_pedido"])}T00:00:00`).toLocaleDateString(
-                              "pt-BR",
-                            )
-                          : "—"}
+                        {dataBr(p["data_pedido"])}
                       </td>
                       <td data-label="Total" className="px-4 py-2.5 text-right">
                         {moeda(p["total_liquido"])}

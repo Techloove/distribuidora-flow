@@ -16,6 +16,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run check:version
+      - run: bun run check:dates
       - run: bun run check:versionamento
       - run: bun run check:sql
       - run: bun run check:migrations

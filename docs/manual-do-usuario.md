@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.35.3 · 2026-11-04
+Versão 1.35.4 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -56,6 +56,7 @@ Cuidados:
 
 - Um mês sem movimentos mostra zero, sem substituir pelos valores do mês anterior. A troca de mês não altera pedidos, títulos, pagamentos ou estoque.
 - Ao reabrir a tela, o período volta ao mês atual. Se a tela continuar aberta na virada do mês, o período atual acompanha o novo mês; uma consulta histórica escolhida permanece selecionada.
+- Datas nas mensagens de pendências, inclusive vencimentos de parcelas e próximas ações, aparecem em DD/MM/AAAA. Competências mensais seguem MM/AAAA. Essa apresentação não muda as datas gravadas nem a ordenação dos registros.
 
 ## Filtros rápidos de datas e meses anteriores
 
@@ -469,6 +470,7 @@ Cuidados:
 - A escolha Recebe comissão é registrada no pedido na aprovação. A mudança no cadastro vale para novos pedidos e pedidos ainda em digitação ou aguardando aprovação; pedidos aprovados e comissões pagas preservam o histórico. Ao habilitar, volta a valer a prioridade do produto sobre o percentual padrão do representante.
 - Pedidos antigos com histórico de aprovação usam a aprovação registrada; quando não há evidência histórica nem aprovação automática registrada, a leitura preserva a data comercial legada. A mudança de competência não altera os valores das comissões nem datas e registros de pagamentos realizados.
 - A confirmação fixa a aprovação antes de gerar a primeira parcela. Parcelas, recebimentos e boletos já emitidos mantêm seus vencimentos. A nova base vale para parcelas geradas após esta atualização, inclusive novos ciclos de pedidos reabertos; não há reemissão nem alteração automática de boletos antigos.
+- Datas nas mensagens de pendências, inclusive vencimentos de parcelas e próximas ações, aparecem em DD/MM/AAAA. Competências mensais seguem MM/AAAA. Essa apresentação não muda as datas gravadas nem a ordenação dos registros.
 
 ## Gestão, regras e faixas de comissão
 
@@ -543,6 +545,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.35.4 · 2026-11-04 · Padronizar datas nas pendências, boletos e demais exibições
+
+Motivo da atualização: Mensagens de vencimento do dashboard e outras exibições ainda mostravam datas ISO, apesar do padrão brasileiro definido para o sistema.
+
+- Pendências do dashboard e da central, próximas ações, alterações de boletos, tarifas e histórico de parcelas exibem datas em DD/MM/AAAA. Competências dos lotes de comissão usam MM/AAAA.
+- Padronização complementar de pedidos, produtos, notas, cargas, romaneios e exportações de relatórios. Modelos técnicos de importação, filtros e integrações conservam os valores ISO.
+- Verificação automática de exibição direta de campos de calendário adicionada ao build e ao CI, com regressão dos vencimentos PED-3 e PED-4.
 
 ### v1.35.3 · 2026-11-04 · Compactar a lista de pedidos para reduzir a rolagem horizontal
 

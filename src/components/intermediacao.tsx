@@ -833,8 +833,8 @@ export function ItensIntermediacao({
       <div>
         <h3 className="font-semibold">Itens de intermediação</h3>
         <p className="text-xs text-muted-foreground">
-          Data base da cotação: {dataBaseIntermediacao(doc).split("-").reverse().join("/")}. A
-          margem é um valor em reais por saco.
+          Data base da cotação: {dataBr(dataBaseIntermediacao(doc))}. A margem é um valor em reais
+          por saco.
         </p>
       </div>
       {editavel && podePreco && (

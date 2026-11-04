@@ -1,4 +1,5 @@
 import { SearchSelect } from "@/components/ui/search-select";
+import { dataBr } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { Table } from "@/components/ui/table";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
@@ -352,11 +353,7 @@ export function RomaneiosEntrega() {
                         {transportadoraLabel(r["transportadora_id"])}
                       </td>
                       <td data-label="Previsão" className="px-4 py-2.5">
-                        {r["previsao_entrega"]
-                          ? new Date(
-                              `${String(r["previsao_entrega"]).slice(0, 10)}T00:00:00`,
-                            ).toLocaleDateString("pt-BR")
-                          : "—"}
+                        {dataBr(r["previsao_entrega"])}
                       </td>
                       <td data-label="Status" className="px-4 py-2.5">
                         <span

@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useSupabaseAnalitico as useSupabase } from "@/lib/supabase-provider";
 import { useAcesso } from "@/lib/permissoes";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
-import { brl } from "@/lib/formatacao";
+import { brl, mesBr } from "@/lib/formatacao";
 import { useState } from "react";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -240,9 +240,7 @@ function MetasRepresentante() {
       {acesso.pode("/metas") && (
         <div className="rounded-2xl border bg-card p-5">
           <div className="flex justify-between gap-2">
-            <h2 className="text-sm font-medium">
-              Minha meta · {month.split("-").reverse().join("/")}
-            </h2>
+            <h2 className="text-sm font-medium">Minha meta · {mesBr(month)}</h2>
             <Link to="/metas" className="text-xs text-primary">
               Ver metas
             </Link>

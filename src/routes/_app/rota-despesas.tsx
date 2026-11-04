@@ -160,7 +160,7 @@ function RotaDespesasPage() {
                   "rentabilidade-rotas",
                   [
                     { key: "rota", label: "Rota" },
-                    { key: "periodo", label: "Período" },
+                    { key: "periodo", label: "Período", formato: "mes" },
                     { key: "clientes", label: "Clientes" },
                     { key: "pedidos", label: "Pedidos" },
                     { key: "faturamento", label: "Faturamento" },

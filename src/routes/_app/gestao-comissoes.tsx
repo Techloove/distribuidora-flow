@@ -620,7 +620,7 @@ function GestaoComissoesPage() {
                             {repNome(l["representante_id"])}
                           </TableCell>
                           <TableCell data-label="Competência">
-                            {String(l["competencia"] ?? "—")}
+                            {mesPadrao(l["competencia"])}
                           </TableCell>
                           <TableCell data-label="Período">
                             {fmtDate(l["periodo_inicio"])} a {fmtDate(l["periodo_fim"])}

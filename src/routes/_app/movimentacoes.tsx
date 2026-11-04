@@ -219,7 +219,7 @@ function MovimentacoesPage() {
                   exportarCsv(
                     "movimentacoes",
                     [
-                      { key: "data", label: "Data" },
+                      { key: "data", label: "Data", formato: "data" },
                       { key: "conta_nome", label: "Conta" },
                       { key: "tipo", label: "Tipo" },
                       { key: "origem", label: "Origem" },

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.35.4",
+    "data": "2026-11-04",
+    "titulo": "Padronizar datas nas pendências, boletos e demais exibições",
+    "motivo": "Mensagens de vencimento do dashboard e outras exibições ainda mostravam datas ISO, apesar do padrão brasileiro definido para o sistema.",
+    "novidades": [
+      "Pendências do dashboard e da central, próximas ações, alterações de boletos, tarifas e histórico de parcelas exibem datas em DD/MM/AAAA. Competências dos lotes de comissão usam MM/AAAA.",
+      "Padronização complementar de pedidos, produtos, notas, cargas, romaneios e exportações de relatórios. Modelos técnicos de importação, filtros e integrações conservam os valores ISO.",
+      "Verificação automática de exibição direta de campos de calendário adicionada ao build e ao CI, com regressão dos vencimentos PED-3 e PED-4."
+    ]
+  },
+  {
     "versao": "1.35.3",
     "data": "2026-11-04",
     "titulo": "Compactar a lista de pedidos para reduzir a rolagem horizontal",

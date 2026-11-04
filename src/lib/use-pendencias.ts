@@ -1,5 +1,5 @@
 import { getModalidade } from "./modalidade-store";
-import { brl } from "./formatacao";
+import { detalhePendencia } from "./pendencias-exibicao";
 import { usePermissoesRotinas } from "./permissoes-rotinas";
 import {
   camposFaltantesCliente,
@@ -364,19 +364,7 @@ export function usePendencias() {
                   : k.module === "/pedidos" || k.id === "divergencia"
                     ? `Pedido #${String(r["numero"] ?? "—")}`
                     : String(r["documento"] ?? r["nosso_numero"] ?? "Parcela / boleto"),
-            detalhe: ["agenda", "cobranca"].includes(k.id)
-              ? `Próxima ação ${r["proxima_acao"]} · ${r["observacao"] ?? "Confira a agenda"}`
-              : k.id === "extrato"
-                ? String(r["descricao"] ?? "Vincule ao movimento correspondente.")
-                : k.id === "comissao"
-                  ? `Valor a conferir: ${brl(r["valor"])}`
-                  : k.id === "vencimento"
-                    ? `Alteração ${String(r["estado"])} · vencimento ${String(r["vencimento_novo"])}`
-                    : String(
-                        r["erro"] ??
-                          r["divergencia_obs"] ??
-                          (k.id === "vencido" ? `Vencimento ${r["vencimento"]}` : k.label),
-                      ),
+            detalhe: detalhePendencia(k, r),
             ...(k.module === "/pedidos" ? { pedido: String(r["id"]) } : {}),
             centro: String(r["centro_id"] ?? ""),
           }));
