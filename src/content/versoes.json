@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.35.3",
+    "data": "2026-11-04",
+    "titulo": "Compactar a lista de pedidos para reduzir a rolagem horizontal",
+    "motivo": "A lista de pedidos exigia rolagem horizontal para alcançar a impressão mesmo em telas de computador.",
+    "novidades": [
+      "Fonte, espaçamentos, nomes e botão de impressão compactados somente na lista de pedidos. Datas e valores permanecem inteiros; nomes longos podem ocupar mais de uma linha.",
+      "Cartões no celular preservados. Em telas estreitas que ainda precisem de rolagem, a ação de impressão permanece acessível."
+    ]
+  },
+  {
     "versao": "1.35.2",
     "data": "2026-11-04",
     "titulo": "Preservar o custo histórico no fechamento de pedidos e no CPV",

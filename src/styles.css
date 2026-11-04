@@ -646,3 +646,60 @@ body {
     background: var(--muted);
   }
 }
+
+/* Pedidos: mantém as sete colunas acessíveis com a navegação lateral aberta. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].pedidos-list {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+    font-size: 0.75rem;
+  }
+  table[data-readable-table].pedidos-list th,
+  table[data-readable-table].pedidos-list td {
+    padding: 8px 6px;
+    line-height: 1.4;
+  }
+  table[data-readable-table].pedidos-list th {
+    font-size: 0.65625rem;
+    white-space: normal;
+  }
+  table[data-readable-table].pedidos-list td[data-column-kind="name"] {
+    min-width: 6.5rem;
+    max-width: 22rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  table[data-readable-table].pedidos-list td[data-label="Cliente"] {
+    width: 32%;
+  }
+  table[data-readable-table].pedidos-list td[data-label="Representante"] {
+    width: 19%;
+    max-width: 13rem;
+  }
+  table[data-readable-table].pedidos-list td[data-label="Status"] > span {
+    display: inline-block;
+    max-width: 8rem;
+    white-space: normal;
+  }
+  table[data-readable-table].pedidos-list td[data-label="Ações"] button {
+    height: 28px;
+    padding: 4px 6px;
+    font-size: 0.6875rem;
+    gap: 5px;
+  }
+  table[data-readable-table].pedidos-list td[data-label="Ações"] button svg {
+    width: 14px;
+    height: 14px;
+  }
+  table[data-readable-table].pedidos-list th:last-child,
+  table[data-readable-table].pedidos-list td[data-label="Ações"] {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--card);
+  }
+  table[data-readable-table].pedidos-list th:last-child {
+    background: var(--muted);
+  }
+}

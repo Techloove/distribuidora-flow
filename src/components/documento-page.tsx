@@ -1737,7 +1737,9 @@ export function DocumentoPage({
             </div>
           ) : (
             <>
-              <Table className="mobile-cards w-full sm:min-w-[720px] text-sm">
+              <Table
+                className={`mobile-cards w-full sm:min-w-[720px] text-sm ${config.table === "pedidos" ? "pedidos-list" : ""}`}
+              >
                 <thead className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 text-left font-medium">Nº</th>

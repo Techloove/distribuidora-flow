@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.35.2 · 2026-11-04
+Versão 1.35.3 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -171,6 +171,7 @@ Da escolha do cliente à confirmação da venda.
 15. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
 16. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
 17. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
+18. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
 
 Cuidados:
 
@@ -542,6 +543,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.35.3 · 2026-11-04 · Compactar a lista de pedidos para reduzir a rolagem horizontal
+
+Motivo da atualização: A lista de pedidos exigia rolagem horizontal para alcançar a impressão mesmo em telas de computador.
+
+- Fonte, espaçamentos, nomes e botão de impressão compactados somente na lista de pedidos. Datas e valores permanecem inteiros; nomes longos podem ocupar mais de uma linha.
+- Cartões no celular preservados. Em telas estreitas que ainda precisem de rolagem, a ação de impressão permanece acessível.
 
 ### v1.35.2 · 2026-11-04 · Preservar o custo histórico no fechamento de pedidos e no CPV
 
