@@ -1,0 +1,151 @@
+{
+  "data": "2026-11-04T20:29:49.087Z",
+  "status": "instalado",
+  "antes": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 274,
+      "hash": "646bed198063ac99b6863858bde242fc"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 85,
+      "hash": "8e63b538fa1a90589d45ef99b2d121d8"
+    },
+    {
+      "tabela": "profiles",
+      "quantidade": 9,
+      "hash": "d842d745c643a48651465346bbaf8bfc"
+    },
+    {
+      "tabela": "saas_contrato_330",
+      "quantidade": 1,
+      "hash": "cf218a524d2909527e6de7c02998d0be"
+    },
+    {
+      "tabela": "saas_eventos_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "saas_proprietarios_330",
+      "quantidade": 1,
+      "hash": "0d7b7587e172b69a9cf91ed7bcaae10d"
+    },
+    {
+      "tabela": "saas_setup_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "saas_termos_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    }
+  ],
+  "estado_antes": [
+    {
+      "controle_ativo": false,
+      "bloqueado": false,
+      "cobrancas": 0
+    }
+  ],
+  "migracao_sha256": "232a0e4816ae46b11f01761dcc7652a981d68cd560c696b2cd8ac67fe9f1033c",
+  "depois": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 274,
+      "hash": "646bed198063ac99b6863858bde242fc"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 85,
+      "hash": "8e63b538fa1a90589d45ef99b2d121d8"
+    },
+    {
+      "tabela": "profiles",
+      "quantidade": 9,
+      "hash": "d842d745c643a48651465346bbaf8bfc"
+    },
+    {
+      "tabela": "saas_contrato_330",
+      "quantidade": 1,
+      "hash": "cf218a524d2909527e6de7c02998d0be"
+    },
+    {
+      "tabela": "saas_eventos_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "saas_proprietarios_330",
+      "quantidade": 1,
+      "hash": "0d7b7587e172b69a9cf91ed7bcaae10d"
+    },
+    {
+      "tabela": "saas_setup_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "saas_termos_330",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    }
+  ],
+  "estado_depois": [
+    {
+      "controle_ativo": false,
+      "bloqueado": false,
+      "cobrancas": 0
+    }
+  ],
+  "dados_preservados": true,
+  "controle_preservado": true,
+  "servicos_criados": 0,
+  "validacao_proprietario": {
+    "proprietario": true,
+    "escrita_direta": false,
+    "servicos_visiveis": 0
+  }
+}

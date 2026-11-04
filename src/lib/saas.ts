@@ -41,6 +41,15 @@ export type SaasPainel = {
   mensagem?: string;
   termos?: { vigencia: string; valor: number; dia: number }[];
   parcelas?: SaasParcela[];
+  servicos?: {
+    id: string;
+    descricao: string;
+    valor: number;
+    vencimento: string;
+    observacao: string;
+    revisao: number;
+    editavel: boolean;
+  }[];
   historico?: {
     id: number;
     chave: string | null;

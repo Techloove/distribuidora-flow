@@ -658,13 +658,15 @@
       "O usuário master consulta Minha assinatura e recebe avisos no sistema. Na suspensão, os usuários continuam com acesso à regularização; somente master e proprietário visualizam os valores e o histórico financeiro da assinatura.",
       "O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.",
       "Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.",
-      "Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados."
+      "Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados.",
+      "Na lista Cobranças da plataforma, use Adicionar serviço para cobrar domínio, hospedagem, suporte, treinamento ou outra descrição. Informe valor, vencimento e observação, revise e confirme. O contrato precisa estar configurado. Os filtros separam mensalidades, implantação e serviços adicionais. Cada serviço é uma cobrança avulsa; não há renovação anual automática."
     ],
     "cuidados": [
       "Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio.",
       "O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.",
       "Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.",
-      "Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão."
+      "Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.",
+      "Serviços adicionais participam do saldo e das regras de tolerância/bloqueio quando o controle estiver ativo. O proprietário pode editar antes de haver histórico financeiro; depois, deve cancelar e lançar uma nova cobrança para corrigir valores ou datas. Pagamentos, reaberturas e cancelamentos usam as mesmas ações da lista. O master somente consulta."
     ]
   }
 ]

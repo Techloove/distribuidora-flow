@@ -32,6 +32,16 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
   const qc = useQueryClient();
   const [form, setForm] = useState<Form | null>(null);
   const [revisar, setRevisar] = useState(false);
+  const [tipoCobranca, setTipoCobranca] = useState("todos");
+  const [servico, setServico] = useState<{
+    id: string;
+    descricao: string;
+    valor: string;
+    vencimento: string;
+    observacao: string;
+    revisao: number;
+  } | null>(null);
+  const [revisarServico, setRevisarServico] = useState(false);
   const [operacao, setOperacao] = useState<{
     parcela: SaasParcela;
     acao: string;
@@ -73,6 +83,50 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const salvarServico = useMutation({
+    mutationFn: async () => {
+      if (!servico) throw new Error("Informe o serviço.");
+      const r = await client!.rpc("saas_salvar_servico_331", {
+        _id: servico.id,
+        _descricao: servico.descricao,
+        _valor: Number(servico.valor),
+        _vencimento: servico.vencimento,
+        _observacao: servico.observacao,
+        _revisao: servico.revisao,
+      });
+      if (r.error) throw new Error(r.error.message);
+    },
+    onSuccess: async () => {
+      setServico(null);
+      setRevisarServico(false);
+      await atualizar();
+      toast.success("Serviço adicional salvo.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const nomeCobranca = (p: SaasParcela) =>
+    p.tipo === "servico"
+      ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === p.chave)?.descricao ??
+        "Serviço adicional")
+      : p.tipo === "implantacao"
+        ? `Implantação · parcela ${p.parcela}`
+        : "Mensalidade";
+  const abrirServico = (p?: SaasParcela) => {
+    const s = p ? painel.data?.servicos?.find((x) => `servico:${x.id}` === p.chave) : undefined;
+    setServico(
+      s
+        ? { ...s, valor: String(s.valor) }
+        : {
+            id: crypto.randomUUID(),
+            descricao: "",
+            valor: "0",
+            vencimento: hojeSaoPaulo(),
+            observacao: "",
+            revisao: 0,
+          },
+    );
+    setRevisarServico(false);
+  };
   const registrar = useMutation({
     mutationFn: async () => {
       if (!operacao) throw new Error("Selecione uma parcela.");
@@ -298,12 +352,46 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
             ))}
           </section>
           <section className={card}>
-            <h2 className="mb-3 font-semibold">Implantação e mensalidades</h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-semibold">Cobranças da plataforma</h2>
+              {administracao && dono && (
+                <Button
+                  disabled={!painel.data.contrato.mensal_inicio}
+                  onClick={() => abrirServico()}
+                >
+                  Adicionar serviço
+                </Button>
+              )}
+            </div>
+            {administracao && dono && !painel.data.contrato.mensal_inicio && (
+              <p className="mb-3 text-sm text-muted-foreground">
+                Configure o contrato antes de adicionar serviços.
+              </p>
+            )}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {[
+                ["todos", "Todas"],
+                ["mensalidade", "Mensalidades"],
+                ["implantacao", "Implantação"],
+                ["servico", "Serviços adicionais"],
+              ].map(([tipo, label]) => (
+                <Button
+                  key={tipo}
+                  size="sm"
+                  variant={tipoCobranca === tipo ? "default" : "outline"}
+                  onClick={() => setTipoCobranca(tipo!)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
             <p className="mb-4 text-xs text-muted-foreground">
               Mensalidades disponíveis até o próximo mês. Novas competências surgem automaticamente
-              pelo calendário. Esta cobrança é separada do financeiro da distribuidora.
+              pelo calendário. Serviços adicionais são cobranças avulsas, com descrição e vencimento
+              próprios. Todas seguem a tolerância do contrato e ficam separadas do financeiro da
+              distribuidora.
             </p>
-            {parcelas.length ? (
+            {parcelas.filter((p) => tipoCobranca === "todos" || p.tipo === tipoCobranca).length ? (
               <Table className="mobile-cards">
                 <TableHeader>
                   <TableRow>
@@ -317,60 +405,81 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parcelas.map((p) => (
-                    <TableRow key={p.chave}>
-                      <TableCell>
-                        {p.tipo === "implantacao"
-                          ? `Implantação · parcela ${p.parcela}`
-                          : "Mensalidade"}
-                      </TableCell>
-                      <TableCell>{mesBr(p.competencia)}</TableCell>
-                      <TableCell>{dataBr(p.vencimento)}</TableCell>
-                      <TableCell>{brl(p.valor)}</TableCell>
-                      <TableCell>
-                        {p.estado === "pago"
-                          ? "Pago"
-                          : p.estado === "cancelado"
-                            ? "Cancelado"
-                            : p.estado === "vencido"
-                              ? "Vencido"
-                              : "Pendente"}
-                      </TableCell>
-                      <TableCell>{dataBr(p.pagamento_data)}</TableCell>
-                      {administracao && dono && (
+                  {parcelas
+                    .filter((p) => tipoCobranca === "todos" || p.tipo === tipoCobranca)
+                    .map((p) => (
+                      <TableRow key={p.chave}>
                         <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            {(p.estado === "pago" || p.estado === "cancelado"
-                              ? ["reaberto"]
-                              : ["pago", "cancelado"]
-                            ).map((acao) => (
-                              <Button
-                                key={acao}
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setOperacao({ parcela: p, acao, chave: crypto.randomUUID() });
-                                  setMotivo("");
-                                  setPagamento(hojeSaoPaulo());
-                                }}
-                              >
-                                {acao === "pago"
-                                  ? "Confirmar pagamento"
-                                  : acao === "reaberto"
-                                    ? "Reabrir cobrança"
-                                    : "Cancelar cobrança"}
-                              </Button>
-                            ))}
-                          </div>
+                          <span className="block max-w-[16rem] whitespace-normal break-words">
+                            {nomeCobranca(p)}
+                          </span>
+                          {p.tipo === "servico" && (
+                            <span className="block text-xs text-muted-foreground">
+                              Serviço adicional
+                            </span>
+                          )}
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+                        <TableCell>{mesBr(p.competencia)}</TableCell>
+                        <TableCell>{dataBr(p.vencimento)}</TableCell>
+                        <TableCell>{brl(p.valor)}</TableCell>
+                        <TableCell>
+                          {p.estado === "pago"
+                            ? "Pago"
+                            : p.estado === "cancelado"
+                              ? "Cancelado"
+                              : p.estado === "vencido"
+                                ? "Vencido"
+                                : "Pendente"}
+                        </TableCell>
+                        <TableCell>{dataBr(p.pagamento_data)}</TableCell>
+                        {administracao && dono && (
+                          <TableCell>
+                            <div className="flex max-w-[19rem] flex-wrap gap-2">
+                              {p.tipo === "servico" &&
+                                painel.data?.servicos?.some(
+                                  (s) => `servico:${s.id}` === p.chave && s.editavel,
+                                ) && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => abrirServico(p)}
+                                  >
+                                    Editar serviço
+                                  </Button>
+                                )}
+                              {(p.estado === "pago" || p.estado === "cancelado"
+                                ? ["reaberto"]
+                                : ["pago", "cancelado"]
+                              ).map((acao) => (
+                                <Button
+                                  key={acao}
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setOperacao({ parcela: p, acao, chave: crypto.randomUUID() });
+                                    setMotivo("");
+                                    setPagamento(hojeSaoPaulo());
+                                  }}
+                                >
+                                  {acao === "pago"
+                                    ? "Confirmar pagamento"
+                                    : acao === "reaberto"
+                                      ? "Reabrir cobrança"
+                                      : "Cancelar cobrança"}
+                                </Button>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Nenhuma cobrança cadastrada. Configure o contrato antes de ativar o controle.
+                {parcelas.length
+                  ? "Nenhuma cobrança neste filtro."
+                  : "Nenhuma cobrança cadastrada. Configure o contrato antes de ativar o controle."}
               </p>
             )}
           </section>
@@ -390,7 +499,10 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                     ·{" "}
                     {e.chave?.startsWith("mensal:")
                       ? mesBr(e.chave.slice(7))
-                      : e.chave?.replace("setup:", "Implantação · parcela ")}
+                      : e.chave?.startsWith("servico:")
+                        ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === e.chave)
+                            ?.descricao ?? "Serviço adicional")
+                        : e.chave?.replace("setup:", "Implantação · parcela ")}
                     {e.valor != null && ` · ${brl(e.valor)}`}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -538,6 +650,135 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
         </DialogContent>
       </Dialog>
       <Dialog
+        open={!!servico}
+        onOpenChange={(o) => {
+          if (!o && !salvarServico.isPending) setServico(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {servico?.revisao ? "Editar serviço adicional" : "Adicionar serviço"}
+            </DialogTitle>
+            <DialogDescription>
+              Taxa de domínio, hospedagem, suporte ou outro serviço. Cada lançamento tem valor e
+              vencimento próprios.
+            </DialogDescription>
+          </DialogHeader>
+          {servico && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (Number(servico.valor) <= 0) {
+                  toast.error("Informe um valor maior que zero.");
+                  return;
+                }
+                if (revisarServico) salvarServico.mutate();
+                else setRevisarServico(true);
+              }}
+            >
+              <div>
+                <Label htmlFor="saas-servico-descricao">Serviço / descrição</Label>
+                <Input
+                  id="saas-servico-descricao"
+                  list="saas-sugestoes-servicos"
+                  required
+                  minLength={2}
+                  maxLength={160}
+                  value={servico.descricao}
+                  disabled={salvarServico.isPending}
+                  onChange={(e) => {
+                    setServico({ ...servico, descricao: e.target.value });
+                    setRevisarServico(false);
+                  }}
+                />
+                <datalist id="saas-sugestoes-servicos">
+                  {[
+                    "Taxa de domínio",
+                    "Hospedagem",
+                    "Suporte técnico",
+                    "Treinamento",
+                    "Configuração adicional",
+                  ].map((v) => (
+                    <option key={v} value={v} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="saas-servico-valor">Valor (R$)</Label>
+                  <Input
+                    id="saas-servico-valor"
+                    currency
+                    required
+                    value={servico.valor}
+                    disabled={salvarServico.isPending}
+                    onChange={(e) => {
+                      setServico({ ...servico, valor: e.target.value });
+                      setRevisarServico(false);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="saas-servico-vencimento">Vencimento</Label>
+                  <Input
+                    id="saas-servico-vencimento"
+                    type="date"
+                    required
+                    value={servico.vencimento}
+                    disabled={salvarServico.isPending}
+                    onChange={(e) => {
+                      setServico({ ...servico, vencimento: e.target.value });
+                      setRevisarServico(false);
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="saas-servico-observacao">Observação (opcional)</Label>
+                <Textarea
+                  id="saas-servico-observacao"
+                  maxLength={1000}
+                  value={servico.observacao}
+                  disabled={salvarServico.isPending}
+                  onChange={(e) => {
+                    setServico({ ...servico, observacao: e.target.value });
+                    setRevisarServico(false);
+                  }}
+                />
+              </div>
+              {revisarServico && (
+                <p role="alert" className="rounded-xl border bg-muted/30 p-3 text-sm">
+                  {servico.descricao} · {brl(servico.valor)} · vencimento{" "}
+                  {dataBr(servico.vencimento)}. Esta cobrança entra no saldo da assinatura e pode
+                  causar bloqueio se vencer além da tolerância com o controle ativo. Após registro
+                  financeiro, os dados ficam preservados; use cancelamento e uma nova cobrança para
+                  corrigir.
+                </p>
+              )}
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={salvarServico.isPending}
+                  onClick={() => setServico(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button disabled={salvarServico.isPending}>
+                  {salvarServico.isPending
+                    ? "Salvando…"
+                    : revisarServico
+                      ? "Confirmar cobrança"
+                      : "Revisar cobrança"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={!!operacao}
         onOpenChange={(o) => {
           if (!o && !registrar.isPending) setOperacao(null);
@@ -564,6 +805,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
               registrar.mutate();
             }}
           >
+            <p>{operacao ? nomeCobranca(operacao.parcela) : ""}</p>
             <p>
               {brl(operacao?.parcela.valor)} · vencimento {dataBr(operacao?.parcela.vencimento)}
             </p>

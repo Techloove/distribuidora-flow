@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.36.0 · 2026-11-04
+Versão 1.37.0 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -553,6 +553,7 @@ Implantação, mensalidade e regularização da empresa atual, separados do fina
 5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
 6. Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.
 7. Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados.
+8. Na lista Cobranças da plataforma, use Adicionar serviço para cobrar domínio, hospedagem, suporte, treinamento ou outra descrição. Informe valor, vencimento e observação, revise e confirme. O contrato precisa estar configurado. Os filtros separam mensalidades, implantação e serviços adicionais. Cada serviço é uma cobrança avulsa; não há renovação anual automática.
 
 Cuidados:
 
@@ -560,10 +561,19 @@ Cuidados:
 - O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.
 - Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.
 - Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.
+- Serviços adicionais participam do saldo e das regras de tolerância/bloqueio quando o controle estiver ativo. O proprietário pode editar antes de haver histórico financeiro; depois, deve cancelar e lançar uma nova cobrança para corrigir valores ou datas. Pagamentos, reaberturas e cancelamentos usam as mesmas ações da lista. O master somente consulta.
 
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.37.0 · 2026-11-04 · Serviços adicionais em lista na cobrança SaaS
+
+Motivo da atualização: Permitir a cobrança de domínio e outros serviços pelo painel SaaS, além da implantação e mensalidade.
+
+- Lista de cobranças com filtros para mensalidades, implantação e serviços adicionais. Descrição livre, valor, vencimento e observação por serviço.
+- Cadastro e edição exclusivos do proprietário, revisão antes de salvar e histórico financeiro preservado. Master somente consulta.
+- Serviços avulsos seguem pagamento, cancelamento, tolerância e bloqueio da assinatura, sem movimentar o financeiro da distribuidora ou gerar serviços automaticamente.
 
 ### v1.36.0 · 2026-11-04 · Painel SaaS de contrato e cobranças para a operação atual
 

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.37.0",
+    "data": "2026-11-04",
+    "titulo": "Serviços adicionais em lista na cobrança SaaS",
+    "motivo": "Permitir a cobrança de domínio e outros serviços pelo painel SaaS, além da implantação e mensalidade.",
+    "novidades": [
+      "Lista de cobranças com filtros para mensalidades, implantação e serviços adicionais. Descrição livre, valor, vencimento e observação por serviço.",
+      "Cadastro e edição exclusivos do proprietário, revisão antes de salvar e histórico financeiro preservado. Master somente consulta.",
+      "Serviços avulsos seguem pagamento, cancelamento, tolerância e bloqueio da assinatura, sem movimentar o financeiro da distribuidora ou gerar serviços automaticamente."
+    ]
+  },
+  {
     "versao": "1.36.0",
     "data": "2026-11-04",
     "titulo": "Painel SaaS de contrato e cobranças para a operação atual",

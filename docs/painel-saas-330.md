@@ -31,3 +31,11 @@ Validação local concluída: 302 testes unitários, 74/74 suítes de negócio e
 A conta proprietária está ativa e a rotina de limpeza possui o padrão necessário à adaptação, conforme preflight somente leitura. O cadastro de proprietário foi provisionado pelo SQL de instalação. O administrador da distribuidora não poderá desativar, excluir ou alterar o e-mail do perfil proprietário pelo ERP.
 
 A comparação imediatamente antes/depois preservou integralmente as contagens e hashes de dez tabelas de negócio e acesso: pedidos, itens, contas a receber/pagar, clientes, boletos, comissões, movimentos de estoque, perfis e papéis. Foram validados em transações somente leitura os perfis proprietário, master e colaborador: todos mantêm o acesso normal ao ERP, apenas proprietário/master recebem dados do contrato e nenhum possui escrita direta nas tabelas SaaS. A configuração do hook foi conferida no papel authenticator e na configuração específica do banco. Nenhum teste com dívida fictícia ou bloqueio foi executado sobre a operação real.
+
+## Serviços adicionais — fase331, versão 1.37.0
+
+Cobranças da plataforma agora possui lista com filtros por mensalidade, implantação e serviço adicional. O proprietário pode lançar domínio, hospedagem, suporte e outras descrições livres, com valor, vencimento e observação. São lançamentos avulsos, sem renovação automática. O contrato deve estar configurado antes da inclusão.
+
+Os serviços entram na apuração da assinatura e seguem pagamento, cancelamento, reabertura, tolerância e bloqueio existentes. Somente itens sem histórico financeiro são editáveis, com controle de revisão concorrente. Após o histórico financeiro, a correção exige cancelamento e novo lançamento. A gravação é idempotente e a interface exige revisão antes de confirmar a cobrança.
+
+Instalação concluída sem criar serviços reais nem modificar os dados anteriores do ERP e da assinatura. Evidência: `docs/auditorias/saas-331-servicos.json`. A consulta com o proprietário confirmou lista vazia e ausência de escrita direta nas tabelas privadas. Validações: 302 testes unitários, regressões SaaS330/331 em bancos descartáveis, typecheck, build e verificações de segurança. Interface testada com dados fictícios em 1366 e 390 pixels, incluindo filtro, formulário, etapa de revisão e permissões de proprietário/master/colaborador.
