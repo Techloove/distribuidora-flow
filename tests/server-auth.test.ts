@@ -40,6 +40,7 @@ describe("requireServerAuth", () => {
       expect(headers.get("apikey")).toBe("anon-test-key");
       expect(headers.get("authorization")).toBe("Bearer token-ok");
 
+      if (url.includes("/rpc/saas_acesso_330")) return Response.json(true);
       if (url.includes("/auth/v1/user")) {
         return Response.json({ id: "00000000-0000-4000-8000-000000000001" });
       }
@@ -54,7 +55,7 @@ describe("requireServerAuth", () => {
 
     const user = await requireServerAuth("token-ok", ["admin", "financeiro"]);
     expect(user.id).toBe("00000000-0000-4000-8000-000000000001");
-    expect(calls.length).toBe(3);
+    expect(calls.length).toBe(4);
   });
 
   test("rejeita usuário inativo, sem papel ou sem papel permitido", async () => {
@@ -63,6 +64,7 @@ describe("requireServerAuth", () => {
 
     globalThis.fetch = (async (input) => {
       const url = String(input);
+      if (url.includes("/rpc/saas_acesso_330")) return Response.json(true);
       if (url.includes("/auth/v1/user")) {
         return Response.json({ id: "00000000-0000-4000-8000-000000000001" });
       }
@@ -83,6 +85,21 @@ describe("requireServerAuth", () => {
 
     roles = [{ role: "representante" }];
     await expect(requireServerAuth("token-ok", ["financeiro"])).rejects.toThrow("sem permissão");
+  });
+
+  test("assinatura bloqueada ou consulta indisponível impede acesso antes dos módulos e bancos", async () => {
+    for (const resposta of [Response.json(false), new Response("{}", { status: 503 })]) {
+      const calls: string[] = [];
+      globalThis.fetch = (async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.includes("/auth/v1/user")) return Response.json({ id: "fixture-user" });
+        if (url.includes("/rpc/saas_acesso_330")) return resposta;
+        throw new Error("Não deveria consultar perfis ou serviços bancários após bloqueio");
+      }) as typeof fetch;
+      await expect(requireServerAuth("token-ok", ["admin"])).rejects.toThrow("Assinatura pendente");
+      expect(calls.length).toBe(2);
+    }
   });
 
   test("rejeita token inválido", async () => {

@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as AssinaturaRouteImport } from './routes/assinatura'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PlataformaRouteImport } from './routes/plataforma'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as AppAgendaComercialRouteImport } from './routes/_app/agenda-comercial'
 import { Route as AppAjudaRouteImport } from './routes/_app/ajuda'
@@ -76,9 +78,19 @@ const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssinaturaRoute = AssinaturaRouteImport.update({
+  id: '/assinatura',
+  path: '/assinatura',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlataformaRoute = PlataformaRouteImport.update({
+  id: '/plataforma',
+  path: '/plataforma',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -356,7 +368,9 @@ const AppUsuariosRoute = AppUsuariosRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assinatura': typeof AssinaturaRoute
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
   '/ajuda': typeof AppAjudaRoute
@@ -414,7 +428,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assinatura': typeof AssinaturaRoute
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/agenda-comercial': typeof AppAgendaComercialRoute
   '/ajuda': typeof AppAjudaRoute
@@ -474,7 +490,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
+  '/assinatura': typeof AssinaturaRoute
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/_app/agenda-comercial': typeof AppAgendaComercialRoute
   '/_app/ajuda': typeof AppAjudaRoute
@@ -534,7 +552,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assinatura'
     | '/auth'
+    | '/plataforma'
     | '/recuperar-senha'
     | '/agenda-comercial'
     | '/ajuda'
@@ -592,7 +612,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assinatura'
     | '/auth'
+    | '/plataforma'
     | '/recuperar-senha'
     | '/agenda-comercial'
     | '/ajuda'
@@ -651,7 +673,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/assinatura'
     | '/auth'
+    | '/plataforma'
     | '/recuperar-senha'
     | '/_app/agenda-comercial'
     | '/_app/ajuda'
@@ -711,7 +735,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
+  AssinaturaRoute: typeof AssinaturaRoute
   AuthRoute: typeof AuthRoute
+  PlataformaRoute: typeof PlataformaRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
 }
 
@@ -731,11 +757,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assinatura': {
+      id: '/assinatura'
+      path: '/assinatura'
+      fullPath: '/assinatura'
+      preLoaderRoute: typeof AssinaturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plataforma': {
+      id: '/plataforma'
+      path: '/plataforma'
+      fullPath: '/plataforma'
+      preLoaderRoute: typeof PlataformaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -1238,7 +1278,9 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
+  AssinaturaRoute: AssinaturaRoute,
   AuthRoute: AuthRoute,
+  PlataformaRoute: PlataformaRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
 }
 export const routeTree = rootRouteImport

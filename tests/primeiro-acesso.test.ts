@@ -21,7 +21,8 @@ function backend(profile: Record<string, unknown>, role = "representante") {
   globalThis.fetch = mock(async (input: RequestInfo | URL) => {
     const url = new URL(String(input));
     let out: unknown;
-    if (url.pathname.endsWith("/user")) out = { id: "fixture-user" };
+    if (url.pathname.endsWith("/saas_acesso_330")) out = true;
+    else if (url.pathname.endsWith("/user")) out = { id: "fixture-user" };
     else if (url.pathname.endsWith("/profiles")) {
       expect(url.searchParams.get("select")).toContain("precisa_completar_cadastro");
       out = [profile];

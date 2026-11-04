@@ -29,6 +29,19 @@ export async function requireServerAuth(
   const user = (await userRes.json()) as AuthUser;
   if (!user.id) throw new Error("Usuário autenticado não identificado.");
 
+  const assinaturaRes = await fetch(`${url}/rest/v1/rpc/saas_acesso_330`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!assinaturaRes.ok || (await assinaturaRes.json()) !== true)
+    throw new Error("Assinatura pendente ou indisponível. Acesse a tela de regularização.");
+
   const [profileRes, roleRes] = await Promise.all([
     fetch(
       `${url}/rest/v1/profiles?select=ativo,precisa_completar_cadastro&id=eq.${encodeURIComponent(user.id)}&limit=1`,

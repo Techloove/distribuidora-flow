@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Boxes,
@@ -18,6 +18,12 @@ import { mensagemLogin } from "@/lib/auth-senhas";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { painel?: "plataforma" | "assinatura" } =>
+    search["painel"] === "plataforma"
+      ? { painel: "plataforma" }
+      : search["painel"] === "assinatura"
+        ? { painel: "assinatura" }
+        : {},
   head: () => ({
     meta: [
       { title: "Entrar — Caparaó System" },
@@ -37,6 +43,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 function AuthPage() {
+  const { painel } = Route.useSearch();
   const { client, session, loading, error, passwordRecovery } = useSupabase();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -66,8 +73,16 @@ function AuthPage() {
       return;
     }
     if (session && !cadastro && !busy && !enviado)
-      void navigate({ to: "/dashboard", replace: true });
-  }, [session, navigate, cadastro, busy, enviado, passwordRecovery]);
+      void navigate({
+        to:
+          painel === "plataforma"
+            ? "/plataforma"
+            : painel === "assinatura"
+              ? "/assinatura"
+              : "/dashboard",
+        replace: true,
+      });
+  }, [session, navigate, cadastro, busy, enviado, passwordRecovery, painel]);
   async function recuperarSenha() {
     if (!client || busy || recuperando) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -227,6 +242,11 @@ function AuthPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              {painel === "plataforma" && (
+                <p className="rounded-xl border bg-muted/30 p-3 text-sm">
+                  Acesso exclusivo do proprietário da plataforma. Entre com sua conta autorizada.
+                </p>
+              )}
               {cadastro && (
                 <>
                   <div className="space-y-2">
@@ -350,6 +370,19 @@ function AuthPage() {
           >
             {cadastro ? "Voltar para entrar" : "Não tenho cadastro · Primeiro acesso"}
           </Button>
+          <Link
+            to="/auth"
+            search={painel === "plataforma" ? {} : { painel: "plataforma" }}
+            onClick={() => {
+              setCadastro(false);
+              setEnviado(false);
+            }}
+            className="mt-5 block text-center text-sm text-primary underline"
+          >
+            {painel === "plataforma"
+              ? "Voltar ao acesso da empresa"
+              : "Administração da plataforma · Painel SaaS"}
+          </Link>
           <p className="mt-7 border-t pt-6 text-center text-xs leading-relaxed text-muted-foreground">
             Precisa de acesso ou ajuda com sua senha?
             <br />

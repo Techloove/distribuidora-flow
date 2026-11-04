@@ -644,5 +644,27 @@
       "Versões antigas mantêm as notas registradas na publicação; elas descrevem o comportamento da época. Siga as orientações atuais do manual para operar o sistema.",
       "A documentação não concede acesso a módulos, lojas ou carteiras. Credenciais, senhas e tokens não devem ser incluídos em pedidos de suporte."
     ]
+  },
+  {
+    "id": "saas-assinatura",
+    "titulo": "Contrato e assinatura da plataforma",
+    "grupo": "Gestão",
+    "resumo": "Implantação, mensalidade e regularização da empresa atual, separados do financeiro do ERP.",
+    "modulos": [],
+    "passos": [
+      "Na página de login, use Administração da plataforma · Painel SaaS. Entre com a conta proprietária autorizada. Administrador da distribuidora e proprietário da plataforma são permissões diferentes.",
+      "No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, usuário master administrador, valor da implantação, parcelas, primeiro vencimento, mensalidade, início, dia de vencimento, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem.",
+      "Confira as instruções de regularização e revise a configuração. Marque Ativar avisos e bloqueio automático somente quando os valores e vencimentos estiverem corretos. O controle começa desativado e nenhuma cobrança é criada no Contas a Receber da distribuidora.",
+      "O usuário master consulta Minha assinatura e recebe avisos no sistema. Na suspensão, os usuários continuam com acesso à regularização; somente master e proprietário visualizam os valores e o histórico financeiro da assinatura.",
+      "O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.",
+      "Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.",
+      "Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados."
+    ],
+    "cuidados": [
+      "Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio.",
+      "O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.",
+      "Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.",
+      "Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão."
+    ]
   }
 ]

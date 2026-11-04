@@ -123,6 +123,7 @@ test("servidor suporta Cloudflare, confere administrador e não segue redirecion
     let role='admin',redirect=false,storage=0;
     const id='11111111-1111-4111-8111-111111111111',nome='backup-2026-10-27T03-00-00-000Z.tar';
     globalThis.fetch=async(input,options)=>{
+      if(String(input).includes('/rpc/saas_acesso_330'))return Response.json(true);
       if(options.redirect==='error')throw new Error('Cloudflare rejeitou redirect error');
       const p=new URL(input).pathname;
       if(p==='/auth/v1/user')return Response.json({id});

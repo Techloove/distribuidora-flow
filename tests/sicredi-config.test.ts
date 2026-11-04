@@ -34,7 +34,8 @@ function backend(role = "admin", error?: { code: string; message: string; detail
       body = init?.body ? JSON.parse(String(init.body)) : {};
     calls.push({ path, method: init?.method ?? "GET", body });
     let out: unknown;
-    if (path === "/auth/v1/user") out = { id: actor };
+    if (path.endsWith("/saas_acesso_330")) out = true;
+    else if (path === "/auth/v1/user") out = { id: actor };
     else if (path.endsWith("/profiles")) out = [{ ativo: true }];
     else if (path.endsWith("/user_roles")) out = [{ role }];
     else if (path.endsWith("/consumir_rate_limit")) out = true;

@@ -1,3 +1,4 @@
+import type { SaasStatus } from "./saas";
 import { clienteAnalitico } from "./modalidade-consultas";
 import { useModalidade, setModalidade } from "./modalidade-store";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
@@ -16,6 +17,7 @@ type SupabaseContextValue = {
   user: User | null;
   roles: AppRole[];
   needsCadastro: boolean;
+  saas: SaasStatus | null;
   passwordRecovery: boolean;
   loading: boolean;
   error: string | null;
@@ -87,6 +89,11 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     refetchInterval: 60_000,
     retry: 1,
     queryFn: async () => {
+      const assinatura = await client!.rpc("saas_status_330");
+      if (assinatura.error || !assinatura.data || typeof assinatura.data.bloqueado !== "boolean")
+        throw new Error("Não foi possível verificar a assinatura. Tente novamente.");
+      const saas = assinatura.data as SaasStatus;
+      if (saas.bloqueado) return { roles: [] as AppRole[], needsCadastro: false, saas };
       const [profile, roles] = await Promise.all([
         client!.from("profiles").select("*").eq("id", session!.user.id).single(),
         client!.from("user_roles").select("role").eq("user_id", session!.user.id),
@@ -104,6 +111,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       return {
         roles: (roles.data ?? []).map((r: { role: AppRole }) => r.role),
         needsCadastro: profile.data?.precisa_completar_cadastro === true,
+        saas,
       };
     },
   });
@@ -143,6 +151,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         roles,
         needsCadastro,
+        saas: session ? (permissions.data?.saas ?? null) : null,
         passwordRecovery,
         loading,
         error,

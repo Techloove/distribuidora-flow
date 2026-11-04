@@ -1,3 +1,4 @@
+import { AvisoAssinatura } from "@/components/painel-saas";
 import { useModalidade, nomesModalidade } from "@/lib/modalidade-store";
 import { VERSAO_SISTEMA } from "@/lib/versao";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -495,6 +496,7 @@ export function ErpLayout({
               integrais.
             </p>
           )}
+          <AvisoAssinatura />
           {children}
         </div>
       </main>

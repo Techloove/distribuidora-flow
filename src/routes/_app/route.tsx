@@ -1,3 +1,4 @@
+import { PainelSaas } from "@/components/painel-saas";
 import { AvisoAtualizacao } from "@/components/aviso-atualizacao";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -10,7 +11,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app")({ ssr: false, component: AppLayout });
 function AppLayout() {
-  const { session, loading, error, signOut, needsCadastro, passwordRecovery } = useSupabase();
+  const { session, loading, error, signOut, needsCadastro, passwordRecovery, saas } = useSupabase();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const acesso = useAcesso();
@@ -25,6 +26,7 @@ function AppLayout() {
   }, [passwordRecovery, navigate]);
   useEffect(() => {
     if (
+      !saas?.bloqueado &&
       !passwordRecovery &&
       !needsCadastro &&
       bloqueado &&
@@ -34,13 +36,24 @@ function AppLayout() {
       destino !== pathname
     )
       void navigate({ to: destino, replace: true });
-  }, [passwordRecovery, needsCadastro, bloqueado, destino, error, acesso.erro, pathname, navigate]);
+  }, [
+    passwordRecovery,
+    needsCadastro,
+    bloqueado,
+    destino,
+    error,
+    acesso.erro,
+    pathname,
+    navigate,
+    saas?.bloqueado,
+  ]);
   if (passwordRecovery)
     return (
       <p role="status" className="p-6">
         Abrindo recuperação de senha…
       </p>
     );
+  if (session && !loading && saas?.bloqueado) return <PainelSaas />;
   if (loading || (!error && session && !needsCadastro && acesso.carregando))
     return (
       <div

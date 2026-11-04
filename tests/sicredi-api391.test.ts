@@ -97,7 +97,8 @@ function backend(o: Options = {}) {
       headers: new Headers(init?.headers),
     });
     let out: unknown = [];
-    if (p === "/auth/v1/user") out = { id };
+    if (p.endsWith("/saas_acesso_330")) out = true;
+    else if (p === "/auth/v1/user") out = { id };
     else if (p.endsWith("/profiles")) out = [{ ativo: true }];
     else if (p.endsWith("/user_roles")) out = [{ role: o.papel ?? "financeiro" }];
     else if (p.endsWith("/autorizar_baixa_boleto_285") && o.negarBaixa)

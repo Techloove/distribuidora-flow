@@ -74,7 +74,8 @@ function backend(
       : {};
     calls.push({ path, method: init?.method ?? "GET", body, headers: new Headers(init?.headers) });
     let out: unknown = [];
-    if (path === "/auth/v1/user") out = { id: "00000000-0000-4000-8000-000000000001" };
+    if (path.endsWith("/saas_acesso_330")) out = true;
+    else if (path === "/auth/v1/user") out = { id: "00000000-0000-4000-8000-000000000001" };
     else if (path.endsWith("/profiles")) out = [{ ativo: true }];
     else if (path.endsWith("/user_roles")) out = [{ role: options.role ?? "admin" }];
     else if (path.endsWith("/consumir_rate_limit")) out = true;

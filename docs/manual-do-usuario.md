@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.35.4 · 2026-11-04
+Versão 1.36.0 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -542,9 +542,37 @@ Cuidados:
 - Versões antigas mantêm as notas registradas na publicação; elas descrevem o comportamento da época. Siga as orientações atuais do manual para operar o sistema.
 - A documentação não concede acesso a módulos, lojas ou carteiras. Credenciais, senhas e tokens não devem ser incluídos em pedidos de suporte.
 
+## Contrato e assinatura da plataforma
+
+Implantação, mensalidade e regularização da empresa atual, separados do financeiro do ERP.
+
+1. Na página de login, use Administração da plataforma · Painel SaaS. Entre com a conta proprietária autorizada. Administrador da distribuidora e proprietário da plataforma são permissões diferentes.
+2. No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, usuário master administrador, valor da implantação, parcelas, primeiro vencimento, mensalidade, início, dia de vencimento, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem.
+3. Confira as instruções de regularização e revise a configuração. Marque Ativar avisos e bloqueio automático somente quando os valores e vencimentos estiverem corretos. O controle começa desativado e nenhuma cobrança é criada no Contas a Receber da distribuidora.
+4. O usuário master consulta Minha assinatura e recebe avisos no sistema. Na suspensão, os usuários continuam com acesso à regularização; somente master e proprietário visualizam os valores e o histórico financeiro da assinatura.
+5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
+6. Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.
+7. Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados.
+
+Cuidados:
+
+- Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio.
+- O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.
+- Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.
+- Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.
+
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.36.0 · 2026-11-04 · Painel SaaS de contrato e cobranças para a operação atual
+
+Motivo da atualização: Controlar a implantação e mensalidade da operação atual com autorização separada do administrador do ERP e suspensão por inadimplência.
+
+- Painel SaaS acessível pelo login, exclusivo da conta proprietária autorizada; usuário master consulta a assinatura sem confirmar pagamentos.
+- Contrato, implantação parcelada, mensalidades por calendário, tolerância, avisos internos e histórico com confirmação manual de recebimento.
+- Bloqueio no servidor com regularização acessível e dados preservados. Controle começa desativado, sem alterar títulos, lojas ou permissões comerciais.
+- Atende somente à operação atual; não cadastra novos contratantes nem integra cobrança bancária automática.
 
 ### v1.35.4 · 2026-11-04 · Padronizar datas nas pendências, boletos e demais exibições
 

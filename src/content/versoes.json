@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.36.0",
+    "data": "2026-11-04",
+    "titulo": "Painel SaaS de contrato e cobranças para a operação atual",
+    "motivo": "Controlar a implantação e mensalidade da operação atual com autorização separada do administrador do ERP e suspensão por inadimplência.",
+    "novidades": [
+      "Painel SaaS acessível pelo login, exclusivo da conta proprietária autorizada; usuário master consulta a assinatura sem confirmar pagamentos.",
+      "Contrato, implantação parcelada, mensalidades por calendário, tolerância, avisos internos e histórico com confirmação manual de recebimento.",
+      "Bloqueio no servidor com regularização acessível e dados preservados. Controle começa desativado, sem alterar títulos, lojas ou permissões comerciais.",
+      "Atende somente à operação atual; não cadastra novos contratantes nem integra cobrança bancária automática."
+    ]
+  },
+  {
     "versao": "1.35.4",
     "data": "2026-11-04",
     "titulo": "Padronizar datas nas pendências, boletos e demais exibições",
