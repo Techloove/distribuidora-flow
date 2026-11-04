@@ -586,3 +586,63 @@ body {
     background-color: var(--muted);
   }
 }
+
+/* Títulos financeiros: colunas compactas sem cortar nomes, datas ou valores. */
+@media screen and (min-width: 640px) {
+  table[data-readable-table].titulos-list {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+    font-size: 0.75rem;
+  }
+  table[data-readable-table].titulos-list th,
+  table[data-readable-table].titulos-list td {
+    padding: 8px 5px;
+    line-height: 1.4;
+  }
+  table[data-readable-table].titulos-list th {
+    font-size: 0.65625rem;
+  }
+  table[data-readable-table].titulos-list td[data-column-kind="name"] {
+    width: 20%;
+    min-width: 7.5rem;
+    max-width: 15rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  table[data-readable-table].titulos-list td[data-label="Documento"] {
+    min-width: 3.5rem;
+    max-width: 6rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  table[data-readable-table].titulos-list
+    td:is([data-label="Valor"], [data-label="Pago"], [data-label="Saldo"], [data-label="Boleto"]) {
+    min-width: 0;
+  }
+  table[data-readable-table].titulos-list td[data-label="Boleto"] {
+    max-width: 7rem;
+  }
+  table[data-readable-table].titulos-list td[data-label="Boleto"] > span {
+    font-size: 0.6875rem;
+  }
+  table[data-readable-table].titulos-list td[data-label="Ações"] > div {
+    width: 5.25rem;
+    gap: 4px;
+  }
+  table[data-readable-table].titulos-list td[data-label="Ações"] button {
+    height: 28px;
+    padding: 4px 6px;
+    font-size: 0.6875rem;
+  }
+  table[data-readable-table].titulos-list th:last-child,
+  table[data-readable-table].titulos-list td[data-label="Ações"] {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--card);
+  }
+  table[data-readable-table].titulos-list th:last-child {
+    background: var(--muted);
+  }
+}

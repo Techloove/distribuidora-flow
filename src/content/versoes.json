@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.35.1",
+    "data": "2026-11-04",
+    "titulo": "Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis",
+    "motivo": "Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis",
+    "novidades": [
+      "Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis"
+    ]
+  },
+  {
     "versao": "1.35.0",
     "data": "2026-11-04",
     "titulo": "Amplia filtros de datas com semana, mês atual, mês anterior e navegação mensal em pedidos e demais listagens",

@@ -395,7 +395,7 @@ export function TitulosPage({
 
   return (
     <div className="space-y-4">
-      <div className="no-print grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="no-print grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
         <Card label="Em aberto" value={brl(totals.aberto)} />
         <Card label="Vencido" value={brl(totals.vencido)} tone />
         <Card label={isReceber ? "Recebido" : "Pago"} value={brl(totals.pago)} />
@@ -589,7 +589,7 @@ export function TitulosPage({
             Nenhum título neste filtro.
           </p>
         ) : (
-          <Table className="mobile-cards sm:min-w-[1100px] print:min-w-0 print:text-[10px]">
+          <Table className="mobile-cards titulos-list print:min-w-0 print:text-[10px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="no-print w-8" />
@@ -1120,7 +1120,7 @@ function Card({ label, value, tone }: { label: string; value: string; tone?: boo
     <article className="rounded-lg border border-border bg-card p-5">
       <p className="text-sm text-muted-foreground">{label}</p>
       <p
-        className={`mt-2 text-2xl font-semibold tracking-tight ${
+        className={`mt-2 whitespace-nowrap text-xl font-semibold tabular-nums tracking-tight ${
           tone ? "text-destructive" : "text-foreground"
         }`}
       >

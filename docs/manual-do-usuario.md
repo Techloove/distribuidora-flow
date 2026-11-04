@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.35.0 · 2026-11-04
+Versão 1.35.1 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -358,6 +358,7 @@ Cuidados:
 - Saldo bancário, caixa e resultado gerencial têm finalidades diferentes. Confira período e filtros antes de comparar relatórios.
 - O lançamento apenas cadastra os títulos; não movimenta banco/caixa e não representa pagamento ou recebimento. Confira os dados e escolha o banco ao confirmar a baixa.
 - Juros, multa e desconto são valores em reais, não percentuais. O saldo inicial da baixa já considera ajustes anteriores e valores recebidos/pagos. Não repita os encargos de uma baixa anterior; o valor confirmado deve ser positivo e não pode exceder o total atualizado.
+- Contas a receber e pagar usam uma tabela compacta no computador: nomes e documentos longos podem ocupar mais de uma linha, mas datas e valores ficam inteiros. Receber/Pagar e Opções permanecem à direita. Em telas estreitas, a rolagem interna continua disponível quando necessária; no celular, os títulos permanecem em cartões.
 
 ## Categorias e subcategorias financeiras
 
@@ -540,6 +541,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.35.1 · 2026-11-04 · Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis
+
+Motivo da atualização: Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis
+
+- Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis
 
 ### v1.35.0 · 2026-11-04 · Amplia filtros de datas com semana, mês atual, mês anterior e navegação mensal em pedidos e demais listagens
 

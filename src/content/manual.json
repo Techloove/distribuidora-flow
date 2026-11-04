@@ -428,7 +428,8 @@
       "Evite registrar o mesmo recebimento manualmente se ele já entrou por conciliação ou integração.",
       "Saldo bancário, caixa e resultado gerencial têm finalidades diferentes. Confira período e filtros antes de comparar relatórios.",
       "O lançamento apenas cadastra os títulos; não movimenta banco/caixa e não representa pagamento ou recebimento. Confira os dados e escolha o banco ao confirmar a baixa.",
-      "Juros, multa e desconto são valores em reais, não percentuais. O saldo inicial da baixa já considera ajustes anteriores e valores recebidos/pagos. Não repita os encargos de uma baixa anterior; o valor confirmado deve ser positivo e não pode exceder o total atualizado."
+      "Juros, multa e desconto são valores em reais, não percentuais. O saldo inicial da baixa já considera ajustes anteriores e valores recebidos/pagos. Não repita os encargos de uma baixa anterior; o valor confirmado deve ser positivo e não pode exceder o total atualizado.",
+      "Contas a receber e pagar usam uma tabela compacta no computador: nomes e documentos longos podem ocupar mais de uma linha, mas datas e valores ficam inteiros. Receber/Pagar e Opções permanecem à direita. Em telas estreitas, a rolagem interna continua disponível quando necessária; no celular, os títulos permanecem em cartões."
     ]
   },
   {
