@@ -1,6 +1,6 @@
 # Painel SaaS da operação atual
 
-**Situação:** versão 1.36.0 preparada e validada localmente, ainda não instalada nem publicada. A instalação no banco de produção aguarda autorização explícita após a revisão automática recusar o teste de DDL por risco de locks e alterações em políticas/funções/configuração do PostgREST. Nenhuma cobrança real foi criada e o ERP publicado permanece na versão anterior.
+**Situação:** migração e vínculo da conta proprietária instalados em produção em 04/11/2026, após autorização explícita do usuário. Versão da interface: 1.36.0. Controle desativado, acesso do ERP liberado, sem termos de mensalidade, parcelas de implantação ou eventos de pagamento cadastrados. A evidência de instalação está em `docs/auditorias/saas-330-instalacao.json`.
 
 Escopo: um contrato para a operação existente, sem migração de cadastros, novas empresas ou alteração de domínios. A tabela `empresas` da instalação estava vazia; os clientes, lojas e perfis existentes não foram recategorizados.
 
@@ -28,4 +28,6 @@ Teste principal: `node scripts/check-saas-330.cjs`. O teste usa Postgres descart
 
 Validação local concluída: 302 testes unitários, 74/74 suítes de negócio em PGlite, build, typecheck, verificações de superfície do cliente/servidor, SQL, datas, manual e versão. A interface real foi exercitada com Supabase simulado em 1366 e 390 pixels, incluindo formulário de revisão, proprietário, master bloqueado e usuário sem acesso ao contrato; não houve rolagem horizontal da página nem controles de pagamento para não proprietários.
 
-A conta proprietária está ativa e a rotina de limpeza possui o padrão necessário à adaptação, conforme preflight somente leitura. O cadastro de proprietário ainda será provisionado pelo SQL de instalação. O administrador da distribuidora não poderá desativar, excluir ou alterar o e-mail do perfil proprietário pelo ERP.
+A conta proprietária está ativa e a rotina de limpeza possui o padrão necessário à adaptação, conforme preflight somente leitura. O cadastro de proprietário foi provisionado pelo SQL de instalação. O administrador da distribuidora não poderá desativar, excluir ou alterar o e-mail do perfil proprietário pelo ERP.
+
+A comparação imediatamente antes/depois preservou integralmente as contagens e hashes de dez tabelas de negócio e acesso: pedidos, itens, contas a receber/pagar, clientes, boletos, comissões, movimentos de estoque, perfis e papéis. Foram validados em transações somente leitura os perfis proprietário, master e colaborador: todos mantêm o acesso normal ao ERP, apenas proprietário/master recebem dados do contrato e nenhum possui escrita direta nas tabelas SaaS. A configuração do hook foi conferida no papel authenticator e na configuração específica do banco. Nenhum teste com dívida fictícia ou bloqueio foi executado sobre a operação real.

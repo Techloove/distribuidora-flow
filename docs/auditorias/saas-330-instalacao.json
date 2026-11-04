@@ -1,0 +1,173 @@
+{
+  "data": "2026-11-04T20:08:26.745Z",
+  "estado": "instalado",
+  "antes": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_pagar",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 274,
+      "hash": "646bed198063ac99b6863858bde242fc"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 85,
+      "hash": "8e63b538fa1a90589d45ef99b2d121d8"
+    },
+    {
+      "tabela": "profiles",
+      "quantidade": 9,
+      "hash": "d842d745c643a48651465346bbaf8bfc"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    }
+  ],
+  "migracao_sha256": "1ac4f60d099acd9884d0ee285e92ab93ab4d4f91247c9b33e7e2f22fd7386d6f",
+  "depois": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_pagar",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 274,
+      "hash": "646bed198063ac99b6863858bde242fc"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 85,
+      "hash": "8e63b538fa1a90589d45ef99b2d121d8"
+    },
+    {
+      "tabela": "profiles",
+      "quantidade": 9,
+      "hash": "d842d745c643a48651465346bbaf8bfc"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    }
+  ],
+  "contrato": [
+    {
+      "controle_ativo": false,
+      "ativado_em": null,
+      "proprietarios": 1,
+      "termos": 0,
+      "implantacao": 0,
+      "eventos": 0,
+      "acesso_liberado": true
+    }
+  ],
+  "dados_erp_preservados": true,
+  "validacao_perfis": [
+    {
+      "perfil": "proprietario",
+      "status": {
+        "estado": "nao_configurado",
+        "master": false,
+        "bloqueado": false,
+        "vencimento": null,
+        "proprietario": true,
+        "controle_ativo": false,
+        "limite_regularizacao": null
+      },
+      "acesso_erp": true,
+      "painel_tem_contrato": true,
+      "escrita_direta_contrato": false
+    },
+    {
+      "perfil": "master",
+      "status": {
+        "estado": "nao_configurado",
+        "master": true,
+        "bloqueado": false,
+        "vencimento": null,
+        "proprietario": false,
+        "controle_ativo": false,
+        "limite_regularizacao": null
+      },
+      "acesso_erp": true,
+      "painel_tem_contrato": true,
+      "escrita_direta_contrato": false
+    },
+    {
+      "perfil": "colaborador",
+      "status": {
+        "estado": "nao_configurado",
+        "master": false,
+        "bloqueado": false,
+        "vencimento": null,
+        "proprietario": false,
+        "controle_ativo": false,
+        "limite_regularizacao": null
+      },
+      "acesso_erp": true,
+      "painel_tem_contrato": false,
+      "escrita_direta_contrato": false
+    }
+  ],
+  "hook_configuracoes": [
+    {
+      "configuracoes_corretas": 2
+    }
+  ]
+}
