@@ -125,7 +125,8 @@
       "Produto com saldo ou reserva não deve ser reclassificado para outra loja por edição da categoria. Solicite a conciliação ao administrador.",
       "Estoque total do produto no cadastro não representa uma nova quantidade a somar aos depósitos. Consulte o saldo da loja em Estoque.",
       "Dados fiscais e CNPJ precisam ser conferidos pelo responsável da empresa.",
-      "Alterar o preço normal não reescreve itens de pedidos ou vendas já gravados. Revise os itens de pedidos em digitação pelo fluxo comercial quando precisar atualizar uma proposta."
+      "Alterar o preço normal não reescreve itens de pedidos ou vendas já gravados. Revise os itens de pedidos em digitação pelo fluxo comercial quando precisar atualizar uma proposta.",
+      "No cadastro de Produtos, representantes sem o papel Administrador não visualizam custo de compra, custo médio, custos alternativos, margens internas nem markup. Os campos também não podem ser reativados pelo seletor de colunas e a leitura do servidor oculta esses valores. O histórico de compras do produto não é disponibilizado a esse perfil. Quem acumula Representante e Administrador mantém o acesso completo; Representante e Gestor não equivale a Administrador."
     ]
   },
   {

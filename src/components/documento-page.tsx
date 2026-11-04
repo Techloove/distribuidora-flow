@@ -187,7 +187,7 @@ export function DocumentoPage({
     queryFn: async () => {
       return lerPaginas<Row>((inicio, fim) =>
         client!
-          .from("produtos")
+          .from("produtos_consulta_324")
           .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
           .order("descricao")
           .order("id")

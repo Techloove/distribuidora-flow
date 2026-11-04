@@ -1,3 +1,4 @@
+import { tabelaLeituraCadastro } from "@/lib/produtos-acesso";
 import { dataBr as dataPadrao } from "@/lib/formatacao";
 import { correspondeBuscaSelecao } from "@/lib/busca-selecao";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -285,7 +286,7 @@ export function CrudPage({
   defaultValues?: Record<string, string | boolean>;
 }) {
   const isUpperField = (f: CrudField) => !f.type || f.type === "text";
-  const { client, user, canManage } = useSupabase();
+  const { client, user, canManage, roles } = useSupabase();
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const effectiveReadOnly = readOnly === true;
@@ -312,14 +313,27 @@ export function CrudPage({
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
 
   const query = useQuery({
-    queryKey: [...(readAll ? [table, "lista-completa"] : [table]), getModalidade()],
+    queryKey: [
+      ...(readAll ? [table, "lista-completa"] : [table]),
+      user?.id,
+      roles.join(","),
+      getModalidade(),
+    ],
     enabled: !!client,
     queryFn: async () => {
       if (readAll)
         return lerPaginas<Row>((inicio, fim) =>
-          client!.from(table).select("*").order(orderBy).order("id").range(inicio, fim),
+          client!
+            .from(tabelaLeituraCadastro(table))
+            .select("*")
+            .order(orderBy)
+            .order("id")
+            .range(inicio, fim),
         );
-      const { data, error } = await client!.from(table).select("*").order(orderBy);
+      const { data, error } = await client!
+        .from(tabelaLeituraCadastro(table))
+        .select("*")
+        .order(orderBy);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },
@@ -414,7 +428,7 @@ export function CrudPage({
     enabled: !!client && !!initialEditId,
     queryFn: async () => {
       const { data, error } = await client!
-        .from(table)
+        .from(tabelaLeituraCadastro(table))
         .select("*")
         .eq("id", initialEditId!)
         .maybeSingle();

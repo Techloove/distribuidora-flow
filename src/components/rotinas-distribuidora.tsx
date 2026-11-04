@@ -66,13 +66,23 @@ export function MargemPedido({ pedido }: { pedido: Registro }) {
     queryFn: async () => {
       const { data, error } = await client!
         .from("pedido_itens")
-        .select(
-          "id,quantidade,total,custo_unitario_base,produtos(descricao,custo_medio,preco_custo,ultimo_custo)",
-        )
+        .select("id,produto_id,quantidade,total,custo_unitario_base,produtos(descricao)")
         .eq("pedido_id", pedido["id"])
         .abortSignal(AbortSignal.timeout(15000));
       if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as Registro[];
+      const rows = (data ?? []) as unknown as Registro[];
+      const ids = [...new Set(rows.map((r) => String(r["produto_id"])))];
+      if (!ids.length) return rows;
+      const custos = await client!
+        .from("produtos_consulta_324")
+        .select("id,descricao,custo_medio,preco_custo,ultimo_custo")
+        .in("id", ids);
+      if (custos.error) throw new Error(custos.error.message);
+      const mapa = new Map((custos.data ?? []).map((p) => [String(p.id), p]));
+      return rows.map<Registro>((r) => ({
+        ...r,
+        produtos: mapa.get(String(r["produto_id"])) ?? r["produtos"],
+      }));
     },
   });
   const rpc = useRotinaRpc(["vw_margem_pedido_209", "pedidos"]);

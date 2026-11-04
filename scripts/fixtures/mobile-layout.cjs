@@ -268,3 +268,5 @@ if (process.env.MOBILE_ROLE === "representante") {
     meses: Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, valor: 1234567.89, pedidos: 100 })),
   };
 }
+// Projeção de leitura usada no cadastro e nas opções de produtos.
+module.exports.rows.produtos_consulta_324 = module.exports.rows.produtos;

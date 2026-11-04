@@ -28,7 +28,7 @@ export function ImportarCompraXml() {
       const [produtos, fornecedores] = await Promise.all([
         lerPaginas<Registro>((inicio, fim) =>
           client!
-            .from("produtos")
+            .from("produtos_consulta_324")
             .select("id,descricao,unidade")
             .eq("ativo", true)
             .order("descricao")

@@ -1,3 +1,4 @@
+import { podeVerCustosProduto, CAMPOS_CUSTO_PRODUTO } from "@/lib/produtos-acesso";
 import { lerPaginas } from "@/lib/paginacao";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes } from "lucide-react";
@@ -174,7 +175,8 @@ const fmtDate = (v: unknown) => {
 };
 
 function ProdutosPage() {
-  const { client, user } = useSupabase();
+  const { client, user, roles } = useSupabase();
+  const verCustos = podeVerCustosProduto(roles);
   const cv = useCentroValido();
 
   const vinculosLoja = useQuery({
@@ -306,7 +308,7 @@ function ProdutosPage() {
         readAll
         uppercase
         table="produtos"
-        fields={fields}
+        fields={verCustos ? fields : fields.filter((f) => !CAMPOS_CUSTO_PRODUTO.has(f.name))}
         formSections={[
           {
             id: "geral",
@@ -347,18 +349,18 @@ function ProdutosPage() {
             label: "Dados fiscais",
             fields: ["ncm", "cest", "ean", "origem_fiscal", "cfop", "cfop_interestadual"],
           },
-          { id: "historico", label: "Histórico", fields: [], extra: true },
+          ...(verCustos ? [{ id: "historico", label: "Histórico", fields: [], extra: true }] : []),
         ]}
         orderBy="descricao"
         emptyLabel="Nenhum produto cadastrado ainda."
         searchColumns={["codigo", "descricao", "categoria", "marca", "grupo"]}
         onFieldChange={recalcularPreco}
         decorate={decorate}
-        inlineEdit={["markup_percentual", "preco_venda"]}
+        inlineEdit={verCustos ? ["markup_percentual", "preco_venda"] : ["preco_venda"]}
         onInlineSave={onInlineSave}
-        extraForm={({ editing }) => (
-          <HistoricoProduto produtoId={editing ? String(editing["id"]) : null} />
-        )}
+        extraForm={({ editing }) =>
+          verCustos ? <HistoricoProduto produtoId={editing ? String(editing["id"]) : null} /> : null
+        }
       />
     </ErpLayout>
   );

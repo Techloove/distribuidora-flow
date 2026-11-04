@@ -170,7 +170,7 @@ function DevolucoesPage() {
     enabled: !!client,
     queryFn: async () => {
       const { data, error } = await client!
-        .from("produtos")
+        .from("produtos_consulta_324")
         .select("id, codigo, descricao, preco_venda")
         .order("descricao");
       if (error) throw new Error(error.message);

@@ -27,3 +27,4 @@
 
 - Ao entregar mudanças, revise as instruções da rotina no manual e o motivo/novidades da versão. `npm run check:manual` verifica cobertura das telas; o build também exige esse controle. Preserve as notas antigas e diferencie respostas simuladas de integrações operacionais.
 - Datas exibidas usam `dataBr` (DD/MM/AAAA) e competências mensais usam `mesBr` (MM/AAAA), de `src/lib/formatacao.ts`. Use `Input type="month"` para edição mensal em formato brasileiro. Preserve ISO nos valores enviados a filtros, banco e APIs; não use o texto formatado para ordenar, calcular ou comparar datas.
+- Leituras do cadastro completo de produtos usam `produtos_consulta_324` (ou `tabelaLeituraCadastro` em CrudPage). Custos/markup são ocultados para representante sem admin no servidor e na interface; não restaure SELECT sensível direto na tabela para contornar erros. Escrita administrativa e cálculos internos continuam na tabela base.

@@ -80,7 +80,7 @@ function EstoquePage() {
     queryFn: async () => {
       return await lerPaginas<Row>((inicio, fim) =>
         client!
-          .from("produtos")
+          .from("produtos_consulta_324")
           .select("id,codigo,descricao,unidade,estoque_atual,estoque_minimo,custo_medio")
           .order("id")
           .range(inicio, fim),

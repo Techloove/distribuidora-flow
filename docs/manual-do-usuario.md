@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.34.1 · 2026-11-03
+Versão 1.34.2 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -117,6 +117,7 @@ Cuidados:
 - Estoque total do produto no cadastro não representa uma nova quantidade a somar aos depósitos. Consulte o saldo da loja em Estoque.
 - Dados fiscais e CNPJ precisam ser conferidos pelo responsável da empresa.
 - Alterar o preço normal não reescreve itens de pedidos ou vendas já gravados. Revise os itens de pedidos em digitação pelo fluxo comercial quando precisar atualizar uma proposta.
+- No cadastro de Produtos, representantes sem o papel Administrador não visualizam custo de compra, custo médio, custos alternativos, margens internas nem markup. Os campos também não podem ser reativados pelo seletor de colunas e a leitura do servidor oculta esses valores. O histórico de compras do produto não é disponibilizado a esse perfil. Quem acumula Representante e Administrador mantém o acesso completo; Representante e Gestor não equivale a Administrador.
 
 ## Promoções, descontos e formas de pagamento
 
@@ -522,6 +523,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.34.2 · 2026-11-04 · Restringe custos e markup de produtos para representantes sem perfil administrador, inclusive nas consultas do servidor
+
+Motivo da atualização: Restringe custos e markup de produtos para representantes sem perfil administrador, inclusive nas consultas do servidor
+
+- Restringe custos e markup de produtos para representantes sem perfil administrador, inclusive nas consultas do servidor
 
 ### v1.34.1 · 2026-11-03 · Padroniza datas em DD/MM/AAAA e competências em MM/AAAA nas telas, gráficos, filtros e impressões
 
