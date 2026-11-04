@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.35.2",
+    "data": "2026-11-04",
+    "titulo": "Preservar o custo histórico no fechamento de pedidos e no CPV",
+    "motivo": "O fechamento e o CPV usavam o custo atual do produto em vendas de estoque antigas, alterando a margem exibida após atualizar o cadastro.",
+    "novidades": [
+      "Fechamento prioriza o custo histórico gravado no item e preserva custo zero explícito. Itens de estoque sem histórico identificam estimativa; valores dependentes de custo ausente ficam indisponíveis.",
+      "CPV base e por modalidade corrigidos para priorizar o custo histórico, com proteção por perfil. Migração fase327 aplicada e conferida no banco.",
+      "Não reprocessa pedidos, parcelas, recebimentos, boletos nem comissões; somente a leitura de rentabilidade é corrigida."
+    ]
+  },
+  {
     "versao": "1.35.1",
     "data": "2026-11-04",
     "titulo": "Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis",

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.35.1 · 2026-11-04
+Versão 1.35.2 · 2026-11-04
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -182,6 +182,7 @@ Cuidados:
 - Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.
 - Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
 - O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.
+- No fechamento, o custo gravado no item prevalece sobre o cadastro atual do produto, inclusive quando for zero. Alterar o custo do produto não muda a rentabilidade histórica de vendas com custo preservado. Para itens de estoque sem custo histórico, o sistema usa o primeiro custo positivo disponível no cadastro e identifica a estimativa; se faltar custo, os resultados dependentes dele ficam indisponíveis. A DRE/CPV usa a mesma prioridade de custo histórico. Essa correção de leitura não altera valores de parcelas ou comissões. Representantes sem Administrador não visualizam o painel de custos e rentabilidade.
 
 ## Vender por intermediação com preço de fábrica vigente
 
@@ -541,6 +542,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.35.2 · 2026-11-04 · Preservar o custo histórico no fechamento de pedidos e no CPV
+
+Motivo da atualização: O fechamento e o CPV usavam o custo atual do produto em vendas de estoque antigas, alterando a margem exibida após atualizar o cadastro.
+
+- Fechamento prioriza o custo histórico gravado no item e preserva custo zero explícito. Itens de estoque sem histórico identificam estimativa; valores dependentes de custo ausente ficam indisponíveis.
+- CPV base e por modalidade corrigidos para priorizar o custo histórico, com proteção por perfil. Migração fase327 aplicada e conferida no banco.
+- Não reprocessa pedidos, parcelas, recebimentos, boletos nem comissões; somente a leitura de rentabilidade é corrigida.
 
 ### v1.35.1 · 2026-11-04 · Compacta as tabelas de contas a receber e pagar para reduzir rolagem lateral, mantendo datas, valores e ações legíveis
 

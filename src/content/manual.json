@@ -215,7 +215,8 @@
       "Os produtos e suas reservas pertencem à loja do pedido. A venda não usa o estoque de outra loja.",
       "Após conferência/faturamento, a edição de itens pode estar bloqueada. Trate alterações pelo fluxo apropriado.",
       "Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.",
-      "O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador."
+      "O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.",
+      "No fechamento, o custo gravado no item prevalece sobre o cadastro atual do produto, inclusive quando for zero. Alterar o custo do produto não muda a rentabilidade histórica de vendas com custo preservado. Para itens de estoque sem custo histórico, o sistema usa o primeiro custo positivo disponível no cadastro e identifica a estimativa; se faltar custo, os resultados dependentes dele ficam indisponíveis. A DRE/CPV usa a mesma prioridade de custo histórico. Essa correção de leitura não altera valores de parcelas ou comissões. Representantes sem Administrador não visualizam o painel de custos e rentabilidade."
     ]
   },
   {

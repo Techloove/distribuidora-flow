@@ -1,0 +1,105 @@
+{
+  "data": "2026-11-04T13:56:21.406Z",
+  "antes": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 270,
+      "hash": "390249909c7bc5730f260f89fbab6db3"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 82,
+      "hash": "c50c9921b5594ec1767ace0374c0f465"
+    }
+  ],
+  "depois": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 270,
+      "hash": "390249909c7bc5730f260f89fbab6db3"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 82,
+      "hash": "c50c9921b5594ec1767ace0374c0f465"
+    }
+  ],
+  "dados_preservados": true,
+  "views_antes": [
+    {
+      "relname": "vw_cpv",
+      "reloptions": null,
+      "relacl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "definition": " SELECT p.data_pedido AS data,\n    p.centro_id,\n    sum(i.quantidade *\n        CASE\n            WHEN p.modalidade_venda = 'intermediacao'::text THEN COALESCE(i.custo_unitario_base, 0::numeric)\n            ELSE COALESCE(pr.custo_medio, pr.preco_custo, pr.ultimo_custo, 0::numeric)\n        END) AS custo\n   FROM pedidos p\n     JOIN pedido_itens i ON i.pedido_id = p.id\n     JOIN produtos_consulta_324 pr ON pr.id = i.produto_id\n  WHERE p.status <> ALL (ARRAY['rascunho'::text, 'cancelado'::text, 'recusado'::text])\n  GROUP BY p.data_pedido, p.centro_id;"
+    },
+    {
+      "relname": "vw_cpv_mod_300",
+      "reloptions": null,
+      "relacl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres,service_role=r/postgres}",
+      "definition": " SELECT p.data_pedido AS data,\n    p.centro_id,\n    sum(i.quantidade *\n        CASE\n            WHEN p.modalidade_venda = 'intermediacao'::text THEN COALESCE(i.custo_unitario_base, 0::numeric)\n            ELSE COALESCE(pr.custo_medio, pr.preco_custo, pr.ultimo_custo, 0::numeric)\n        END) AS custo\n   FROM pedidos_mod_300 p\n     JOIN pedido_itens_mod_300 i ON i.pedido_id = p.id\n     JOIN produtos_consulta_324 pr ON pr.id = i.produto_id\n  WHERE p.status <> ALL (ARRAY['rascunho'::text, 'cancelado'::text, 'recusado'::text])\n  GROUP BY p.data_pedido, p.centro_id;"
+    }
+  ],
+  "views_depois": [
+    {
+      "relname": "vw_cpv",
+      "reloptions": null,
+      "relacl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "definition": " SELECT p.data_pedido AS data,\n    p.centro_id,\n    sum(i.quantidade *\n        CASE\n            WHEN pode_ver_custos_produto_324() THEN\n            CASE\n                WHEN p.modalidade_venda = 'intermediacao'::text THEN COALESCE(i.custo_unitario_base, 0::numeric)\n                ELSE COALESCE(i.custo_unitario_base, NULLIF(pr.custo_medio, 0::numeric), NULLIF(pr.preco_custo, 0::numeric), NULLIF(pr.ultimo_custo, 0::numeric), 0::numeric)\n            END\n            ELSE NULL::numeric\n        END) AS custo\n   FROM pedidos p\n     JOIN pedido_itens i ON i.pedido_id = p.id\n     JOIN produtos_consulta_324 pr ON pr.id = i.produto_id\n  WHERE p.status <> ALL (ARRAY['rascunho'::text, 'cancelado'::text, 'recusado'::text])\n  GROUP BY p.data_pedido, p.centro_id;"
+    },
+    {
+      "relname": "vw_cpv_mod_300",
+      "reloptions": null,
+      "relacl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres,service_role=r/postgres}",
+      "definition": " SELECT p.data_pedido AS data,\n    p.centro_id,\n    sum(i.quantidade *\n        CASE\n            WHEN pode_ver_custos_produto_324() THEN\n            CASE\n                WHEN p.modalidade_venda = 'intermediacao'::text THEN COALESCE(i.custo_unitario_base, 0::numeric)\n                ELSE COALESCE(i.custo_unitario_base, NULLIF(pr.custo_medio, 0::numeric), NULLIF(pr.preco_custo, 0::numeric), NULLIF(pr.ultimo_custo, 0::numeric), 0::numeric)\n            END\n            ELSE NULL::numeric\n        END) AS custo\n   FROM pedidos_mod_300 p\n     JOIN pedido_itens_mod_300 i ON i.pedido_id = p.id\n     JOIN produtos_consulta_324 pr ON pr.id = i.produto_id\n  WHERE p.status <> ALL (ARRAY['rascunho'::text, 'cancelado'::text, 'recusado'::text])\n  GROUP BY p.data_pedido, p.centro_id;"
+    }
+  ],
+  "status": "aplicado",
+  "validacao": {
+    "data": "2026-11-04T13:59:27.845Z",
+    "cpv_admin_confere_custo_preservado": true,
+    "grupos_data_loja": 13,
+    "representante_sem_custos": true,
+    "grupos_cpv_representante": 11,
+    "grupos_modalidade_representante": 0
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "consulta": "with h as (select 'pedidos' tabela,count(*) quantidade,md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) hash from pedidos p union all select 'pedido_itens',count(*),md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) from pedido_itens p union all select 'contas_receber',count(*),md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) from contas_receber p union all select 'comissoes',count(*),md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) from comissoes p union all select 'boletos',count(*),md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) from boletos p union all select 'estoque_movimentos',count(*),md5(coalesce(jsonb_agg(to_jsonb(p) order by p.id)::text,'[]')) from estoque_movimentos p)select * from h order by tabela",
+  "data": "2026-11-04T13:52:16.295Z",
+  "tabelas": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 270,
+      "hash": "390249909c7bc5730f260f89fbab6db3"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 82,
+      "hash": "c50c9921b5594ec1767ace0374c0f465"
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 import { FiltroPeriodo } from "@/components/filtro-periodo";
 import { SearchSelect } from "@/components/ui/search-select";
 import { calcularItemCompra } from "@/lib/custo-compra";
+import { custoItemPedido } from "@/lib/custo-pedido";
+import { podeVerCustosProduto } from "@/lib/produtos-acesso";
 import { RetomarDataPedido } from "@/components/retomar-data-pedido";
 import { getModalidade } from "@/lib/modalidade-store";
 import {
@@ -189,7 +191,9 @@ export function DocumentoPage({
       return lerPaginas<Row>((inicio, fim) =>
         client!
           .from("produtos_consulta_324")
-          .select("id, codigo, descricao, preco_venda, custo_medio, estoque_atual, peso_kg")
+          .select(
+            "id, codigo, descricao, preco_venda, custo_medio, preco_custo, ultimo_custo, estoque_atual, peso_kg",
+          )
           .order("descricao")
           .order("id")
           .range(inicio, fim),
@@ -1301,16 +1305,20 @@ export function DocumentoPage({
       className="rounded-lg border border-border bg-card p-5"
       aria-label="Finalização do documento"
     >
-      {config.table === "pedidos" && (roles.includes("admin") || roles.includes("gestor"))
+      {config.table === "pedidos" &&
+      podeVerCustosProduto(roles) &&
+      (roles.includes("admin") || roles.includes("gestor"))
         ? (() => {
-            const custo = (itens.data ?? []).reduce((s, it) => {
+            const custos = (itens.data ?? []).map((it) => {
               const p = (produtos.data ?? []).find((x) => x["id"] === it["produto_id"]);
-              return (
-                s +
-                Number(it["quantidade"] ?? 0) *
-                  Number(inter ? (it["custo_unitario_base"] ?? 0) : (p?.["custo_medio"] ?? 0))
-              );
-            }, 0);
+              return {
+                ...custoItemPedido(it, p, inter),
+                quantidade: Number(it["quantidade"] ?? 0),
+              };
+            });
+            const semCusto = custos.some((c) => c.valor === null);
+            const estimado = custos.some((c) => c.estimado);
+            const custo = custos.reduce((s, c) => s + c.quantidade * (c.valor ?? 0), 0);
             const venda = Number(doc["total_liquido"] ?? 0);
             const comissao = Number(doc["comissao_valor"] ?? 0);
             const margemItens = (itens.data ?? []).reduce(
@@ -1333,11 +1341,19 @@ export function DocumentoPage({
               `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
             const cards: [string, string, boolean?][] = [
               ["Comissão", brl(comissao)],
-              ["Custo", brl(custo)],
-              [inter ? "Margem dos itens" : "Lucro bruto", brl(lucro), lucro < 0],
-              [inter ? "Resultado após ajustes" : "Lucro após comissão", brl(liquido), liquido < 0],
-              ["Markup", pct(markup), markup < 0],
-              ["Margem", pct(margem), margem < 0],
+              ["Custo", semCusto ? "—" : brl(custo)],
+              [
+                inter ? "Margem dos itens" : "Lucro bruto",
+                semCusto && !inter ? "—" : brl(lucro),
+                lucro < 0,
+              ],
+              [
+                inter ? "Resultado após ajustes" : "Lucro após comissão",
+                semCusto ? "—" : brl(liquido),
+                liquido < 0,
+              ],
+              ["Markup", semCusto ? "—" : pct(markup), markup < 0],
+              ["Margem", semCusto && !inter ? "—" : pct(margem), margem < 0],
             ];
             return (
               <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -1347,6 +1363,13 @@ export function DocumentoPage({
                     <p className={`text-sm font-semibold ${neg ? "text-destructive" : ""}`}>{v}</p>
                   </div>
                 ))}
+                {estimado && (
+                  <p className="col-span-full text-xs text-muted-foreground">
+                    {semCusto
+                      ? "Custo indisponível para um ou mais itens; resultado dependente do custo não calculado."
+                      : "Custo estimado pelo cadastro atual para itens sem custo histórico gravado."}
+                  </p>
+                )}
               </div>
             );
           })()
