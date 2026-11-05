@@ -410,9 +410,13 @@ export function ConsultaIe({
                 <Button size="sm" variant="outline" onClick={() => setResultado(null)}>
                   {diferente ? "Manter atual" : "Descartar consulta"}
                 </Button>
-                <Button size="sm" disabled={!selecionado} onClick={() => aplicar(selecionado!)}>
-                  {diferente ? "Atualizar" : "Usar estes dados fiscais"}
-                </Button>
+                {(!automatico ||
+                  !selecionado ||
+                  digitos(ieAtual) !== digitos(selecionado.inscricao)) && (
+                  <Button size="sm" disabled={!selecionado} onClick={() => aplicar(selecionado!)}>
+                    {diferente ? "Atualizar" : "Usar estes dados fiscais"}
+                  </Button>
+                )}
               </div>
             </div>
           )}

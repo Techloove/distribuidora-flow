@@ -184,18 +184,20 @@ export function ConsultaClienteRepresentante({
                   ? " · corresponde à IE informada"
                   : ""}
               </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={disabled}
-                onClick={() => {
-                  ultimaIe.current = doc;
-                  aplicarIe(doc, r.inscricao);
-                }}
-              >
-                Usar esta IE
-              </Button>
+              {normalizarIe(inscricao) !== normalizarIe(r.inscricao) && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={() => {
+                    ultimaIe.current = doc;
+                    aplicarIe(doc, r.inscricao);
+                  }}
+                >
+                  Usar esta IE
+                </Button>
+              )}
             </div>
           ))}
         </div>

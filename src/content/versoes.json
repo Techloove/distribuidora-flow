@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.2",
+    "data": "2026-11-05",
+    "titulo": "Ocultar ação de aplicar inscrição estadual já preenchida",
+    "motivo": "A inscrição estadual já preenchida automaticamente ainda exibia uma ação redundante para aplicar o mesmo valor.",
+    "novidades": [
+      "Nos cadastros de representante e na consulta automática administrativa, o botão de aplicar a IE fica oculto quando ela já corresponde ao campo preenchido. A conferência dos dados e a aplicação de um registro diferente continuam disponíveis."
+    ]
+  },
+  {
     "versao": "1.40.1",
     "data": "2026-11-05",
     "titulo": "Preenchimento automático de CNPJ e inscrição estadual nos cadastros",
