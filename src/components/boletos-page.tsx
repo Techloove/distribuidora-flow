@@ -48,6 +48,7 @@ import {
 import {
   alteracoesVencimentoConfirmadas,
   filtrarBoletos,
+  boletoVencido,
   dataBoleto,
   periodoBoletosInvalido,
   agruparTarifasApi,
@@ -68,6 +69,7 @@ const statusLabel: Record<string, string> = {
   pendente: "Pendente",
   em_processamento: "Em processamento",
   registrado: "Registrado",
+  vencido: "Vencido",
   liquidado: "Liquidado",
   baixado: "Baixado",
   cancelado: "Cancelado",
@@ -833,6 +835,11 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 ? "Cancelamento solicitado"
                                 : (statusLabel[st] ?? st)}
                             </span>
+                            {st !== "vencido" && boletoVencido(b) && (
+                              <span className="ml-1 inline-block rounded-full bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                                Vencido
+                              </span>
+                            )}
                             {["erro", "em_processamento"].includes(st) && b["erro"] ? (
                               <span className="block text-xs text-destructive">
                                 {String(b["erro"]).slice(0, 90)}

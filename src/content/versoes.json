@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.8",
+    "data": "2026-11-05",
+    "titulo": "Destacar boletos vencidos e não liquidados na listagem",
+    "motivo": "Um boleto consultado como vencido continuava aparecendo apenas como registrado, sem destaque de atraso.",
+    "novidades": [
+      "A listagem mostra a tag Vencido em boletos registrados e não liquidados com vencimento anterior ao dia atual de São Paulo ou retorno bancário de vencido. Pagos, baixados e cancelados não recebem a tag. O filtro de situação inclui Vencido, sem alterar o estado bancário nem movimentar o financeiro."
+    ]
+  },
+  {
     "versao": "1.40.7",
     "data": "2026-11-05",
     "titulo": "Conferir cadastro pendente antes de exigir rota no pedido",

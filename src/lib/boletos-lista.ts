@@ -1,3 +1,4 @@
+import { hojeSaoPaulo } from "./painel-trabalho";
 type Row = Record<string, unknown>;
 type Filtros = Record<string, string>;
 
@@ -8,6 +9,20 @@ export function dataBoleto(value: unknown): string {
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
     ? value
     : "";
+}
+
+/** Atraso é informação visual; não muda o estado bancário nem movimenta o financeiro. */
+export function boletoVencido(boleto: Row, hoje = hojeSaoPaulo()): boolean {
+  if (!["registrado", "vencido"].includes(String(boleto["status"]))) return false;
+  if (boleto["data_liquidacao"]) return false;
+  const retorno = boleto["retorno"];
+  const dados =
+    retorno && typeof retorno === "object" && !Array.isArray(retorno) ? (retorno as Row) : {};
+  const situacao = normalizar(dados["situacao"] ?? dados["situacaoBoleto"] ?? "");
+  if (/liquidad|baixad|cancelad|^pago$/.test(situacao)) return false;
+  if (/vencid/.test(situacao) || boleto["status"] === "vencido") return true;
+  const vencimento = dataBoleto(boleto["vencimento"]);
+  return !!vencimento && vencimento < hoje;
 }
 
 const periodos = [
@@ -32,7 +47,8 @@ export function filtrarBoletos(rows: Row[], f: Filtros, cliente: (id: unknown) =
   const termo = normalizar(f["busca"]).trim();
   return rows.filter((b) => {
     if (f["cliente"] && String(b["cliente_id"]) !== f["cliente"]) return false;
-    if (f["status"] && b["status"] !== f["status"]) return false;
+    if (f["status"] === "vencido" ? !boletoVencido(b) : f["status"] && b["status"] !== f["status"])
+      return false;
     for (const [campo, de, ate] of periodos) {
       if (!f[de] && !f[ate]) continue;
       const data = dataBoleto(b[campo]);

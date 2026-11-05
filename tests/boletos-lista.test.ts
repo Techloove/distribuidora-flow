@@ -147,3 +147,41 @@ test("tags mostram apenas vencimentos confirmados, em ordem e sem confundir soli
     alteracoesVencimentoConfirmadas({ alteracoes_vencimento: { estado: "confirmado" } }),
   ).toEqual([]);
 });
+
+test("tag de vencido respeita calendário e retorno, sem marcar boletos pagos ou cancelados", async () => {
+  const { boletoVencido } = await import("../src/lib/boletos-lista");
+  const boleto = { status: "registrado", vencimento: "2026-11-04" };
+  expect(boletoVencido(boleto, "2026-11-05")).toBe(true);
+  expect(boletoVencido({ ...boleto, vencimento: "2026-11-05" }, "2026-11-05")).toBe(false);
+  expect(boletoVencido({ ...boleto, vencimento: "2026-11-06" }, "2026-11-05")).toBe(false);
+  expect(
+    boletoVencido(
+      { ...boleto, vencimento: "2026-11-06", retorno: { situacao: "VENCIDO" } },
+      "2026-11-05",
+    ),
+  ).toBe(true);
+  for (const status of [
+    "liquidado",
+    "baixado",
+    "cancelado",
+    "erro",
+    "pendente",
+    "em_processamento",
+  ])
+    expect(boletoVencido({ ...boleto, status }, "2026-11-05")).toBe(false);
+  expect(boletoVencido({ ...boleto, data_liquidacao: "2026-11-04" }, "2026-11-05")).toBe(false);
+  expect(boletoVencido({ ...boleto, retorno: { situacao: "LIQUIDADO" } }, "2026-11-05")).toBe(
+    false,
+  );
+  expect(boletoVencido({ ...boleto, vencimento: "inválido" }, "2026-11-05")).toBe(false);
+  expect(
+    filtrarBoletos(
+      [
+        { ...boleto, id: "atrasado", vencimento: "2000-01-01" },
+        { ...boleto, id: "pago", status: "liquidado" },
+      ],
+      { status: "vencido" },
+      () => "",
+    ).map((b) => b["id"]),
+  ).toEqual(["atrasado"]);
+});
