@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.6",
+    "data": "2026-11-05",
+    "titulo": "Padronizar CPF e CNPJ na listagem do cadastro unificado",
+    "motivo": "Cadastros feitos pelo representante podiam armazenar o documento só com números e aparecer sem pontuação na listagem.",
+    "novidades": [
+      "CPF e CNPJ são exibidos com pontuação padrão no Cadastro Unificado e no painel de clientes pendentes, inclusive documentos já salvos sem máscara. A apresentação preserva zeros iniciais e não altera os documentos gravados no banco."
+    ]
+  },
+  {
     "versao": "1.40.5",
     "data": "2026-11-05",
     "titulo": "Abrir cadastro completo na revisão de clientes pendentes",

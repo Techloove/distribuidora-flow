@@ -1,3 +1,4 @@
+import { cpfCnpjBr } from "@/lib/formatacao";
 import { ConsultaClienteRepresentante } from "@/components/consulta-cliente-representante";
 import { preencherCadastroRepresentante } from "@/lib/consulta-cliente-representante";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -294,7 +295,7 @@ export function CreditosClientesPendentes() {
             >
               {p.razao_social}
             </Link>
-            <p className="text-xs text-muted-foreground">{p.cnpj_cpf}</p>
+            <p className="text-xs text-muted-foreground">{cpfCnpjBr(p.cnpj_cpf)}</p>
             {!p.rota_id && (
               <p className="text-xs text-amber-800">
                 Rota pendente: abra o cadastro para definir antes de liberar.

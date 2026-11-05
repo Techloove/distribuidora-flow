@@ -1,6 +1,6 @@
 import { ConsultaIe } from "@/components/consulta-ie";
 import { preencherCadastroAdministrativo } from "@/lib/consulta-cliente-representante";
-import { dataBr } from "@/lib/formatacao";
+import { dataBr, cpfCnpjBr } from "@/lib/formatacao";
 import { aproveitarCacheCadastral } from "@/lib/consulta-endereco";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -54,12 +54,7 @@ const CAMPOS: { name: keyof DadosCadastrais; label: string }[] = [
 
 const digitos = (v: string) => (v ?? "").replace(/\D+/g, "");
 
-const formatarDoc = (v: string) => {
-  const d = digitos(v);
-  if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-  if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-  return v;
-};
+const formatarDoc = cpfCnpjBr;
 
 /**
  * Consulta cadastral dentro do cadastro de clientes já existente.

@@ -1,3 +1,4 @@
+import { cpfCnpjBr } from "@/lib/formatacao";
 import { salvarRevisaoCadastroCliente } from "@/lib/revisao-cadastro-cliente";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
@@ -91,7 +92,13 @@ const fields: CrudField[] = [
       { value: "PF", label: "Pessoa física" },
     ],
   },
-  { name: "cnpj_cpf", label: "CNPJ / CPF", inTable: true, hiddenInForm: true },
+  {
+    name: "cnpj_cpf",
+    label: "CNPJ / CPF",
+    inTable: true,
+    hiddenInForm: true,
+    renderValue: (r) => cpfCnpjBr(r["cnpj_cpf"]),
+  },
   {
     name: "loja_pendente",
     label: "Cliente sem loja",

@@ -51,3 +51,15 @@ export function dataHoraBr(value: unknown): string {
       })
     : "—";
 }
+
+/** Pontuação de CPF/CNPJ apenas na apresentação, preservando zeros iniciais. */
+export function cpfCnpjBr(value: unknown): string {
+  const texto = String(value ?? "").trim();
+  const digitos = texto.replace(/[^0-9]/g, "");
+  if (!/^[0-9./\s-]*$/.test(texto)) return texto || "—";
+  if (digitos.length === 14)
+    return digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+  if (digitos.length === 11)
+    return digitos.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+  return texto || "—";
+}
