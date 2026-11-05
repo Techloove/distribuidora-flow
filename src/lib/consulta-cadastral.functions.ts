@@ -280,7 +280,7 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
   let naoEncontrado = 0;
   let melhor: Extract<ConsultaResultado, { ok: true }> | null = null;
   // A chave fica somente no servidor. Consulta autenticada apenas se as fontes
-  // gratuitas falharem ou não trouxerem logradouro/número, sem pedir nova chave.
+  // gratuitas falharem ou não trouxerem endereço/nome fantasia, sem pedir nova chave.
   const key = process.env["CNPJA_API_KEY"]?.trim();
   const provedores: Provedor[] = [
     ...PROVEDORES_CNPJ,
@@ -336,7 +336,15 @@ async function consultarCnpj(doc: string): Promise<ConsultaResultado> {
           dados: endereco,
         });
       }
-      if (melhor.dados.logradouro && melhor.dados.numero) return melhor;
+      if (!melhor.dados.nome_fantasia?.trim() && dados.nome_fantasia?.trim()) {
+        melhor = {
+          ...melhor,
+          provedor: `${melhor.provedor} + ${p.nome} (nome fantasia)`,
+          dados: { ...melhor.dados, nome_fantasia: dados.nome_fantasia },
+        };
+      }
+      if (melhor.dados.logradouro && melhor.dados.numero && melhor.dados.nome_fantasia?.trim())
+        return melhor;
     } catch {
       /* tenta o próximo provedor */
     }

@@ -284,6 +284,18 @@ export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
         }
 
         const j = (await res.json()) as Record<string, unknown>;
+        const cnpjRetornado = j["taxId"] ?? j["cnpj"];
+        if (cnpjRetornado != null && digitos(String(cnpjRetornado)) !== doc) {
+          ultimoErro = {
+            ok: false,
+            documento: doc,
+            codigo: "incompleto",
+            mensagem:
+              "A fonte retornou dados de outro CNPJ. Os dados cadastrados foram preservados.",
+          };
+          continue;
+        }
+
         const { registros, uf, isento } = mapGenerico(j);
 
         if (registros.length === 0) {

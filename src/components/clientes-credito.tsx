@@ -137,9 +137,10 @@ export function CadastrarClienteRepresentante() {
                   return { ...f, ...patch };
                 })
               }
-              aplicarIe={(documento, inscricao) =>
+              aplicarIe={(documento, inscricao, somenteVazio) =>
                 setForm((f) => {
                   if ((f["cnpj_cpf"] ?? "").replace(/\D/g, "") !== documento) return f;
+                  if (somenteVazio && (f["inscricao_estadual"] ?? "").trim()) return f;
                   preenchidosConsulta.current["inscricao_estadual"] = inscricao;
                   return { ...f, inscricao_estadual: inscricao };
                 })

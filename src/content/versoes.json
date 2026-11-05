@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.40.1",
+    "data": "2026-11-05",
+    "titulo": "Preenchimento automático de CNPJ e inscrição estadual nos cadastros",
+    "motivo": "Simplificar o cadastro de empresas por representantes e administradores e complementar nome fantasia ausente nas consultas.",
+    "novidades": [
+      "Quando falta nome fantasia, a consulta tenta as demais fontes configuradas para o mesmo CNPJ e complementa esse campo sem substituir o endereço já encontrado.",
+      "O formulário do representante informa quando as fontes não retornam nome fantasia e permite preenchimento manual. Dados digitados continuam preservados; razão social não é usada como nome fantasia fictício.",
+      "Novos cadastros de representantes e administradores consultam CNPJ e inscrição estadual automaticamente. A IE é preenchida quando existe um registro compatível com o CNPJ e a UF do estabelecimento; dados manuais são preservados e respostas de outro documento são ignoradas."
+    ]
+  },
+  {
     "versao": "1.40.0",
     "data": "2026-11-05",
     "titulo": "Consulta cadastral e visibilidade da carteira do representante",

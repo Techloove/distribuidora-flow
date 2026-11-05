@@ -58,11 +58,19 @@ export function completarEndereco<
  */
 export function aproveitarCacheCadastral(
   tipo: string,
-  dados: { logradouro?: string | undefined; numero?: string | undefined },
+  dados: {
+    logradouro?: string | undefined;
+    numero?: string | undefined;
+    nome_fantasia?: string | undefined;
+  },
   consultadoEm: string,
   agora = Date.now(),
 ) {
-  if (tipo !== "PJ" || (dados.logradouro?.trim() && dados.numero?.trim())) return true;
+  if (
+    tipo !== "PJ" ||
+    (dados.logradouro?.trim() && dados.numero?.trim() && dados.nome_fantasia?.trim())
+  )
+    return true;
   const idade = agora - Date.parse(consultadoEm);
   return Number.isFinite(idade) && idade >= 0 && idade < 15 * 60_000;
 }

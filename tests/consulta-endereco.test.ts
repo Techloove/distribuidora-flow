@@ -107,7 +107,7 @@ test("cadastro PJ não reutiliza por 30 dias uma consulta antiga sem rua ou núm
   expect(
     aproveitarCacheCadastral(
       "PJ",
-      { logradouro: "AV RAFAEL VALLE DOS REIS", numero: "SN" },
+      { logradouro: "AV RAFAEL VALLE DOS REIS", numero: "SN", nome_fantasia: "Nome confirmado" },
       "2026-10-16T02:14:57Z",
       agora,
     ),
@@ -118,5 +118,13 @@ test("cadastro PJ não reutiliza por 30 dias uma consulta antiga sem rua ou núm
   expect(aproveitarCacheCadastral("PJ", {}, "2026-10-30T15:45:00Z", agora)).toBe(false);
   expect(aproveitarCacheCadastral("PJ", {}, "data inválida", agora)).toBe(false);
   expect(aproveitarCacheCadastral("PJ", {}, "2026-10-31T16:00:00Z", agora)).toBe(false);
+  expect(
+    aproveitarCacheCadastral(
+      "PJ",
+      { logradouro: "Rua", numero: "10" },
+      "2026-10-16T02:14:57Z",
+      agora,
+    ),
+  ).toBe(false);
   expect(aproveitarCacheCadastral("PF", {}, "2026-10-16T02:14:57Z", agora)).toBe(true);
 });

@@ -7,6 +7,7 @@ import {
   consultarInscricaoEstadual,
   type RegistroFiscal,
 } from "@/lib/inscricao-estadual.functions";
+import { inscricaoUnicaParaPreencher } from "@/lib/consulta-cliente-representante";
 import { Button } from "@/components/ui/button";
 const digitos = (v: string) => v.replace(/\D/g, "");
 const normalizarIe = (v: string) => v.toUpperCase().replace(/[^0-9A-Z]/g, "");
@@ -24,7 +25,7 @@ export function ConsultaClienteRepresentante({
   ativo: boolean;
   disabled: boolean;
   preencher: (documento: string, dados: object) => void;
-  aplicarIe: (documento: string, inscricao: string) => void;
+  aplicarIe: (documento: string, inscricao: string, somenteVazio?: boolean) => void;
   ocupado: (valor: boolean) => void;
 }) {
   const { session } = useSupabase();
@@ -57,7 +58,9 @@ export function ConsultaClienteRepresentante({
       if (!contexto.current.ativo || contexto.current.doc !== r.documento) return;
       preencher(r.documento, r.dados);
       setMensagem(
-        "Dados encontrados. Os campos vazios foram preenchidos; confira antes de cadastrar.",
+        r.dados.nome_fantasia?.trim()
+          ? "Dados encontrados. Os campos vazios foram preenchidos; confira antes de cadastrar."
+          : "Dados encontrados. As fontes consultadas não informaram nome fantasia; se souber, preencha esse campo manualmente. Os demais campos vazios foram preenchidos.",
       );
     },
     onError: (e: Error, cnpj) => {
@@ -82,6 +85,8 @@ export function ConsultaClienteRepresentante({
     },
     onSuccess: (r) => {
       if (!contexto.current.ativo || contexto.current.doc !== r.documento) return;
+      const automatica = inscricaoUnicaParaPreencher(r.registros, r.uf_estabelecimento);
+      if (automatica) aplicarIe(r.documento, automatica, true);
       setFiscal({
         doc: r.documento,
         registros: r.registros,
@@ -110,22 +115,14 @@ export function ConsultaClienteRepresentante({
     return () => clearTimeout(timer);
   }, [doc, ativo, disabled, buscarCnpj]);
   useEffect(() => {
-    const chave = `${doc}:${normalizarIe(inscricao)}`;
-    if (
-      !ativo ||
-      disabled ||
-      doc.length !== 14 ||
-      !normalizarIe(inscricao) ||
-      ultimaIe.current === chave
-    )
-      return;
+    if (!ativo || disabled || doc.length !== 14 || ultimaIe.current === doc) return;
     const timer = setTimeout(() => {
-      if (ultimaIe.current === chave) return;
-      ultimaIe.current = chave;
+      if (ultimaIe.current === doc) return;
+      ultimaIe.current = doc;
       buscarIe(doc);
-    }, 800);
+    }, 600);
     return () => clearTimeout(timer);
-  }, [doc, inscricao, ativo, disabled, buscarIe]);
+  }, [doc, ativo, disabled, buscarIe]);
   useEffect(() => {
     ocupado(buscar.isPending || ie.isPending);
     return () => ocupado(false);
@@ -140,8 +137,8 @@ export function ConsultaClienteRepresentante({
   return (
     <section className="space-y-2 rounded-xl border bg-muted/30 p-3 text-sm">
       <p>
-        Ao completar o CNPJ, o sistema busca os dados da empresa. A inscrição estadual é consultada
-        pelo CNPJ; confira o registro encontrado antes de usar.
+        Ao completar o CNPJ, o sistema busca os dados da empresa e preenche a inscrição estadual do
+        estabelecimento quando o campo estiver vazio. Confira os dados antes de cadastrar.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -163,7 +160,7 @@ export function ConsultaClienteRepresentante({
           variant="outline"
           disabled={disabled || doc.length !== 14 || ie.isPending}
           onClick={() => {
-            ultimaIe.current = `${doc}:${normalizarIe(inscricao)}`;
+            ultimaIe.current = doc;
             ie.mutate(doc);
           }}
         >
@@ -193,7 +190,7 @@ export function ConsultaClienteRepresentante({
                 variant="outline"
                 disabled={disabled}
                 onClick={() => {
-                  ultimaIe.current = `${doc}:${normalizarIe(r.inscricao)}`;
+                  ultimaIe.current = doc;
                   aplicarIe(doc, r.inscricao);
                 }}
               >

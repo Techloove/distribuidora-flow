@@ -26,6 +26,8 @@ let role = "representante",
   vinculado = true,
   rate = true;
 const externos = [];
+let cenarioFantasia = "normal";
+let ieCnpjDivergente = false;
 globalThis.fetch = async (input, init) => {
   const url = String(input);
   if (url.startsWith("https://supabase.example.test")) {
@@ -44,7 +46,7 @@ globalThis.fetch = async (input, init) => {
     return Response.json({
       cnpj: "11222333000181",
       razao_social: "Empresa exemplo",
-      nome_fantasia: "Exemplo",
+      nome_fantasia: cenarioFantasia === "normal" ? "Exemplo" : "",
       logradouro: "Rua de exemplo",
       numero: "10",
       bairro: "Centro",
@@ -54,8 +56,27 @@ globalThis.fetch = async (input, init) => {
       ddd_telefone_1: "2733334444",
       email: "contato@example.test",
     });
+  if (url.startsWith("https://minhareceita.org/")) {
+    if (cenarioFantasia === "alternativa" || cenarioFantasia === "cnpj-divergente")
+      return Response.json({
+        cnpj: cenarioFantasia === "cnpj-divergente" ? "19131243000197" : "11222333000181",
+        razao_social: "Empresa exemplo",
+        nome_fantasia: "Fantasia confirmada",
+        logradouro: "Rua alternativa",
+        numero: "99",
+        municipio: "Vitória",
+        uf: "ES",
+        cep: "29010000",
+      });
+    return new Response("{}", { status: 404 });
+  }
+  if (url.startsWith("https://open.cnpja.com/") || url.startsWith("https://receitaws.com.br/"))
+    return new Response("{}", { status: 404 });
   if (url.startsWith("https://ie.example.test/"))
-    return Response.json({ inscricoes: [{ inscricao: "123456789", uf: "ES", situacao: "ATIVA" }] });
+    return Response.json({
+      cnpj: ieCnpjDivergente ? "19131243000197" : "11222333000181",
+      inscricoes: [{ inscricao: "123456789", uf: "ES", situacao: "ATIVA" }],
+    });
   throw Error("Provedor inesperado: " + url);
 };
 const { consultarDocumento } = await import("../src/lib/consulta-cadastral.functions.ts");
@@ -93,6 +114,25 @@ assert.equal(externos.length, chamadas, "Negativas não chamam provedores");
 role = "admin";
 const admin = await consultarDocumento({ data: { ...data, cadastroRepresentante: false } });
 assert.equal(admin.ok, true);
+role = "representante";
+ieCnpjDivergente = true;
+assert.equal((await consultarInscricaoEstadual({ data })).ok, false);
+ieCnpjDivergente = false;
+cenarioFantasia = "alternativa";
+const alternativa = await consultarDocumento({ data });
+assert.equal(alternativa.ok, true);
+assert.equal(alternativa.dados.nome_fantasia, "Fantasia confirmada");
+assert.equal(alternativa.dados.logradouro, "Rua de exemplo");
+assert.equal(alternativa.dados.numero, "10");
+cenarioFantasia = "cnpj-divergente";
+const divergente = await consultarDocumento({ data });
+assert.equal(divergente.ok, true);
+assert.equal(divergente.dados.nome_fantasia, undefined);
+cenarioFantasia = "ausente";
+const ausente = await consultarDocumento({ data });
+assert.equal(ausente.ok, true);
+assert.equal(ausente.dados.nome_fantasia, undefined);
+assert.equal(ausente.dados.razao_social, "Empresa exemplo");
 console.log(
-  "Consulta337 OK: CNPJ e IE, permissão de cadastro, vínculo ativo, CPF recusado para representante, rate limit e caminho administrativo preservado; somente HTTP simulado.",
+  "Consulta337 OK: CNPJ e IE, permissão de cadastro, vínculo ativo, CPF recusado para representante, rate limit, nome fantasia alternativo sem trocar endereço ou aceitar outro CNPJ e caminho administrativo preservado; somente HTTP simulado.",
 );

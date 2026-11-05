@@ -1,9 +1,11 @@
+import { ConsultaIe } from "@/components/consulta-ie";
+import { preencherCadastroAdministrativo } from "@/lib/consulta-cliente-representante";
 import { dataBr } from "@/lib/formatacao";
 import { aproveitarCacheCadastral } from "@/lib/consulta-endereco";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -92,6 +94,16 @@ export function ConsultaCadastral({
   const documento = String(form["cnpj_cpf"] ?? "");
   const doc = digitos(documento);
   const editandoId = editing ? String(editing["id"]) : null;
+  const atual = useRef({ form, doc, editandoId, ativo: true });
+  atual.current = { form, doc, editandoId, ativo: true };
+  const ultimaAutomatica = useRef("");
+  const camposAutomaticos = useRef<Record<string, string>>({});
+  useEffect(() => {
+    atual.current.ativo = true;
+    return () => {
+      atual.current.ativo = false;
+    };
+  }, []);
   const rpcDocumento = escopo === "pessoas" ? "pessoa_por_documento" : "cliente_por_documento";
 
   /** Duplicidade: mesmo documento já cadastrado em outro registro. */
@@ -167,6 +179,8 @@ export function ConsultaCadastral({
         ) {
           await registrar("cache", String(cache["provedor"]), String(cache["tipo"]), null, true);
           return {
+            documento: doc,
+            registroId: editandoId,
             dados: (cache["dados"] ?? {}) as DadosCadastrais,
             provedor: String(cache["provedor"]),
             tipo: String(cache["tipo"]) as "PJ" | "PF",
@@ -202,6 +216,8 @@ export function ConsultaCadastral({
       await registrar("sucesso", res.provedor, res.tipo, null, false);
 
       return {
+        documento: doc,
+        registroId: editandoId,
         dados: res.dados,
         provedor: res.provedor,
         tipo: res.tipo,
@@ -210,6 +226,20 @@ export function ConsultaCadastral({
       };
     },
     onSuccess: (r) => {
+      if (
+        !atual.current.ativo ||
+        atual.current.doc !== r.documento ||
+        atual.current.editandoId !== r.registroId
+      )
+        return;
+      if (!r.registroId && r.tipo === "PJ") {
+        const valores = preencherCadastroAdministrativo(atual.current.form, r.documento, r.dados);
+        valores["cadastro_provedor"] = r.provedor;
+        valores["cadastro_consultado_em"] = r.consultadoEm;
+        valores["cadastro_atualizado_em"] = new Date().toISOString();
+        Object.assign(camposAutomaticos.current, valores);
+        patch(valores);
+      }
       setResultado(r);
       const mudou = CAMPOS.filter((c) => {
         const novo = String(r.dados[c.name] ?? "").trim();
@@ -225,6 +255,33 @@ export function ConsultaCadastral({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const tipoPessoa = String(form["tipo_pessoa"]);
+  const consultaAutomatica = buscar.mutate;
+  useEffect(() => {
+    if (
+      !canManage ||
+      editandoId ||
+      doc.length !== 14 ||
+      tipoPessoa === "PF" ||
+      ultimaAutomatica.current === doc
+    )
+      return;
+    const timer = setTimeout(() => {
+      if (ultimaAutomatica.current === doc) return;
+      ultimaAutomatica.current = doc;
+      consultaAutomatica(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [doc, editandoId, canManage, tipoPessoa, consultaAutomatica]);
+
+  function limparAutomaticos() {
+    const valores: Record<string, string> = {};
+    for (const [campo, valor] of Object.entries(camposAutomaticos.current))
+      if (String(form[campo] ?? "") === valor) valores[campo] = "";
+    camposAutomaticos.current = {};
+    return valores;
+  }
 
   function aplicar() {
     if (!resultado) return;
@@ -279,19 +336,40 @@ export function ConsultaCadastral({
       <div>
         <h3 className="text-sm font-semibold">Identificação do cliente</h3>
         <p className="text-xs text-muted-foreground">
-          Escolha o tipo de documento, informe o número e pesquise para preencher os dados
-          cadastrais. Limite de crédito, rota, tabela de preço e demais dados comerciais não são
-          alterados.
+          Ao completar o CNPJ em um novo cadastro, os dados cadastrais e a inscrição estadual são
+          consultados automaticamente. Confira os campos preenchidos antes de salvar. Limite de
+          crédito, rota e tabela de preço continuam sob definição administrativa.
         </p>
       </div>
 
+      {resultado && !resultado.dados.nome_fantasia?.trim() && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Nome fantasia não informado pelas fontes consultadas. Preencha manualmente se souber.
+        </p>
+      )}
+      {!editing && canManage && doc.length === 14 && (
+        <ConsultaIe
+          form={form}
+          editing={null}
+          escopo={escopo}
+          automatico
+          patch={(values) => {
+            Object.assign(camposAutomaticos.current, values);
+            patch(values);
+          }}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
           variant={tipo === "PJ" ? "default" : "outline"}
           onClick={() => {
             setResultado(null);
-            patch({ tipo_pessoa: "PJ", ...(tipo === "PF" ? { cnpj_cpf: "" } : {}) });
+            patch({
+              ...(tipo === "PF" ? limparAutomaticos() : {}),
+              tipo_pessoa: "PJ",
+              ...(tipo === "PF" ? { cnpj_cpf: "" } : {}),
+            });
           }}
         >
           CNPJ (pessoa jurídica)
@@ -301,7 +379,11 @@ export function ConsultaCadastral({
           variant={tipo === "PF" ? "default" : "outline"}
           onClick={() => {
             setResultado(null);
-            patch({ tipo_pessoa: "PF", ...(tipo === "PJ" ? { cnpj_cpf: "" } : {}) });
+            patch({
+              ...(tipo === "PJ" ? limparAutomaticos() : {}),
+              tipo_pessoa: "PF",
+              ...(tipo === "PJ" ? { cnpj_cpf: "" } : {}),
+            });
           }}
         >
           CPF (pessoa física)
@@ -319,14 +401,24 @@ export function ConsultaCadastral({
               value={documento}
               onChange={(e) => {
                 const d = digitos(e.target.value).slice(0, tamanhoEsperado);
-                patch({ cnpj_cpf: d.length === tamanhoEsperado ? formatarDoc(d) : d });
+                const limpar: Record<string, string> = {};
+                if (d !== doc) {
+                  for (const [campo, valor] of Object.entries(camposAutomaticos.current))
+                    if (String(form[campo] ?? "") === valor) limpar[campo] = "";
+                  camposAutomaticos.current = {};
+                  setResultado(null);
+                }
+                patch({ ...limpar, cnpj_cpf: d.length === tamanhoEsperado ? formatarDoc(d) : d });
               }}
             />
           </div>
           <Button
             size="sm"
             disabled={buscar.isPending || !canManage || !docCompleto}
-            onClick={() => buscar.mutate(false)}
+            onClick={() => {
+              ultimaAutomatica.current = doc;
+              buscar.mutate(false);
+            }}
           >
             {buscar.isPending ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -339,7 +431,10 @@ export function ConsultaCadastral({
             size="sm"
             variant="outline"
             disabled={buscar.isPending || !canManage || !docCompleto}
-            onClick={() => buscar.mutate(true)}
+            onClick={() => {
+              ultimaAutomatica.current = doc;
+              buscar.mutate(true);
+            }}
           >
             <RefreshCw className="size-3.5" /> Consultar novamente
           </Button>

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Receipt, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { registroIeDoEstabelecimento } from "@/lib/consulta-cliente-representante";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,11 +34,13 @@ export function ConsultaIe({
   editing,
   patch,
   escopo = "clientes",
+  automatico = false,
 }: {
   form: Record<string, string | boolean>;
   editing: Row | null;
   patch: (values: Record<string, string>) => void;
   escopo?: "clientes" | "pessoas";
+  automatico?: boolean;
 }) {
   const { client, session, canManage } = useSupabase();
   const queryClient = useQueryClient();
@@ -57,6 +60,15 @@ export function ConsultaIe({
   const editandoId = editing ? String(editing["id"]) : null;
   const pj = String(form["tipo_pessoa"] ?? "") !== "PF" && doc.length === 14;
 
+  const atual = useRef({ form, doc, editandoId, ativo: true });
+  atual.current = { form, doc, editandoId, ativo: true };
+  const ultimaAutomatica = useRef("");
+  useEffect(() => {
+    atual.current.ativo = true;
+    return () => {
+      atual.current.ativo = false;
+    };
+  }, []);
   const historico = useQuery({
     queryKey: ["consultas_log_ie", doc],
     enabled: !!client && doc.length === 14,
@@ -111,9 +123,13 @@ export function ConsultaIe({
           .maybeSingle();
         if (cache) {
           const d = (cache["dados"] ?? {}) as Record<string, unknown>;
-          const registros = (Array.isArray(d["registros"]) ? d["registros"] : []) as RegistroFiscal[];
+          const registros = (
+            Array.isArray(d["registros"]) ? d["registros"] : []
+          ) as RegistroFiscal[];
           await registrar("cache", String(cache["provedor"]), null, registros[0] ?? null, true);
           return {
+            documento: doc,
+            registroId: editandoId,
             registros,
             provedor: String(cache["provedor"]),
             ufEstabelecimento: d["uf_estabelecimento"] as string | undefined,
@@ -124,7 +140,12 @@ export function ConsultaIe({
         }
       }
 
-      const res = (await consultar({ data: { documento: doc, ...(session?.access_token ? { accessToken: session.access_token } : {}) } })) as ConsultaIeResultado;
+      const res = (await consultar({
+        data: {
+          documento: doc,
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
+        },
+      })) as ConsultaIeResultado;
       if (!res.ok) {
         await registrar(res.codigo, null, res.mensagem, null, false);
         throw new Error(res.mensagem);
@@ -155,6 +176,8 @@ export function ConsultaIe({
       );
 
       return {
+        documento: doc,
+        registroId: editandoId,
         registros: res.registros,
         provedor: res.provedor,
         ufEstabelecimento: res.uf_estabelecimento,
@@ -164,18 +187,60 @@ export function ConsultaIe({
       };
     },
     onSuccess: (r) => {
+      if (
+        !atual.current.ativo ||
+        atual.current.doc !== r.documento ||
+        atual.current.editandoId !== r.registroId
+      )
+        return;
+      const registro = registroIeDoEstabelecimento(
+        r.registros,
+        r.ufEstabelecimento || String(atual.current.form["uf"] ?? ""),
+      );
+      if (
+        automatico &&
+        !r.registroId &&
+        registro &&
+        !String(atual.current.form["inscricao_estadual"] ?? "").trim()
+      ) {
+        patch({
+          inscricao_estadual: registro.inscricao,
+          ...(registro.uf ? { uf_inscricao_estadual: registro.uf } : {}),
+          ...(registro.situacao ? { situacao_inscricao_estadual: registro.situacao } : {}),
+          ...(registro.contribuinte_icms
+            ? { indicador_contribuinte_icms: registro.contribuinte_icms }
+            : {}),
+          data_ultima_consulta_ie: r.consultadoEm,
+          ie_provedor: r.provedor,
+        });
+      }
       setResultado(r);
-      setEscolhido(r.registros[0]?.inscricao ?? null);
+      setEscolhido(registro?.inscricao ?? r.registros[0]?.inscricao ?? null);
       if (r.registros.length === 0) {
         toast.info(r.mensagem ?? "Inscrição Estadual não localizada para este CNPJ.");
       } else if (r.registros.length > 1) {
-        toast.success("Mais de um registro fiscal encontrado. Escolha o correto.");
+        toast.success("Confira o registro fiscal da UF do estabelecimento.");
       } else {
-        toast.success(r.doCache ? "Dados fiscais do cache da última consulta" : "Consulta realizada com sucesso");
+        toast.success(
+          r.doCache
+            ? "Dados fiscais do cache da última consulta"
+            : "Consulta realizada com sucesso",
+        );
       }
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const consultaAutomatica = buscar.mutate;
+  useEffect(() => {
+    if (!automatico || !canManage || editandoId || !pj || ultimaAutomatica.current === doc) return;
+    const timer = setTimeout(() => {
+      if (ultimaAutomatica.current === doc) return;
+      ultimaAutomatica.current = doc;
+      consultaAutomatica(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [automatico, canManage, editandoId, pj, doc, consultaAutomatica]);
 
   function aplicar(reg: RegistroFiscal) {
     const values: Record<string, string> = {
@@ -222,7 +287,10 @@ export function ConsultaIe({
             size="sm"
             variant="secondary"
             disabled={buscar.isPending || !canManage}
-            onClick={() => buscar.mutate(false)}
+            onClick={() => {
+              ultimaAutomatica.current = doc;
+              buscar.mutate(false);
+            }}
           >
             {buscar.isPending ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -235,7 +303,10 @@ export function ConsultaIe({
             size="sm"
             variant="outline"
             disabled={buscar.isPending || !canManage}
-            onClick={() => buscar.mutate(true)}
+            onClick={() => {
+              ultimaAutomatica.current = doc;
+              buscar.mutate(true);
+            }}
           >
             <RefreshCw className="size-3.5" /> Consultar novamente
           </Button>
@@ -283,7 +354,9 @@ export function ConsultaIe({
             Fonte: {resultado.provedor}
             {resultado.doCache ? " (cache)" : ""} · consultado em{" "}
             {new Date(resultado.consultadoEm).toLocaleString("pt-BR")}
-            {resultado.ufEstabelecimento ? ` · UF do estabelecimento: ${resultado.ufEstabelecimento}` : ""}
+            {resultado.ufEstabelecimento
+              ? ` · UF do estabelecimento: ${resultado.ufEstabelecimento}`
+              : ""}
           </p>
 
           {resultado.registros.length === 0 ? (
