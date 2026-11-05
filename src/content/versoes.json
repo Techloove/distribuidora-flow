@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.39.0",
+    "data": "2026-11-05",
+    "titulo": "Contratos SaaS com vigência, serviços em lista e faturas consolidadas",
+    "motivo": "Organizar assinatura, setup parcelado, hospedagem anual e outros serviços dentro da vigência do contrato, com faturas consultáveis pelo cliente.",
+    "novidades": [
+      "Configuração do contrato com início, fim e lista de serviços mensais, anuais, únicos ou parcelados. Prévia de todas as cobranças e validação de vencimentos antes de salvar.",
+      "Faturas agrupam serviços pelo mesmo vencimento, com detalhamento, total, pagamentos e saldo. Proprietário e master podem consultar e imprimir ou salvar PDF em Minha assinatura.",
+      "Histórico e cobranças anteriores preservados, sem duplicação ou alteração de parcelas vencidas ou com eventos. Pagamento permanece manual e separado do ERP; a instalação não cadastra serviços nem ativa bloqueio."
+    ]
+  },
+  {
     "versao": "1.38.0",
     "data": "2026-11-05",
     "titulo": "Permitir pedidos de novos clientes aguardando aprovação de cadastro",

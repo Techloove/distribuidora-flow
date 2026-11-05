@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.38.0 · 2026-11-05
+Versão 1.39.0 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -547,28 +547,36 @@ Cuidados:
 
 ## Contrato e assinatura da plataforma
 
-Implantação, mensalidade e regularização da empresa atual, separados do financeiro do ERP.
+Vigência, serviços e faturas da empresa atual, separados do financeiro do ERP.
 
 1. Na página de login, use Administração da plataforma · Painel SaaS. Entre com a conta proprietária autorizada. Administrador da distribuidora e proprietário da plataforma são permissões diferentes.
-2. No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, usuário master administrador, valor da implantação, parcelas, primeiro vencimento, mensalidade, início, dia de vencimento, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem.
+2. No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, usuário master administrador, início e fim da vigência, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem. Em Serviços do contrato, adicione linhas para Assinatura, Setup / implantação, Hospedagem, Domínio e Outros serviços.
 3. Confira as instruções de regularização e revise a configuração. Marque Ativar avisos e bloqueio automático somente quando os valores e vencimentos estiverem corretos. O controle começa desativado e nenhuma cobrança é criada no Contas a Receber da distribuidora.
 4. O usuário master consulta Minha assinatura e recebe avisos no sistema. Na suspensão, os usuários continuam com acesso à regularização; somente master e proprietário visualizam os valores e o histórico financeiro da assinatura.
 5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
 6. Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.
-7. Mensalidades surgem pelo calendário até o próximo mês, sem depender de acesso do proprietário. Dia 31 é ajustado ao último dia do mês quando necessário. Após a ativação ou o primeiro registro financeiro, mudanças de mensalidade ou dia só valem em mês futuro; os termos iniciais da implantação ficam preservados.
-8. Na lista Cobranças da plataforma, use Adicionar serviço para cobrar domínio, hospedagem, suporte, treinamento ou outra descrição. Informe valor, vencimento e observação, revise e confirme. O contrato precisa estar configurado. Os filtros separam mensalidades, implantação e serviços adicionais. Cada serviço é uma cobrança avulsa; não há renovação anual automática.
+7. Em cada serviço, informe descrição, valor, primeiro vencimento e cobrança Mensal, Anual, Uma vez ou Parcelado mensalmente. Para parcelamento, informe o valor total do serviço e o número de parcelas; nas demais opções, informe o valor de cada cobrança. Todos os vencimentos devem estar dentro da vigência. Datas no fim do mês são ajustadas sem mudar o dia das cobranças seguintes; a última parcela recebe a diferença de centavos.
+8. Clique Revisar serviços e faturas para conferir todas as cobranças da lista até o fim do contrato. Confirme para salvar. Faturas dos serviços reúne os itens com o mesmo vencimento; datas diferentes geram faturas separadas. O master acessa Minha assinatura, filtra o mês, usa Ver fatura e pode Imprimir / salvar PDF. Total, pagamentos confirmados e saldo excluem itens cancelados. A lista Cobranças da plataforma permite ao proprietário confirmar, cancelar ou reabrir cada item com motivo.
 
 Cuidados:
 
-- Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio.
+- Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio. Contratos anteriores continuam funcionando até adotar a lista; as cobranças antigas são preservadas. Nesse caso, os novos serviços precisam começar após o último vencimento anterior, e a vigência deve incluir todo o histórico preservado.
 - O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.
 - Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.
 - Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.
-- Serviços adicionais participam do saldo e das regras de tolerância/bloqueio quando o controle estiver ativo. O proprietário pode editar antes de haver histórico financeiro; depois, deve cancelar e lançar uma nova cobrança para corrigir valores ou datas. Pagamentos, reaberturas e cancelamentos usam as mesmas ações da lista. O master somente consulta.
+- Todos os serviços participam do saldo e da tolerância/bloqueio quando o controle estiver ativo. Cobranças vencidas ou com histórico financeiro não podem ser removidas, reprecificadas ou ter vencimento alterado pela configuração. Ajustes devem preservar esses registros. O master somente consulta. As faturas são demonstrativos dos serviços, com confirmação manual; não registram boletos ou Pix em banco. O fim do contrato encerra a geração prevista, sem renovar automaticamente a contratação.
 
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.39.0 · 2026-11-05 · Contratos SaaS com vigência, serviços em lista e faturas consolidadas
+
+Motivo da atualização: Organizar assinatura, setup parcelado, hospedagem anual e outros serviços dentro da vigência do contrato, com faturas consultáveis pelo cliente.
+
+- Configuração do contrato com início, fim e lista de serviços mensais, anuais, únicos ou parcelados. Prévia de todas as cobranças e validação de vencimentos antes de salvar.
+- Faturas agrupam serviços pelo mesmo vencimento, com detalhamento, total, pagamentos e saldo. Proprietário e master podem consultar e imprimir ou salvar PDF em Minha assinatura.
+- Histórico e cobranças anteriores preservados, sem duplicação ou alteração de parcelas vencidas ou com eventos. Pagamento permanece manual e separado do ERP; a instalação não cadastra serviços nem ativa bloqueio.
 
 ### v1.38.0 · 2026-11-05 · Permitir pedidos de novos clientes aguardando aprovação de cadastro
 

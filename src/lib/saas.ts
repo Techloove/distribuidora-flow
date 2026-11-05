@@ -9,6 +9,7 @@ export type SaasStatus = {
 };
 export type SaasParcela = {
   chave: string;
+  descricao?: string;
   tipo: string;
   competencia: string;
   parcela: number;
@@ -18,6 +19,9 @@ export type SaasParcela = {
   pagamento_data: string | null;
 };
 export type SaasContrato = {
+  inicio: string | null;
+  fim: string | null;
+  modelo_335: boolean;
   empresa: string;
   responsavel: string;
   contato: string;
@@ -38,6 +42,7 @@ export type SaasContrato = {
 export type SaasPainel = {
   status: SaasStatus;
   contrato?: SaasContrato;
+  itens_contrato?: SaasItemContrato[];
   mensagem?: string;
   termos?: { vigencia: string; valor: number; dia: number }[];
   parcelas?: SaasParcela[];
@@ -68,4 +73,26 @@ export const estadosSaas: Record<SaasStatus["estado"], string> = {
   a_vencer: "Próximo do vencimento",
   em_tolerancia: "Pagamento pendente · dentro da tolerância",
   bloqueado: "Acesso suspenso por pagamento pendente",
+};
+
+export type SaasItemContrato = {
+  id: string;
+  descricao: string;
+  tipo: string;
+  periodicidade: string;
+  valor: number;
+  primeiro_vencimento: string;
+  parcelas: number;
+  observacao: string;
+};
+export type SaasPreviaContrato = {
+  total: number;
+  parcelas: {
+    chave: string;
+    descricao: string;
+    tipo: string;
+    parcela: number;
+    vencimento: string;
+    valor: number;
+  }[];
 };

@@ -1,0 +1,425 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useSupabase } from "@/lib/supabase-provider";
+import { brl, dataBr } from "@/lib/formatacao";
+import { hojeSaoPaulo } from "@/lib/painel-trabalho";
+import { periodicidadesSaas, tiposServicoSaas } from "@/lib/faturas-saas";
+import type { SaasPainel, SaasPreviaContrato } from "@/lib/saas";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
+type Servico = {
+  id: string;
+  descricao: string;
+  tipo: string;
+  periodicidade: string;
+  valor: string;
+  primeiro_vencimento: string;
+  parcelas: number;
+  observacao: string;
+};
+const seletor = "h-10 w-full rounded-xl border bg-background px-3 text-sm";
+export function ConfigurarContratoSaas({
+  painel,
+  fechar,
+  salvo,
+}: {
+  painel: SaasPainel;
+  fechar: () => void;
+  salvo: () => Promise<void>;
+}) {
+  const { client } = useSupabase();
+  const c = painel.contrato!;
+  const hoje = hojeSaoPaulo();
+  const [form, setForm] = useState(() => ({
+    empresa: c.empresa,
+    responsavel: c.responsavel,
+    contato: c.contato,
+    plano: c.plano,
+    dominio: c.dominio,
+    master_id: c.master_id ?? "",
+    inicio: c.inicio ?? hoje,
+    fim: c.fim ?? "",
+    tolerancia: c.tolerancia,
+    aviso_dias: c.aviso_dias,
+    controle_ativo: c.controle_ativo,
+    instrucoes: c.instrucoes,
+  }));
+  const [servicos, setServicos] = useState<Servico[]>(() =>
+    (painel.itens_contrato ?? []).map((s) => ({ ...s, valor: String(s.valor) })),
+  );
+  const [previa, setPrevia] = useState<SaasPreviaContrato | null>(null);
+  const dados = () => ({
+    ...form,
+    servicos: servicos.map((s) => ({ ...s, valor: Number(s.valor) })),
+  });
+  const prever = useMutation({
+    mutationFn: async () => {
+      const r = await client!.rpc("saas_prever_contrato_335", { _dados: dados() });
+      if (r.error) throw new Error(r.error.message);
+      return r.data as SaasPreviaContrato;
+    },
+    onSuccess: setPrevia,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const r = await client!.rpc("saas_salvar_grade_335", {
+        _dados: dados(),
+        _revisao: c.revisao,
+      });
+      if (r.error) throw new Error(r.error.message);
+    },
+    onSuccess: async () => {
+      await salvo();
+      fechar();
+      toast.success("Contrato e serviços salvos. Faturas disponíveis em Minha assinatura.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const ocupado = prever.isPending || salvar.isPending;
+  const alterar = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+    setPrevia(null);
+    setForm((f) => ({ ...f, [key]: value }));
+  };
+  const alterarServico = (id: string, patch: Partial<Servico>) => {
+    setPrevia(null);
+    setServicos((ss) => ss.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+  const adicionar = (tipo: string) => {
+    setPrevia(null);
+    setServicos((ss) => [
+      ...ss,
+      {
+        id: crypto.randomUUID(),
+        tipo,
+        descricao: tiposServicoSaas[tipo] ?? "Serviço",
+        periodicidade:
+          tipo === "mensalidade"
+            ? "mensal"
+            : tipo === "implantacao"
+              ? "parcelado"
+              : tipo === "hospedagem" || tipo === "dominio"
+                ? "anual"
+                : "unica",
+        valor: "0",
+        primeiro_vencimento: form.inicio,
+        parcelas: 1,
+        observacao: "",
+      },
+    ]);
+  };
+  const campo = (
+    key: "empresa" | "responsavel" | "contato" | "plano" | "dominio" | "inicio" | "fim",
+    label: string,
+    type = "text",
+  ) => (
+    <div className="space-y-1">
+      <Label htmlFor={`contrato-${key}`}>{label}</Label>
+      <Input
+        id={`contrato-${key}`}
+        value={form[key]}
+        type={type}
+        required={["empresa", "inicio", "fim"].includes(key)}
+        onChange={(e) => alterar(key, e.target.value)}
+      />
+    </div>
+  );
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !ocupado) fechar();
+      }}
+    >
+      <DialogContent className="max-h-[94dvh] overflow-y-auto sm:max-w-6xl">
+        <DialogHeader>
+          <DialogTitle>Contrato e serviços da empresa</DialogTitle>
+          <DialogDescription>
+            Defina a vigência e os serviços cobrados da operação atual. Revise todos os vencimentos
+            antes de salvar.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (previa) salvar.mutate();
+            else prever.mutate();
+          }}
+        >
+          <fieldset disabled={ocupado} className="space-y-5">
+            <section className="grid gap-4 rounded-xl border bg-muted/20 p-4 sm:grid-cols-3">
+              {campo("empresa", "Empresa")}
+              {campo("plano", "Plano")}
+              {campo("dominio", "Domínio")}
+              {campo("responsavel", "Responsável")}
+              {campo("contato", "Contato para cobrança")}
+              <div className="space-y-1">
+                <Label htmlFor="contrato-master">Usuário master</Label>
+                <select
+                  id="contrato-master"
+                  className={seletor}
+                  required
+                  value={form.master_id}
+                  onChange={(e) => alterar("master_id", e.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {painel.masters?.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nome || m.email} · {m.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {campo("inicio", "Início do contrato", "date")}
+              {campo("fim", "Fim do contrato", "date")}
+            </section>
+            {!c.modelo_335 && !!painel.parcelas?.length && (
+              <p className="rounded-xl border bg-muted p-3 text-sm">
+                As cobranças anteriores serão preservadas. Para evitar duplicidade, os novos
+                serviços devem começar após o último vencimento já lançado (
+                {dataBr(painel.parcelas.at(-1)?.vencimento)}). A vigência deve incluir esses
+                vencimentos anteriores.
+              </p>
+            )}
+            <section className="space-y-3">
+              <div>
+                <h3 className="font-semibold">Serviços do contrato</h3>
+                <p className="text-sm text-muted-foreground">
+                  Valor por cobrança para mensal/anual; valor total para o parcelamento. Todos os
+                  vencimentos precisam caber no contrato. O último dia do mês é ajustado
+                  automaticamente.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(tiposServicoSaas).map(([tipo, label]) => (
+                  <Button
+                    key={tipo}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={servicos.length >= 50}
+                    onClick={() => adicionar(tipo)}
+                  >
+                    + {label}
+                  </Button>
+                ))}
+              </div>
+              {!servicos.length && (
+                <p className="rounded-xl border border-dashed p-5 text-sm">
+                  Adicione a assinatura, setup, hospedagem ou outros serviços cobrados desta
+                  empresa.
+                </p>
+              )}
+              {servicos.map((s, i) => (
+                <div key={s.id} className="space-y-3 rounded-xl border bg-muted/20 p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">
+                      {i + 1}. {tiposServicoSaas[s.tipo]}
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPrevia(null);
+                        setServicos((ss) => ss.filter((x) => x.id !== s.id));
+                      }}
+                    >
+                      Remover serviço {i + 1}
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.3fr_1fr_1.3fr_0.7fr]">
+                    <div>
+                      <Label htmlFor={`servico-descricao-${s.id}`}>Descrição</Label>
+                      <Input
+                        id={`servico-descricao-${s.id}`}
+                        required
+                        minLength={2}
+                        maxLength={160}
+                        value={s.descricao}
+                        onChange={(e) => alterarServico(s.id, { descricao: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`servico-frequencia-${s.id}`}>Cobrança</Label>
+                      <select
+                        id={`servico-frequencia-${s.id}`}
+                        className={seletor}
+                        value={s.periodicidade}
+                        onChange={(e) =>
+                          alterarServico(s.id, { periodicidade: e.target.value, parcelas: 1 })
+                        }
+                      >
+                        {Object.entries(periodicidadesSaas).map(([v, l]) => (
+                          <option key={v} value={v}>
+                            {l}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor={`servico-valor-${s.id}`}>
+                        {s.periodicidade === "parcelado" ? "Valor total (R$)" : "Valor (R$)"}
+                      </Label>
+                      <Input
+                        id={`servico-valor-${s.id}`}
+                        currency
+                        required
+                        value={s.valor}
+                        onChange={(e) => alterarServico(s.id, { valor: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`servico-data-${s.id}`}>Primeiro vencimento</Label>
+                      <Input
+                        id={`servico-data-${s.id}`}
+                        type="date"
+                        min={form.inicio}
+                        max={form.fim}
+                        required
+                        value={s.primeiro_vencimento}
+                        onChange={(e) =>
+                          alterarServico(s.id, { primeiro_vencimento: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`servico-parcelas-${s.id}`}>Parcelas</Label>
+                      <Input
+                        id={`servico-parcelas-${s.id}`}
+                        type="number"
+                        required
+                        min={1}
+                        max={120}
+                        disabled={s.periodicidade !== "parcelado"}
+                        value={s.parcelas}
+                        onChange={(e) => alterarServico(s.id, { parcelas: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor={`servico-observacao-${s.id}`}>Observação (opcional)</Label>
+                    <Input
+                      id={`servico-observacao-${s.id}`}
+                      maxLength={1000}
+                      value={s.observacao}
+                      onChange={(e) => alterarServico(s.id, { observacao: e.target.value })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </section>
+            <section className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="contrato-tolerancia">Dias de tolerância após vencer</Label>
+                <Input
+                  id="contrato-tolerancia"
+                  type="number"
+                  min={0}
+                  max={90}
+                  required
+                  value={form.tolerancia}
+                  onChange={(e) => alterar("tolerancia", Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="contrato-aviso">Avisar quantos dias antes</Label>
+                <Input
+                  id="contrato-aviso"
+                  type="number"
+                  min={0}
+                  max={60}
+                  required
+                  value={form.aviso_dias}
+                  onChange={(e) => alterar("aviso_dias", Number(e.target.value))}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="contrato-instrucoes">
+                  Instruções para pagamento e regularização
+                </Label>
+                <Textarea
+                  id="contrato-instrucoes"
+                  maxLength={4000}
+                  value={form.instrucoes}
+                  onChange={(e) => alterar("instrucoes", e.target.value)}
+                />
+              </div>
+              <label className="flex gap-3 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={form.controle_ativo}
+                  onChange={(e) => alterar("controle_ativo", e.target.checked)}
+                />
+                Ativar avisos e bloqueio após a tolerância. Desmarcado, o ERP continua liberado.
+              </label>
+            </section>
+          </fieldset>
+          {(prever.error || salvar.error) && (
+            <p role="alert" className="text-sm text-destructive">
+              {(prever.error || salvar.error)?.message}
+            </p>
+          )}
+          {previa && (
+            <section className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <h3 className="font-semibold">
+                Prévia do contrato: {previa.parcelas.length} cobrança(s) · {brl(previa.total)}
+              </h3>
+              <p className="text-sm">
+                Serviços com o mesmo vencimento compõem uma única fatura. Confira as datas e o total
+                do período. Se ativar o controle com vencimentos antigos, poderá haver bloqueio
+                imediato por inadimplência.
+              </p>
+              <div className="max-h-64 overflow-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr>
+                      <th>Serviço</th>
+                      <th>Parcela</th>
+                      <th>Vencimento</th>
+                      <th className="text-right">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previa.parcelas.map((p) => (
+                      <tr key={p.chave} className="border-t">
+                        <td className="py-2">{p.descricao}</td>
+                        <td>{p.parcela}</td>
+                        <td>{dataBr(p.vencimento)}</td>
+                        <td className="text-right">{brl(p.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" disabled={ocupado} onClick={fechar}>
+              Cancelar
+            </Button>
+            <Button disabled={ocupado || !servicos.length}>
+              {ocupado
+                ? "Aguarde…"
+                : previa
+                  ? "Confirmar e salvar contrato"
+                  : "Revisar serviços e faturas"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

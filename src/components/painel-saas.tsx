@@ -6,6 +6,9 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { brl, dataBr, mesBr, dataHoraBr } from "@/lib/formatacao";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { estadosSaas, type SaasPainel, type SaasParcela } from "@/lib/saas";
+import { ConfigurarContratoSaas } from "@/components/configurar-contrato-saas";
+import { FaturasSaas } from "@/components/faturas-saas";
+import { periodicidadesSaas } from "@/lib/faturas-saas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,12 +29,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type Form = Record<string, string | boolean>;
 export function PainelSaas({ administracao = false }: { administracao?: boolean }) {
   const { client, session, saas, loading, error, signOut } = useSupabase();
   const qc = useQueryClient();
-  const [form, setForm] = useState<Form | null>(null);
-  const [revisar, setRevisar] = useState(false);
+  const [configurar, setConfigurar] = useState(false);
   const [tipoCobranca, setTipoCobranca] = useState("todos");
   const [servico, setServico] = useState<{
     id: string;
@@ -66,23 +67,6 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
       qc.invalidateQueries({ queryKey: ["session-permissions"] }),
     ]);
   };
-  const salvar = useMutation({
-    mutationFn: async () => {
-      if (!form || !painel.data?.contrato) throw new Error("Atualize o contrato antes de salvar.");
-      const r = await client!.rpc("saas_salvar_contrato_330", {
-        _dados: form,
-        _revisao: Number(form["revisao"]),
-      });
-      if (r.error) throw new Error(r.error.message);
-    },
-    onSuccess: async () => {
-      setForm(null);
-      setRevisar(false);
-      await atualizar();
-      toast.success("Contrato atualizado.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   const salvarServico = useMutation({
     mutationFn: async () => {
       if (!servico) throw new Error("Informe o serviço.");
@@ -105,12 +89,14 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
     onError: (e: Error) => toast.error(e.message),
   });
   const nomeCobranca = (p: SaasParcela) =>
-    p.tipo === "servico"
-      ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === p.chave)?.descricao ??
-        "Serviço adicional")
-      : p.tipo === "implantacao"
-        ? `Implantação · parcela ${p.parcela}`
-        : "Mensalidade";
+    p.descricao
+      ? `${p.descricao} · parcela ${p.parcela}`
+      : p.tipo === "servico"
+        ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === p.chave)?.descricao ??
+          "Serviço adicional")
+        : p.tipo === "implantacao"
+          ? `Implantação · parcela ${p.parcela}`
+          : "Mensalidade";
   const abrirServico = (p?: SaasParcela) => {
     const s = p ? painel.data?.servicos?.find((x) => `servico:${x.id}` === p.chave) : undefined;
     setServico(
@@ -146,52 +132,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const abrirContrato = () => {
-    const c = painel.data?.contrato;
-    if (!c) return;
-    const termo = painel.data?.termos?.at(-1);
-    const hoje = hojeSaoPaulo();
-    const [a, m] = hoje.split("-").map(Number);
-    setForm({
-      revisao: String(c.revisao),
-      empresa: c.empresa,
-      responsavel: c.responsavel,
-      contato: c.contato,
-      plano: c.plano,
-      dominio: c.dominio,
-      master_id: c.master_id ?? "",
-      mensal_inicio: c.mensal_inicio ?? hoje,
-      mensalidade: String(termo?.valor ?? 0),
-      dia_vencimento: String(termo?.dia ?? Number(hoje.slice(8))),
-      vigencia_mensalidade: new Date(Date.UTC(a!, m!, 1)).toISOString().slice(0, 7),
-      setup_valor: String(c.setup_valor),
-      setup_parcelas: String(c.setup_parcelas),
-      setup_vencimento: c.setup_vencimento ?? hoje,
-      tolerancia: String(c.tolerancia),
-      aviso_dias: String(c.aviso_dias),
-      controle_ativo: c.controle_ativo,
-      instrucoes: c.instrucoes,
-    });
-    setRevisar(false);
-  };
-  const alterar = (campo: string, valor: string | boolean) => {
-    setRevisar(false);
-    setForm((f) => (f ? { ...f, [campo]: valor } : f));
-  };
-  const campo = (nome: string, rotulo: string, tipo = "text", desabilitado = false) => (
-    <div className="space-y-1">
-      <Label htmlFor={`saas-${nome}`}>{rotulo}</Label>
-      <Input
-        id={`saas-${nome}`}
-        type={tipo}
-        currency={nome === "mensalidade" || nome === "setup_valor"}
-        value={String(form?.[nome] ?? "")}
-        disabled={desabilitado || salvar.isPending}
-        onChange={(e) => alterar(nome, e.target.value)}
-        required={!["responsavel", "contato", "dominio"].includes(nome)}
-      />
-    </div>
-  );
+  const abrirContrato = () => setConfigurar(true);
   const estado = painel.data?.status ?? saas;
   const dono = !!saas?.proprietario;
   const parcelas = painel.data?.parcelas ?? [];
@@ -324,6 +265,38 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
               </p>
             )}
           </section>
+          {painel.data.contrato.modelo_335 && (
+            <section className={card}>
+              <h2 className="font-semibold">Serviços contratados</h2>
+              <p className="my-3 text-sm">
+                Vigência: {dataBr(painel.data.contrato.inicio)} a {dataBr(painel.data.contrato.fim)}
+              </p>
+              <div className="divide-y">
+                {painel.data.itens_contrato?.map((s) => (
+                  <div key={s.id} className="flex flex-wrap justify-between gap-3 py-3 text-sm">
+                    <div>
+                      <p className="font-medium">{s.descricao}</p>
+                      <p className="text-muted-foreground">
+                        {periodicidadesSaas[s.periodicidade]}
+                        {s.periodicidade === "parcelado" ? ` · ${s.parcelas} parcela(s)` : ""} ·
+                        primeiro vencimento {dataBr(s.primeiro_vencimento)}
+                      </p>
+                      {s.observacao && (
+                        <p className="text-xs text-muted-foreground">{s.observacao}</p>
+                      )}
+                    </div>
+                    <p className="font-semibold">
+                      {brl(s.valor)}
+                      <span className="block text-right text-xs font-normal text-muted-foreground">
+                        {s.periodicidade === "parcelado" ? "Total do serviço" : "Por cobrança"}
+                      </span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+          <FaturasSaas parcelas={parcelas} contrato={painel.data.contrato} />
           <section className="grid gap-3 sm:grid-cols-3">
             {[
               [
@@ -355,17 +328,12 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-semibold">Cobranças da plataforma</h2>
               {administracao && dono && (
-                <Button
-                  disabled={!painel.data.contrato.mensal_inicio}
-                  onClick={() => abrirServico()}
-                >
-                  Adicionar serviço
-                </Button>
+                <Button onClick={abrirContrato}>Configurar serviços</Button>
               )}
             </div>
-            {administracao && dono && !painel.data.contrato.mensal_inicio && (
+            {administracao && dono && !painel.data.contrato.modelo_335 && (
               <p className="mb-3 text-sm text-muted-foreground">
-                Configure o contrato antes de adicionar serviços.
+                Defina a vigência e a lista de serviços em Configurar contrato.
               </p>
             )}
             <div className="mb-4 flex flex-wrap gap-2">
@@ -373,7 +341,9 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                 ["todos", "Todas"],
                 ["mensalidade", "Mensalidades"],
                 ["implantacao", "Implantação"],
-                ["servico", "Serviços adicionais"],
+                ["servico", "Outros serviços"],
+                ["hospedagem", "Hospedagem"],
+                ["dominio", "Domínio"],
               ].map(([tipo, label]) => (
                 <Button
                   key={tipo}
@@ -386,10 +356,9 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
               ))}
             </div>
             <p className="mb-4 text-xs text-muted-foreground">
-              Mensalidades disponíveis até o próximo mês. Novas competências surgem automaticamente
-              pelo calendário. Serviços adicionais são cobranças avulsas, com descrição e vencimento
-              próprios. Todas seguem a tolerância do contrato e ficam separadas do financeiro da
-              distribuidora.
+              Consulte e registre o pagamento de cada item da fatura. A lista respeita a vigência e
+              os vencimentos configurados. Cobranças anteriores ficam preservadas. Os recebimentos
+              seguem separados do financeiro da distribuidora.
             </p>
             {parcelas.filter((p) => tipoCobranca === "todos" || p.tipo === tipoCobranca).length ? (
               <Table className="mobile-cards">
@@ -435,7 +404,8 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                         {administracao && dono && (
                           <TableCell>
                             <div className="flex max-w-[19rem] flex-wrap gap-2">
-                              {p.tipo === "servico" &&
+                              {!painel.data?.contrato?.modelo_335 &&
+                                p.tipo === "servico" &&
                                 painel.data?.servicos?.some(
                                   (s) => `servico:${s.id}` === p.chave && s.editavel,
                                 ) && (
@@ -502,7 +472,10 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                       : e.chave?.startsWith("servico:")
                         ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === e.chave)
                             ?.descricao ?? "Serviço adicional")
-                        : e.chave?.replace("setup:", "Implantação · parcela ")}
+                        : e.chave?.startsWith("contrato:")
+                          ? (parcelas.find((p) => p.chave === e.chave)?.descricao ??
+                            "Serviço do contrato")
+                          : e.chave?.replace("setup:", "Implantação · parcela ")}
                     {e.valor != null && ` · ${brl(e.valor)}`}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -514,141 +487,13 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
           </section>
         </>
       )}
-      <Dialog
-        open={!!form}
-        onOpenChange={(o) => {
-          if (!o && !salvar.isPending) setForm(null);
-        }}
-      >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Contrato da empresa atual</DialogTitle>
-            <DialogDescription>
-              O domínio é uma referência do contrato. Este painel ainda não cadastra outras empresas
-              nem altera domínios da aplicação.
-            </DialogDescription>
-          </DialogHeader>
-          {form && (
-            <form
-              className="space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (revisar) salvar.mutate();
-                else setRevisar(true);
-              }}
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
-                {campo("empresa", "Empresa")}
-                {campo("plano", "Plano")}
-                {campo("responsavel", "Responsável")}
-                {campo("contato", "Contato para cobrança")}
-                {campo("dominio", "Domínio atual")}
-                <div className="space-y-1">
-                  <Label htmlFor="saas-master">Usuário master da empresa</Label>
-                  <select
-                    id="saas-master"
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                    value={String(form["master_id"])}
-                    onChange={(e) => alterar("master_id", e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione o administrador</option>
-                    {painel.data?.masters?.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome || m.email} · {m.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {campo("mensalidade", "Mensalidade (R$)", "number")}
-                {campo("dia_vencimento", "Dia do vencimento (1 a 31)", "number")}
-                {campo(
-                  "mensal_inicio",
-                  "Início da cobrança mensal",
-                  "date",
-                  !!painel.data?.contrato?.ativado_em,
-                )}
-                {painel.data?.contrato?.ativado_em &&
-                  campo("vigencia_mensalidade", "Alteração de mensalidade a partir de", "month")}
-                {campo(
-                  "setup_valor",
-                  "Implantação total (R$)",
-                  "number",
-                  !!painel.data?.contrato?.ativado_em,
-                )}
-                {campo(
-                  "setup_parcelas",
-                  "Parcelas da implantação",
-                  "number",
-                  !!painel.data?.contrato?.ativado_em,
-                )}
-                {campo(
-                  "setup_vencimento",
-                  "Primeiro vencimento da implantação",
-                  "date",
-                  !!painel.data?.contrato?.ativado_em,
-                )}
-                {campo("tolerancia", "Dias de tolerância", "number")}
-                {campo("aviso_dias", "Avisar quantos dias antes", "number")}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Dias acima do último dia do mês são ajustados ao último dia. Após a ativação ou o
-                primeiro registro financeiro, os termos iniciais ficam preservados; uma nova
-                mensalidade ou dia só vale em mês futuro.
-              </p>
-              <div className="space-y-1">
-                <Label htmlFor="saas-instrucoes">Instruções de regularização</Label>
-                <Textarea
-                  id="saas-instrucoes"
-                  maxLength={4000}
-                  value={String(form["instrucoes"])}
-                  onChange={(e) => alterar("instrucoes", e.target.value)}
-                  placeholder="Contato e instruções para o responsável regularizar o pagamento"
-                />
-              </div>
-              <label className="flex items-start gap-3 rounded-xl border p-4 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form["controle_ativo"] === true}
-                  onChange={(e) => {
-                    alterar("controle_ativo", e.target.checked);
-                    setRevisar(false);
-                  }}
-                />
-                Ativar avisos e bloqueio automático após a tolerância. Desmarcado: o ERP continua
-                liberado.
-              </label>
-              {revisar && (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm"
-                >
-                  Confira valores, datas e tolerância. Ao ativar, cobranças já vencidas além da
-                  tolerância podem bloquear imediatamente o uso do ERP. A tela de regularização e
-                  este painel continuam disponíveis. Confirme para salvar.
-                </p>
-              )}
-              <div className="flex flex-wrap justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={salvar.isPending}
-                  onClick={() => setForm(null)}
-                >
-                  Cancelar
-                </Button>
-                <Button disabled={salvar.isPending}>
-                  {salvar.isPending
-                    ? "Salvando…"
-                    : revisar
-                      ? "Confirmar e salvar contrato"
-                      : "Revisar configuração"}
-                </Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      {configurar && painel.data?.contrato && (
+        <ConfigurarContratoSaas
+          painel={painel.data}
+          fechar={() => setConfigurar(false)}
+          salvo={atualizar}
+        />
+      )}
       <Dialog
         open={!!servico}
         onOpenChange={(o) => {
