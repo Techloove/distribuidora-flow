@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.5",
+    "data": "2026-11-05",
+    "titulo": "Abrir cadastro completo na revisão de clientes pendentes",
+    "motivo": "O botão de revisar cadastro abria apenas o limite, impedindo conferir todos os dados e definir a rota no mesmo fluxo.",
+    "novidades": [
+      "Revisar cadastro e liberar limite abre diretamente o cadastro completo do cliente escolhido, com todas as abas de revisão. O formulário isolado de limite foi removido; a liberação acontece ao salvar a revisão administrativa com rota e limite válidos."
+    ]
+  },
+  {
     "versao": "1.40.4",
     "data": "2026-11-05",
     "titulo": "Concluir aprovação do cliente ao salvar revisão administrativa",

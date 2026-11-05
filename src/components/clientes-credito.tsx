@@ -241,10 +241,7 @@ export function CadastrarClienteRepresentante() {
 
 export function CreditosClientesPendentes() {
   const { client, user } = useSupabase();
-  const qc = useQueryClient();
   const [pagina, setPagina] = useState(0);
-  const [alvo, setAlvo] = useState<{ id: string; razao_social: string } | null>(null);
-  const [limite, setLimite] = useState("");
   const q = useQuery({
     queryKey: ["clientes-credito-pendente", user?.id, pagina],
     enabled: !!client,
@@ -269,34 +266,6 @@ export function CreditosClientesPendentes() {
       };
     },
   });
-  const liberar = useMutation({
-    mutationFn: async () => {
-      const valor = Number(limite);
-      if (!alvo || !Number.isFinite(valor) || valor <= 0)
-        throw new Error("Informe um limite positivo.");
-      const r = await client!.rpc("liberar_credito_cliente_284", {
-        _pessoa: alvo.id,
-        _limite: valor,
-      });
-      if (r.error) throw new Error(r.error.message);
-    },
-    onSuccess: () => {
-      toast.success(
-        "Cadastro e limite liberados. Os pedidos continuam aguardando análise comercial.",
-      );
-      setPagina(0);
-      setAlvo(null);
-      setLimite("");
-      for (const key of [
-        ["clientes-credito-pendente"],
-        ["pessoas"],
-        ["clientes"],
-        ["painel-representante"],
-      ])
-        void qc.invalidateQueries({ queryKey: key });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   return (
     <section className="mb-5 space-y-3 rounded-xl border bg-card p-4">
       <h2 className="font-semibold">
@@ -305,7 +274,8 @@ export function CreditosClientesPendentes() {
       <p className="text-sm text-muted-foreground">
         Revise os cadastros feitos por representantes. Eles podem ter pedidos aguardando aprovação
         de cadastro. O limite permanece zero até a liberação. Apenas administradores podem definir o
-        valor.
+        valor. Abra o cadastro completo para conferir identificação, contato, endereço, rota e
+        limite antes de salvar.
       </p>
       {q.error && (
         <p role="alert" className="text-sm text-destructive">
@@ -331,14 +301,10 @@ export function CreditosClientesPendentes() {
               </p>
             )}
           </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setAlvo(p);
-              setLimite("");
-            }}
-          >
-            Revisar cadastro e liberar limite
+          <Button variant="outline" asChild>
+            <Link to="/pessoas" search={{ pessoa: p.id }} reloadDocument>
+              Revisar cadastro e liberar limite
+            </Link>
           </Button>
         </div>
       ))}
@@ -357,46 +323,6 @@ export function CreditosClientesPendentes() {
           </Button>
         </div>
       )}
-      <Dialog
-        open={!!alvo}
-        onOpenChange={(value) => {
-          if (!value && !liberar.isPending) setAlvo(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Aprovar cadastro e liberar limite</DialogTitle>
-            <DialogDescription>
-              {alvo?.razao_social}. Confira o cadastro antes de liberar. O valor ficará disponível
-              para as regras de crédito dos pedidos. Defina uma rota ativa no Cadastro Unificado
-              antes de confirmar esta liberação.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              liberar.mutate();
-            }}
-          >
-            <Label htmlFor="limite-cliente">Limite autorizado (R$)</Label>
-            <Input
-              id="limite-cliente"
-              currency
-              type="number"
-              min="0.01"
-              step="0.01"
-              required
-              value={limite}
-              disabled={liberar.isPending}
-              onChange={(e) => setLimite(e.target.value)}
-            />
-            <Button type="submit" disabled={liberar.isPending}>
-              {liberar.isPending ? "Liberando…" : "Confirmar limite e liberar cliente"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
