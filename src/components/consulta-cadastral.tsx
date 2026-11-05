@@ -342,23 +342,6 @@ export function ConsultaCadastral({
         </p>
       </div>
 
-      {resultado && !resultado.dados.nome_fantasia?.trim() && (
-        <p role="status" className="text-xs text-muted-foreground">
-          Nome fantasia não informado pelas fontes consultadas. Preencha manualmente se souber.
-        </p>
-      )}
-      {!editing && canManage && doc.length === 14 && (
-        <ConsultaIe
-          form={form}
-          editing={null}
-          escopo={escopo}
-          automatico
-          patch={(values) => {
-            Object.assign(camposAutomaticos.current, values);
-            patch(values);
-          }}
-        />
-      )}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -445,6 +428,23 @@ export function ConsultaCadastral({
         </p>
       )}
 
+      {resultado && !resultado.dados.nome_fantasia?.trim() && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Nome fantasia não informado pelas fontes consultadas. Preencha manualmente se souber.
+        </p>
+      )}
+      {!editing && canManage && doc.length === 14 && (
+        <ConsultaIe
+          form={form}
+          editing={null}
+          escopo={escopo}
+          automatico
+          patch={(values) => {
+            Object.assign(camposAutomaticos.current, values);
+            patch(values);
+          }}
+        />
+      )}
       {(duplicado.data ?? []).length > 0 ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
           <p className="font-medium text-destructive">Este documento já está cadastrado.</p>

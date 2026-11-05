@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.3",
+    "data": "2026-11-05",
+    "titulo": "Iniciar cadastro de cliente pelo CPF ou CNPJ",
+    "motivo": "Facilitar a consulta automática antes do preenchimento dos demais dados do cliente.",
+    "novidades": [
+      "CPF/CNPJ passa a ser o primeiro campo no cadastro do representante, antes das consultas e dos demais dados. Na identificação administrativa, o documento também aparece antes do resultado fiscal."
+    ]
+  },
+  {
     "versao": "1.40.2",
     "data": "2026-11-05",
     "titulo": "Ocultar ação de aplicar inscrição estadual já preenchida",

@@ -21,7 +21,6 @@ import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 
 const campos = [
   ["razao_social", "Razão social / Nome", true],
-  ["cnpj_cpf", "CPF / CNPJ", true],
   ["nome_fantasia", "Nome fantasia"],
   ["inscricao_estadual", "Inscrição estadual"],
   ["email", "E-mail"],
@@ -124,6 +123,19 @@ export function CadastrarClienteRepresentante() {
             }}
             className="space-y-4"
           >
+            <div className="space-y-1">
+              <Label htmlFor="novo-cliente-cnpj_cpf">CPF / CNPJ *</Label>
+              <Input
+                id="novo-cliente-cnpj_cpf"
+                inputMode="numeric"
+                required
+                maxLength={18}
+                placeholder="Comece informando o CPF ou CNPJ"
+                disabled={salvar.isPending}
+                value={form["cnpj_cpf"] ?? ""}
+                onChange={(e) => set("cnpj_cpf", e.target.value)}
+              />
+            </div>
             <ConsultaClienteRepresentante
               documento={form["cnpj_cpf"] ?? ""}
               inscricao={form["inscricao_estadual"] ?? ""}
