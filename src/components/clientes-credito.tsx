@@ -58,7 +58,7 @@ export function CadastrarClienteRepresentante() {
     },
     onSuccess: () => {
       toast.success(
-        "Cliente cadastrado na sua carteira. Aguarde o administrador liberar o limite.",
+        "Cliente cadastrado na sua carteira. Você já pode preparar e enviar pedidos para aprovação de cadastro.",
       );
       setAberto(false);
       setForm({});
@@ -79,8 +79,8 @@ export function CadastrarClienteRepresentante() {
       <h2 className="font-semibold">Novos clientes da minha carteira</h2>
       <p className="my-2 text-sm text-muted-foreground">
         Você pode cadastrar clientes nas suas lojas e rotas. O limite será definido pelo
-        administrador; até a liberação, o cliente fica bloqueado para aprovação e confirmação de
-        pedidos.
+        administrador. Você já pode preencher, imprimir e enviar pedidos para aprovação de cadastro;
+        a aprovação e confirmação da venda aguardam a liberação do cliente.
       </p>
       <Button onClick={() => setAberto(true)}>Cadastrar novo cliente</Button>
       <Dialog
@@ -225,7 +225,9 @@ export function CreditosClientesPendentes() {
       if (r.error) throw new Error(r.error.message);
     },
     onSuccess: () => {
-      toast.success("Limite liberado. Cliente disponível para pedidos.");
+      toast.success(
+        "Cadastro e limite liberados. Os pedidos continuam aguardando análise comercial.",
+      );
       setPagina(0);
       setAlvo(null);
       setLimite("");
@@ -242,11 +244,12 @@ export function CreditosClientesPendentes() {
   return (
     <section className="mb-5 space-y-3 rounded-xl border bg-card p-4">
       <h2 className="font-semibold">
-        Clientes aguardando liberação de limite{q.data ? ` · ${q.data.count}` : ""}
+        Clientes aguardando aprovação de cadastro e limite{q.data ? ` · ${q.data.count}` : ""}
       </h2>
       <p className="text-sm text-muted-foreground">
-        Cadastros feitos por representantes ficam com limite zero e bloqueados até esta liberação.
-        Apenas administradores podem definir o valor.
+        Revise os cadastros feitos por representantes. Eles podem ter pedidos aguardando aprovação
+        de cadastro. O limite permanece zero até a liberação. Apenas administradores podem definir o
+        valor.
       </p>
       {q.error && (
         <p role="alert" className="text-sm text-destructive">
@@ -274,7 +277,7 @@ export function CreditosClientesPendentes() {
               setLimite("");
             }}
           >
-            Definir limite e liberar
+            Revisar cadastro e liberar limite
           </Button>
         </div>
       ))}
@@ -301,7 +304,7 @@ export function CreditosClientesPendentes() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Liberar limite de crédito</DialogTitle>
+            <DialogTitle>Aprovar cadastro e liberar limite</DialogTitle>
             <DialogDescription>
               {alvo?.razao_social}. Confira o cadastro antes de liberar. O valor ficará disponível
               para as regras de crédito dos pedidos.

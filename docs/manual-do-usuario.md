@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.37.2 · 2026-11-05
+Versão 1.38.0 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -105,7 +105,7 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 6. No Cadastro unificado, abra o cliente e a aba Dados gerais para escolher o Vínculo de loja do cliente. Escolha Sem loja para um cadastro ainda pendente, uma loja pelo nome, ou Compartilhado entre lojas para atender pelas duas lojas atuais. Salve a alteração. Cliente Sem loja precisa ter esse vínculo definido antes de iniciar ou confirmar novos pedidos; pedidos e financeiros anteriores não são apagados nem recategorizados. Administrador e gestor podem revisar o vínculo, conforme suas permissões. O representante continua cadastrando na loja permitida e não ganha acesso para mudar esse vínculo.
 7. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
 8. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
-9. Clientes cadastrados pelo representante ficam com Crédito pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando liberação de limite, abre o cadastro para revisar e usa Definir limite e liberar. Informe um valor positivo e confirme.
+9. Clientes cadastrados pelo representante ficam com Cadastro / limite pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. O representante já pode montar e imprimir um pedido e usar Enviar para aprovação de cadastro. Na lista e no pedido aparece Aguardando aprovação de cadastro. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando aprovação de cadastro e limite, abre o cadastro para revisar e usa Revisar cadastro e liberar limite. Informe um valor positivo e confirme. A liberação do cadastro não confirma nem aprova os pedidos automaticamente: eles continuam na análise comercial.
 10. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
 11. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
 12. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
@@ -176,6 +176,7 @@ Da escolha do cliente à confirmação da venda.
 
 Cuidados:
 
+- Clientes novos cadastrados pelo representante podem ter pedidos preenchidos e impressos enquanto o cadastro aguarda revisão. Use Enviar para aprovação de cadastro para colocá-los em análise. Aprovar ou confirmar fica indisponível até um administrador liberar o cadastro e o limite em Cadastro Unificado, inclusive para quem tem perfil administrativo. Nenhuma saída de estoque, parcela ou comissão é gerada pelo simples envio. A aprovação do cadastro não substitui a análise comercial do pedido.
 - Representante sem perfil administrador não pode aprovar ou recusar pedidos. Se faltar estoque disponível na loja, pode imprimir e enviar para aprovação comercial; não pode confirmar a venda, mesmo quando o produto permite estoque negativo ou já recebeu aprovação. A gestão deve analisar e confirmar conforme suas permissões.
 - Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.
 - O administrador pode usar Cancelar pedido · administrador até a montagem da carga, antes da saída, descrevendo um motivo com pelo menos 10 caracteres. Reservas são liberadas e somente saídas de estoque já registradas são revertidas. Em etapas iniciais, títulos não recebidos e sem vínculos são excluídos com auditoria; títulos ligados a boletos e históricos financeiros são preservados como cancelados.
@@ -568,6 +569,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.38.0 · 2026-11-05 · Permitir pedidos de novos clientes aguardando aprovação de cadastro
+
+Motivo da atualização: Permitir montar e encaminhar pedidos de clientes novos da carteira enquanto o administrador revisa o cadastro e libera o limite.
+
+- Cliente pendente continua disponível para preencher e imprimir pedidos. Enviar para aprovação de cadastro coloca o pedido em análise, com o motivo visível na lista e no detalhe.
+- Cadastro Unificado identifica a fila de cadastro e limite pendentes. Somente administrador pode revisar e liberar; essa ação não aprova nem confirma pedidos automaticamente.
+- Servidor permite o envio para análise, mas impede aprovação e confirmação antes da liberação cadastral, sem gerar estoque, parcelas ou comissões. Carteira, loja, crédito e aprovação comercial continuam protegidos.
 
 ### v1.37.2 · 2026-11-05 · Impedir confirmação de pedidos sem estoque pelo representante e exigir análise comercial
 

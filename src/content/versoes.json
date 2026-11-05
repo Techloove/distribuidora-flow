@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.38.0",
+    "data": "2026-11-05",
+    "titulo": "Permitir pedidos de novos clientes aguardando aprovação de cadastro",
+    "motivo": "Permitir montar e encaminhar pedidos de clientes novos da carteira enquanto o administrador revisa o cadastro e libera o limite.",
+    "novidades": [
+      "Cliente pendente continua disponível para preencher e imprimir pedidos. Enviar para aprovação de cadastro coloca o pedido em análise, com o motivo visível na lista e no detalhe.",
+      "Cadastro Unificado identifica a fila de cadastro e limite pendentes. Somente administrador pode revisar e liberar; essa ação não aprova nem confirma pedidos automaticamente.",
+      "Servidor permite o envio para análise, mas impede aprovação e confirmação antes da liberação cadastral, sem gerar estoque, parcelas ou comissões. Carteira, loja, crédito e aprovação comercial continuam protegidos."
+    ]
+  },
+  {
     "versao": "1.37.2",
     "data": "2026-11-05",
     "titulo": "Impedir confirmação de pedidos sem estoque pelo representante e exigir análise comercial",

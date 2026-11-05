@@ -171,7 +171,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const columns =
         config.partnerTable === "clientes"
-          ? "id, codigo, razao_social, nome_fantasia, cnpj_cpf, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id"
+          ? "id, codigo, razao_social, nome_fantasia, cnpj_cpf, rota_id, centro_id, condicao_pagamento, limite_credito, representante_id, pessoa_id"
           : "id, codigo, razao_social, nome_fantasia, cnpj_cpf";
       return lerPaginas<Row>((inicio, fim) =>
         client!
@@ -184,6 +184,26 @@ export function DocumentoPage({
       );
     },
   });
+
+  const cadastrosPendentes = useQuery({
+    queryKey: ["pessoas", "cadastros-pendentes-pedido", user?.id, roles.slice().sort().join(",")],
+    enabled: !!client && config.partnerTable === "clientes",
+    refetchInterval: 30_000,
+    queryFn: () =>
+      lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("pessoas")
+          .select("id")
+          .eq("credito_pendente", true)
+          .order("id")
+          .range(inicio, fim)
+          .returns<Row[]>(),
+      ),
+  });
+  const clienteCadastroPendente = (id: unknown) => {
+    const pessoa = partners.data?.find((p) => p["id"] === id)?.["pessoa_id"];
+    return !!pessoa && !!cadastrosPendentes.data?.some((p) => p["id"] === pessoa);
+  };
 
   const produtos = useQuery({
     queryKey: [...["produtos", "options", "documentos"], getModalidade()],
@@ -489,6 +509,11 @@ export function DocumentoPage({
     (!alertasEstoque.isSuccess ||
       alertasEstoque.isFetching ||
       !!alertasEstoque.data?.some((a) => a.insuficiente));
+  const aguardandoCadastro =
+    config.table === "pedidos" && clienteCadastroPendente(doc?.["cliente_id"]);
+  const restringirConfirmacaoCadastro =
+    config.table === "pedidos" &&
+    (!cadastrosPendentes.isSuccess || cadastrosPendentes.isFetching || aguardandoCadastro);
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
   const datasPedido = useQuery({
     queryKey: [
@@ -1471,7 +1496,7 @@ export function DocumentoPage({
             intermediacao={inter}
           />
         )}
-        {!ehOrcamento && !restringirConfirmacaoEstoque && (
+        {!ehOrcamento && !restringirConfirmacaoEstoque && !restringirConfirmacaoCadastro && (
           <Button
             onClick={() => efetivar.mutate()}
             disabled={
@@ -1516,7 +1541,10 @@ export function DocumentoPage({
               .filter(
                 (s) =>
                   !["aprovado", "recusado"].includes(s.status) ||
-                  (!representanteSemAdmin && (roles.includes("admin") || roles.includes("gestor"))),
+                  (cadastrosPendentes.isSuccess &&
+                    !aguardandoCadastro &&
+                    !representanteSemAdmin &&
+                    (roles.includes("admin") || roles.includes("gestor"))),
               )
               .map((s) => (
                 <Button
@@ -1527,7 +1555,9 @@ export function DocumentoPage({
                     avancar.isPending || edicaoPendente || pagamentoAlterado || itens.isFetching
                   }
                 >
-                  {s.label}
+                  {s.status === "aguardando_aprovacao" && aguardandoCadastro
+                    ? "Enviar para aprovação de cadastro"
+                    : s.label}
                 </Button>
               ))
           : null}
@@ -1542,6 +1572,24 @@ export function DocumentoPage({
         )}
       </div>
 
+      {aguardandoCadastro && !ehOrcamento && (
+        <p
+          role="status"
+          className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+        >
+          Aguardando aprovação de cadastro. Você pode preencher, imprimir e enviar este pedido para
+          análise. Um administrador deve revisar e liberar o cliente em Cadastro Unificado antes da
+          aprovação do pedido. A liberação do cadastro não confirma a venda automaticamente.
+        </p>
+      )}
+      {config.table === "pedidos" && cadastrosPendentes.isError && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          Não foi possível conferir a aprovação do cadastro.
+          <Button variant="outline" onClick={() => void cadastrosPendentes.refetch()}>
+            Tentar novamente
+          </Button>
+        </p>
+      )}
       {conferirEstoqueRepresentante && alertasEstoque.data?.some((a) => a.insuficiente) && (
         <p role="status" className="mt-3 text-sm text-amber-800">
           Estoque insuficiente: você pode imprimir e enviar para aprovação comercial. A confirmação
@@ -1862,6 +1910,15 @@ export function DocumentoPage({
                               ? nomeStatusPedido(statusVisivelPedido(d, hoje))
                               : String(d["status"]).replace(/_/g, " ")}
                           </span>
+                          {config.table === "pedidos" &&
+                            clienteCadastroPendente(d["cliente_id"]) &&
+                            ["rascunho", "digitacao", "aguardando_aprovacao"].includes(
+                              String(d["status"]),
+                            ) && (
+                              <span className="mt-1 block text-xs text-amber-800">
+                                Aguardando aprovação de cadastro
+                              </span>
+                            )}
                         </td>
                         <td data-label="Total" className="px-4 py-2.5 text-right font-semibold">
                           {brl(d["total_liquido"])}
@@ -2942,6 +2999,7 @@ export function DocumentoPage({
                   >
                     {p["codigo"] ? `${String(p["codigo"])} · ` : ""}
                     {String(p["razao_social"])}
+                    {clienteCadastroPendente(p["id"]) ? " · cadastro aguardando aprovação" : ""}
                   </option>
                 ))}
               </SearchSelect>

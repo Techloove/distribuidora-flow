@@ -398,7 +398,7 @@ function PessoasPage() {
             })),
             {
               name: "credito_pendente",
-              label: "Crédito pendente",
+              label: "Cadastro / limite pendente",
               type: "checkbox",
               auto: true,
               inTable: true,

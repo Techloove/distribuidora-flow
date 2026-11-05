@@ -1,0 +1,108 @@
+{
+  "data": "2026-11-05T16:34:58.855Z",
+  "migracao_sha256": "fda8c8668091141c2bed07f945e91ed54a5a89a4727302044f7ed649cde2ea88",
+  "dados_preservados": true,
+  "antes": [
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    },
+    {
+      "tabela": "pessoas",
+      "quantidade": 110,
+      "hash": "436b8a7320d0eccae505c2ffba31b17d"
+    }
+  ],
+  "depois": [
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    },
+    {
+      "tabela": "pessoas",
+      "quantidade": 110,
+      "hash": "436b8a7320d0eccae505c2ffba31b17d"
+    }
+  ],
+  "verificacao": [
+    {
+      "guarda_confirmacao": true,
+      "guarda_estoque_preservada": true,
+      "guarda_aprovacao": true,
+      "envio_permitido": true,
+      "motivo_explicito": true
+    }
+  ]
+}

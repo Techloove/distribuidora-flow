@@ -319,8 +319,71 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
       db.query("update pessoas set loja_pendente=true,centro_id=null where id=$1", [id(101)]),
       /permissão/,
     );
+    // Fase334: cadastro real pelo representante, pedido na fila e decisão administrativa.
+    await db.exec(`reset role;
+      insert into role_permissoes values('representante','clientes_cadastrar') on conflict do nothing;
+      create table efeitos334(tipo text);grant select on efeitos334 to authenticated;
+      create function confirmar_pedido(_pedido_id uuid) returns pedidos language plpgsql security definer set search_path=public as $$declare ped pedidos;begin
+        select * into ped from public.pedidos where id = _pedido_id for update;
+        insert into efeitos334 values('estoque'),('financeiro'),('comissao');
+        update pedidos set status='confirmado' where id=_pedido_id returning * into ped;return ped;end $$;
+      create function avancar_pedido(_pedido_id uuid,_novo_status text) returns pedidos language plpgsql security definer set search_path=public as $$declare ped pedidos;begin
+        select * into ped from public.pedidos where id = _pedido_id for update;
+        update pedidos set status=_novo_status where id=_pedido_id returning * into ped;return ped;end $$;
+      create function validar_pedido(_pedido_id uuid) returns jsonb language plpgsql security definer set search_path=public as $$declare cli clientes;begin
+        select c.* into cli from clientes c join pedidos p on p.cliente_id=c.id where p.id=_pedido_id;
+        return jsonb_build_object('nivel','bloqueio','mensagem','Cliente bloqueado no cadastro');end $$;
+    `);
+    const cadastro334 = readFileSync("db/fase334_pedido_cliente_cadastro_pendente.sql", "utf8");
+    await db.exec(cadastro334);
+    await db.exec(cadastro334);
+    await login(1);
+    const novo334 = (await cadastrar({ ...dados, cnpj_cpf: "98765432000198" })).rows[0].id;
+    const cli334 = (await db.query("select id from clientes where pessoa_id=$1", [novo334])).rows[0]
+      .id;
+    const ped334 = (
+      await db.query(
+        "insert into pedidos(cliente_id,centro_id,representante_id,status,total_liquido) values($1,$2,$3,'rascunho',100) returning id",
+        [cli334, id(10), id(100)],
+      )
+    ).rows[0].id;
+    await db.query("select avancar_pedido($1,'aguardando_aprovacao')", [ped334]);
+    await db.query("update pedidos set total_liquido=150 where id=$1", [ped334]);
+    assert.match(
+      (await db.query("select validar_pedido($1) v", [ped334])).rows[0].v.mensagem,
+      /Aguardando aprovação de cadastro/,
+    );
+    await assert.rejects(
+      db.query("select confirmar_pedido($1)", [ped334]),
+      /Aguardando aprovação de cadastro/,
+    );
+    await assert.rejects(liberar(novo334, 500), /administrador/);
+    await login(2);
+    assert.equal((await db.query("select id from pedidos where id=$1", [ped334])).rows.length, 0);
+    await login(3);
+    await assert.rejects(
+      db.query("select avancar_pedido($1,'aprovado')", [ped334]),
+      /Aguardando aprovação de cadastro/,
+    );
+    await assert.rejects(
+      db.query("select confirmar_pedido($1)", [ped334]),
+      /Aguardando aprovação de cadastro/,
+    );
+    await assert.rejects(
+      db.query("update pedidos set status='aprovado' where id=$1", [ped334]),
+      /Aguardando aprovação de cadastro/,
+    );
+    assert.equal((await db.query("select * from efeitos334")).rows.length, 0);
+    await liberar(novo334, 500);
+    assert.equal(
+      (await db.query("select status from pedidos where id=$1", [ped334])).rows[0].status,
+      "aguardando_aprovacao",
+    );
+    await db.query("select avancar_pedido($1,'aprovado')", [ped334]);
+    await db.query("select confirmar_pedido($1)", [ped334]);
+    assert.equal((await db.query("select * from efeitos334")).rows.length, 3);
     console.log(
-      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, bloqueio transacional de pedidos, vendas mensais isoladas, revogações e reexecução preservadas.",
+      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, pedidos aguardando cadastro334, bloqueio antecipado sem efeitos, liberação sem confirmação automática, vendas mensais isoladas, revogações e reexecução preservadas.",
     );
   } finally {
     await db.close();

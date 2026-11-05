@@ -114,7 +114,7 @@ export function PainelRepresentante({ mesSelecionado }: { mesSelecionado?: strin
             value={q.data ? String(q.data.carteira) : "—"}
           />
           <Resumo
-            label="Clientes com limite pendente"
+            label="Clientes aguardando aprovação de cadastro"
             value={q.data ? String(q.data.credito_pendente) : "—"}
           />
         </div>
