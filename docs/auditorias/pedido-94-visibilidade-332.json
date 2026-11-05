@@ -1,0 +1,106 @@
+{
+  "data": "2026-11-05T16:11:51.518Z",
+  "antes": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "523b1da4f68283279ae0dc85634c97fa"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "17dc7adcc0fa4b77001b8168b4d2ed14"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "323138154bbc274e22d8ad4a10a10366"
+    }
+  ],
+  "representante_antes": {
+    "itens_visiveis": 0,
+    "pedido_94_visivel": 1
+  },
+  "status": "instalado",
+  "migracao_sha256": "15bb949fc29b78e3886ad7c69cd93baff9fe83e5e51135fba4b3629568ed77fc",
+  "depois": [
+    {
+      "tabela": "boletos",
+      "quantidade": 110,
+      "hash": "9a00cce0b9a6aea87c4f890a52ed52eb"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 79,
+      "hash": "6284163d4250a2dc578cd00a02770b89"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 144,
+      "hash": "4955670834be41b24d14a748abbcc186"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 249,
+      "hash": "b0b76310044605cec0ebed137b309517"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "523b1da4f68283279ae0dc85634c97fa"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "17dc7adcc0fa4b77001b8168b4d2ed14"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "323138154bbc274e22d8ad4a10a10366"
+    }
+  ],
+  "representante_depois": {
+    "alertas": [
+      {
+        "item_id": "eac13bcf-79a6-436f-9151-034a070e1f62",
+        "insuficiente": true,
+        "quantidade_pedido": 20,
+        "estoque_disponivel": 0
+      }
+    ],
+    "itens_visiveis": 1,
+    "pedido_94_visivel": 1
+  },
+  "dados_preservados": true
+}

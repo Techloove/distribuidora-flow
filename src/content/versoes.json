@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.37.1",
+    "data": "2026-11-05",
+    "titulo": "Preservar a exibição dos itens do pedido e informar pendências de estoque",
+    "motivo": "Representantes com acesso restrito por loja não enxergavam itens já salvos quando a loja do item estava vazia, embora o pedido tivesse total calculado.",
+    "novidades": [
+      "Leitura dos itens usa a loja do pedido e preserva carteira, isolamento de lojas e bloqueio de escrita direta. Nenhum item ou total é regravado.",
+      "Alertas de estoque na linha do produto, considerando a quantidade total por produto e reservas de outros pedidos da mesma loja. Aprovação comercial e confirmação mantêm suas regras.",
+      "Falhas de leitura e inconsistência entre total e itens são identificadas sem informar falsamente que o pedido está vazio."
+    ]
+  },
+  {
     "versao": "1.37.0",
     "data": "2026-11-04",
     "titulo": "Serviços adicionais em lista na cobrança SaaS",

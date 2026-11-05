@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.37.0 · 2026-11-04
+Versão 1.37.1 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -185,6 +185,7 @@ Cuidados:
 - Se a consulta da margem falhar, use Tentar consultar margem novamente. A falha na consulta não impede visualizar os demais dados do pedido.
 - O representante pode usar Cancelar meu pedido aprovado somente em pedidos criados por ele, ainda Aprovados e pertencentes à sua carteira e loja permitida. Informe o motivo e confirme. A partir de Em separação, somente o administrador cancela. A baixa bancária de boletos continua exclusiva do administrador.
 - No fechamento, o custo gravado no item prevalece sobre o cadastro atual do produto, inclusive quando for zero. Alterar o custo do produto não muda a rentabilidade histórica de vendas com custo preservado. Para itens de estoque sem custo histórico, o sistema usa o primeiro custo positivo disponível no cadastro e identifica a estimativa; se faltar custo, os resultados dependentes dele ficam indisponíveis. A DRE/CPV usa a mesma prioridade de custo histórico. Essa correção de leitura não altera valores de parcelas ou comissões. Representantes sem Administrador não visualizam o painel de custos e rentabilidade.
+- Itens salvos herdam a loja do pedido para a leitura autorizada, mesmo quando a loja do item não estiver preenchida. Falta de estoque não remove o item da lista. A linha mostra o alerta de disponibilidade; quando o pedido estiver aguardando aprovação, identifica Aguardando aprovação comercial. O aviso não aprova nem confirma a venda: as regras comerciais e a permissão de estoque negativo continuam valendo. Se a consulta falhar, tente carregar os itens novamente antes de adicionar o mesmo produto.
 
 ## Vender por intermediação com preço de fábrica vigente
 
@@ -566,6 +567,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.37.1 · 2026-11-05 · Preservar a exibição dos itens do pedido e informar pendências de estoque
+
+Motivo da atualização: Representantes com acesso restrito por loja não enxergavam itens já salvos quando a loja do item estava vazia, embora o pedido tivesse total calculado.
+
+- Leitura dos itens usa a loja do pedido e preserva carteira, isolamento de lojas e bloqueio de escrita direta. Nenhum item ou total é regravado.
+- Alertas de estoque na linha do produto, considerando a quantidade total por produto e reservas de outros pedidos da mesma loja. Aprovação comercial e confirmação mantêm suas regras.
+- Falhas de leitura e inconsistência entre total e itens são identificadas sem informar falsamente que o pedido está vazio.
 
 ### v1.37.0 · 2026-11-04 · Serviços adicionais em lista na cobrança SaaS
 

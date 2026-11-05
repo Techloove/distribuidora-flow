@@ -1,3 +1,4 @@
+import { avisoEstoquePedido, type AlertaEstoquePedido } from "@/lib/aviso-estoque-pedido";
 import { FiltroPeriodo } from "@/components/filtro-periodo";
 import { SearchSelect } from "@/components/ui/search-select";
 import { calcularItemCompra } from "@/lib/custo-compra";
@@ -454,6 +455,29 @@ export function DocumentoPage({
   const produtosDisponiveis =
     config.table === "pedidos" ? (catalogoPedido.data ?? []) : (produtos.data ?? []);
 
+  const alertasEstoque = useQuery({
+    queryKey: [
+      "alertas-estoque-pedido-332",
+      user?.id,
+      selected,
+      itens.dataUpdatedAt,
+      doc?.["status"],
+    ],
+    enabled:
+      !!client &&
+      config.table === "pedidos" &&
+      !!selected &&
+      itens.isSuccess &&
+      !!itens.data?.length,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await client!.rpc("alertas_estoque_pedido_332", {
+        _pedido: selected,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as AlertaEstoquePedido[];
+    },
+  });
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
   const datasPedido = useQuery({
     queryKey: [
@@ -1236,7 +1260,11 @@ export function DocumentoPage({
     });
   const avisosPedido =
     config.table === "pedidos" && doc && itens.isSuccess
-      ? conferirPedido(doc as PedidoConferencia, itens.data ?? [])
+      ? !itens.data?.length && Number(doc["total_itens"] ?? 0) > 0
+        ? [
+            "O pedido tem valores gravados, mas os itens não foram retornados. Atualize a consulta antes de continuar.",
+          ]
+        : conferirPedido(doc as PedidoConferencia, itens.data ?? [])
       : [];
   if (intermediacaoPendente)
     avisosPedido.push("Salve ou descarte o item de intermediação antes de confirmar.");
@@ -2368,14 +2396,41 @@ export function DocumentoPage({
                   )
                 ) : null}
 
+                {config.table === "pedidos" && alertasEstoque.isError && (
+                  <div
+                    role="alert"
+                    className="flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm"
+                  >
+                    Não foi possível conferir a disponibilidade de estoque. Os itens continuam
+                    salvos.
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void alertasEstoque.refetch()}
+                    >
+                      Atualizar disponibilidade
+                    </Button>
+                  </div>
+                )}
                 <div className="overflow-x-auto rounded-lg border border-border bg-card">
                   {itens.isLoading ? (
                     <div className="py-10 text-center text-sm text-muted-foreground">
                       Carregando...
                     </div>
+                  ) : itens.isError ? (
+                    <div role="alert" className="space-y-3 p-5 text-sm">
+                      <p>
+                        Não foi possível carregar os itens. Isso não significa que foram removidos.
+                      </p>
+                      <Button variant="outline" onClick={() => void itens.refetch()}>
+                        Tentar carregar itens novamente
+                      </Button>
+                    </div>
                   ) : (itens.data ?? []).length === 0 ? (
                     <p className="py-10 text-center text-sm text-muted-foreground">
-                      Nenhum item lançado.
+                      {config.table === "pedidos" && Number(doc["total_itens"] ?? 0) > 0
+                        ? "Há valores gravados no pedido, mas os itens não foram retornados. Atualize a consulta; não adicione o mesmo item novamente."
+                        : "Nenhum item lançado."}
                     </p>
                   ) : (
                     <Table className="mobile-cards">
@@ -2408,6 +2463,21 @@ export function DocumentoPage({
                             )}
                             <TableCell data-label="Produto">
                               {produtoName(it["produto_id"])}
+                              {config.table === "pedidos" &&
+                                (() => {
+                                  const aviso = avisoEstoquePedido(
+                                    alertasEstoque.data?.find((a) => a.item_id === it["id"]),
+                                    doc["status"],
+                                  );
+                                  return aviso ? (
+                                    <p
+                                      role="status"
+                                      className="mt-2 max-w-sm whitespace-normal rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-800 dark:text-amber-300"
+                                    >
+                                      {aviso}
+                                    </p>
+                                  ) : null;
+                                })()}
                             </TableCell>
                             <TableCell
                               data-label={config.table === "compras" ? "Itens" : "Quantidade"}
