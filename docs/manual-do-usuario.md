@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.40.8 · 2026-11-05
+Versão 1.40.9 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -421,7 +421,7 @@ Cuidados:
 - A contabilização automática só começa depois de configurar e autorizar a loja. Ela gera saídas na conta escolhida, em Despesas Financeiras no DRE, sem reduzir o valor recebido do cliente. A instalação da fase282 não cria despesas. Confira os lançamentos anteriores antes de ativar o período retroativo.
 - O agendamento consulta uma data a cada 15 minutos e preenche até 90 dias anteriores. Datas dos últimos sete dias são reconsultadas a cada seis horas; as demais, semanalmente. Uma falha mantém o resultado anterior e permite nova tentativa. A lista mostra a última consulta e os dias com pendência ou falha.
 - Cancelar boleto envia um pedido de baixa ao Sicredi; não cancela a venda nem quita a conta a receber. Boletos liquidados, já baixados ou com solicitação pendente não permitem novo cancelamento. Se o banco ainda não confirmar a baixa, consulte a situação e confira com o Sicredi antes de qualquer nova cobrança.
-- Em Boletos, o aviso e o motivo de pedido cancelado ou de título ajustado por devolução ficam dentro de Opções, para manter a listagem compacta. A situação bancária continua visível na linha. Boletos registrados e não liquidados exibem também a tag Vencido quando o vencimento já passou, considerando o dia de São Paulo, ou quando a consulta bancária informa vencido. Boletos liquidados, baixados ou cancelados não recebem essa tag. O filtro de situação Vencido localiza esses boletos sem alterar seu estado bancário. No computador, a lista de boletos usa espaçamento compacto e os botões de reimpressão e Opções ficam um abaixo do outro para manter as ações à vista. A coluna de ações fica fixa à direita quando outras colunas precisarem de rolagem em uma tela menor. Boletos com baixa ou cancelamento confirmados mostram uma tag vermelha Boleto cancelado · ver Opções junto ao vencimento, no mesmo padrão da marcação de vencimento alterado. Cancelamento apenas solicitado não recebe essa tag de confirmação. Solicite a baixa dos boletos anteriores e aguarde a confirmação antes de emitir outra cobrança do saldo. O sistema também verifica boletos de títulos anteriores quando há mais de uma devolução parcial. Boleto CNAB exige a rotina de baixa do banco/remessa; não é baixado pela ação da API.
+- Em Boletos, o aviso e o motivo de pedido cancelado ou de título ajustado por devolução ficam dentro de Opções, para manter a listagem compacta. A situação bancária continua visível na linha. Boletos registrados e não liquidados exibem também a tag Vencido quando o vencimento já passou, considerando o dia de São Paulo, ou quando a consulta bancária informa vencido. Boletos liquidados, baixados ou cancelados não recebem essa tag. O filtro de situação Vencido localiza esses boletos sem alterar seu estado bancário. O cartão Boletos vencidos soma os valores desses boletos conforme loja, cliente, banco e períodos selecionados; esse valor faz parte do total em aberto. Clique nos cartões Registrados, Liquidados ou Vencidos para filtrar a listagem pelo grupo correspondente. O cartão selecionado fica destacado. Os totais dos cartões preservam os grupos ao alternar a situação; para mostrar todas as situações, selecione Todos no filtro Situação. No computador, a lista de boletos usa espaçamento compacto e os botões de reimpressão e Opções ficam um abaixo do outro para manter as ações à vista. A coluna de ações fica fixa à direita quando outras colunas precisarem de rolagem em uma tela menor. Boletos com baixa ou cancelamento confirmados mostram uma tag vermelha Boleto cancelado · ver Opções junto ao vencimento, no mesmo padrão da marcação de vencimento alterado. Cancelamento apenas solicitado não recebe essa tag de confirmação. Solicite a baixa dos boletos anteriores e aguarde a confirmação antes de emitir outra cobrança do saldo. O sistema também verifica boletos de títulos anteriores quando há mais de uma devolução parcial. Boleto CNAB exige a rotina de baixa do banco/remessa; não é baixado pela ação da API.
 - Se o banco informar pagamento depois do ajuste do pedido, o boleto mostra o recebimento bancário e um aviso para conciliação. O título cancelado não é reaberto automaticamente nem se cria uma entrada de caixa sem tratamento financeiro.
 - Reconsultar a API não duplica despesas. Tarifas manuais conhecidas com data, valor, conta e categoria correspondentes podem ser vinculadas sem novo lançamento. Uma saída avulsa semelhante, divergência no retorno, conta/categoria inativa, responsável sem acesso ou estorno exige conferência. Não há correção ou relançamento automático de movimentos estornados.
 - A configuração vale por loja e apenas para as datas a partir do início escolhido. Alterar a conta ou categoria não move despesas já lançadas. As tarifas de emissão podem ser contabilizadas antes do pagamento do boleto; outros débitos sem identificação de TARIFA não são lançados automaticamente.
@@ -569,6 +569,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.40.9 · 2026-11-05 · Cartões de boletos com total vencido e filtro por clique
+
+Motivo da atualização: Destacar os vencidos e permitir consultar os grupos diretamente pelos cartões de totais.
+
+- Novo cartão Boletos vencidos ao lado dos registrados e liquidados. Cada cartão é clicável e aplica o filtro correspondente à listagem, mantendo loja, cliente, banco e períodos selecionados. O cartão selecionado fica destacado e pode ser acionado por teclado.
+- Os totais dos cartões mantêm os grupos disponíveis ao alternar a situação da lista. Vencidos fazem parte do total em aberto. Os valores continuam com duas casas decimais, inclusive zero.
 
 ### v1.40.8 · 2026-11-05 · Destacar boletos vencidos e não liquidados na listagem
 

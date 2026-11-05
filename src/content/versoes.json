@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.40.9",
+    "data": "2026-11-05",
+    "titulo": "Cartões de boletos com total vencido e filtro por clique",
+    "motivo": "Destacar os vencidos e permitir consultar os grupos diretamente pelos cartões de totais.",
+    "novidades": [
+      "Novo cartão Boletos vencidos ao lado dos registrados e liquidados. Cada cartão é clicável e aplica o filtro correspondente à listagem, mantendo loja, cliente, banco e períodos selecionados. O cartão selecionado fica destacado e pode ser acionado por teclado.",
+      "Os totais dos cartões mantêm os grupos disponíveis ao alternar a situação da lista. Vencidos fazem parte do total em aberto. Os valores continuam com duas casas decimais, inclusive zero."
+    ]
+  },
+  {
     "versao": "1.40.8",
     "data": "2026-11-05",
     "titulo": "Destacar boletos vencidos e não liquidados na listagem",

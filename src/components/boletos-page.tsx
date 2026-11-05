@@ -189,21 +189,26 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
       .filter((c) => ids.has(String(c["id"])))
       .map((c) => ({ value: String(c["id"]), label: String(c["razao_social"]) }));
   }, [daLoja, clientes.data]);
+  const boletosResumo = useMemo(
+    () =>
+      filtrarBoletos(
+        daLoja.filter(
+          (r) =>
+            (!referencia || correspondeReferencia(r, referencia, true)) &&
+            (!filtros["banco"] || r["banco"] === filtros["banco"]),
+        ),
+        { ...filtros, status: "" },
+        cliName,
+      ),
+    [daLoja, filtros, cliName, referencia],
+  );
   const boletosFiltrados = useMemo(
     () =>
       ordenarBoletos(
-        filtrarBoletos(
-          daLoja.filter(
-            (r) =>
-              (!referencia || correspondeReferencia(r, referencia, true)) &&
-              (!filtros["banco"] || r["banco"] === filtros["banco"]),
-          ),
-          filtros,
-          cliName,
-        ),
+        filtrarBoletos(boletosResumo, { status: filtros["status"] ?? "" }, cliName),
         filtros["ordem"] ?? "vencimento_asc",
       ),
-    [daLoja, filtros, cliName, referencia],
+    [boletosResumo, filtros, cliName],
   );
   const periodoInvalido = periodoBoletosInvalido(filtros);
   const tarifas = useQuery({
@@ -339,10 +344,13 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const emAberto = boletosFiltrados
+  const emAberto = boletosResumo
     .filter((b) => b["status"] === "registrado")
     .reduce((s, b) => s + Number(b["valor"] ?? 0), 0);
-  const liquidado = boletosFiltrados
+  const vencido = boletosResumo
+    .filter((b) => boletoVencido(b))
+    .reduce((s, b) => s + Number(b["valor"] ?? 0), 0);
+  const liquidado = boletosResumo
     .filter((b) => b["status"] === "liquidado")
     .reduce((s, b) => s + Number(b["valor_liquidado"] ?? b["valor"] ?? 0), 0);
 
@@ -553,32 +561,54 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           </p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <article className="rounded-lg border border-border bg-card p-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setF("status", "registrado")}
+            aria-pressed={filtros["status"] === "registrado"}
+            className="rounded-lg border border-border bg-card p-5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary"
+          >
             <p className="text-sm text-muted-foreground">Boletos registrados (em aberto)</p>
             <p className="mt-2 text-2xl font-semibold">{brl(emAberto)}</p>
-          </article>
-          <article className="rounded-lg border border-border bg-card p-5">
+          </button>
+          <button
+            type="button"
+            onClick={() => setF("status", "liquidado")}
+            aria-pressed={filtros["status"] === "liquidado"}
+            className="rounded-lg border border-border bg-card p-5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary"
+          >
             <p className="text-sm text-muted-foreground">Boletos liquidados</p>
             <p className="mt-2 text-2xl font-semibold">{brl(liquidado)}</p>
-          </article>
+          </button>
+          <button
+            type="button"
+            onClick={() => setF("status", "vencido")}
+            aria-pressed={filtros["status"] === "vencido"}
+            className="rounded-lg border border-destructive/20 bg-card p-5 text-left transition-colors hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive aria-pressed:border-destructive aria-pressed:ring-2 aria-pressed:ring-destructive"
+          >
+            <p className="text-sm text-destructive">Boletos vencidos</p>
+            <p className="mt-2 text-2xl font-semibold text-destructive">{brl(vencido)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Incluídos no total em aberto.</p>
+          </button>
         </div>
 
         <section className="print-area space-y-2">
           <h2 className="text-sm font-semibold">Boletos emitidos · {boletosFiltrados.length}</h2>
           {bancoLoja.data?.["banco"] === "sicoob" ? (
             <p className="text-xs text-muted-foreground">
-              Valores e totais consideram os filtros selecionados. A consulta confirma a situação
-              bancária do boleto Sicoob; confira recebimentos e tarifas no financeiro antes de
-              registrar a baixa financeira.
+              Os cartões consideram loja, cliente, banco e períodos selecionados; a situação
+              selecionada filtra a listagem. Clique em um cartão para listar o grupo correspondente.
+              A consulta confirma a situação bancária do boleto Sicoob; confira recebimentos e
+              tarifas no financeiro antes de registrar a baixa financeira.
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Valores e totais consideram os filtros selecionados. Tarifas identificadas pelo banco
-              chegam pela consulta automática de movimentações financeiras. Configure conta e
-              categoria por loja em Liquidação e tarifa para contabilizar as despesas. Débitos sem
-              identificação de tarifa ficam para conferência; a ausência de informação não significa
-              tarifa zero.
+              Os cartões consideram loja, cliente, banco e períodos selecionados; a situação
+              selecionada filtra a listagem. Clique em um cartão para listar o grupo correspondente.
+              Tarifas identificadas pelo banco chegam pela consulta automática de movimentações
+              financeiras. Configure conta e categoria por loja em Liquidação e tarifa para
+              contabilizar as despesas. Débitos sem identificação de tarifa ficam para conferência;
+              a ausência de informação não significa tarifa zero.
             </p>
           )}
 
