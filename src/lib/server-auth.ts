@@ -118,3 +118,23 @@ export async function enforceRateLimit(
   if (!allowed)
     throw new Error("Limite de consultas atingido. Tente novamente em alguns instantes.");
 }
+
+/** Consulta de CNPJ/IE no formulário de inclusão: não concede administração ou acesso a outros cadastros. */
+export async function requireCadastroRepresentante(
+  accessToken: string | undefined,
+): Promise<AuthUser> {
+  const token = String(accessToken ?? "").trim();
+  const user = await requireServerAuth(token, ["representante"]);
+  const { url, anonKey } = config();
+  const headers = { apikey: anonKey, Authorization: `Bearer ${token}` };
+  const permissao = await fetch(`${url}/rest/v1/rpc/consulta_cliente_representante_permitida_337`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: "{}",
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!permissao.ok) throw new Error("Não foi possível validar a permissão de cadastro.");
+  if ((await permissao.json()) !== true)
+    throw new Error("Cadastro de clientes não liberado para este representante.");
+  return user;
+}

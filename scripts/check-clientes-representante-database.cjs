@@ -487,8 +487,42 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
       ]),
       /Rota de entrega obrigatoria/,
     );
+    // Fase337: autoriza consulta sem liberar SELECT do módulo administrativo.
+    await db.exec(`reset role;
+      alter table profiles add column precisa_completar_cadastro boolean not null default false;
+      create function saas_acesso_330() returns boolean language sql stable as $$select coalesce(current_setting('test.saas337',true),'true')='true'$$;
+    `);
+    const consulta337 = readFileSync("db/fase337_consulta_cadastro_representante.sql", "utf8");
+    await db.exec(consulta337);
+    await db.exec(consulta337);
+    await db.exec("revoke select on representantes from authenticated");
+    const podeConsultar337 = async () =>
+      (await db.query("select consulta_cliente_representante_permitida_337() pode")).rows[0].pode;
+    await login(7);
+    await assert.rejects(db.query("select * from representantes"), /permission denied/);
+    assert.equal(await podeConsultar337(), true);
+    await db.exec("select set_config('test.saas337','false',false)");
+    assert.equal(await podeConsultar337(), false);
+    await db.exec("select set_config('test.saas337','true',false)");
+    await login(3);
+    assert.equal(await podeConsultar337(), false);
+    await db.exec(`reset role;update representantes set ativo=false where id='${id(700)}'`);
+    await login(7);
+    assert.equal(await podeConsultar337(), false);
+    await db.exec(
+      `reset role;update representantes set ativo=true where id='${id(700)}';update profiles set precisa_completar_cadastro=true where id='${id(7)}'`,
+    );
+    await login(7);
+    assert.equal(await podeConsultar337(), false);
+    await db.exec(
+      `reset role;update profiles set precisa_completar_cadastro=false where id='${id(7)}';delete from role_permissoes where role='representante' and permissao='clientes_cadastrar'`,
+    );
+    await login(7);
+    assert.equal(await podeConsultar337(), false);
+    await db.exec("reset role;set role anon");
+    await assert.rejects(podeConsultar337(), /permission denied/);
     console.log(
-      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, cadastro sem acesso a rotas336, revisão de rota e pedido pendente íntegros, pedidos aguardando cadastro334, bloqueio antecipado sem efeitos, liberação sem confirmação automática, vendas mensais isoladas, revogações e reexecução preservadas.",
+      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, cadastro sem acesso a rotas336, consulta CNPJ/IE337 sem SELECT administrativo, revisão de rota e pedido pendente íntegros, pedidos aguardando cadastro334, bloqueio antecipado sem efeitos, liberação sem confirmação automática, vendas mensais isoladas, revogações e reexecução preservadas.",
     );
   } finally {
     await db.close();

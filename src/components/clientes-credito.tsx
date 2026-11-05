@@ -1,5 +1,7 @@
+import { ConsultaClienteRepresentante } from "@/components/consulta-cliente-representante";
+import { preencherCadastroRepresentante } from "@/lib/consulta-cliente-representante";
 import { SearchSelect } from "@/components/ui/search-select";
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -41,8 +43,11 @@ export function CadastrarClienteRepresentante() {
   const qc = useQueryClient();
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [consultaPendente, setConsultaPendente] = useState(false);
+  const preenchidosConsulta = useRef<Record<string, string>>({});
   const salvar = useMutation({
     mutationFn: async () => {
+      if (consultaPendente) throw new Error("Aguarde a consulta terminar antes de cadastrar.");
       const loja = form["centro_id"] || (centros.lista.length === 1 ? centros.lista[0]!.id : "");
       if (!loja) throw new Error("Selecione uma loja permitida.");
       const result = await client!.rpc("cadastrar_cliente_representante_284", {
@@ -56,6 +61,7 @@ export function CadastrarClienteRepresentante() {
       );
       setAberto(false);
       setForm({});
+      preenchidosConsulta.current = {};
       for (const key of [
         ["pessoas"],
         ["clientes"],
@@ -67,7 +73,26 @@ export function CadastrarClienteRepresentante() {
     onError: (e: Error) => toast.error(e.message),
   });
   if (!perm.pode("clientes_cadastrar")) return null;
-  const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: string, value: string) => {
+    const preenchidos = { ...preenchidosConsulta.current };
+    if (
+      key === "cnpj_cpf" &&
+      value.replace(/\D/g, "") !== (form["cnpj_cpf"] ?? "").replace(/\D/g, "")
+    )
+      preenchidosConsulta.current = {};
+    setForm((f) => {
+      if (
+        key === "cnpj_cpf" &&
+        value.replace(/\D/g, "") !== (f["cnpj_cpf"] ?? "").replace(/\D/g, "")
+      ) {
+        const limpo = { ...f };
+        for (const [campo, anterior] of Object.entries(preenchidos))
+          if (limpo[campo] === anterior) limpo[campo] = "";
+        return { ...limpo, [key]: value };
+      }
+      return { ...f, [key]: value };
+    });
+  };
   return (
     <section className="mb-5 rounded-xl border bg-card p-4">
       <h2 className="font-semibold">Novos clientes da minha carteira</h2>
@@ -99,6 +124,27 @@ export function CadastrarClienteRepresentante() {
             }}
             className="space-y-4"
           >
+            <ConsultaClienteRepresentante
+              documento={form["cnpj_cpf"] ?? ""}
+              inscricao={form["inscricao_estadual"] ?? ""}
+              ativo={aberto}
+              disabled={salvar.isPending}
+              ocupado={setConsultaPendente}
+              preencher={(documento, dados) =>
+                setForm((f) => {
+                  const patch = preencherCadastroRepresentante(f, documento, dados);
+                  preenchidosConsulta.current = { ...preenchidosConsulta.current, ...patch };
+                  return { ...f, ...patch };
+                })
+              }
+              aplicarIe={(documento, inscricao) =>
+                setForm((f) => {
+                  if ((f["cnpj_cpf"] ?? "").replace(/\D/g, "") !== documento) return f;
+                  preenchidosConsulta.current["inscricao_estadual"] = inscricao;
+                  return { ...f, inscricao_estadual: inscricao };
+                })
+              }
+            />
             <fieldset disabled={salvar.isPending} className="grid gap-4 sm:grid-cols-2">
               {campos.map(([key, label, required]) => (
                 <div className="space-y-1" key={key}>
@@ -163,7 +209,11 @@ export function CadastrarClienteRepresentante() {
               <Button
                 type="submit"
                 disabled={
-                  salvar.isPending || centros.isLoading || !!centros.error || !centros.lista.length
+                  salvar.isPending ||
+                  consultaPendente ||
+                  centros.isLoading ||
+                  !!centros.error ||
+                  !centros.lista.length
                 }
               >
                 {salvar.isPending ? "Cadastrando…" : "Cadastrar e aguardar liberação"}

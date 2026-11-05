@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.40.0",
+    "data": "2026-11-05",
+    "titulo": "Consulta cadastral e visibilidade da carteira do representante",
+    "motivo": "Permitir consultas de CNPJ/IE no cadastro simplificado e corrigir clientes compartilhados da própria carteira que eram contados no dashboard mas ocultados na listagem.",
+    "novidades": [
+      "Ao completar o CNPJ, os campos vazios de identificação, contato e endereço são preenchidos. Consulta fiscal por CNPJ confere a IE informada e permite escolher o registro encontrado.",
+      "Dados digitados manualmente são preservados; respostas de um CNPJ anterior são ignoradas. Falhas permitem continuar manualmente, sem exigir rota ou código IBGE.",
+      "Servidor exige representante ativo vinculado e permissão de cadastro, mantém limite de consultas e recusa CPF nesse fluxo. Cadastro e pedidos continuam sujeitos à revisão administrativa. Validação booleana no servidor funciona sem acesso ao módulo de representantes; a migração não modifica cadastros ou permissões existentes.",
+      "Clientes explicitamente compartilhados entre lojas ficam visíveis na própria carteira, incluindo o caso de Carlos Antonio Lucio. A correção atua somente na leitura; carteiras alheias, clientes de lojas não permitidas e permissões de edição continuam protegidos."
+    ]
+  },
+  {
     "versao": "1.39.1",
     "data": "2026-11-05",
     "titulo": "Simplificar cadastro do representante e permitir rota na revisão administrativa",

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { requireServerAuth } from "../src/lib/server-auth";
+import { requireServerAuth, requireCadastroRepresentante } from "../src/lib/server-auth";
 
 const originalFetch = globalThis.fetch;
 const originalUrl = process.env["EXT_SUPABASE_URL"];
@@ -105,5 +105,35 @@ describe("requireServerAuth", () => {
   test("rejeita token inválido", async () => {
     globalThis.fetch = (async () => new Response("{}", { status: 401 })) as typeof fetch;
     await expect(requireServerAuth("token-invalido", ["admin"])).rejects.toThrow("Sessão inválida");
+  });
+  test("consulta cadastral do representante exige permissão, vínculo ativo e sessão regular", async () => {
+    let permitido = true;
+    let vinculo = true;
+    let role = "representante";
+    globalThis.fetch = (async (input, init) => {
+      const url = String(input);
+      expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer token-ok");
+      if (url.includes("/auth/v1/user")) return Response.json({ id: "fixture-representante" });
+      if (url.includes("/rpc/saas_acesso_330")) return Response.json(true);
+      if (url.includes("/rest/v1/profiles")) return Response.json([{ ativo: true }]);
+      if (url.includes("/rest/v1/user_roles")) return Response.json([{ role }]);
+      if (url.includes("/rpc/consulta_cliente_representante_permitida_337")) {
+        expect(JSON.parse(String(init?.body))).toEqual({});
+        return Response.json(permitido && vinculo);
+      }
+      throw Error("Endpoint inesperado");
+    }) as typeof fetch;
+    expect((await requireCadastroRepresentante(" token-ok ")).id).toBe("fixture-representante");
+    permitido = false;
+    await expect(requireCadastroRepresentante("token-ok")).rejects.toThrow("não liberado");
+    permitido = true;
+    vinculo = false;
+    await expect(requireCadastroRepresentante("token-ok")).rejects.toThrow("não liberado");
+    vinculo = true;
+    role = "financeiro";
+    await expect(requireCadastroRepresentante("token-ok")).rejects.toThrow("sem permissão");
+    role = "representante";
+    globalThis.fetch = (async () => new Response("{}", { status: 503 })) as typeof fetch;
+    await expect(requireCadastroRepresentante("token-ok")).rejects.toThrow();
   });
 });

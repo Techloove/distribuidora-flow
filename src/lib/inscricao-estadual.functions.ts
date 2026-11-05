@@ -1,4 +1,9 @@
-import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+import {
+  enforceRateLimit,
+  requestAccessToken,
+  requireServerAuth,
+  requireCadastroRepresentante,
+} from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { createServerFn } from "@tanstack/react-start";
 
@@ -197,13 +202,17 @@ function fontes(doc: string): Fonte[] {
 
 /** Consulta a Inscrição Estadual de um CNPJ. Não inventa dados nem assume isenção. */
 export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
-  .inputValidator((input: { documento: string; accessToken?: string }) => ({
-    documento: String(input?.documento ?? ""),
-    accessToken: String(input?.accessToken ?? ""),
-  }))
+  .inputValidator(
+    (input: { documento: string; accessToken?: string; cadastroRepresentante?: boolean }) => ({
+      documento: String(input?.documento ?? ""),
+      cadastroRepresentante: input?.cadastroRepresentante === true,
+      accessToken: String(input?.accessToken ?? ""),
+    }),
+  )
   .handler(async ({ data }): Promise<ConsultaIeResultado> => {
     const accessToken = String(data.accessToken ?? "").trim() || requestAccessToken();
-    await requireServerAuth(accessToken, ["admin", "gestor"]);
+    if (data.cadastroRepresentante) await requireCadastroRepresentante(accessToken);
+    else await requireServerAuth(accessToken, ["admin", "gestor"]);
     await enforceRateLimit(accessToken, "inscricao-estadual", 20, 60);
     const doc = digitos(data.documento);
     if (doc.length !== 14) {
@@ -229,7 +238,10 @@ export const consultarInscricaoEstadual = createServerFn({ method: "POST" })
       try {
         const controle = new AbortController();
         const tempo = setTimeout(() => controle.abort(), 20000);
-        const res = await fetchWithTimeout(fonte.url, { headers: fonte.headers, signal: controle.signal });
+        const res = await fetchWithTimeout(fonte.url, {
+          headers: fonte.headers,
+          signal: controle.signal,
+        });
         clearTimeout(tempo);
 
         if (res.status === 404) {

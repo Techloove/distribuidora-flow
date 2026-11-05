@@ -5,7 +5,12 @@ import {
   normalizarCep,
   type EnderecoCep,
 } from "./consulta-endereco";
-import { enforceRateLimit, requestAccessToken, requireServerAuth } from "./server-auth";
+import {
+  enforceRateLimit,
+  requestAccessToken,
+  requireServerAuth,
+  requireCadastroRepresentante,
+} from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { createServerFn } from "@tanstack/react-start";
 
@@ -444,15 +449,27 @@ async function consultarCpf(doc: string): Promise<ConsultaResultado> {
 
 /** Consulta cadastral por CNPJ ou CPF. Valida e normaliza o documento. */
 export const consultarDocumento = createServerFn({ method: "POST" })
-  .inputValidator((input: { documento: string; accessToken?: string }) => ({
-    documento: String(input?.documento ?? ""),
-    accessToken: String(input?.accessToken ?? ""),
-  }))
+  .inputValidator(
+    (input: { documento: string; accessToken?: string; cadastroRepresentante?: boolean }) => ({
+      documento: String(input?.documento ?? ""),
+      cadastroRepresentante: input?.cadastroRepresentante === true,
+      accessToken: String(input?.accessToken ?? ""),
+    }),
+  )
   .handler(async ({ data }): Promise<ConsultaResultado> => {
     const accessToken = String(data.accessToken ?? "").trim() || requestAccessToken();
-    await requireServerAuth(accessToken, ["admin", "gestor"]);
+    if (data.cadastroRepresentante) await requireCadastroRepresentante(accessToken);
+    else await requireServerAuth(accessToken, ["admin", "gestor"]);
     await enforceRateLimit(accessToken, "consulta-cadastral", 20, 60);
     const doc = digitos(data.documento);
+    if (data.cadastroRepresentante && doc.length !== 14)
+      return {
+        ok: false,
+        documento: doc,
+        tipo: null,
+        codigo: "invalido",
+        mensagem: "A consulta para cadastro do representante exige um CNPJ com 14 números.",
+      };
     if (doc.length === 14) {
       if (!cnpjValido(doc)) {
         return {
