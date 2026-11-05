@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.37.1 · 2026-11-05
+Versão 1.37.2 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -176,6 +176,7 @@ Da escolha do cliente à confirmação da venda.
 
 Cuidados:
 
+- Representante sem perfil administrador não pode aprovar ou recusar pedidos. Se faltar estoque disponível na loja, pode imprimir e enviar para aprovação comercial; não pode confirmar a venda, mesmo quando o produto permite estoque negativo ou já recebeu aprovação. A gestão deve analisar e confirmar conforme suas permissões.
 - Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.
 - O administrador pode usar Cancelar pedido · administrador até a montagem da carga, antes da saída, descrevendo um motivo com pelo menos 10 caracteres. Reservas são liberadas e somente saídas de estoque já registradas são revertidas. Em etapas iniciais, títulos não recebidos e sem vínculos são excluídos com auditoria; títulos ligados a boletos e históricos financeiros são preservados como cancelados.
 - Depois da saída, use Devolver itens e ajustar financeiro. Informe as quantidades integral ou parcialmente devolvidas, a condição de cada produto e o motivo; confirme o recebimento físico. Avarias não voltam ao saldo disponível. Na devolução parcial, os títulos afetados ficam cancelados no histórico e um novo título representa o saldo restante. Na integral, o pedido fica Devolvido.
@@ -567,6 +568,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.37.2 · 2026-11-05 · Impedir confirmação de pedidos sem estoque pelo representante e exigir análise comercial
+
+Motivo da atualização: A falta de estoque era apenas informativa e permitia confirmação pelo representante, gerando estoque e parcelas sem análise comercial.
+
+- Sem estoque disponível, representante sem administrador pode imprimir e enviar para aprovação; confirmação fica oculta e é recusada no servidor antes de qualquer lançamento.
+- A decisão de aprovar ou recusar fica com a gestão. Representante com administrador mantém as permissões administrativas; intermediação mantém seu fluxo.
+- Pedido 94 devolvido à aprovação pela rotina auditada: saída de estoque revertida e três parcelas anteriores preservadas como canceladas, sem excluir o item.
 
 ### v1.37.1 · 2026-11-05 · Preservar a exibição dos itens do pedido e informar pendências de estoque
 

@@ -1,0 +1,86 @@
+{
+  "data": "2026-11-05T16:27:21.004Z",
+  "migracao_sha256": "41a8c473baf63a8a8c3226574c840888d89fcd0c001625aa1437301d34208f1d",
+  "dados_preservados": true,
+  "antes": [
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    }
+  ],
+  "depois": [
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_reservas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    }
+  ],
+  "validacao": [
+    {
+      "numero": 94,
+      "status": "aguardando_aprovacao",
+      "total_liquido": "207.80"
+    }
+  ]
+}

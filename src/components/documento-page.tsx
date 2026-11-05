@@ -478,6 +478,17 @@ export function DocumentoPage({
       return (data ?? []) as AlertaEstoquePedido[];
     },
   });
+  const representanteSemAdmin = roles.includes("representante") && !roles.includes("admin");
+  const conferirEstoqueRepresentante =
+    config.table === "pedidos" &&
+    doc?.["modalidade_venda"] === "estoque" &&
+    doc?.["tipo_documento"] !== "orcamento" &&
+    representanteSemAdmin;
+  const restringirConfirmacaoEstoque =
+    conferirEstoqueRepresentante &&
+    (!alertasEstoque.isSuccess ||
+      alertasEstoque.isFetching ||
+      !!alertasEstoque.data?.some((a) => a.insuficiente));
   const ehOrcamento = config.table === "pedidos" && doc?.["tipo_documento"] === "orcamento";
   const datasPedido = useQuery({
     queryKey: [
@@ -933,6 +944,16 @@ export function DocumentoPage({
         if (!doc["centro_id"]) throw new Error("Informe o centro de custo do pedido");
         if (!doc["rota_id"]) throw new Error("Informe a rota de entrega do pedido");
         if (!doc["forma_pagamento_id"]) throw new Error("Informe a forma de pagamento do pedido");
+        if (conferirEstoqueRepresentante) {
+          const { data, error } = await client!.rpc("alertas_estoque_pedido_332", {
+            _pedido: selected,
+          });
+          if (error) throw new Error(error.message);
+          if ((data as AlertaEstoquePedido[] | null)?.some((a) => a.insuficiente))
+            throw new Error(
+              "Estoque insuficiente. Imprima o pedido ou envie para aprovação comercial.",
+            );
+        }
         // Regras de crédito: bloqueios mandam o pedido direto para aprovação.
         if (String(doc["status"]) !== "aprovado") {
           const { data: val, error: vErr } = await client!.rpc("validar_pedido", {
@@ -1450,7 +1471,7 @@ export function DocumentoPage({
             intermediacao={inter}
           />
         )}
-        {!ehOrcamento && (
+        {!ehOrcamento && !restringirConfirmacaoEstoque && (
           <Button
             onClick={() => efetivar.mutate()}
             disabled={
@@ -1495,8 +1516,7 @@ export function DocumentoPage({
               .filter(
                 (s) =>
                   !["aprovado", "recusado"].includes(s.status) ||
-                  roles.includes("admin") ||
-                  roles.includes("gestor"),
+                  (!representanteSemAdmin && (roles.includes("admin") || roles.includes("gestor"))),
               )
               .map((s) => (
                 <Button
@@ -1522,6 +1542,12 @@ export function DocumentoPage({
         )}
       </div>
 
+      {conferirEstoqueRepresentante && alertasEstoque.data?.some((a) => a.insuficiente) && (
+        <p role="status" className="mt-3 text-sm text-amber-800">
+          Estoque insuficiente: você pode imprimir e enviar para aprovação comercial. A confirmação
+          depende da gestão.
+        </p>
+      )}
       {config.table === "pedidos" && (validacao.data ?? []).length > 0 ? (
         <div className="mt-4 space-y-1.5 rounded-md border border-border bg-background p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.37.2",
+    "data": "2026-11-05",
+    "titulo": "Impedir confirmação de pedidos sem estoque pelo representante e exigir análise comercial",
+    "motivo": "A falta de estoque era apenas informativa e permitia confirmação pelo representante, gerando estoque e parcelas sem análise comercial.",
+    "novidades": [
+      "Sem estoque disponível, representante sem administrador pode imprimir e enviar para aprovação; confirmação fica oculta e é recusada no servidor antes de qualquer lançamento.",
+      "A decisão de aprovar ou recusar fica com a gestão. Representante com administrador mantém as permissões administrativas; intermediação mantém seu fluxo.",
+      "Pedido 94 devolvido à aprovação pela rotina auditada: saída de estoque revertida e três parcelas anteriores preservadas como canceladas, sem excluir o item."
+    ]
+  },
+  {
     "versao": "1.37.1",
     "data": "2026-11-05",
     "titulo": "Preservar a exibição dos itens do pedido e informar pendências de estoque",
