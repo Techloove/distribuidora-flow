@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.39.1",
+    "data": "2026-11-05",
+    "titulo": "Simplificar cadastro do representante e permitir rota na revisão administrativa",
+    "motivo": "O representante era obrigado a selecionar uma rota mesmo sem acesso ao módulo ou a rotas disponíveis, impedindo o cadastro do cliente.",
+    "novidades": [
+      "Cadastro do representante pede nome, CPF/CNPJ e loja permitida, com contato/endereço opcionais. Rota e código IBGE saem do formulário; loja única é preenchida automaticamente e a carteira continua automática.",
+      "Cliente permanece pendente de aprovação e limite, permitindo preparar e enviar o pedido sem rota. Administrador define rota ativa antes de liberar o cliente; pedidos iniciais ainda sem rota recebem essa definição, sem confirmação automática.",
+      "Permissões de loja/carteira e bloqueios de crédito preservados. Cadastros existentes, rotas já escolhidas e pedidos aprovados ou confirmados não são regravados pela instalação."
+    ]
+  },
+  {
     "versao": "1.39.0",
     "data": "2026-11-05",
     "titulo": "Contratos SaaS com vigência, serviços em lista e faturas consolidadas",

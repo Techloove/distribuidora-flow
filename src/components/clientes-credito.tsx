@@ -31,34 +31,28 @@ const campos = [
   ["bairro", "Bairro"],
   ["cidade", "Cidade"],
   ["uf", "UF"],
-  ["codigo_ibge", "Código IBGE da cidade"],
   ["observacoes", "Observações"],
 ] as const;
 
 export function CadastrarClienteRepresentante() {
-  const { client, user } = useSupabase();
+  const { client } = useSupabase();
   const centros = useCentrosPermitidos();
   const perm = usePermissoesRotinas();
   const qc = useQueryClient();
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
-  const rotas = useQuery({
-    queryKey: ["rotas-cadastro-cliente", user?.id],
-    enabled: !!client && aberto && perm.pode("clientes_cadastrar"),
-    queryFn: async () => {
-      const result = await client!.rpc("rotas_cadastro_representante_284");
-      if (result.error) throw new Error("Não foi possível carregar suas rotas.");
-      return result.data as { id: string; nome: string }[];
-    },
-  });
   const salvar = useMutation({
     mutationFn: async () => {
-      const result = await client!.rpc("cadastrar_cliente_representante_284", { _dados: form });
+      const loja = form["centro_id"] || (centros.lista.length === 1 ? centros.lista[0]!.id : "");
+      if (!loja) throw new Error("Selecione uma loja permitida.");
+      const result = await client!.rpc("cadastrar_cliente_representante_284", {
+        _dados: { ...form, centro_id: loja },
+      });
       if (result.error) throw new Error(result.error.message);
     },
     onSuccess: () => {
       toast.success(
-        "Cliente cadastrado na sua carteira. Você já pode preparar e enviar pedidos para aprovação de cadastro.",
+        "Cliente cadastrado e enviado para revisão. O administrador definirá a rota e liberará o cadastro; você já pode preparar o pedido.",
       );
       setAberto(false);
       setForm({});
@@ -78,9 +72,10 @@ export function CadastrarClienteRepresentante() {
     <section className="mb-5 rounded-xl border bg-card p-4">
       <h2 className="font-semibold">Novos clientes da minha carteira</h2>
       <p className="my-2 text-sm text-muted-foreground">
-        Você pode cadastrar clientes nas suas lojas e rotas. O limite será definido pelo
-        administrador. Você já pode preencher, imprimir e enviar pedidos para aprovação de cadastro;
-        a aprovação e confirmação da venda aguardam a liberação do cliente.
+        Informe os dados do cliente e a loja em que você pode atender. Sua carteira será vinculada
+        automaticamente; rota e limite serão revisados pelo administrador. Você já pode preencher,
+        imprimir e enviar pedidos para aprovação de cadastro; a aprovação e confirmação da venda
+        aguardam a liberação do cliente.
       </p>
       <Button onClick={() => setAberto(true)}>Cadastrar novo cliente</Button>
       <Dialog
@@ -93,7 +88,8 @@ export function CadastrarClienteRepresentante() {
           <DialogHeader>
             <DialogTitle>Cadastrar cliente</DialogTitle>
             <DialogDescription>
-              O vínculo com seu representante é automático. Não há liberação de crédito nesta tela.
+              Preencha os dados que você conhece. Apenas nome, CPF/CNPJ e loja são obrigatórios.
+              Rota, crédito e aprovação ficam com o administrador.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -126,7 +122,9 @@ export function CadastrarClienteRepresentante() {
                   id="novo-cliente-loja"
                   required
                   className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={form["centro_id"] ?? ""}
+                  value={
+                    form["centro_id"] || (centros.lista.length === 1 ? centros.lista[0]!.id : "")
+                  }
                   onChange={(e) => set("centro_id", e.target.value)}
                 >
                   <option value="">Selecione</option>
@@ -137,34 +135,22 @@ export function CadastrarClienteRepresentante() {
                   ))}
                 </SearchSelect>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="novo-cliente-rota">Rota *</Label>
-                <SearchSelect
-                  id="novo-cliente-rota"
-                  required
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={form["rota_id"] ?? ""}
-                  onChange={(e) => set("rota_id", e.target.value)}
-                >
-                  <option value="">Selecione</option>
-                  {rotas.data?.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nome}
-                    </option>
-                  ))}
-                </SearchSelect>
-              </div>
             </fieldset>
-            {(rotas.error || centros.error) && (
+            {centros.error && (
               <p role="alert" className="text-sm text-destructive">
-                {(rotas.error || centros.error)?.message}
+                {centros.error.message}
               </p>
             )}
-            {rotas.data?.length === 0 && (
-              <p className="text-sm">
-                Peça ao administrador para vincular suas rotas antes de cadastrar clientes.
+            {!centros.isLoading && !centros.error && !centros.lista.length && (
+              <p role="status" className="text-sm">
+                Nenhuma loja foi liberada para sua conta. Peça ao administrador para definir sua
+                loja de atendimento.
               </p>
             )}
+            <p className="rounded-xl border bg-muted/30 p-3 text-sm">
+              O cadastro será enviado automaticamente para aprovação. A rota de entrega será
+              definida pelo administrador, sem precisar acessar o módulo de rotas.
+            </p>
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
@@ -176,7 +162,9 @@ export function CadastrarClienteRepresentante() {
               </Button>
               <Button
                 type="submit"
-                disabled={salvar.isPending || !rotas.data?.length || !centros.lista.length}
+                disabled={
+                  salvar.isPending || centros.isLoading || !!centros.error || !centros.lista.length
+                }
               >
                 {salvar.isPending ? "Cadastrando…" : "Cadastrar e aguardar liberação"}
               </Button>
@@ -201,14 +189,19 @@ export function CreditosClientesPendentes() {
     queryFn: async () => {
       const r = await client!
         .from("pessoas")
-        .select("id,razao_social,cnpj_cpf,created_at", { count: "exact" })
+        .select("id,razao_social,cnpj_cpf,created_at,rota_id", { count: "exact" })
         .eq("credito_pendente", true)
         .order("created_at")
         .order("id")
         .range(pagina * 20, pagina * 20 + 19);
       if (r.error) throw new Error("Não foi possível carregar os clientes com crédito pendente.");
       return {
-        rows: r.data as { id: string; razao_social: string; cnpj_cpf: string }[],
+        rows: r.data as {
+          id: string;
+          razao_social: string;
+          cnpj_cpf: string;
+          rota_id: string | null;
+        }[],
         count: r.count ?? 0,
       };
     },
@@ -269,6 +262,11 @@ export function CreditosClientesPendentes() {
               {p.razao_social}
             </Link>
             <p className="text-xs text-muted-foreground">{p.cnpj_cpf}</p>
+            {!p.rota_id && (
+              <p className="text-xs text-amber-800">
+                Rota pendente: abra o cadastro para definir antes de liberar.
+              </p>
+            )}
           </div>
           <Button
             variant="outline"
@@ -307,7 +305,8 @@ export function CreditosClientesPendentes() {
             <DialogTitle>Aprovar cadastro e liberar limite</DialogTitle>
             <DialogDescription>
               {alvo?.razao_social}. Confira o cadastro antes de liberar. O valor ficará disponível
-              para as regras de crédito dos pedidos.
+              para as regras de crédito dos pedidos. Defina uma rota ativa no Cadastro Unificado
+              antes de confirmar esta liberação.
             </DialogDescription>
           </DialogHeader>
           <form

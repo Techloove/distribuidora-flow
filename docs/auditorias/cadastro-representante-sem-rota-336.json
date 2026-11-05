@@ -1,0 +1,158 @@
+{
+  "data": "2026-11-05T18:57:26.594Z",
+  "migracao_sha256": "eaa1cd8abd0857689d8046d4cb9eaefecb7ea021c672af72b07fe069c6d40da0",
+  "dados_permissoes_preservados": true,
+  "antes": [
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    },
+    {
+      "tabela": "pessoas",
+      "quantidade": 110,
+      "hash": "436b8a7320d0eccae505c2ffba31b17d"
+    },
+    {
+      "tabela": "representante_rotas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "role_menus",
+      "quantidade": 43,
+      "hash": "01d3aa5a37b5317e6db00c422f6ecce8"
+    },
+    {
+      "tabela": "role_permissoes",
+      "quantidade": 62,
+      "hash": "0253e37cadbd3bb92333395b2d902b50"
+    },
+    {
+      "tabela": "rotas",
+      "quantidade": 7,
+      "hash": "0ed7ea4c1c0ef35a495ff94986929f4a"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    },
+    {
+      "tabela": "usuario_centros",
+      "quantidade": 9,
+      "hash": "4c210acb697e35c306b144d6972906d4"
+    }
+  ],
+  "depois": [
+    {
+      "tabela": "clientes",
+      "quantidade": 100,
+      "hash": "dcdd75bcaa02245a455ded762032a834"
+    },
+    {
+      "tabela": "comissoes",
+      "quantidade": 80,
+      "hash": "2901b9923ac1c53d7a8fcb156e36ca11"
+    },
+    {
+      "tabela": "contas_receber",
+      "quantidade": 147,
+      "hash": "0c38c187f20c185d7167facf173a4662"
+    },
+    {
+      "tabela": "estoque_movimentos",
+      "quantidade": 251,
+      "hash": "a5b96ae1ad6eb2c9997094be48f19d58"
+    },
+    {
+      "tabela": "estoque_saldos",
+      "quantidade": 43,
+      "hash": "b1a69384b93ba6b5e77a4e9df936a4e0"
+    },
+    {
+      "tabela": "pedido_itens",
+      "quantidade": 276,
+      "hash": "0d7f3b9be8d6db3fdebf537047de074a"
+    },
+    {
+      "tabela": "pedidos",
+      "quantidade": 87,
+      "hash": "6548929be3e12e177cef840a8e1b16b1"
+    },
+    {
+      "tabela": "pessoas",
+      "quantidade": 110,
+      "hash": "436b8a7320d0eccae505c2ffba31b17d"
+    },
+    {
+      "tabela": "representante_rotas",
+      "quantidade": 0,
+      "hash": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "role_menus",
+      "quantidade": 43,
+      "hash": "01d3aa5a37b5317e6db00c422f6ecce8"
+    },
+    {
+      "tabela": "role_permissoes",
+      "quantidade": 62,
+      "hash": "0253e37cadbd3bb92333395b2d902b50"
+    },
+    {
+      "tabela": "rotas",
+      "quantidade": 7,
+      "hash": "0ed7ea4c1c0ef35a495ff94986929f4a"
+    },
+    {
+      "tabela": "user_roles",
+      "quantidade": 14,
+      "hash": "2f1950f28055277f59cecfe274434b04"
+    },
+    {
+      "tabela": "usuario_centros",
+      "quantidade": 9,
+      "hash": "4c210acb697e35c306b144d6972906d4"
+    }
+  ],
+  "verificacao": [
+    {
+      "cadastro_sem_rota": true,
+      "pedido_pendente_sem_rota": true,
+      "revisao_administrativa": true,
+      "atribuicao_automatica_preservada": true,
+      "venda_exige_rota": true
+    }
+  ]
+}

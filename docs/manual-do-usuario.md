@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.39.0 · 2026-11-05
+Versão 1.39.1 · 2026-11-05
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -104,8 +104,8 @@ Cadastre pessoas e mantenha os dados comerciais e de entrega organizados.
 5. No Cadastro unificado, os filtros Rota do cliente, Representante do cliente e Limite de crédito do cliente permitem selecionar Sem ou Com cadastro. Combine os filtros para encontrar clientes com mais de uma pendência. Esses filtros excluem pessoas que não têm a função Cliente e respeitam a loja e a carteira permitidas. Sem limite considera valor não informado ou zero; não significa que um limite cadastrado foi consumido pelas compras. Apenas o administrador pode conceder ou alterar o limite.
 6. No Cadastro unificado, abra o cliente e a aba Dados gerais para escolher o Vínculo de loja do cliente. Escolha Sem loja para um cadastro ainda pendente, uma loja pelo nome, ou Compartilhado entre lojas para atender pelas duas lojas atuais. Salve a alteração. Cliente Sem loja precisa ter esse vínculo definido antes de iniciar ou confirmar novos pedidos; pedidos e financeiros anteriores não são apagados nem recategorizados. Administrador e gestor podem revisar o vínculo, conforme suas permissões. O representante continua cadastrando na loja permitida e não ganha acesso para mudar esse vínculo.
 7. Para clientes, confira representante, rota e endereço de entrega. Essas informações ajudam a organizar a carteira e as entregas.
-8. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Selecione uma loja permitida e uma rota já atendida pela própria carteira ou vinculada pelo administrador. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
-9. Clientes cadastrados pelo representante ficam com Cadastro / limite pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. O representante já pode montar e imprimir um pedido e usar Enviar para aprovação de cadastro. Na lista e no pedido aparece Aguardando aprovação de cadastro. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando aprovação de cadastro e limite, abre o cadastro para revisar e usa Revisar cadastro e liberar limite. Informe um valor positivo e confirme. A liberação do cadastro não confirma nem aprova os pedidos automaticamente: eles continuam na análise comercial.
+8. O representante pode usar Cadastrar novo cliente no Cadastro Unificado. Informe nome e CPF/CNPJ e complete os dados de contato e endereço que conhecer. A loja é preenchida automaticamente quando houver apenas uma permitida; havendo mais, selecione uma delas. O formulário não exige rota nem código IBGE. A rota fica para o administrador na revisão. O vínculo com o representante é automático; não é possível escolher outra carteira ou conceder limite.
+9. Clientes cadastrados pelo representante ficam com Cadastro / limite pendente, limite zero e bloqueados para aprovação e confirmação de pedidos. O representante já pode montar e imprimir um pedido e usar Enviar para aprovação de cadastro. Na lista e no pedido aparece Aguardando aprovação de cadastro. Em Cadastro Unificado, o administrador confere a fila Clientes aguardando aprovação de cadastro e limite, abre o cadastro para revisar e usa Revisar cadastro e liberar limite. Defina uma rota ativa no cadastro, informe um limite positivo e confirme. Ao liberar, pedidos em digitação ou aguardando aprovação desta loja que ainda não têm rota recebem essa rota automaticamente. Pedidos aprovados, confirmados ou com rota própria são preservados. A liberação do cadastro não confirma nem aprova os pedidos automaticamente: eles continuam na análise comercial.
 10. Mantenha categorias, marcas, cidades e rotas nos módulos correspondentes.
 11. No Cadastro Unificado, a janela ampliada é dividida em CPF / CNPJ, Dados gerais, Contato e endereço, Dados fiscais, Cliente, Representante, Histórico e Observações. Os campos preenchidos permanecem ao mudar de seção; clique Salvar para gravar.
 12. Marque as funções em Dados gerais para habilitar os campos de Cliente e Representante. Na seção Histórico, use a paginação dos pedidos e dos títulos financeiros.
@@ -176,7 +176,7 @@ Da escolha do cliente à confirmação da venda.
 
 Cuidados:
 
-- Clientes novos cadastrados pelo representante podem ter pedidos preenchidos e impressos enquanto o cadastro aguarda revisão. Use Enviar para aprovação de cadastro para colocá-los em análise. Aprovar ou confirmar fica indisponível até um administrador liberar o cadastro e o limite em Cadastro Unificado, inclusive para quem tem perfil administrativo. Nenhuma saída de estoque, parcela ou comissão é gerada pelo simples envio. A aprovação do cadastro não substitui a análise comercial do pedido.
+- Clientes novos cadastrados pelo representante podem ter pedidos preenchidos e impressos enquanto o cadastro aguarda revisão. Use Enviar para aprovação de cadastro para colocá-los em análise. É possível iniciar um pedido sem rota para esse cliente pendente; a rota será definida na revisão administrativa. Aprovar ou confirmar fica indisponível até um administrador revisar a rota e liberar o cadastro e o limite em Cadastro Unificado, inclusive para quem tem perfil administrativo. Nenhuma saída de estoque, parcela ou comissão é gerada pelo simples envio. A aprovação do cadastro não substitui a análise comercial do pedido.
 - Representante sem perfil administrador não pode aprovar ou recusar pedidos. Se faltar estoque disponível na loja, pode imprimir e enviar para aprovação comercial; não pode confirmar a venda, mesmo quando o produto permite estoque negativo ou já recebeu aprovação. A gestão deve analisar e confirmar conforme suas permissões.
 - Confirmar pedido pode baixar estoque e gerar contas a receber e comissão prevista. Aguarde o resultado e confira o pedido antes de repetir a ação.
 - O administrador pode usar Cancelar pedido · administrador até a montagem da carga, antes da saída, descrevendo um motivo com pelo menos 10 caracteres. Reservas são liberadas e somente saídas de estoque já registradas são revertidas. Em etapas iniciais, títulos não recebidos e sem vínculos são excluídos com auditoria; títulos ligados a boletos e históricos financeiros são preservados como cancelados.
@@ -569,6 +569,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.39.1 · 2026-11-05 · Simplificar cadastro do representante e permitir rota na revisão administrativa
+
+Motivo da atualização: O representante era obrigado a selecionar uma rota mesmo sem acesso ao módulo ou a rotas disponíveis, impedindo o cadastro do cliente.
+
+- Cadastro do representante pede nome, CPF/CNPJ e loja permitida, com contato/endereço opcionais. Rota e código IBGE saem do formulário; loja única é preenchida automaticamente e a carteira continua automática.
+- Cliente permanece pendente de aprovação e limite, permitindo preparar e enviar o pedido sem rota. Administrador define rota ativa antes de liberar o cliente; pedidos iniciais ainda sem rota recebem essa definição, sem confirmação automática.
+- Permissões de loja/carteira e bloqueios de crédito preservados. Cadastros existentes, rotas já escolhidas e pedidos aprovados ou confirmados não são regravados pela instalação.
 
 ### v1.39.0 · 2026-11-05 · Contratos SaaS com vigência, serviços em lista e faturas consolidadas
 

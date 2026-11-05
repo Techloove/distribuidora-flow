@@ -627,7 +627,7 @@ export function DocumentoPage({
         );
       }
       if (config.table === "pedidos") {
-        if (!payload["rota_id"])
+        if (!payload["rota_id"] && !clienteCadastroPendente(payload["cliente_id"]))
           throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
         if (!payload["forma_pagamento_id"])
           throw new Error(
@@ -1578,8 +1578,9 @@ export function DocumentoPage({
           className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
         >
           Aguardando aprovação de cadastro. Você pode preencher, imprimir e enviar este pedido para
-          análise. Um administrador deve revisar e liberar o cliente em Cadastro Unificado antes da
-          aprovação do pedido. A liberação do cadastro não confirma a venda automaticamente.
+          análise. Um administrador deve revisar a rota, definir o limite e liberar o cliente em
+          Cadastro Unificado antes da aprovação do pedido. A liberação do cadastro não confirma a
+          venda automaticamente.
         </p>
       )}
       {config.table === "pedidos" && cadastrosPendentes.isError && (
@@ -3094,21 +3095,28 @@ export function DocumentoPage({
                     Vem do login quando o usuário está vinculado a um representante.
                   </p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Rota de entrega *</Label>
-                  <SearchSelect
-                    value={header["rota"] ?? ""}
-                    onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">—</option>
-                    {rotas.data?.map((r) => (
-                      <option key={String(r["id"])} value={String(r["id"])}>
-                        {String(r["nome"])}
-                      </option>
-                    ))}
-                  </SearchSelect>
-                </div>
+                {clienteCadastroPendente(header["partner"]) && !header["rota"] ? (
+                  <p className="self-center rounded-xl border bg-muted/30 p-3 text-sm">
+                    A rota será definida pelo administrador na aprovação do cadastro. Você pode
+                    preparar este pedido e enviá-lo para análise.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label>Rota de entrega *</Label>
+                    <SearchSelect
+                      value={header["rota"] ?? ""}
+                      onChange={(e) => setHeader((h) => ({ ...h, rota: e.target.value }))}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="">—</option>
+                      {rotas.data?.map((r) => (
+                        <option key={String(r["id"])} value={String(r["id"])}>
+                          {String(r["nome"])}
+                        </option>
+                      ))}
+                    </SearchSelect>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Forma de pagamento *</Label>
                   <SearchSelect

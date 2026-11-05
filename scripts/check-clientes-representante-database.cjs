@@ -382,8 +382,113 @@ const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
     await db.query("select avancar_pedido($1,'aprovado')", [ped334]);
     await db.query("select confirmar_pedido($1)", [ped334]);
     assert.equal((await db.query("select * from efeitos334")).rows.length, 3);
+    // Fase336: representante sem consulta de rotas cadastra e monta pedido pendente.
+    await db.exec(`reset role;
+      alter table pedidos add column rota_id uuid,add column forma_pagamento_id uuid,add column previsao_entrega date,add column observacoes text,add column numero bigserial;
+      alter table pedidos alter column status set default 'rascunho';
+      alter table clientes add column sequencia_entrega integer;
+      create table formas_pagamento(id uuid,ativo boolean);insert into formas_pagamento values('${id(30)}',true);
+      create function can_operate(u uuid) returns boolean language sql security definer set search_path=public as $$select usuario_ativo() and (has_role(u,'admin') or has_role(u,'representante') or has_role(u,'gestor'))$$;
+      create function rota_por_cidade(text,text) returns uuid language sql as $$select '${id(22)}'::uuid$$;
+      create function sequencia_por_cidade(text,text) returns integer language sql as $$select 1$$;
+      insert into profiles(id) values('${id(7)}');insert into user_roles values('${id(7)}','representante');
+      insert into representantes values('${id(700)}','Sem rotas','${id(7)}',null,true);
+      insert into usuario_centros values('${id(7)}','${id(10)}');
+    `);
+    await load("db/fase50_rota_cidades.sql", "cliente_rota_por_cidade");
+    await db.exec(
+      "create trigger trg_cliente_rota_por_cidade before insert or update of cidade,uf,rota_id on clientes for each row execute function cliente_rota_por_cidade()",
+    );
+    await load("db/fase81_hardening_crud_pedidos.sql", "criar_pedido_rascunho");
+    await db.exec(readFileSync("db/fase206_carteira_representante.sql", "utf8"));
+    const cadastro336 = readFileSync("db/fase336_cadastro_representante_sem_rota.sql", "utf8");
+    await db.exec(cadastro336);
+    await db.exec(cadastro336);
+    await db.exec(
+      "revoke all on rotas from authenticated;revoke execute on function rotas_cadastro_representante_284() from authenticated",
+    );
+    await login(7);
+    await assert.rejects(db.query("select * from rotas"), /permission denied/);
+    await assert.rejects(
+      db.query("select rotas_cadastro_representante_284()"),
+      /permission denied/,
+    );
+    const semRota = { ...dados, cnpj_cpf: "96765432000190", cidade: "Cidade sem rota acessível" };
+    delete semRota.rota_id;
+    const pessoa336 = (await cadastrar(semRota)).rows[0].id;
+    const cliente336 = (await db.query("select * from clientes where pessoa_id=$1", [pessoa336]))
+      .rows[0];
+    assert.equal(cliente336.rota_id, null);
+    assert.equal(cliente336.status, "bloqueado");
+    assert.equal(
+      (await db.query("select credito_pendente from pessoas where id=$1", [pessoa336])).rows[0]
+        .credito_pendente,
+      true,
+    );
+    await assert.rejects(
+      cadastrar({ ...semRota, cnpj_cpf: "96765432000191", rota_id: id(22) }),
+      /Rota fora/,
+    );
+    const pedido336 = (
+      await db.query(
+        "select (criar_pedido_rascunho($1,$2,null,$3,current_date,null,null,null)).id id",
+        [cliente336.id, id(10), id(30)],
+      )
+    ).rows[0].id;
+    await db.query("select avancar_pedido($1,'aguardando_aprovacao')", [pedido336]);
+    assert.equal(
+      (await db.query("select rota_id from pedidos where id=$1", [pedido336])).rows[0].rota_id,
+      null,
+    );
+    await assert.rejects(
+      db.query("select confirmar_pedido($1)", [pedido336]),
+      /Aguardando aprovação de cadastro/,
+    );
+    await assert.rejects(
+      db.query("update pessoas set rota_id=$1 where id=$2", [id(22), pessoa336]),
+      /Rota fora/,
+    );
+    await login(3);
+    await assert.rejects(liberar(pessoa336, 500), /rota ativa/);
+    await db.query("update pessoas set rota_id=$1 where id=$2", [id(11), pessoa336]);
+    const pedidoComRota336 = (
+      await db.query(
+        "insert into pedidos(cliente_id,centro_id,representante_id,rota_id,status,numero) values($1,$2,$3,$4,'aguardando_aprovacao',336) returning id",
+        [cliente336.id, id(10), id(700), id(22)],
+      )
+    ).rows[0].id;
+    await liberar(pessoa336, 500);
+    const revisado = (await db.query("select rota_id,status from pedidos where id=$1", [pedido336]))
+      .rows[0];
+    assert.equal(revisado.rota_id, id(11));
+    assert.equal(revisado.status, "aguardando_aprovacao");
+    assert.equal(
+      (await db.query("select rota_id from pedidos where id=$1", [pedidoComRota336])).rows[0]
+        .rota_id,
+      id(22),
+    );
+
+    await db.query("update pedidos set rota_id=null where id=$1", [pedido336]);
+    const efeitosAntes336 = (await db.query("select count(*) n from efeitos334")).rows[0].n;
+    await assert.rejects(db.query("select confirmar_pedido($1)", [pedido336]), /rota ativa/);
+    assert.equal((await db.query("select count(*) n from efeitos334")).rows[0].n, efeitosAntes336);
+    await assert.rejects(
+      db.query("select avancar_pedido($1,'aprovado')", [pedido336]),
+      /rota ativa/,
+    );
+    await db.query("update pedidos set rota_id=$1 where id=$2", [id(11), pedido336]);
+    await db.query("select avancar_pedido($1,'aprovado')", [pedido336]);
+    await login(7);
+    await assert.rejects(
+      db.query("select criar_pedido_rascunho($1,$2,null,$3,current_date,null,null,null)", [
+        cliente336.id,
+        id(10),
+        id(30),
+      ]),
+      /Rota de entrega obrigatoria/,
+    );
     console.log(
-      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, pedidos aguardando cadastro334, bloqueio antecipado sem efeitos, liberação sem confirmação automática, vendas mensais isoladas, revogações e reexecução preservadas.",
+      "Clientes/representante OK: carteira e lojas, crédito pendente, espelho real198, aprovação exclusiva, cadastro sem acesso a rotas336, revisão de rota e pedido pendente íntegros, pedidos aguardando cadastro334, bloqueio antecipado sem efeitos, liberação sem confirmação automática, vendas mensais isoladas, revogações e reexecução preservadas.",
     );
   } finally {
     await db.close();
