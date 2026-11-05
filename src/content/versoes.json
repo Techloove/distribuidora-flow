@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.4",
+    "data": "2026-11-05",
+    "titulo": "Concluir aprovação do cliente ao salvar revisão administrativa",
+    "motivo": "O salvamento direto de um limite positivo mantinha o cadastro pendente e era recusado pelo banco.",
+    "novidades": [
+      "Na revisão de cliente pendente, o administrador salva os dados ainda bloqueados e conclui a liberação pelo procedimento administrativo existente, com validação de loja, rota ativa e limite positivo. Um aviso explica a aprovação ao salvar. Falha na liberação mantém o cliente pendente e informa que os dados foram salvos. Pedidos não são aprovados automaticamente."
+    ]
+  },
+  {
     "versao": "1.40.3",
     "data": "2026-11-05",
     "titulo": "Iniciar cadastro de cliente pelo CPF ou CNPJ",

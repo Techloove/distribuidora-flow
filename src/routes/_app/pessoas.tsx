@@ -1,3 +1,4 @@
+import { salvarRevisaoCadastroCliente } from "@/lib/revisao-cadastro-cliente";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ConsultaCep } from "@/components/consulta-cep";
@@ -484,9 +485,38 @@ function PessoasPage() {
           orderBy="razao_social"
           emptyLabel="Nenhuma pessoa cadastrada ainda."
           searchColumns={["codigo", "razao_social", "nome_fantasia", "cnpj_cpf", "cidade", "email"]}
+          saveExisting={(payload, editing) =>
+            salvarRevisaoCadastroCliente({
+              payload,
+              pendente: editing["credito_pendente"] === true,
+              admin: roles.includes("admin"),
+              salvar: async (dados, exigirPendente) => {
+                let query = client!.from("pessoas").update(dados).eq("id", String(editing["id"]));
+                if (exigirPendente) query = query.eq("credito_pendente", true);
+                const { error } = await query.select("id").single();
+                if (error) throw new Error(error.message);
+              },
+              liberar: async (limite) => {
+                const { error } = await client!.rpc("liberar_credito_cliente_284", {
+                  _pessoa: String(editing["id"]),
+                  _limite: limite,
+                });
+                if (error) throw new Error(error.message);
+              },
+            })
+          }
           extraFormTop
           extraForm={({ form, editing, patch, openRow, sectionId }) => (
             <div className="space-y-4">
+              {sectionId === "cliente" &&
+                editing?.["credito_pendente"] === true &&
+                roles.includes("admin") && (
+                  <p role="status" className="rounded-lg border bg-muted/30 p-3 text-sm">
+                    Cadastro aguardando aprovação. Confira os dados, defina a rota e um limite
+                    positivo. Ao salvar, o sistema também aprovará o cadastro e liberará esse
+                    limite. Os pedidos continuam sujeitos à análise comercial.
+                  </p>
+                )}
               {sectionId === "geral" && form["is_cliente"] && (
                 <div className="space-y-2 rounded-lg border p-3">
                   <label htmlFor="vinculo-loja-cliente" className="text-sm font-medium">

@@ -227,6 +227,7 @@ export function CrudPage({
   decorate,
   inlineEdit,
   onInlineSave,
+  saveExisting,
   extraForm,
   extraFormTop,
   extraFormEnd,
@@ -256,6 +257,8 @@ export function CrudPage({
   inlineEdit?: string[];
   /** Converte a edição inline no patch gravado (ex.: markup ↔ preço de venda). */
   onInlineSave?: (row: Row, name: string, value: string) => Record<string, unknown>;
+  /** Salvamento especializado de registros existentes, mantendo autorização da rotina. */
+  saveExisting?: (payload: Record<string, unknown>, editing: Row) => Promise<void>;
   /** Blocos extras dentro do formulário (ex.: comissão do representante). */
   extraForm?: (ctx: {
     sectionId?: string | undefined;
@@ -515,7 +518,9 @@ export function CrudPage({
         }
       }
 
-      if (editing) {
+      if (editing && saveExisting) {
+        await saveExisting(payload, editing);
+      } else if (editing) {
         const { error } = await client!
           .from(table)
           .update(payload)
@@ -541,6 +546,8 @@ export function CrudPage({
       if (table === "pessoas") {
         queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
+        void queryClient.invalidateQueries({ queryKey: ["clientes-credito-pendente"] });
+        void queryClient.invalidateQueries({ queryKey: ["painel-representante"] });
       }
     },
     onError: (error: Error) => toast.error(traduzErro(error.message)),
