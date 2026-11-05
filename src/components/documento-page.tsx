@@ -1,3 +1,4 @@
+import { conferirRotaRascunhoCliente } from "@/lib/rota-rascunho-cliente";
 import { avisoEstoquePedido, type AlertaEstoquePedido } from "@/lib/aviso-estoque-pedido";
 import { FiltroPeriodo } from "@/components/filtro-periodo";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -627,8 +628,16 @@ export function DocumentoPage({
         );
       }
       if (config.table === "pedidos") {
-        if (!payload["rota_id"] && !clienteCadastroPendente(payload["cliente_id"]))
-          throw new Error("Informe a rota de entrega (cadastre no cliente para vir automático)");
+        await conferirRotaRascunhoCliente(
+          payload["rota_id"],
+          partners.data?.find((p) => p["id"] === payload["cliente_id"])?.["pessoa_id"],
+          async () => {
+            const resultado = await cadastrosPendentes.refetch();
+            if (resultado.error || !resultado.data)
+              throw new Error("Consulta de cadastro indisponível");
+            return resultado.data;
+          },
+        );
         if (!payload["forma_pagamento_id"])
           throw new Error(
             "Informe a forma de pagamento (defina a condição de pagamento no cliente)",

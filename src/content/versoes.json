@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.40.7",
+    "data": "2026-11-05",
+    "titulo": "Conferir cadastro pendente antes de exigir rota no pedido",
+    "motivo": "A consulta de cadastros pendentes podia ainda estar carregando ao criar um pedido sem rota, causando uma exigência indevida.",
+    "novidades": [
+      "Antes de exigir rota em um novo rascunho, a tela aguarda uma consulta atualizada da pendência do cliente. Cliente ainda pendente pode preparar o pedido sem rota; cadastro liberado continua exigindo rota. Falha na consulta informa nova tentativa, mantendo as validações do servidor. Fluxo de cadastro, aprovação e estoque revisado com testes isolados e verificação somente leitura no banco em uso.",
+      "Proteção de documento único no banco impede cadastrar novamente o mesmo CPF/CNPJ com pontuação diferente, inclusive entre celular e computador. Não mescla nem modifica registros existentes."
+    ]
+  },
+  {
     "versao": "1.40.6",
     "data": "2026-11-05",
     "titulo": "Padronizar CPF e CNPJ na listagem do cadastro unificado",
