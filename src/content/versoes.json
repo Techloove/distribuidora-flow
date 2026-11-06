@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.41.0",
+    "data": "2026-11-06",
+    "titulo": "Reajustes por salário mínimo e carência da assinatura pré-paga",
+    "motivo": "Permitir reajustar a mensalidade durante a vigência contratual, com base em percentual do salário mínimo, sem interferir no setup ou em serviços anuais.",
+    "novidades": [
+      "Assinaturas mensais podem ter uma lista de reajustes com vigência e salário mínimo de referência. Percentual inicial de 23%, editável pelo proprietário, com cálculo em centavos e aplicação somente a partir da vigência indicada.",
+      "É possível salvar o próximo reajuste com salário mínimo a definir. As mensalidades desse período aguardam a definição antes de gerar cobrança; a prévia e Minha assinatura avisam que esses valores não estão incluídos nos totais. Depois de informar a referência, revise e salve para gerar o restante do contrato.",
+      "O parcelamento do setup e as recorrências de hospedagem, domínio e outros serviços são independentes. Cobranças vencidas ou com histórico não são reprecificadas; permissões, revisão concorrente e proteção de atualização do contrato permanecem preservadas. A instalação não recalcula contratos existentes.",
+      "Assinaturas mensais podem ter carência inicial gratuita, em dias corridos: com 30 dias, o primeiro vencimento é o início do contrato mais 30 dias. Cada vencimento inicia o ciclo pré-pago seguinte, identificado também na fatura e no PDF. O setup mantém seu próprio parcelamento."
+    ]
+  },
+  {
     "versao": "1.40.10",
     "data": "2026-11-06",
     "titulo": "Corrigir gravação de contratos SaaS com filtro explícito",

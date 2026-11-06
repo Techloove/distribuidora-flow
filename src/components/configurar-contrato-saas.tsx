@@ -1,3 +1,5 @@
+import { textoMensalidadePorSalario, primeiroVencimentoComCarencia } from "@/lib/reajuste-saas";
+import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,6 +21,9 @@ import {
 } from "@/components/ui/dialog";
 
 type Servico = {
+  carencia_inicial_dias: string;
+  percentual_salario: string;
+  reajustes: { vigencia: string; salario_minimo: string }[];
   id: string;
   descricao: string;
   tipo: string;
@@ -56,12 +61,35 @@ export function ConfigurarContratoSaas({
     instrucoes: c.instrucoes,
   }));
   const [servicos, setServicos] = useState<Servico[]>(() =>
-    (painel.itens_contrato ?? []).map((s) => ({ ...s, valor: String(s.valor) })),
+    (painel.itens_contrato ?? []).map((s) => ({
+      ...s,
+      carencia_inicial_dias: s.carencia_inicial_dias == null ? "" : String(s.carencia_inicial_dias),
+      valor: String(s.valor),
+      percentual_salario: s.percentual_salario == null ? "" : String(s.percentual_salario),
+      reajustes: (s.reajustes ?? []).map((r) => ({
+        vigencia: r.vigencia,
+        salario_minimo: r.salario_minimo == null ? "" : String(r.salario_minimo),
+      })),
+    })),
   );
   const [previa, setPrevia] = useState<SaasPreviaContrato | null>(null);
   const dados = () => ({
     ...form,
-    servicos: servicos.map((s) => ({ ...s, valor: Number(s.valor) })),
+    servicos: servicos.map((s) => ({
+      ...s,
+      carencia_inicial_dias: s.carencia_inicial_dias.trim()
+        ? Number(s.carencia_inicial_dias)
+        : null,
+      primeiro_vencimento: s.carencia_inicial_dias.trim()
+        ? primeiroVencimentoComCarencia(form.inicio, Number(s.carencia_inicial_dias))
+        : s.primeiro_vencimento,
+      valor: Number(s.valor),
+      percentual_salario: s.percentual_salario.trim() ? Number(s.percentual_salario) : null,
+      reajustes: s.reajustes.map((r) => ({
+        vigencia: r.vigencia,
+        salario_minimo: r.salario_minimo.trim() ? Number(r.salario_minimo) : null,
+      })),
+    })),
   });
   const prever = useMutation({
     mutationFn: async () => {
@@ -113,6 +141,9 @@ export function ConfigurarContratoSaas({
                 ? "anual"
                 : "unica",
         valor: "0",
+        carencia_inicial_dias: "",
+        percentual_salario: "",
+        reajustes: [],
         primeiro_vencimento: form.inicio,
         parcelas: 1,
         observacao: "",
@@ -259,7 +290,13 @@ export function ConfigurarContratoSaas({
                         className={seletor}
                         value={s.periodicidade}
                         onChange={(e) =>
-                          alterarServico(s.id, { periodicidade: e.target.value, parcelas: 1 })
+                          alterarServico(s.id, {
+                            periodicidade: e.target.value,
+                            parcelas: 1,
+                            ...(e.target.value !== "mensal"
+                              ? { percentual_salario: "", reajustes: [], carencia_inicial_dias: "" }
+                              : {}),
+                          })
                         }
                       >
                         {Object.entries(periodicidadesSaas).map(([v, l]) => (
@@ -271,7 +308,11 @@ export function ConfigurarContratoSaas({
                     </div>
                     <div>
                       <Label htmlFor={`servico-valor-${s.id}`}>
-                        {s.periodicidade === "parcelado" ? "Valor total (R$)" : "Valor (R$)"}
+                        {s.periodicidade === "parcelado"
+                          ? "Valor total (R$)"
+                          : s.percentual_salario || s.reajustes.length
+                            ? "Valor inicial (R$)"
+                            : "Valor (R$)"}
                       </Label>
                       <Input
                         id={`servico-valor-${s.id}`}
@@ -289,7 +330,15 @@ export function ConfigurarContratoSaas({
                         min={form.inicio}
                         max={form.fim}
                         required
-                        value={s.primeiro_vencimento}
+                        value={
+                          s.carencia_inicial_dias.trim()
+                            ? primeiroVencimentoComCarencia(
+                                form.inicio,
+                                Number(s.carencia_inicial_dias),
+                              )
+                            : s.primeiro_vencimento
+                        }
+                        readOnly={s.carencia_inicial_dias !== ""}
                         onChange={(e) =>
                           alterarServico(s.id, { primeiro_vencimento: e.target.value })
                         }
@@ -309,6 +358,206 @@ export function ConfigurarContratoSaas({
                       />
                     </div>
                   </div>
+                  {s.tipo === "mensalidade" && s.periodicidade === "mensal" && (
+                    <section className="space-y-3 rounded-xl border bg-muted/30 p-3">
+                      <h4 className="text-sm font-medium">Mensalidade pré-paga</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Cada vencimento inicia o próximo período de uso pago. A carência inicial é
+                        gratuita e vale apenas no início do contrato. Setup e demais serviços seguem
+                        seus próprios vencimentos.
+                      </p>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={s.carencia_inicial_dias !== ""}
+                          onChange={(e) =>
+                            alterarServico(
+                              s.id,
+                              e.target.checked
+                                ? { carencia_inicial_dias: "30" }
+                                : {
+                                    carencia_inicial_dias: "",
+                                    primeiro_vencimento:
+                                      primeiroVencimentoComCarencia(
+                                        form.inicio,
+                                        Number(s.carencia_inicial_dias),
+                                      ) || s.primeiro_vencimento,
+                                  },
+                            )
+                          }
+                        />
+                        Definir carência inicial gratuita
+                      </label>
+                      {s.carencia_inicial_dias !== "" && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label htmlFor={`servico-carencia-${s.id}`}>
+                              Dias gratuitos no início
+                            </Label>
+                            <Input
+                              id={`servico-carencia-${s.id}`}
+                              type="number"
+                              min={0}
+                              max={365}
+                              step={1}
+                              required
+                              value={s.carencia_inicial_dias.trim()}
+                              onChange={(e) =>
+                                alterarServico(s.id, {
+                                  carencia_inicial_dias: e.target.value || " ",
+                                })
+                              }
+                            />
+                          </div>
+                          <p className="self-end pb-2 text-sm">
+                            Primeiro vencimento:{" "}
+                            {dataBr(
+                              primeiroVencimentoComCarencia(
+                                form.inicio,
+                                Number(s.carencia_inicial_dias),
+                              ),
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </section>
+                  )}
+                  {s.tipo === "mensalidade" && s.periodicidade === "mensal" && (
+                    <section className="space-y-3 rounded-xl border bg-muted/30 p-3">
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input
+                          type="checkbox"
+                          checked={!!s.percentual_salario || s.reajustes.length > 0}
+                          onChange={(e) =>
+                            alterarServico(
+                              s.id,
+                              e.target.checked
+                                ? {
+                                    percentual_salario: "23",
+                                    reajustes: s.reajustes.length
+                                      ? s.reajustes
+                                      : [
+                                          {
+                                            vigencia: `${Math.max(Number(form.inicio.slice(0, 4)), Number(hoje.slice(0, 4))) + 1}-01-01`,
+                                            salario_minimo: "",
+                                          },
+                                        ],
+                                  }
+                                : { percentual_salario: "", reajustes: [] },
+                            )
+                          }
+                        />
+                        Reajustar mensalidade por percentual do salário mínimo
+                      </label>
+                      {(!!s.percentual_salario || s.reajustes.length > 0) && (
+                        <>
+                          <div className="max-w-xs space-y-1">
+                            <Label htmlFor={`servico-percentual-${s.id}`}>
+                              Percentual do salário mínimo (%)
+                            </Label>
+                            <Input
+                              id={`servico-percentual-${s.id}`}
+                              type="number"
+                              min="0.0001"
+                              max="100"
+                              step="0.0001"
+                              required
+                              value={s.percentual_salario}
+                              onChange={(e) =>
+                                alterarServico(s.id, { percentual_salario: e.target.value })
+                              }
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            O valor atual vale até o primeiro reajuste. Informe a vigência e o
+                            salário mínimo de referência; a mensalidade será calculada pelo
+                            percentual acima. Deixe a referência vazia se ainda estiver a definir: a
+                            partir dessa vigência, as mensalidades aguardam definição antes de gerar
+                            cobrança. O setup e os outros serviços não mudam.
+                          </p>
+                          {s.reajustes.map((r, j) => (
+                            <div
+                              key={j}
+                              className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
+                            >
+                              <div>
+                                <Label htmlFor={`reajuste-data-${s.id}-${j}`}>
+                                  Vigência do reajuste
+                                </Label>
+                                <Input
+                                  id={`reajuste-data-${s.id}-${j}`}
+                                  type="date"
+                                  min={form.inicio}
+                                  max={form.fim || undefined}
+                                  required
+                                  value={r.vigencia}
+                                  onChange={(e) =>
+                                    alterarServico(s.id, {
+                                      reajustes: s.reajustes.map((x, k) =>
+                                        k === j ? { ...x, vigencia: e.target.value } : x,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`reajuste-base-${s.id}-${j}`}>
+                                  Salário mínimo (R$)
+                                </Label>
+                                <Input
+                                  id={`reajuste-base-${s.id}-${j}`}
+                                  currency
+                                  placeholder="A definir"
+                                  value={r.salario_minimo}
+                                  onChange={(e) =>
+                                    alterarServico(s.id, {
+                                      reajustes: s.reajustes.map((x, k) =>
+                                        k === j ? { ...x, salario_minimo: e.target.value } : x,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="py-2 text-sm">
+                                <span className="block text-xs text-muted-foreground">
+                                  Mensalidade reajustada
+                                </span>
+                                {r.salario_minimo.trim()
+                                  ? textoMensalidadePorSalario(
+                                      r.salario_minimo,
+                                      s.percentual_salario,
+                                    )
+                                  : "A definir"}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() =>
+                                  alterarServico(s.id, {
+                                    reajustes: s.reajustes.filter((_, k) => k !== j),
+                                  })
+                                }
+                              >
+                                Remover reajuste
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={s.reajustes.length >= 20}
+                            onClick={() =>
+                              alterarServico(s.id, {
+                                reajustes: [...s.reajustes, { vigencia: "", salario_minimo: "" }],
+                              })
+                            }
+                          >
+                            Adicionar reajuste
+                          </Button>
+                        </>
+                      )}
+                    </section>
+                  )}
                   <div>
                     <Label htmlFor={`servico-observacao-${s.id}`}>Observação (opcional)</Label>
                     <Input
@@ -382,6 +631,7 @@ export function ConfigurarContratoSaas({
                 do período. Se ativar o controle com vencimentos antigos, poderá haver bloqueio
                 imediato por inadimplência.
               </p>
+              <AvisoReajustesSaas reajustes={previa.reajustes_pendentes} />
               <div className="max-h-64 overflow-auto">
                 <table className="w-full text-left text-sm">
                   <thead>

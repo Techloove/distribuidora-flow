@@ -1,8 +1,9 @@
+import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
 import { useState } from "react";
 import { toast } from "sonner";
 import { brl, dataBr } from "@/lib/formatacao";
 import { agruparFaturasSaas, nomeEstadoFatura, type FaturaSaas } from "@/lib/faturas-saas";
-import type { SaasContrato, SaasParcela } from "@/lib/saas";
+import type { SaasContrato, SaasParcela, SaasReajustePendente } from "@/lib/saas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-function imprimir(fatura: FaturaSaas, contrato: SaasContrato) {
+function imprimir(fatura: FaturaSaas, contrato: SaasContrato, reajustes: SaasReajustePendente[]) {
   const janela = window.open("", "_blank", "width=920,height=760");
   if (!janela) {
     toast.error("Permita abrir a janela de impressão para salvar a fatura em PDF.");
@@ -46,7 +47,10 @@ function imprimir(fatura: FaturaSaas, contrato: SaasContrato) {
   for (const item of fatura.itens) {
     const linha = texto("tr", "", tabela);
     for (const valor of [
-      item.descricao ?? "Serviço",
+      (item.descricao ?? "Serviço") +
+        (item.periodo_inicio && item.periodo_fim
+          ? ` · pré-pago: uso de ${dataBr(item.periodo_inicio)} a ${dataBr(item.periodo_fim)}`
+          : ""),
       String(item.parcela),
       item.estado === "pago"
         ? "Pago"
@@ -63,6 +67,12 @@ function imprimir(fatura: FaturaSaas, contrato: SaasContrato) {
     "p",
     `Total a cobrar: ${brl(fatura.total)}\nPagamentos confirmados: ${brl(fatura.pago)}\nSaldo: ${brl(fatura.saldo)}`,
   );
+  for (const reajuste of reajustes.filter((r) => r.vigencia <= fatura.vencimento)) {
+    texto(
+      "p",
+      `${reajuste.descricao}: salário mínimo a definir a partir de ${dataBr(reajuste.vigencia)}. A mensalidade de ${Number(reajuste.percentual).toLocaleString("pt-BR")}% da referência ainda não está incluída no total desta fatura.`,
+    );
+  }
   if (contrato.instrucoes) texto("p", contrato.instrucoes);
   texto(
     "p",
@@ -74,9 +84,11 @@ function imprimir(fatura: FaturaSaas, contrato: SaasContrato) {
 export function FaturasSaas({
   parcelas,
   contrato,
+  reajustes = [],
 }: {
   parcelas: SaasParcela[];
   contrato: SaasContrato;
+  reajustes?: SaasReajustePendente[] | undefined;
 }) {
   const [mes, setMes] = useState("");
   const [id, setId] = useState<string | null>(null);
@@ -182,6 +194,11 @@ export function FaturasSaas({
                       <tr key={p.chave} className="border-b">
                         <td className="py-3">
                           {p.descricao ?? "Serviço"}
+                          {p.periodo_inicio && p.periodo_fim && (
+                            <span className="block text-xs text-muted-foreground">
+                              Pré-pago · uso de {dataBr(p.periodo_inicio)} a {dataBr(p.periodo_fim)}
+                            </span>
+                          )}
                           <span className="block text-xs text-muted-foreground">
                             {p.estado === "cancelado"
                               ? "Cancelado · fora do total"
@@ -211,6 +228,9 @@ export function FaturasSaas({
                   Saldo<strong className="block">{brl(aberta.saldo)}</strong>
                 </p>
               </div>
+              <AvisoReajustesSaas
+                reajustes={reajustes.filter((r) => r.vigencia <= aberta.vencimento)}
+              />
               {contrato.instrucoes && (
                 <p className="whitespace-pre-wrap text-sm">{contrato.instrucoes}</p>
               )}
@@ -222,7 +242,9 @@ export function FaturasSaas({
                 <Button variant="outline" onClick={() => setId(null)}>
                   Fechar
                 </Button>
-                <Button onClick={() => imprimir(aberta, contrato)}>Imprimir / salvar PDF</Button>
+                <Button onClick={() => imprimir(aberta, contrato, reajustes)}>
+                  Imprimir / salvar PDF
+                </Button>
               </div>
             </div>
           )}

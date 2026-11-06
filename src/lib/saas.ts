@@ -8,6 +8,8 @@ export type SaasStatus = {
   limite_regularizacao: string | null;
 };
 export type SaasParcela = {
+  periodo_inicio?: string | null;
+  periodo_fim?: string | null;
   chave: string;
   descricao?: string;
   tipo: string;
@@ -43,6 +45,7 @@ export type SaasPainel = {
   status: SaasStatus;
   contrato?: SaasContrato;
   itens_contrato?: SaasItemContrato[];
+  reajustes_pendentes?: SaasReajustePendente[];
   mensagem?: string;
   termos?: { vigencia: string; valor: number; dia: number }[];
   parcelas?: SaasParcela[];
@@ -75,7 +78,17 @@ export const estadosSaas: Record<SaasStatus["estado"], string> = {
   bloqueado: "Acesso suspenso por pagamento pendente",
 };
 
+export type SaasReajuste = { vigencia: string; salario_minimo: number | null };
+export type SaasReajustePendente = {
+  servico_id: string;
+  descricao: string;
+  vigencia: string;
+  percentual: number;
+};
 export type SaasItemContrato = {
+  carencia_inicial_dias?: number | null;
+  percentual_salario?: number | null;
+  reajustes?: SaasReajuste[];
   id: string;
   descricao: string;
   tipo: string;
@@ -86,6 +99,7 @@ export type SaasItemContrato = {
   observacao: string;
 };
 export type SaasPreviaContrato = {
+  reajustes_pendentes?: SaasReajustePendente[];
   total: number;
   parcelas: {
     chave: string;

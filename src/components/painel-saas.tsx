@@ -1,3 +1,5 @@
+import { textoMensalidadePorSalario } from "@/lib/reajuste-saas";
+import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -281,6 +283,31 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                         {s.periodicidade === "parcelado" ? ` · ${s.parcelas} parcela(s)` : ""} ·
                         primeiro vencimento {dataBr(s.primeiro_vencimento)}
                       </p>
+                      {s.tipo === "mensalidade" && s.periodicidade === "mensal" && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Pré-pago
+                          {s.carencia_inicial_dias != null
+                            ? ` · ${s.carencia_inicial_dias} dia(s) gratuitos no início`
+                            : ""}
+                          . Cada vencimento inicia o próximo período de uso pago.
+                        </p>
+                      )}
+                      {!!s.percentual_salario && (
+                        <div className="mt-2 space-y-1 text-xs">
+                          <p>
+                            Reajustes: {Number(s.percentual_salario).toLocaleString("pt-BR")}% do
+                            salário mínimo informado.
+                          </p>
+                          {s.reajustes?.map((r) => (
+                            <p key={r.vigencia}>
+                              A partir de {dataBr(r.vigencia)}:{" "}
+                              {r.salario_minimo == null
+                                ? "Salário mínimo a definir"
+                                : `${brl(r.salario_minimo)} de referência · mensalidade ${textoMensalidadePorSalario(r.salario_minimo, s.percentual_salario ?? "")}`}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                       {s.observacao && (
                         <p className="text-xs text-muted-foreground">{s.observacao}</p>
                       )}
@@ -288,7 +315,11 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                     <p className="font-semibold">
                       {brl(s.valor)}
                       <span className="block text-right text-xs font-normal text-muted-foreground">
-                        {s.periodicidade === "parcelado" ? "Total do serviço" : "Por cobrança"}
+                        {s.periodicidade === "parcelado"
+                          ? "Total do serviço"
+                          : s.percentual_salario
+                            ? "Valor inicial por cobrança"
+                            : "Por cobrança"}
                       </span>
                     </p>
                   </div>
@@ -296,7 +327,12 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
               </div>
             </section>
           )}
-          <FaturasSaas parcelas={parcelas} contrato={painel.data.contrato} />
+          <AvisoReajustesSaas reajustes={painel.data.reajustes_pendentes} />
+          <FaturasSaas
+            parcelas={parcelas}
+            contrato={painel.data.contrato}
+            reajustes={painel.data.reajustes_pendentes}
+          />
           <section className="grid gap-3 sm:grid-cols-3">
             {[
               [

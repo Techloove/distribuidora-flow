@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.40.10 · 2026-11-06
+Versão 1.41.0 · 2026-11-06
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -556,7 +556,7 @@ Vigência, serviços e faturas da empresa atual, separados do financeiro do ERP.
 5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
 6. Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.
 7. Em cada serviço, informe descrição, valor, primeiro vencimento e cobrança Mensal, Anual, Uma vez ou Parcelado mensalmente. Para parcelamento, informe o valor total do serviço e o número de parcelas; nas demais opções, informe o valor de cada cobrança. Todos os vencimentos devem estar dentro da vigência. Datas no fim do mês são ajustadas sem mudar o dia das cobranças seguintes; a última parcela recebe a diferença de centavos.
-8. Clique Revisar serviços e faturas para conferir todas as cobranças da lista até o fim do contrato. Confirme para salvar. A configuração e a grade de cobranças são gravadas em uma única operação; se o salvamento falhar, as parcelas dessa tentativa não são gravadas. Faturas dos serviços reúne os itens com o mesmo vencimento; datas diferentes geram faturas separadas. O master acessa Minha assinatura, filtra o mês, usa Ver fatura e pode Imprimir / salvar PDF. Total, pagamentos confirmados e saldo excluem itens cancelados. A lista Cobranças da plataforma permite ao proprietário confirmar, cancelar ou reabrir cada item com motivo.
+8. A assinatura funciona no modelo pré-pago: cada vencimento inicia o próximo ciclo de uso pago. Para o período inicial gratuito, marque Definir carência inicial gratuita e informe 30 dias. O primeiro vencimento será calculado como início do contrato mais 30 dias corridos; as mensalidades seguintes serão mensais a partir dessa data. O setup não é deslocado pela carência e pode ter seus próprios cinco vencimentos. A fatura e o PDF mostram o período de uso da mensalidade pré-paga, limitado ao fim do contrato. Não há rateio automático do último ciclo; confira os valores e a vigência na prévia. Nas assinaturas com cobrança Mensal, marque Reajustar mensalidade por percentual do salário mínimo. Informe o percentual, por exemplo 23%, e adicione as vigências e os salários mínimos de referência na lista de reajustes. O valor inicial do serviço vale até o primeiro reajuste; a partir da vigência, a mensalidade corresponde ao percentual sobre a referência, arredondada em centavos. Para janeiro de 2027 ainda sem referência definida, mantenha o salário mínimo vazio: aparecerá A definir. Essas mensalidades não geram cobrança nem bloqueio por atraso antes da definição; os totais e faturas incluem somente valores definidos. O proprietário e o master visualizam o aviso em Minha assinatura; a fatura e o PDF também avisam quando há mensalidade a definir que não está incluída no total. Ao conhecer a referência, preencha o salário mínimo, revise e salve o contrato para gerar as mensalidades do restante da vigência. O setup pode continuar em cinco parcelas independentes e os demais serviços mantêm seus próprios prazos e valores. Reajustes não alteram parcelas vencidas ou com histórico. Clique Revisar serviços e faturas para conferir todas as cobranças da lista até o fim do contrato. Confirme para salvar. A configuração e a grade de cobranças são gravadas em uma única operação; se o salvamento falhar, as parcelas dessa tentativa não são gravadas. Faturas dos serviços reúne os itens com o mesmo vencimento; datas diferentes geram faturas separadas. O master acessa Minha assinatura, filtra o mês, usa Ver fatura e pode Imprimir / salvar PDF. Total, pagamentos confirmados e saldo excluem itens cancelados. A lista Cobranças da plataforma permite ao proprietário confirmar, cancelar ou reabrir cada item com motivo.
 
 Cuidados:
 
@@ -569,6 +569,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.41.0 · 2026-11-06 · Reajustes por salário mínimo e carência da assinatura pré-paga
+
+Motivo da atualização: Permitir reajustar a mensalidade durante a vigência contratual, com base em percentual do salário mínimo, sem interferir no setup ou em serviços anuais.
+
+- Assinaturas mensais podem ter uma lista de reajustes com vigência e salário mínimo de referência. Percentual inicial de 23%, editável pelo proprietário, com cálculo em centavos e aplicação somente a partir da vigência indicada.
+- É possível salvar o próximo reajuste com salário mínimo a definir. As mensalidades desse período aguardam a definição antes de gerar cobrança; a prévia e Minha assinatura avisam que esses valores não estão incluídos nos totais. Depois de informar a referência, revise e salve para gerar o restante do contrato.
+- O parcelamento do setup e as recorrências de hospedagem, domínio e outros serviços são independentes. Cobranças vencidas ou com histórico não são reprecificadas; permissões, revisão concorrente e proteção de atualização do contrato permanecem preservadas. A instalação não recalcula contratos existentes.
+- Assinaturas mensais podem ter carência inicial gratuita, em dias corridos: com 30 dias, o primeiro vencimento é o início do contrato mais 30 dias. Cada vencimento inicia o ciclo pré-pago seguinte, identificado também na fatura e no PDF. O setup mantém seu próprio parcelamento.
 
 ### v1.40.10 · 2026-11-06 · Corrigir gravação de contratos SaaS com filtro explícito
 
