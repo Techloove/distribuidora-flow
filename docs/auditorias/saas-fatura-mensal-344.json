@@ -1,0 +1,12 @@
+{
+  "fase": 344,
+  "contrato_grade_eventos_papeis_proprietarios_preservados": true,
+  "verificacoes": {
+    "rpc_autenticada": true,
+    "anon_bloqueado": true,
+    "recibos_privados": true,
+    "regularizacao_permitida": true,
+    "nenhum_pagamento_criado": true
+  },
+  "sql_sha256": "56cb2330f65e955ffe3f0c57384b0b8d5a5cd6320859b4fbb10062aa18f77355"
+}

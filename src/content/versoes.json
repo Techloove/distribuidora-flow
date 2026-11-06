@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.0",
+    "data": "2026-11-06",
+    "titulo": "Quitar todos os serviços pela fatura mensal da competência",
+    "motivo": "Unificar os serviços de cada competência e confirmar seu recebimento em uma única baixa mensal.",
+    "novidades": [
+      "Faturas mensais reúnem mensalidade, setup, domínio, hospedagem e outros serviços da competência, com total, saldo e detalhamento dos vencimentos originais. A lista administrativa passa a ter uma linha por mês.",
+      "Confirmar pagamento da fatura quita todos os itens pendentes daquela competência em uma transação única, com data e referência do recebimento. Itens pagos/cancelados e cobranças de outros meses não são incluídos.",
+      "O servidor confere itens e saldo, recusa faturas alteradas, evita duplicidade por repetição da requisição e preserva o histórico de cada serviço. Cancelar/reabrir um item continua disponível no detalhamento. Responsáveis consultam a fatura; somente o proprietário confirma o pagamento."
+    ]
+  },
+  {
     "versao": "1.42.0",
     "data": "2026-11-06",
     "titulo": "Avisos de mensalidade com prazo e múltiplos responsáveis",

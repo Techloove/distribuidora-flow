@@ -17,17 +17,20 @@ const item = (
   estado,
   pagamento_data: null,
 });
-describe("faturas da assinatura", () => {
-  test("agrupa apenas vencimentos iguais e soma em centavos", () => {
+describe("faturas mensais do SaaS", () => {
+  test("agrupa a competência mesmo com vencimentos diferentes e soma em centavos", () => {
     const r = agruparFaturasSaas([
       item("setup", 0.1),
       item("mensal", 0.2),
       item("anual", 100, "pendente", "2027-01-20"),
     ]);
-    expect(r).toHaveLength(2);
-    expect(r[0].total).toBe(0.3);
-    expect(r[0].itens).toHaveLength(2);
-    expect(r[1].vencimento).toBe("2027-01-20");
+    expect(r).toHaveLength(1);
+    expect(r[0].total).toBe(100.3);
+    expect(r[0].itens).toHaveLength(3);
+    expect(r[0].competencia).toBe("2027-01-01");
+    expect(r[0].vencimento).toBe("2027-01-10");
+    expect(r[0].vencimento_final).toBe("2027-01-20");
+    expect(r[0].id).toBe("FAT-202701");
   });
   test("pagamento parcial e cancelamento preservam linhas e descontam saldo", () => {
     const [r] = agruparFaturasSaas([
@@ -50,4 +53,10 @@ describe("faturas da assinatura", () => {
     expect(c.saldo).toBe(0);
     expect(agruparFaturasSaas([])).toEqual([]);
   });
+});
+
+test("competências distintas não são quitadas juntas mesmo com vencimento igual", () => {
+  const r = agruparFaturasSaas([item("a", 100), { ...item("b", 50), competencia: "2027-02-01" }]);
+  expect(r).toHaveLength(2);
+  expect(r.map((f) => f.saldo)).toEqual([100, 50]);
 });

@@ -1,20 +1,26 @@
 import type { SaasParcela } from "./saas";
 export type FaturaSaas = {
   id: string;
+  competencia: string;
   vencimento: string;
+  vencimento_final: string;
   itens: SaasParcela[];
   total: number;
   pago: number;
   saldo: number;
   estado: "pago" | "cancelado" | "parcial" | "vencido" | "pendente";
 };
-/** Um vencimento por fatura, sem antecipar nem adiar os serviços contratados. */
+/** Uma fatura por competência; vencimentos originais permanecem no detalhamento. */
 export function agruparFaturasSaas(parcelas: SaasParcela[]): FaturaSaas[] {
   const grupos = new Map<string, SaasParcela[]>();
-  for (const p of parcelas) grupos.set(p.vencimento, [...(grupos.get(p.vencimento) ?? []), p]);
+  for (const p of parcelas) {
+    const competencia = p.competencia.slice(0, 7) + "-01";
+    grupos.set(competencia, [...(grupos.get(competencia) ?? []), p]);
+  }
   return [...grupos.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([vencimento, itens]) => {
+    .map(([competencia, itens]) => {
+      const datas = itens.map((p) => p.vencimento).sort();
       const total = itens
         .filter((p) => p.estado !== "cancelado")
         .reduce((s, p) => s + Math.round(Number(p.valor) * 100), 0);
@@ -22,8 +28,10 @@ export function agruparFaturasSaas(parcelas: SaasParcela[]): FaturaSaas[] {
         .filter((p) => p.estado === "pago")
         .reduce((s, p) => s + Math.round(Number(p.valor) * 100), 0);
       return {
-        id: `FAT-${vencimento.replaceAll("-", "")}`,
-        vencimento,
+        id: `FAT-${competencia.slice(0, 7).replace("-", "")}`,
+        competencia,
+        vencimento: datas[0]!,
+        vencimento_final: datas.at(-1)!,
         itens,
         total: total / 100,
         pago: pago / 100,

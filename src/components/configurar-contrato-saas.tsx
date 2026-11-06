@@ -675,9 +675,9 @@ export function ConfigurarContratoSaas({
                 Prévia do contrato: {previa.parcelas.length} cobrança(s) · {brl(previa.total)}
               </h3>
               <p className="text-sm">
-                Serviços com o mesmo vencimento compõem uma única fatura. Confira as datas e o total
-                do período. Se ativar o controle com vencimentos antigos, poderá haver bloqueio
-                imediato por inadimplência.
+                Serviços da mesma competência compõem uma única fatura mensal. Confira as datas e o
+                total do período. Se ativar o controle com vencimentos antigos, poderá haver
+                bloqueio imediato por inadimplência.
               </p>
               <AvisoReajustesSaas reajustes={previa.reajustes_pendentes} />
               <div className="max-h-64 overflow-auto">

@@ -13,7 +13,7 @@ import { hojeSaoPaulo } from "@/lib/painel-trabalho";
 import { estadosSaas, type SaasPainel, type SaasParcela } from "@/lib/saas";
 import { ConfigurarContratoSaas } from "@/components/configurar-contrato-saas";
 import { FaturasSaas } from "@/components/faturas-saas";
-import { periodicidadesSaas } from "@/lib/faturas-saas";
+import { periodicidadesSaas, type FaturaSaas } from "@/lib/faturas-saas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,20 +25,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export function PainelSaas({ administracao = false }: { administracao?: boolean }) {
   const { client, session, saas, loading, error, signOut } = useSupabase();
   const qc = useQueryClient();
   const [configurar, setConfigurar] = useState(false);
-  const [tipoCobranca, setTipoCobranca] = useState("todos");
+  const [faturaPagamento, setFaturaPagamento] = useState<{
+    fatura: FaturaSaas;
+    requisicao: string;
+  } | null>(null);
   const [servico, setServico] = useState<{
     id: string;
     descricao: string;
@@ -142,6 +137,38 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const quitarFatura = useMutation({
+    mutationFn: async () => {
+      if (!faturaPagamento) throw new Error("Selecione uma fatura mensal.");
+      const f = faturaPagamento.fatura;
+      const r = await client!.rpc("saas_quitar_fatura_344", {
+        _competencia: f.competencia,
+        _chaves: f.itens
+          .filter((p) => !["pago", "cancelado"].includes(p.estado))
+          .map((p) => p.chave)
+          .sort(),
+        _valor: f.saldo,
+        _data: pagamento,
+        _motivo: motivo,
+        _requisicao: faturaPagamento.requisicao,
+      });
+      if (r.error) throw new Error(r.error.message);
+    },
+    onSuccess: async () => {
+      setFaturaPagamento(null);
+      await atualizar();
+      toast.success("Pagamento da fatura mensal confirmado.");
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+      void atualizar();
+    },
+  });
+  const pagarFatura = (fatura: FaturaSaas) => {
+    setFaturaPagamento({ fatura, requisicao: crypto.randomUUID() });
+    setPagamento(hojeSaoPaulo());
+    setMotivo("");
+  };
   const abrirContrato = () => setConfigurar(true);
   const estado = painel.data?.status ?? saas;
   const dono = !!saas?.proprietario;
@@ -341,6 +368,25 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
             parcelas={parcelas}
             contrato={painel.data.contrato}
             reajustes={painel.data.reajustes_pendentes}
+            onPagar={administracao && dono ? pagarFatura : undefined}
+            onOperacaoItem={
+              administracao && dono
+                ? (p, acao) => {
+                    setOperacao({ parcela: p, acao, chave: crypto.randomUUID() });
+                    setMotivo("");
+                    setPagamento(hojeSaoPaulo());
+                  }
+                : undefined
+            }
+            onEditarServico={administracao && dono ? abrirServico : undefined}
+            servicosEditaveis={
+              !painel.data.contrato.modelo_335
+                ? (painel.data.servicos ?? [])
+                    .filter((s) => s.editavel)
+                    .map((s) => `servico:${s.id}`)
+                : []
+            }
+            ocupado={quitarFatura.isPending || registrar.isPending}
           />
           <section className="grid gap-3 sm:grid-cols-3">
             {[
@@ -368,135 +414,6 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                 <p className="mt-2 text-xl font-semibold">{brl(v)}</p>
               </div>
             ))}
-          </section>
-          <section className={card}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-semibold">Cobranças da plataforma</h2>
-              {administracao && dono && (
-                <Button onClick={abrirContrato}>Configurar serviços</Button>
-              )}
-            </div>
-            {administracao && dono && !painel.data.contrato.modelo_335 && (
-              <p className="mb-3 text-sm text-muted-foreground">
-                Defina a vigência e a lista de serviços em Configurar contrato.
-              </p>
-            )}
-            <div className="mb-4 flex flex-wrap gap-2">
-              {[
-                ["todos", "Todas"],
-                ["mensalidade", "Mensalidades"],
-                ["implantacao", "Implantação"],
-                ["servico", "Outros serviços"],
-                ["hospedagem", "Hospedagem"],
-                ["dominio", "Domínio"],
-              ].map(([tipo, label]) => (
-                <Button
-                  key={tipo}
-                  size="sm"
-                  variant={tipoCobranca === tipo ? "default" : "outline"}
-                  onClick={() => setTipoCobranca(tipo!)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Consulte e registre o pagamento de cada item da fatura. A lista respeita a vigência e
-              os vencimentos configurados. Cobranças anteriores ficam preservadas. Os recebimentos
-              seguem separados do financeiro da distribuidora.
-            </p>
-            {parcelas.filter((p) => tipoCobranca === "todos" || p.tipo === tipoCobranca).length ? (
-              <Table className="mobile-cards">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cobrança</TableHead>
-                    <TableHead>Competência</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Situação</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    {administracao && dono && <TableHead>Ações</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parcelas
-                    .filter((p) => tipoCobranca === "todos" || p.tipo === tipoCobranca)
-                    .map((p) => (
-                      <TableRow key={p.chave}>
-                        <TableCell>
-                          <span className="block max-w-[16rem] whitespace-normal break-words">
-                            {nomeCobranca(p)}
-                          </span>
-                          {p.tipo === "servico" && (
-                            <span className="block text-xs text-muted-foreground">
-                              Serviço adicional
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>{mesBr(p.competencia)}</TableCell>
-                        <TableCell>{dataBr(p.vencimento)}</TableCell>
-                        <TableCell>{brl(p.valor)}</TableCell>
-                        <TableCell>
-                          {p.estado === "pago"
-                            ? "Pago"
-                            : p.estado === "cancelado"
-                              ? "Cancelado"
-                              : p.estado === "vencido"
-                                ? "Vencido"
-                                : "Pendente"}
-                        </TableCell>
-                        <TableCell>{dataBr(p.pagamento_data)}</TableCell>
-                        {administracao && dono && (
-                          <TableCell>
-                            <div className="flex max-w-[19rem] flex-wrap gap-2">
-                              {!painel.data?.contrato?.modelo_335 &&
-                                p.tipo === "servico" &&
-                                painel.data?.servicos?.some(
-                                  (s) => `servico:${s.id}` === p.chave && s.editavel,
-                                ) && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => abrirServico(p)}
-                                  >
-                                    Editar serviço
-                                  </Button>
-                                )}
-                              {(p.estado === "pago" || p.estado === "cancelado"
-                                ? ["reaberto"]
-                                : ["pago", "cancelado"]
-                              ).map((acao) => (
-                                <Button
-                                  key={acao}
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setOperacao({ parcela: p, acao, chave: crypto.randomUUID() });
-                                    setMotivo("");
-                                    setPagamento(hojeSaoPaulo());
-                                  }}
-                                >
-                                  {acao === "pago"
-                                    ? "Confirmar pagamento"
-                                    : acao === "reaberto"
-                                      ? "Reabrir cobrança"
-                                      : "Cancelar cobrança"}
-                                </Button>
-                              ))}
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {parcelas.length
-                  ? "Nenhuma cobrança neste filtro."
-                  : "Nenhuma cobrança cadastrada. Configure o contrato antes de ativar o controle."}
-              </p>
-            )}
           </section>
           <section className={card}>
             <h2 className="mb-4 font-semibold">Histórico da mensalidade</h2>
@@ -664,6 +581,103 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                     : revisarServico
                       ? "Confirmar cobrança"
                       : "Revisar cobrança"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!faturaPagamento}
+        onOpenChange={(aberto) => {
+          if (!aberto && !quitarFatura.isPending) setFaturaPagamento(null);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Confirmar pagamento da fatura</DialogTitle>
+            <DialogDescription>
+              Todos os serviços pendentes desta competência serão quitados juntos. Confira o saldo e
+              confirme somente o valor recebido.
+            </DialogDescription>
+          </DialogHeader>
+          {faturaPagamento && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                quitarFatura.mutate();
+              }}
+            >
+              <p className="text-lg font-semibold">
+                Competência {mesBr(faturaPagamento.fatura.competencia)} ·{" "}
+                {brl(faturaPagamento.fatura.saldo)}
+              </p>
+              <ul className="divide-y rounded-xl border p-3 text-sm">
+                {faturaPagamento.fatura.itens
+                  .filter((p) => !["pago", "cancelado"].includes(p.estado))
+                  .map((p) => (
+                    <li key={p.chave} className="flex justify-between gap-3 py-2">
+                      <span>
+                        {nomeCobranca(p)}
+                        <span className="block text-xs text-muted-foreground">
+                          Vencimento {dataBr(p.vencimento)}
+                        </span>
+                      </span>
+                      <strong>{brl(p.valor)}</strong>
+                    </li>
+                  ))}
+              </ul>
+              <p className="text-sm">
+                Total da fatura: {brl(faturaPagamento.fatura.total)} · Já pago:{" "}
+                {brl(faturaPagamento.fatura.pago)} · Saldo a quitar:{" "}
+                {brl(faturaPagamento.fatura.saldo)}
+              </p>
+              <AvisoReajustesSaas
+                reajustes={painel.data?.reajustes_pendentes?.filter(
+                  (r) => r.vigencia.slice(0, 7) <= faturaPagamento.fatura.competencia.slice(0, 7),
+                )}
+              />
+              <div>
+                <Label htmlFor="fatura-pagamento">Data do pagamento</Label>
+                <Input
+                  id="fatura-pagamento"
+                  type="date"
+                  required
+                  max={hojeSaoPaulo()}
+                  value={pagamento}
+                  disabled={quitarFatura.isPending}
+                  onChange={(e) => setPagamento(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="fatura-referencia">Referência do recebimento</Label>
+                <Textarea
+                  id="fatura-referencia"
+                  required
+                  minLength={5}
+                  maxLength={1000}
+                  value={motivo}
+                  disabled={quitarFatura.isPending}
+                  onChange={(e) => setMotivo(e.target.value)}
+                />
+              </div>
+              {quitarFatura.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {quitarFatura.error.message}
+                </p>
+              )}
+              <div className="flex flex-wrap justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={quitarFatura.isPending}
+                  onClick={() => setFaturaPagamento(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button disabled={quitarFatura.isPending}>
+                  {quitarFatura.isPending ? "Confirmando…" : "Confirmar pagamento da fatura"}
                 </Button>
               </div>
             </form>
