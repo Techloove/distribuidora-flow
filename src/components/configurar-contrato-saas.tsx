@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useSupabase } from "@/lib/supabase-provider";
 import { brl, dataBr } from "@/lib/formatacao";
 import { hojeSaoPaulo } from "@/lib/painel-trabalho";
-import { periodicidadesSaas, tiposServicoSaas } from "@/lib/faturas-saas";
+import { periodicidadesSaas, tiposServicoSaas, nomeServicoSaas } from "@/lib/faturas-saas";
 import type { SaasPainel, SaasPreviaContrato } from "@/lib/saas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +111,7 @@ export function ConfigurarContratoSaas({
     onSuccess: async () => {
       await salvo();
       fechar();
-      toast.success("Contrato e serviços salvos. Faturas disponíveis em Minha assinatura.");
+      toast.success("Contrato e serviços salvos. Faturas disponíveis em Minha mensalidade.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -249,7 +249,7 @@ export function ConfigurarContratoSaas({
               </div>
               {!servicos.length && (
                 <p className="rounded-xl border border-dashed p-5 text-sm">
-                  Adicione a assinatura, setup, hospedagem ou outros serviços cobrados desta
+                  Adicione a mensalidade, setup, hospedagem ou outros serviços cobrados desta
                   empresa.
                 </p>
               )}
@@ -279,8 +279,18 @@ export function ConfigurarContratoSaas({
                         required
                         minLength={2}
                         maxLength={160}
-                        value={s.descricao}
-                        onChange={(e) => alterarServico(s.id, { descricao: e.target.value })}
+                        value={nomeServicoSaas(s.descricao)}
+                        onChange={(e) => {
+                          const original = painel.itens_contrato?.find(
+                            (item) => item.id === s.id,
+                          )?.descricao;
+                          alterarServico(s.id, {
+                            descricao:
+                              original !== undefined && e.target.value === nomeServicoSaas(original)
+                                ? original
+                                : e.target.value,
+                          });
+                        }}
                       />
                     </div>
                     <div>
@@ -645,7 +655,7 @@ export function ConfigurarContratoSaas({
                   <tbody>
                     {previa.parcelas.map((p) => (
                       <tr key={p.chave} className="border-t">
-                        <td className="py-2">{p.descricao}</td>
+                        <td className="py-2">{nomeServicoSaas(p.descricao)}</td>
                         <td>{p.parcela}</td>
                         <td>{dataBr(p.vencimento)}</td>
                         <td className="text-right">{brl(p.valor)}</td>

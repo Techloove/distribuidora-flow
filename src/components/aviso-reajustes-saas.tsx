@@ -1,6 +1,11 @@
+import { nomeServicoSaas } from "@/lib/faturas-saas";
 import { dataBr } from "@/lib/formatacao";
 import type { SaasReajustePendente } from "@/lib/saas";
-export function AvisoReajustesSaas({ reajustes }: { reajustes?: SaasReajustePendente[] | undefined }) {
+export function AvisoReajustesSaas({
+  reajustes,
+}: {
+  reajustes?: SaasReajustePendente[] | undefined;
+}) {
   if (!reajustes?.length) return null;
   return (
     <section
@@ -10,8 +15,8 @@ export function AvisoReajustesSaas({ reajustes }: { reajustes?: SaasReajustePend
       <h3 className="font-semibold">Reajuste aguardando definição do salário mínimo</h3>
       {reajustes.map((r) => (
         <p key={`${r.servico_id}:${r.vigencia}`}>
-          {r.descricao}: {Number(r.percentual).toLocaleString("pt-BR")}% do salário mínimo, a partir
-          de {dataBr(r.vigencia)}.
+          {nomeServicoSaas(r.descricao)}: {Number(r.percentual).toLocaleString("pt-BR")}% do salário
+          mínimo, a partir de {dataBr(r.vigencia)}.
         </p>
       ))}
       <p>

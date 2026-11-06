@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.41.1",
+    "data": "2026-11-06",
+    "titulo": "Usar Mensalidade no lugar de Assinatura no painel SaaS",
+    "motivo": "Padronizar o nome da cobrança recorrente como Mensalidade.",
+    "novidades": [
+      "Painel SaaS, configuração, área Minha mensalidade, faturas e PDF usam Mensalidade. Descrições padrão antigas são apresentadas com o novo nome sem regravar valores, vencimentos ou histórico financeiro."
+    ]
+  },
+  {
     "versao": "1.41.0",
     "data": "2026-11-06",
     "titulo": "Reajustes por salário mínimo e carência da assinatura pré-paga",

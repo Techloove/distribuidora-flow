@@ -1,3 +1,4 @@
+import { nomeServicoSaas } from "@/lib/faturas-saas";
 import { textoMensalidadePorSalario } from "@/lib/reajuste-saas";
 import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
 import { useState } from "react";
@@ -92,7 +93,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
   });
   const nomeCobranca = (p: SaasParcela) =>
     p.descricao
-      ? `${p.descricao} · parcela ${p.parcela}`
+      ? `${nomeServicoSaas(p.descricao)} · parcela ${p.parcela}`
       : p.tipo === "servico"
         ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === p.chave)?.descricao ??
           "Serviço adicional")
@@ -142,14 +143,14 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
   if (loading)
     return (
       <p role="status" className="p-8">
-        Verificando acesso à assinatura…
+        Verificando acesso à mensalidade…
       </p>
     );
   if (!session)
     return (
       <main className="mx-auto max-w-lg space-y-5 p-8">
         <h1 className="text-2xl font-semibold">
-          {administracao ? "Administração da plataforma" : "Minha assinatura"}
+          {administracao ? "Administração da plataforma" : "Minha mensalidade"}
         </h1>
         <p>Entre com a conta autorizada para continuar.</p>
         <Link
@@ -188,10 +189,10 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
             {administracao ? "Administração da plataforma" : "Contrato e cobrança"}
           </p>
           <h1 className="mt-2 text-2xl font-semibold">
-            {administracao ? "Painel SaaS" : "Minha assinatura"}
+            {administracao ? "Painel SaaS" : "Minha mensalidade"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {estado ? estadosSaas[estado.estado] : "Consultando assinatura…"}
+            {estado ? estadosSaas[estado.estado] : "Consultando mensalidade…"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -237,7 +238,12 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
           <Button onClick={() => void atualizar()}>Tentar novamente</Button>
         </section>
       ) : !painel.data?.contrato ? (
-        <p className={card}>{painel.data?.mensagem ?? "Procure o usuário master da empresa."}</p>
+        <p className={card}>
+          {(painel.data?.mensagem ?? "Procure o usuário master da empresa.").replace(
+            /\bassinatura\b/gi,
+            "mensalidade",
+          )}
+        </p>
       ) : (
         <>
           <section className={card}>
@@ -277,7 +283,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                 {painel.data.itens_contrato?.map((s) => (
                   <div key={s.id} className="flex flex-wrap justify-between gap-3 py-3 text-sm">
                     <div>
-                      <p className="font-medium">{s.descricao}</p>
+                      <p className="font-medium">{nomeServicoSaas(s.descricao)}</p>
                       <p className="text-muted-foreground">
                         {periodicidadesSaas[s.periodicidade]}
                         {s.periodicidade === "parcelado" ? ` · ${s.parcelas} parcela(s)` : ""} ·
@@ -490,7 +496,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
             )}
           </section>
           <section className={card}>
-            <h2 className="mb-4 font-semibold">Histórico da assinatura</h2>
+            <h2 className="mb-4 font-semibold">Histórico da mensalidade</h2>
             <ul className="divide-y">
               {painel.data.historico?.map((e) => (
                 <li key={e.id} className="py-3 text-sm">
@@ -509,8 +515,10 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
                         ? (painel.data?.servicos?.find((s) => `servico:${s.id}` === e.chave)
                             ?.descricao ?? "Serviço adicional")
                         : e.chave?.startsWith("contrato:")
-                          ? (parcelas.find((p) => p.chave === e.chave)?.descricao ??
-                            "Serviço do contrato")
+                          ? nomeServicoSaas(
+                              parcelas.find((p) => p.chave === e.chave)?.descricao ??
+                                "Serviço do contrato",
+                            )
                           : e.chave?.replace("setup:", "Implantação · parcela ")}
                     {e.valor != null && ` · ${brl(e.valor)}`}
                   </p>
@@ -632,7 +640,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
               {revisarServico && (
                 <p role="alert" className="rounded-xl border bg-muted/30 p-3 text-sm">
                   {servico.descricao} · {brl(servico.valor)} · vencimento{" "}
-                  {dataBr(servico.vencimento)}. Esta cobrança entra no saldo da assinatura e pode
+                  {dataBr(servico.vencimento)}. Esta cobrança entra no saldo da mensalidade e pode
                   causar bloqueio se vencer além da tolerância com o controle ativo. Após registro
                   financeiro, os dados ficam preservados; use cancelamento e uma nova cobrança para
                   corrigir.
@@ -730,12 +738,12 @@ export function AvisoAssinatura() {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
       <p>
-        {saas.controle_ativo ? estadosSaas[saas.estado] : "Assinatura da plataforma"}
+        {saas.controle_ativo ? estadosSaas[saas.estado] : "Mensalidade da plataforma"}
         {saas.controle_ativo && saas.vencimento && ` · vencimento ${dataBr(saas.vencimento)}`}
       </p>
       <div className="flex gap-4">
         <Link to="/assinatura" className="text-primary underline">
-          Minha assinatura
+          Minha mensalidade
         </Link>
         {saas.proprietario && (
           <Link to="/plataforma" className="text-primary underline">

@@ -2,7 +2,12 @@ import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
 import { useState } from "react";
 import { toast } from "sonner";
 import { brl, dataBr } from "@/lib/formatacao";
-import { agruparFaturasSaas, nomeEstadoFatura, type FaturaSaas } from "@/lib/faturas-saas";
+import {
+  agruparFaturasSaas,
+  nomeEstadoFatura,
+  nomeServicoSaas,
+  type FaturaSaas,
+} from "@/lib/faturas-saas";
 import type { SaasContrato, SaasParcela, SaasReajustePendente } from "@/lib/saas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +52,7 @@ function imprimir(fatura: FaturaSaas, contrato: SaasContrato, reajustes: SaasRea
   for (const item of fatura.itens) {
     const linha = texto("tr", "", tabela);
     for (const valor of [
-      (item.descricao ?? "Serviço") +
+      nomeServicoSaas(item.descricao) +
         (item.periodo_inicio && item.periodo_fim
           ? ` · pré-pago: uso de ${dataBr(item.periodo_inicio)} a ${dataBr(item.periodo_fim)}`
           : ""),
@@ -70,7 +75,7 @@ function imprimir(fatura: FaturaSaas, contrato: SaasContrato, reajustes: SaasRea
   for (const reajuste of reajustes.filter((r) => r.vigencia <= fatura.vencimento)) {
     texto(
       "p",
-      `${reajuste.descricao}: salário mínimo a definir a partir de ${dataBr(reajuste.vigencia)}. A mensalidade de ${Number(reajuste.percentual).toLocaleString("pt-BR")}% da referência ainda não está incluída no total desta fatura.`,
+      `${nomeServicoSaas(reajuste.descricao)}: salário mínimo a definir a partir de ${dataBr(reajuste.vigencia)}. A mensalidade de ${Number(reajuste.percentual).toLocaleString("pt-BR")}% da referência ainda não está incluída no total desta fatura.`,
     );
   }
   if (contrato.instrucoes) texto("p", contrato.instrucoes);
@@ -193,7 +198,7 @@ export function FaturasSaas({
                     {aberta.itens.map((p) => (
                       <tr key={p.chave} className="border-b">
                         <td className="py-3">
-                          {p.descricao ?? "Serviço"}
+                          {nomeServicoSaas(p.descricao)}
                           {p.periodo_inicio && p.periodo_fim && (
                             <span className="block text-xs text-muted-foreground">
                               Pré-pago · uso de {dataBr(p.periodo_inicio)} a {dataBr(p.periodo_fim)}

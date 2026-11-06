@@ -91,7 +91,7 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const assinatura = await client!.rpc("saas_status_330");
       if (assinatura.error || !assinatura.data || typeof assinatura.data.bloqueado !== "boolean")
-        throw new Error("Não foi possível verificar a assinatura. Tente novamente.");
+        throw new Error("Não foi possível verificar a mensalidade. Tente novamente.");
       const saas = assinatura.data as SaasStatus;
       if (saas.bloqueado) return { roles: [] as AppRole[], needsCadastro: false, saas };
       const [profile, roles] = await Promise.all([

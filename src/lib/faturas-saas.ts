@@ -54,9 +54,16 @@ export const periodicidadesSaas: Record<string, string> = {
   parcelado: "Parcelado mensalmente",
 };
 export const tiposServicoSaas: Record<string, string> = {
-  mensalidade: "Assinatura",
+  mensalidade: "Mensalidade",
   implantacao: "Setup / implantação",
   hospedagem: "Hospedagem",
   dominio: "Domínio",
   servico: "Outro serviço",
 };
+
+/** Alias de apresentação para descrições padrão antigas, sem regravar cobranças com histórico. */
+export function nomeServicoSaas(descricao?: string | null): string {
+  return descricao?.trim().toLocaleLowerCase("pt-BR") === "assinatura"
+    ? "Mensalidade"
+    : (descricao ?? "Serviço");
+}
