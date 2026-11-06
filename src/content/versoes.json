@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.40.10",
+    "data": "2026-11-06",
+    "titulo": "Corrigir gravação de contratos SaaS com filtro explícito",
+    "motivo": "O banco protege atualizações sem WHERE e recusava salvar a configuração do contrato SaaS.",
+    "novidades": [
+      "As rotinas de contrato, grade de serviços, serviço adicional e registro de pagamento identificam explicitamente o contrato único na atualização, corrigindo UPDATE requires a WHERE clause sem desativar a proteção do banco. Permissões do proprietário, revisão concorrente, parcelas e histórico são preservados. A migração não modifica contratos, cobranças ou pagamentos existentes."
+    ]
+  },
+  {
     "versao": "1.40.9",
     "data": "2026-11-05",
     "titulo": "Cartões de boletos com total vencido e filtro por clique",

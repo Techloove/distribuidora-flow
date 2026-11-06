@@ -16,7 +16,20 @@ insert into user_roles values('${id(1)}','representante'),('${id(2)}','admin'),(
     await db.exec(fs.readFileSync("db/fase331_servicos_saas.sql", "utf8"));
     const migration = fs.readFileSync("db/fase335_contrato_servicos_faturas_saas.sql", "utf8");
     await db.exec(migration);
+    await db.exec(fs.readFileSync("db/fase340_saas_atualizacao_contrato_com_filtro.sql", "utf8"));
     await db.exec(migration);
+    await db.exec(fs.readFileSync("db/fase340_saas_atualizacao_contrato_com_filtro.sql", "utf8"));
+    const definicoes = (
+      await db.query(
+        "select pg_get_functiondef(oid) as fonte from pg_proc where pronamespace='public'::regnamespace and proname in ('saas_salvar_contrato_330','saas_salvar_servico_331','saas_salvar_grade_335','saas_registrar_pagamento_330')",
+      )
+    ).rows;
+    assert.equal(definicoes.length, 4);
+    for (const { fonte } of definicoes) {
+      const updates = fonte.match(/update public\.saas_contrato_330 set [^;]+;/g);
+      assert.equal(updates?.length, 1);
+      assert.match(updates[0], /where unico=true;/);
+    }
     await db.exec(`insert into saas_proprietarios_330 values('${id(1)}',now());`);
     const q = async (s, args) => (await db.query(s, args)).rows;
     const scalar = async (s, args) => Object.values((await q(s, args))[0])[0];
@@ -218,6 +231,7 @@ insert into user_roles values('${id(1)}','representante'),('${id(2)}','admin'),(
     );
     await db.exec("reset role");
     await db.exec(migration);
+    await db.exec(fs.readFileSync("db/fase340_saas_atualizacao_contrato_com_filtro.sql", "utf8"));
     await actor(1);
     assert.equal((await scalar("select saas_painel_330()")).parcelas.length, 18);
     await db.exec("set role anon");

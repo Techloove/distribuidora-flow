@@ -1,0 +1,23 @@
+{
+  "fase": 340,
+  "dados_preservados": true,
+  "funcoes": [
+    {
+      "nome": "saas_registrar_pagamento_330",
+      "filtro_explicito": true
+    },
+    {
+      "nome": "saas_salvar_contrato_330",
+      "filtro_explicito": true
+    },
+    {
+      "nome": "saas_salvar_grade_335",
+      "filtro_explicito": true
+    },
+    {
+      "nome": "saas_salvar_servico_331",
+      "filtro_explicito": true
+    }
+  ],
+  "sql_sha256": "9093eee2cc9970af7b34b11d8c0b7f7384e39d47567c4e3690e006de3ecf83bd"
+}

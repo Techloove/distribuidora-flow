@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.40.9 · 2026-11-05
+Versão 1.40.10 · 2026-11-06
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -556,7 +556,7 @@ Vigência, serviços e faturas da empresa atual, separados do financeiro do ERP.
 5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
 6. Se houver erro na confirmação, use Reabrir cobrança e informe motivo. Cancelamentos também exigem motivo e preservam o histórico. Reabrir uma pendência pode suspender o ERP novamente.
 7. Em cada serviço, informe descrição, valor, primeiro vencimento e cobrança Mensal, Anual, Uma vez ou Parcelado mensalmente. Para parcelamento, informe o valor total do serviço e o número de parcelas; nas demais opções, informe o valor de cada cobrança. Todos os vencimentos devem estar dentro da vigência. Datas no fim do mês são ajustadas sem mudar o dia das cobranças seguintes; a última parcela recebe a diferença de centavos.
-8. Clique Revisar serviços e faturas para conferir todas as cobranças da lista até o fim do contrato. Confirme para salvar. Faturas dos serviços reúne os itens com o mesmo vencimento; datas diferentes geram faturas separadas. O master acessa Minha assinatura, filtra o mês, usa Ver fatura e pode Imprimir / salvar PDF. Total, pagamentos confirmados e saldo excluem itens cancelados. A lista Cobranças da plataforma permite ao proprietário confirmar, cancelar ou reabrir cada item com motivo.
+8. Clique Revisar serviços e faturas para conferir todas as cobranças da lista até o fim do contrato. Confirme para salvar. A configuração e a grade de cobranças são gravadas em uma única operação; se o salvamento falhar, as parcelas dessa tentativa não são gravadas. Faturas dos serviços reúne os itens com o mesmo vencimento; datas diferentes geram faturas separadas. O master acessa Minha assinatura, filtra o mês, usa Ver fatura e pode Imprimir / salvar PDF. Total, pagamentos confirmados e saldo excluem itens cancelados. A lista Cobranças da plataforma permite ao proprietário confirmar, cancelar ou reabrir cada item com motivo.
 
 Cuidados:
 
@@ -569,6 +569,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.40.10 · 2026-11-06 · Corrigir gravação de contratos SaaS com filtro explícito
+
+Motivo da atualização: O banco protege atualizações sem WHERE e recusava salvar a configuração do contrato SaaS.
+
+- As rotinas de contrato, grade de serviços, serviço adicional e registro de pagamento identificam explicitamente o contrato único na atualização, corrigindo UPDATE requires a WHERE clause sem desativar a proteção do banco. Permissões do proprietário, revisão concorrente, parcelas e histórico são preservados. A migração não modifica contratos, cobranças ou pagamentos existentes.
 
 ### v1.40.9 · 2026-11-05 · Cartões de boletos com total vencido e filtro por clique
 
