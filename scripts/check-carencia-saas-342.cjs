@@ -19,10 +19,12 @@ insert into user_roles values('${id(1)}','representante'),('${id(2)}','admin'),(
     await db.exec(fs.readFileSync("db/fase340_saas_atualizacao_contrato_com_filtro.sql", "utf8"));
     await db.exec(fs.readFileSync("db/fase341_saas_reajuste_salario_minimo.sql", "utf8"));
     await db.exec(fs.readFileSync("db/fase342_saas_carencia_pre_pago.sql", "utf8"));
+    await db.exec(fs.readFileSync("db/fase343_saas_responsaveis_avisos.sql", "utf8"));
     await db.exec(migration);
     await db.exec(fs.readFileSync("db/fase340_saas_atualizacao_contrato_com_filtro.sql", "utf8"));
     await db.exec(fs.readFileSync("db/fase341_saas_reajuste_salario_minimo.sql", "utf8"));
     await db.exec(fs.readFileSync("db/fase342_saas_carencia_pre_pago.sql", "utf8"));
+    await db.exec(fs.readFileSync("db/fase343_saas_responsaveis_avisos.sql", "utf8"));
     const definicoes = (
       await db.query(
         "select pg_get_functiondef(oid) as fonte from pg_proc where pronamespace='public'::regnamespace and proname in ('saas_salvar_contrato_330','saas_salvar_servico_331','saas_salvar_grade_335','saas_registrar_pagamento_330')",
@@ -155,6 +157,7 @@ insert into user_roles values('${id(1)}','representante'),('${id(2)}','admin'),(
       "select md5(jsonb_agg(to_jsonb(g) order by chave)::text) from saas_grade_335 g",
     );
     await db.exec(fs.readFileSync("db/fase342_saas_carencia_pre_pago.sql", "utf8"));
+    await db.exec(fs.readFileSync("db/fase343_saas_responsaveis_avisos.sql", "utf8"));
     assert.equal(
       await scalar("select md5(jsonb_agg(to_jsonb(g) order by chave)::text) from saas_grade_335 g"),
       antes,

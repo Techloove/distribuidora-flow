@@ -1,3 +1,5 @@
+import { avisoMensalidade } from "@/lib/avisos-saas";
+import { AvisoMensalidade, SistemaEmManutencao } from "@/components/aviso-mensalidade";
 import { nomeServicoSaas } from "@/lib/faturas-saas";
 import { textoMensalidadePorSalario } from "@/lib/reajuste-saas";
 import { AvisoReajustesSaas } from "@/components/aviso-reajustes-saas";
@@ -54,8 +56,13 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
   const [motivo, setMotivo] = useState("");
   const [pagamento, setPagamento] = useState(hojeSaoPaulo());
   const painel = useQuery({
-    queryKey: ["saas-painel", session?.user.id],
-    enabled: !!client && !!session && !!saas && (!administracao || saas.proprietario),
+    queryKey: ["saas-painel", session?.user.id, saas?.master, saas?.proprietario],
+    enabled:
+      !!client &&
+      !!session &&
+      !!saas &&
+      (!saas.bloqueado || saas.master || saas.proprietario) &&
+      (!administracao || saas.proprietario),
     refetchInterval: 30_000,
     retry: false,
     queryFn: async () => {
@@ -162,6 +169,14 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
         </Link>
       </main>
     );
+  if (saas?.bloqueado && !saas.master && !saas.proprietario)
+    return (
+      <SistemaEmManutencao
+        atualizar={() => void atualizar()}
+        sair={() => void signOut().catch((e: Error) => toast.error(e.message))}
+        carregando={painel.isFetching}
+      />
+    );
   if (error || (administracao && !dono))
     return (
       <main className="mx-auto max-w-lg space-y-4 p-8">
@@ -217,19 +232,7 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
           </Button>
         </div>
       </header>
-      {estado?.bloqueado && (
-        <section
-          role="alert"
-          className="rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
-        >
-          <h2 className="font-semibold">Regularização necessária</h2>
-          <p className="mt-2 text-sm">
-            O uso do sistema está suspenso por pagamento pendente. Seus dados permanecem
-            preservados. O proprietário da plataforma confirma o recebimento e o acesso é liberado
-            quando não houver parcelas além da tolerância.
-          </p>
-        </section>
-      )}
+      {avisoMensalidade(estado) && <AvisoMensalidade status={estado ?? null} />}
       {painel.isPending ? (
         <p role="status">Carregando contrato…</p>
       ) : painel.isError ? (
@@ -734,23 +737,5 @@ export function PainelSaas({ administracao = false }: { administracao?: boolean 
 
 export function AvisoAssinatura() {
   const { saas } = useSupabase();
-  if (!saas || (!saas.master && !saas.proprietario)) return null;
-  return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
-      <p>
-        {saas.controle_ativo ? estadosSaas[saas.estado] : "Mensalidade da plataforma"}
-        {saas.controle_ativo && saas.vencimento && ` · vencimento ${dataBr(saas.vencimento)}`}
-      </p>
-      <div className="flex gap-4">
-        <Link to="/assinatura" className="text-primary underline">
-          Minha mensalidade
-        </Link>
-        {saas.proprietario && (
-          <Link to="/plataforma" className="text-primary underline">
-            Painel SaaS
-          </Link>
-        )}
-      </div>
-    </div>
-  );
+  return <AvisoMensalidade status={saas} />;
 }

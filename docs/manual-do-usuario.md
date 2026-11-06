@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.41.1 · 2026-11-06
+Versão 1.42.0 · 2026-11-06
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -550,7 +550,7 @@ Cuidados:
 Vigência, serviços e faturas da empresa atual, separados do financeiro do ERP.
 
 1. Na página de login, use Administração da plataforma · Painel SaaS. Entre com a conta proprietária autorizada. Administrador da distribuidora e proprietário da plataforma são permissões diferentes.
-2. No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, usuário master administrador, início e fim da vigência, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem. Em Serviços do contrato, adicione linhas para Mensalidade, Setup / implantação, Hospedagem, Domínio e Outros serviços.
+2. No Painel SaaS, use Configurar contrato. Informe empresa, responsável, contato, plano, administradores responsáveis pela mensalidade (usuários master), início e fim da vigência, tolerância e antecedência dos avisos. O domínio é informativo e não altera a hospedagem. Em Serviços do contrato, adicione linhas para Mensalidade, Setup / implantação, Hospedagem, Domínio e Outros serviços.
 3. Confira as instruções de regularização e revise a configuração. Marque Ativar avisos e bloqueio automático somente quando os valores e vencimentos estiverem corretos. O controle começa desativado e nenhuma cobrança é criada no Contas a Receber da distribuidora.
 4. O usuário master consulta Minha mensalidade e recebe avisos no sistema. Na suspensão, os usuários continuam com acesso à regularização; somente master e proprietário visualizam os valores e o histórico financeiro da mensalidade.
 5. O proprietário confirma o pagamento recebido informando data e referência. A liberação é automática quando não restarem parcelas vencidas além da tolerância. Esta confirmação é manual, sem boleto ou Pix integrado.
@@ -561,14 +561,22 @@ Vigência, serviços e faturas da empresa atual, separados do financeiro do ERP.
 Cuidados:
 
 - Este painel atende somente à operação atual. Ele não habilita novas empresas, isolamento entre contratantes ou configuração de domínio próprio. Contratos anteriores continuam funcionando até adotar a lista; as cobranças antigas são preservadas. Nesse caso, os novos serviços precisam começar após o último vencimento anterior, e a vigência deve incluir todo o histórico preservado.
-- O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.
+- Em Configurar contrato, selecione um ou mais administradores em Responsáveis pela mensalidade. Se um responsável deixar de ser administrador ativo, substitua-o na seleção. Os responsáveis e o proprietário recebem um aviso destacado ao entrar, uma vez por sessão, quando existe mensalidade próxima do vencimento, em tolerância ou bloqueada. O banner informa quantos dias faltam e a data do bloqueio; Minha mensalidade abre as faturas e instruções de regularização. Para representantes e outros usuários sem autorização financeira, o bloqueio aparece como Sistema em Manutenção, sem valores ou motivo financeiro. O bloqueio começa no dia seguinte ao vencimento acrescido da tolerância. Ele protege as operações no servidor, mantendo os dados e a tela de regularização. O proprietário não recebe acesso adicional aos módulos da distribuidora.
 - Não registre pagamentos antes de confirmar o recebimento. A confirmação não movimenta o caixa do ERP nem consulta o banco. Valores vencidos configurados ao ativar o controle podem causar suspensão imediata.
 - Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.
-- Todos os serviços participam do saldo e da tolerância/bloqueio quando o controle estiver ativo. Cobranças vencidas ou com histórico financeiro não podem ser removidas, reprecificadas ou ter vencimento alterado pela configuração. Ajustes devem preservar esses registros. O master somente consulta. As faturas são demonstrativos dos serviços, com confirmação manual; não registram boletos ou Pix em banco. O fim do contrato encerra a geração prevista, sem renovar automaticamente a contratação.
+- Todos os serviços participam do saldo e da tolerância/bloqueio quando o controle estiver ativo. Cobranças vencidas ou com histórico financeiro não podem ser removidas, reprecificadas ou ter vencimento alterado pela configuração. Ajustes devem preservar esses registros. Os responsáveis selecionados somente consultam faturas e recebem avisos; apenas o proprietário confirma pagamentos e configura o contrato. As faturas são demonstrativos dos serviços, com confirmação manual; não registram boletos ou Pix em banco. O fim do contrato encerra a geração prevista, sem renovar automaticamente a contratação.
 
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.42.0 · 2026-11-06 · Avisos de mensalidade com prazo e múltiplos responsáveis
+
+Motivo da atualização: Corrigir a navegação para Minha mensalidade e tornar claras as pendências e a data de bloqueio para os responsáveis pelo contrato.
+
+- Minha mensalidade passa a abrir sem o redirecionamento indevido da proteção de módulos do ERP. Avisos destacados mostram o vencimento, a data efetiva de bloqueio e quantos dias faltam, calculados no servidor pelo calendário de São Paulo.
+- O contrato permite selecionar vários administradores responsáveis para consultar faturas e receber avisos. Cada sessão apresenta um aviso inicial de pendência; o banner permanece disponível durante o uso. Somente o proprietário continua confirmando pagamentos e configurando o contrato.
+- Representantes e demais usuários sem autorização financeira visualizam Sistema em Manutenção quando o ERP está bloqueado. Datas, faturas e motivo financeiro não são retornados para esse perfil. Responsáveis e proprietário continuam acessando a regularização. A instalação preserva o responsável anterior, cobranças e permissões do ERP.
 
 ### v1.41.1 · 2026-11-06 · Usar Mensalidade no lugar de Assinatura no painel SaaS
 

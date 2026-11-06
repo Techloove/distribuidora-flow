@@ -1,3 +1,4 @@
+import { rotaForaDoErp } from "@/lib/avisos-saas";
 import { PainelSaas } from "@/components/painel-saas";
 import { AvisoAtualizacao } from "@/components/aviso-atualizacao";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -15,8 +16,10 @@ function AppLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const acesso = useAcesso();
+  const foraDoErp = rotaForaDoErp(pathname);
   const modulo = moduloDaRota(pathname);
-  const bloqueado = !!session && !acesso.carregando && (!modulo || !acesso.pode(modulo));
+  const bloqueado =
+    !foraDoErp && !!session && !acesso.carregando && (!modulo || !acesso.pode(modulo));
   const destino = acesso.permitidos.has("/dashboard") ? "/dashboard" : [...acesso.permitidos][0];
   useEffect(() => {
     if (!loading && !session) void navigate({ to: "/auth", replace: true });
@@ -26,6 +29,7 @@ function AppLayout() {
   }, [passwordRecovery, navigate]);
   useEffect(() => {
     if (
+      !foraDoErp &&
       !saas?.bloqueado &&
       !passwordRecovery &&
       !needsCadastro &&
@@ -37,6 +41,7 @@ function AppLayout() {
     )
       void navigate({ to: destino, replace: true });
   }, [
+    foraDoErp,
     passwordRecovery,
     needsCadastro,
     bloqueado,

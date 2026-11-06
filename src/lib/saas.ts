@@ -1,9 +1,12 @@
 export type SaasStatus = {
+  manutencao?: boolean;
+  data_bloqueio?: string | null;
+  dias_ate_bloqueio?: number | null;
   proprietario: boolean;
   master: boolean;
   bloqueado: boolean;
   controle_ativo: boolean;
-  estado: "nao_configurado" | "em_dia" | "a_vencer" | "em_tolerancia" | "bloqueado";
+  estado: "nao_configurado" | "em_dia" | "a_vencer" | "em_tolerancia" | "bloqueado" | "manutencao";
   vencimento: string | null;
   limite_regularizacao: string | null;
 };
@@ -30,6 +33,7 @@ export type SaasContrato = {
   plano: string;
   dominio: string;
   master_id: string | null;
+  master_ids?: string[];
   mensal_inicio: string | null;
   setup_valor: number;
   setup_parcelas: number;
@@ -76,6 +80,7 @@ export const estadosSaas: Record<SaasStatus["estado"], string> = {
   a_vencer: "Próximo do vencimento",
   em_tolerancia: "Pagamento pendente · dentro da tolerância",
   bloqueado: "Acesso suspenso por pagamento pendente",
+  manutencao: "Sistema em Manutenção",
 };
 
 export type SaasReajuste = { vigencia: string; salario_minimo: number | null };

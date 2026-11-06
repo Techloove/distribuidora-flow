@@ -53,6 +53,7 @@ export function ConfigurarContratoSaas({
     plano: c.plano,
     dominio: c.dominio,
     master_id: c.master_id ?? "",
+    master_ids: c.master_ids?.length ? c.master_ids : c.master_id ? [c.master_id] : [],
     inicio: c.inicio ?? hoje,
     fim: c.fim ?? "",
     tolerancia: c.tolerancia,
@@ -75,6 +76,7 @@ export function ConfigurarContratoSaas({
   const [previa, setPrevia] = useState<SaasPreviaContrato | null>(null);
   const dados = () => ({
     ...form,
+    master_id: form.master_ids[0] ?? "",
     servicos: servicos.map((s) => ({
       ...s,
       carencia_inicial_dias: s.carencia_inicial_dias.trim()
@@ -93,6 +95,8 @@ export function ConfigurarContratoSaas({
   });
   const prever = useMutation({
     mutationFn: async () => {
+      if (!form.master_ids.length)
+        throw new Error("Selecione ao menos um administrador responsável pela mensalidade.");
       const r = await client!.rpc("saas_prever_contrato_335", { _dados: dados() });
       if (r.error) throw new Error(r.error.message);
       return r.data as SaasPreviaContrato;
@@ -196,23 +200,57 @@ export function ConfigurarContratoSaas({
               {campo("dominio", "Domínio")}
               {campo("responsavel", "Responsável")}
               {campo("contato", "Contato para cobrança")}
-              <div className="space-y-1">
-                <Label htmlFor="contrato-master">Usuário master</Label>
-                <select
-                  id="contrato-master"
-                  className={seletor}
-                  required
-                  value={form.master_id}
-                  onChange={(e) => alterar("master_id", e.target.value)}
-                >
-                  <option value="">Selecione</option>
+              <fieldset className="space-y-2 sm:col-span-3">
+                <legend className="text-sm font-medium">
+                  Responsáveis pela mensalidade (usuários master)
+                </legend>
+                <p className="text-xs text-muted-foreground">
+                  Selecione um ou mais administradores para receber os avisos e consultar as
+                  faturas. Somente o proprietário da plataforma confirma pagamentos e configura o
+                  contrato.
+                </p>
+                <div className="grid max-h-48 gap-2 overflow-y-auto rounded-xl border p-3 sm:grid-cols-2">
                   {painel.masters?.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome || m.email} · {m.email}
-                    </option>
+                    <label key={m.id} className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={form.master_ids.includes(m.id)}
+                        disabled={!form.master_ids.includes(m.id) && form.master_ids.length >= 20}
+                        onChange={(e) =>
+                          alterar(
+                            "master_ids",
+                            e.target.checked
+                              ? [...form.master_ids, m.id]
+                              : form.master_ids.filter((id) => id !== m.id),
+                          )
+                        }
+                      />
+                      <span>
+                        {m.nome || m.email}
+                        <span className="block text-xs text-muted-foreground">{m.email}</span>
+                      </span>
+                    </label>
                   ))}
-                </select>
-              </div>
+                  {form.master_ids
+                    .filter((id) => !painel.masters?.some((m) => m.id === id))
+                    .map((id, i) => (
+                      <label key={id} className="flex items-start gap-2 text-sm text-amber-800">
+                        <input
+                          type="checkbox"
+                          checked
+                          onChange={() =>
+                            alterar(
+                              "master_ids",
+                              form.master_ids.filter((v) => v !== id),
+                            )
+                          }
+                        />
+                        Responsável indisponível {i + 1}: remova da seleção e escolha um
+                        administrador ativo.
+                      </label>
+                    ))}
+                </div>
+              </fieldset>
               {campo("inicio", "Início do contrato", "date")}
               {campo("fim", "Fim do contrato", "date")}
             </section>

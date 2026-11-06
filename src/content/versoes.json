@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.42.0",
+    "data": "2026-11-06",
+    "titulo": "Avisos de mensalidade com prazo e múltiplos responsáveis",
+    "motivo": "Corrigir a navegação para Minha mensalidade e tornar claras as pendências e a data de bloqueio para os responsáveis pelo contrato.",
+    "novidades": [
+      "Minha mensalidade passa a abrir sem o redirecionamento indevido da proteção de módulos do ERP. Avisos destacados mostram o vencimento, a data efetiva de bloqueio e quantos dias faltam, calculados no servidor pelo calendário de São Paulo.",
+      "O contrato permite selecionar vários administradores responsáveis para consultar faturas e receber avisos. Cada sessão apresenta um aviso inicial de pendência; o banner permanece disponível durante o uso. Somente o proprietário continua confirmando pagamentos e configurando o contrato.",
+      "Representantes e demais usuários sem autorização financeira visualizam Sistema em Manutenção quando o ERP está bloqueado. Datas, faturas e motivo financeiro não são retornados para esse perfil. Responsáveis e proprietário continuam acessando a regularização. A instalação preserva o responsável anterior, cobranças e permissões do ERP."
+    ]
+  },
+  {
     "versao": "1.41.1",
     "data": "2026-11-06",
     "titulo": "Usar Mensalidade no lugar de Assinatura no painel SaaS",

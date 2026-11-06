@@ -1,0 +1,12 @@
+{
+  "fase": 343,
+  "contrato_cobrancas_papeis_e_proprietarios_preservados": true,
+  "kennedy_com_acesso_preservado": true,
+  "verificacoes": {
+    "responsaveis_multiplos": true,
+    "filtro_contrato": true,
+    "helper_privado": true,
+    "anon_bloqueado": true
+  },
+  "sql_sha256": "0b60d4f65ad56dd6b8b19a582f1cd9b3d6cbcd6053a807a9144169f7df5f6b2e"
+}

@@ -1,3 +1,4 @@
+import { AvisoInicialMensalidade } from "@/components/aviso-mensalidade";
 import type { SaasStatus } from "./saas";
 import { clienteAnalitico } from "./modalidade-consultas";
 import { useModalidade, setModalidade } from "./modalidade-store";
@@ -135,6 +136,21 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       /* Sessões sem identificador não interrompem o acesso ao ERP. */
     }
   }, [client, session, loading, error]);
+  const sessaoAviso = useMemo(() => {
+    if (!session) return undefined;
+    try {
+      const encoded = session.access_token.split(".")[1];
+      if (encoded) {
+        const claims = JSON.parse(atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))) as {
+          session_id?: string;
+        };
+        if (claims.session_id) return claims.session_id;
+      }
+    } catch {
+      /* Sessões sem identificador usam a data de entrada. */
+    }
+    return session.user.last_sign_in_at ?? session.user.created_at;
+  }, [session]);
   async function signOut() {
     const result = await client?.auth.signOut();
     if (result?.error) throw new Error("Não foi possível encerrar a sessão. Tente novamente.");
@@ -160,6 +176,15 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <AvisoInicialMensalidade
+        status={
+          !loading && !error && !passwordRecovery && session
+            ? (permissions.data?.saas ?? null)
+            : null
+        }
+        usuarioId={session?.user.id}
+        sessaoId={sessaoAviso}
+      />
     </SupabaseContext.Provider>
   );
 }
