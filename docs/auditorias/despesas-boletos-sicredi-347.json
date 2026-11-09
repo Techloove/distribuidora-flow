@@ -1,0 +1,14 @@
+{
+  "fase": 347,
+  "documentos_recebimentos_e_comissoes_preservados": true,
+  "conta": "Boletos Sicred",
+  "categoria": "Tarifas bancárias",
+  "resultado": {
+    "pendencias": [],
+    "valor_lancado": 9.17,
+    "despesas_lancadas": 6,
+    "configuracao_ativa": true,
+    "lancamentos_conferidos": true
+  },
+  "sql_sha256": "c2a2cf25380c9cfb238627992133de3f73acd732846218ae25c4c5a95bab58f6"
+}

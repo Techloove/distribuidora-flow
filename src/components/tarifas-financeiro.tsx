@@ -27,7 +27,7 @@ const estadosTarifa: Record<string, string> = {
   estornado: "Despesa estornada: exige conferência",
   movimento_divergente: "Movimento alterado: exige conferência",
   falha_financeira: "Lançamento não concluído: confira o financeiro",
-  sem_tarifa: "Sem tarifa identificada",
+  sem_tarifa: "Sem despesa bancária identificada",
   pendente: "Aguardando processamento",
 };
 export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[] }) {
@@ -168,7 +168,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
   const erro = config.error ?? lancamentos.error ?? opcoes.error;
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">Tarifas preenchidas pelo retorno do Sicredi</h3>
+      <h3 className="font-semibold">Tarifas e despesas confirmadas pelo Sicredi</h3>
       {dados.map((d) => {
         const dia = String(d["data_lancamento"]);
         const l = lancamentos.data?.find((x) => x["data_lancamento"] === dia);
@@ -177,7 +177,9 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
           <div key={dia} className="space-y-2 rounded-lg border p-3 text-sm">
             <p>
               <strong>
-                {Number(d["tarifa_total"]) > 0 ? brl(d["tarifa_total"]) : "Tarifa não identificada"}
+                {Number(d["tarifa_total"]) > 0
+                  ? brl(d["tarifa_total"])
+                  : "Despesa de cobrança não identificada"}
               </strong>{" "}
               · Data do débito: {dataBr(dia)}
             </p>
@@ -212,7 +214,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
             ) : null}
             {Number(d["outros_debitos"]) > 0 && (
               <p className="text-xs">
-                Outros débitos sem identificação de tarifa permanecem para conferência.
+                Débitos sem identificação de despesa de cobrança permanecem para conferência.
               </p>
             )}
           </div>
@@ -242,7 +244,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
         podeConfigurar && (
           <fieldset className="space-y-3 rounded-lg border p-4" disabled={salvar.isPending}>
             <legend className="px-1 font-semibold text-sm">
-              Conta e categoria para as tarifas desta loja
+              Conta e categoria para tarifas e despesas desta loja
             </legend>
             <p className="text-xs text-muted-foreground">
               Valor, data e descrição vêm da API. Esta configuração vale para a loja do boleto e
@@ -281,7 +283,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
               </SearchSelect>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="api-tarifa-inicio">Contabilizar tarifas a partir de</Label>
+              <Label htmlFor="api-tarifa-inicio">Contabilizar despesas bancárias a partir de</Label>
               <Input
                 id="api-tarifa-inicio"
                 type="date"
@@ -296,7 +298,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
                 checked={estaAtivo}
                 onChange={(e) => setAtivo(e.target.checked)}
               />
-              Lançar automaticamente as tarifas retornadas pela API
+              Lançar automaticamente as tarifas e despesas de cobrança identificadas pela API
             </label>
             <label className="flex gap-2 text-sm">
               <input
@@ -304,8 +306,8 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
                 checked={confirmado}
                 onChange={(e) => setConfirmado(e.target.checked)}
               />
-              Conferi os lançamentos anteriores e autorizo contabilizar as tarifas desta loja desde
-              a data inicial, incluindo os retornos já recebidos.
+              Conferi os lançamentos anteriores e autorizo contabilizar as despesas bancárias desta
+              loja desde a data inicial, incluindo os retornos já recebidos.
             </label>
             <Button
               disabled={
@@ -316,7 +318,7 @@ export function TarifasFinanceiro({ boleto, dados }: { boleto: Row; dados: Row[]
               {salvar.isPending
                 ? "Processando…"
                 : estaAtivo
-                  ? "Salvar e contabilizar tarifas da loja"
+                  ? "Salvar e contabilizar despesas da loja"
                   : "Salvar automação pausada"}
             </Button>
           </fieldset>

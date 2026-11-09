@@ -31,6 +31,16 @@ grant usage on schema public,auth to authenticated;`);
     const sql = fs.readFileSync(path.join(root, "db/fase280_tarifas_api_sicredi.sql"), "utf8");
     await db.exec(sql);
     await db.exec(sql);
+    // Processador financeiro exercitado no teste próprio; aqui validamos o cache real do banco.
+    await db.exec(
+      `create function sicredi_contabilizar_tarifa_282(uuid,date) returns text language plpgsql as $fn$declare v jsonb;begin if upper(v->>'descricao') ~ '\\mTARIFA\\M' then return 'despesa';end if;return 'outro';end$fn$;`,
+    );
+    const despesas347 = fs.readFileSync(
+      path.join(root, "db/fase347_despesas_bancarias_boletos.sql"),
+      "utf8",
+    );
+    await db.exec(despesas347);
+    await db.exec(despesas347);
     assert.equal((await db.query("select count(*)::int n from cron.job")).rows[0].n, 1);
     const reserve = async (secret = "secret") =>
       (await db.query("select sicredi_tarifas_reservar_280($1) r", [secret])).rows[0].r;
@@ -44,6 +54,21 @@ grant usage on schema public,auth to authenticated;`);
     await db.exec("set test.role='authenticated'");
     await assert.rejects(() => reserve(), /servidor/);
     await db.exec("set test.role='service_role'");
+    for (const descricao of [
+      "TAXA COBRANÇA",
+      "CUSTAS CARTORÁRIAS",
+      "EMOLUMENTOS",
+      "DESPESA PROTESTO",
+    ]) {
+      assert.equal(
+        (await db.query("select sicredi_despesa_identificada_347($1) ok", [descricao])).rows[0].ok,
+        true,
+      );
+    }
+    assert.equal(
+      (await db.query("select sicredi_despesa_identificada_347('ESTORNO TARIFA') ok")).rows[0].ok,
+      false,
+    );
     const before = (await db.query("select * from boletos")).rows,
       financeBefore = (await db.query("select * from movimentos_financeiros")).rows,
       titleBefore = (await db.query("select * from contas_receber")).rows;
@@ -60,7 +85,7 @@ grant usage on schema public,auth to authenticated;`);
       valor: value,
     });
     await assert.rejects(
-      () => finish(r, [{ ...item("600000228", "TARIFA COBRANCA", 1.63), cooperativa: "9999" }]),
+      () => finish(r, [{ ...item("600000228", "TAXA COBRANCA", 1.63), cooperativa: "9999" }]),
       /incompatível/,
     );
     assert.equal(
@@ -68,9 +93,9 @@ grant usage on schema public,auth to authenticated;`);
       0,
     );
     await finish(r, [
-      item("600000228", "TARIFA COBRANCA", 1.63),
+      item("600000228", "TAXA COBRANCA", 1.63),
       item("600000228", "OUTRO DEBITO", 2),
-      item("600000229", "TARIFA COBRANCA", 3),
+      item("600000229", "TAXA COBRANCA", 3),
       item("999999999", "TARIFA SEM BOLETO", 4),
     ]);
     let rows = (await db.query("select * from sicredi_tarifas_api_280 order by boleto_id")).rows;
@@ -85,7 +110,7 @@ grant usage on schema public,auth to authenticated;`);
     ]);
     r = await reserve();
     assert.equal(r.dia, dia);
-    await finish(r, [item("600000228", "TARIFA COBRANCA", 1.63)]);
+    await finish(r, [item("600000228", "TAXA COBRANCA", 1.63)]);
     rows = (await db.query("select * from sicredi_tarifas_api_280")).rows;
     assert.equal(rows.length, 1);
     assert.equal(Number(rows[0].tarifa_total), 1.63);
@@ -108,7 +133,7 @@ grant usage on schema public,auth to authenticated;`);
       dia,
     ]);
     r = await reserve();
-    await assert.rejects(() => finish(r, [item("600000228", "TARIFA COBRANCA", 1.63)]), /ambíguo/);
+    await assert.rejects(() => finish(r, [item("600000228", "TAXA COBRANCA", 1.63)]), /ambíguo/);
     assert.equal((await db.query("select * from sicredi_tarifas_api_280")).rows.length, 1);
     await db.query("delete from boletos where id=$1", [id(42)]);
     await finish(r, []);
@@ -118,8 +143,8 @@ grant usage on schema public,auth to authenticated;`);
     ]);
     r = await reserve();
     await finish(r, [
-      item("600000228", "TARIFA COBRANCA", 1.63),
-      item("600000229", "TARIFA COBRANCA", 3),
+      item("600000228", "TAXA COBRANCA", 1.63),
+      item("600000229", "TAXA COBRANCA", 3),
     ]);
     await db.exec("set role authenticated;set test.role='authenticated'");
     assert.equal(

@@ -41,6 +41,16 @@ grant usage on schema auth,public to authenticated;`);
     );
     await db.exec(sql);
     await db.exec(sql);
+    // O cache completo é testado no script de API; aqui exercitamos o processador financeiro real.
+    await db.exec(
+      `create function sicredi_tarifas_finalizar_280(uuid,jsonb,text) returns integer language plpgsql as $fn$declare r3 jsonb;begin return case when upper(r3->>'descricao') ~ '\\mTARIFA\\M' then 1 when upper(r3->>'descricao') !~ '\\mTARIFA\\M' then 0 end;end$fn$;`,
+    );
+    const despesas347 = fs.readFileSync(
+      path.join(root, "db/fase347_despesas_bancarias_boletos.sql"),
+      "utf8",
+    );
+    await db.exec(despesas347);
+    await db.exec(despesas347);
     // Usa a seleção financeira real da DRE, incluindo sinais, origem e estornos.
     source = fs.readFileSync(path.join(root, "db/fase46_dre_receita_competencia.sql"), "utf8");
     start = source.indexOf("create or replace view public.vw_dre_base as");
@@ -254,6 +264,33 @@ grant usage on schema auth,public to authenticated;`);
       before,
     );
     assert.deepEqual((await db.query("select * from contas_receber")).rows, title);
+    const entradasAntes = (
+      await db.query("select sum(valor) valor from movimentos_financeiros where tipo='entrada'")
+    ).rows[0].valor;
+    await snap(id(40), 2.75, 0, "CUSTAS CARTORÁRIAS");
+    const custas = await estado(id(40), 0);
+    assert.equal(custas.estado, "lancado");
+    assert.equal(Number(custas.valor_lancado), 2.75);
+    await snap(id(40), 2.75, 0, "CUSTAS CARTORÁRIAS");
+    assert.equal((await estado(id(40), 0)).movimento_id, custas.movimento_id);
+    const saidasAntes = (
+      await db.query("select count(*) n from movimentos_financeiros where tipo='saida'")
+    ).rows[0].n;
+    await db.query(
+      "insert into boletos select $1,centro_id,banco,canal,ambiente,status,'600000099',valor,valor_liquidado from boletos where id=$2",
+      [id(45), id(40)],
+    );
+    await snap(id(45), 3.5, 1, "ESTORNO TARIFA");
+    assert.equal(
+      (await db.query("select count(*) n from movimentos_financeiros where tipo='saida'")).rows[0]
+        .n,
+      saidasAntes,
+    );
+    assert.equal(
+      (await db.query("select sum(valor) valor from movimentos_financeiros where tipo='entrada'"))
+        .rows[0].valor,
+      entradasAntes,
+    );
     console.log(
       "Financeiro282 OK: 100 recebido/1,63 despesa/saldo98,37 e DRE financeiro -1,63; replay, manual, estorno/divergência, emissão antes de pagamento, rollback, loja/carteira/permissões e retorno preservado.",
     );

@@ -18,7 +18,10 @@ function codigo(v: unknown, length: number): string {
   return v.padStart(length, "0");
 }
 export function tarifaIdentificada(descricao: string): boolean {
-  return /\bTARIFA\b/i.test(descricao);
+  return (
+    /\b(TARIFAS?|TAXAS?|DESPESAS?|CUSTAS?|EMOLUMENTOS?)\b/i.test(descricao) &&
+    !/\b(ESTORNO|ESTORNADO|DEVOLUÇÃO|DEVOLUCAO|DESCONTO|ABATIMENTO)\b/i.test(descricao)
+  );
 }
 /** Manual3.9.1 §7.21. Não infere tarifa a partir da diferença entre crédito e nominal. */
 export function paginaFrancesinha(

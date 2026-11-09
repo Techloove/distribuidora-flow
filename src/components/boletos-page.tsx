@@ -605,10 +605,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             <p className="text-xs text-muted-foreground">
               Os cartões consideram loja, cliente, banco e períodos selecionados; a situação
               selecionada filtra a listagem. Clique em um cartão para listar o grupo correspondente.
-              Tarifas identificadas pelo banco chegam pela consulta automática de movimentações
-              financeiras. Configure conta e categoria por loja em Liquidação e tarifa para
-              contabilizar as despesas. Débitos sem identificação de tarifa ficam para conferência;
-              a ausência de informação não significa tarifa zero.
+              Tarifas e despesas de cobrança identificadas pelo banco chegam pela consulta
+              automática de movimentações financeiras. Configure conta e categoria por loja em
+              Liquidação e tarifa para contabilizar as despesas. Débitos sem identificação de tarifa
+              ficam para conferência; a ausência de informação não significa tarifa zero.
             </p>
           )}
 
@@ -655,7 +655,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Datas</TableHead>
                     <TableHead className="text-right">Valores</TableHead>
-                    <TableHead className="text-right">Tarifas do boleto</TableHead>
+                    <TableHead className="text-right">Tarifas / despesas</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="no-print text-right">Ações</TableHead>
                   </TableRow>
@@ -787,7 +787,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                               </p>
                             )}
                           </TableCell>
-                          <TableCell data-label="Tarifas do boleto" className="text-right text-xs">
+                          <TableCell data-label="Tarifas / despesas" className="text-right text-xs">
                             {!canFinance ? (
                               "Acesso financeiro necessário"
                             ) : tarifaApi && tarifaApi.valor > 0 ? (

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.3",
+    "data": "2026-11-09",
+    "titulo": "Contabilizar automaticamente tarifas e despesas dos boletos Sicredi",
+    "motivo": "As tarifas confirmadas estavam pendentes por falta de configuração financeira da loja; despesas de cobrança além de TARIFA precisavam da mesma contabilização segura.",
+    "novidades": [
+      "Tarifas, taxas, custas, emolumentos e despesas de cobrança identificadas no retorno Sicredi usam a mesma saída bancária automática e categoria de Despesas Financeiras da loja.",
+      "A despesa permanece separada do recebimento do cliente. Vínculos por boleto/data evitam duplicidade; estornos, débitos não identificados e retornos divergentes ficam para conferência.",
+      "Configuração da operação atual ativa na conta Sicredi da loja, com regularização das tarifas confirmadas e ainda pendentes. Sicoob e sandbox permanecem separados; a futura contabilização Sicoob depende de retorno real de despesas."
+    ]
+  },
+  {
     "versao": "1.43.2",
     "data": "2026-11-09",
     "titulo": "Corrigir a distinção entre lucro bruto e líquido nas vendas",

@@ -265,3 +265,25 @@ test("endpoint consulta a Francesinha com GET, parâmetros documentados e token 
     });
   }
 });
+
+test("despesas de cobrança incluem taxas, custas e emolumentos sem interpretar estornos como saída", async () => {
+  const { tarifaIdentificada } = await import("../src/lib/sicredi-francesinha");
+  for (const descricao of [
+    "TARIFA LIQUIDAÇÃO",
+    "TARIFAS BOLETOS",
+    "TAXA DE COBRANÇA",
+    "DESPESA PROTESTO",
+    "CUSTAS CARTORÁRIAS",
+    "EMOLUMENTOS",
+  ])
+    expect(tarifaIdentificada(descricao)).toBe(true);
+  for (const descricao of [
+    "ESTORNO TARIFA",
+    "DEVOLUÇÃO DE DESPESAS",
+    "DEVOLUCAO DE TAXA",
+    "ABATIMENTO",
+    "LIQUIDAÇÃO",
+    "DÉBITO NÃO IDENTIFICADO",
+  ])
+    expect(tarifaIdentificada(descricao)).toBe(false);
+});
