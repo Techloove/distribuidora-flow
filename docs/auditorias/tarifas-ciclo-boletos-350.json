@@ -10,5 +10,27 @@
     "tarifa_desconto_reconhecida": true,
     "tarifa_abatimento_reconhecida": true
   },
-  "sql_sha256": "2c0e0c8307923989562151cee4c30f001dd57e08bccb351b8527274fca0622da"
+  "sql_sha256": "2c0e0c8307923989562151cee4c30f001dd57e08bccb351b8527274fca0622da",
+  "validacao_operacional": {
+    "conferido_em_utc": "2026-11-09T21:00:40.323089+00:00",
+    "ciclo_em_utc": "2026-11-09T21:00:00.40632+00:00",
+    "http": 200,
+    "datas_com_coleta_concluida": [
+      "2026-11-09",
+      "2026-11-03",
+      "2026-11-02",
+      "2026-11-08"
+    ],
+    "boleto_600000139": {
+      "tarifa_confirmada": 1.02,
+      "descricao": "TARIFA DE BAIXA",
+      "estado_financeiro": "lancado"
+    },
+    "sem_tarifa_retornada_no_cache": [
+      "600000910",
+      "600000929",
+      "600000937"
+    ],
+    "disparo_bancario_manual": false
+  }
 }
