@@ -51,6 +51,16 @@ grant usage on schema auth,public to authenticated;`);
     );
     await db.exec(despesas347);
     await db.exec(despesas347);
+    const fonte350 = fs.readFileSync(
+      path.join(root, "db/fase350_tarifas_boletos_ciclo_completo.sql"),
+      "utf8",
+    );
+    await db.exec(
+      fonte350.slice(
+        fonte350.indexOf("create or replace function public.sicredi_despesa_identificada_347"),
+        fonte350.indexOf("create or replace function public.sicredi_tarifas_reservar_280"),
+      ),
+    );
     // Usa a seleção financeira real da DRE, incluindo sinais, origem e estornos.
     source = fs.readFileSync(path.join(root, "db/fase46_dre_receita_competencia.sql"), "utf8");
     start = source.indexOf("create or replace view public.vw_dre_base as");
@@ -291,6 +301,16 @@ grant usage on schema auth,public to authenticated;`);
         .rows[0].valor,
       entradasAntes,
     );
+    await db.query(
+      "insert into boletos select $1,centro_id,banco,canal,ambiente,'baixado','600000100',valor,valor_liquidado from boletos where id=$2",
+      [id(46), id(40)],
+    );
+    await snap(id(46), 1.02, 0, "TARIFA CONCESSAO DESCONTO");
+    const baixa = await estado(id(46), 0);
+    assert.equal(baixa.estado, "lancado");
+    assert.equal(Number(baixa.valor_lancado), 1.02);
+    await snap(id(46), 1.02, 0, "TARIFA CONCESSAO DESCONTO");
+    assert.equal((await estado(id(46), 0)).movimento_id, baixa.movimento_id);
     console.log(
       "Financeiro282 OK: 100 recebido/1,63 despesa/saldo98,37 e DRE financeiro -1,63; replay, manual, estorno/divergência, emissão antes de pagamento, rollback, loja/carteira/permissões e retorno preservado.",
     );

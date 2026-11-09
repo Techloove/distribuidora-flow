@@ -15,16 +15,17 @@ type Banco = {
   beneficiario: string;
   ambiente: string;
 };
-export async function executarTarifasSicredi(
+async function executarDiaTarifasSicredi(
   secret: string,
   io: {
     rpc: Rpc;
     config: () => Promise<Banco>;
     consultar: (c: Banco, dia: string, pagina: number) => Promise<unknown>;
+    agora?: () => number;
   },
 ) {
   const r = await io.rpc<Reserva>("sicredi_tarifas_reservar_280", { _segredo: secret });
-  if (!r.lease) return { boletos: 0 };
+  if (!r.lease) return null;
   try {
     if (!r.dia || !dataBoleto(r.dia)) throw new Error("RETORNO_INVALIDO");
     const c = await io.config();
@@ -40,7 +41,7 @@ export async function executarTarifasSicredi(
       _lease: r.lease,
       _movimentos: movimentos,
     });
-    return { boletos };
+    return boletos;
   } catch (e) {
     const codigo =
       e instanceof Error &&
@@ -50,6 +51,25 @@ export async function executarTarifasSicredi(
     await io.rpc("sicredi_tarifas_finalizar_280", { _lease: r.lease, _erro: codigo });
     throw new Error(codigo);
   }
+}
+
+/** Lê dias completos em lote limitado, preservando paginação e idempotência por dia. */
+export async function executarTarifasSicredi(
+  secret: string,
+  io: Parameters<typeof executarDiaTarifasSicredi>[1],
+  limiteDias = 1,
+) {
+  if (!Number.isInteger(limiteDias) || limiteDias < 1 || limiteDias > 4)
+    throw new Error("LIMITE_INVALIDO");
+  const agora = io.agora ?? Date.now;
+  const fim = agora() + 40_000;
+  let boletos = 0;
+  for (let i = 0; i < limiteDias && agora() < fim; i++) {
+    const quantidade = await executarDiaTarifasSicredi(secret, io);
+    if (quantidade === null) break;
+    boletos += quantidade;
+  }
+  return { boletos };
 }
 
 /** Endpoint independente da liquidação: apenas GET bancário e cache privado no ERP. */
@@ -82,77 +102,84 @@ export async function atenderTarifasSicredi(request: Request): Promise<Response>
     return (body.trim() ? JSON.parse(body) : null) as T;
   };
   let token: string | undefined;
+  let bancoCarregado: Banco | undefined;
   const inicio = Date.now();
   try {
     return Response.json(
-      await executarTarifasSicredi(secret, {
-        rpc,
-        config: async () => {
-          const res = await fetchWithTimeout(
-            `${url}/rest/v1/sicredi_config?select=api_key,username,password,cooperativa,posto,codigo_beneficiario,ambiente&limit=2`,
-            { headers: dbHeaders },
-            8_000,
-          );
-          if (!res.ok) throw new Error("CONVENIO_DIVERGENTE");
-          const rows = (await res.json()) as Record<string, string>[];
-          const c = rows[0];
-          if (
-            rows.length !== 1 ||
-            !c ||
-            !c["api_key"] ||
-            !c["password"] ||
-            c["username"] !== `${c["codigo_beneficiario"]}${c["cooperativa"]}`
-          )
-            throw new Error("CONVENIO_DIVERGENTE");
-          return {
-            base: "https://api-parceiro.sicredi.com.br",
-            apiKey: c["api_key"]!,
-            username: c["username"]!,
-            password: c["password"]!,
-            cooperativa: c["cooperativa"]!,
-            posto: c["posto"]!,
-            beneficiario: c["codigo_beneficiario"]!,
-            ambiente: c["ambiente"]!,
-          };
-        },
-        consultar: async (c, dia, pagina) => {
-          if (Date.now() - inicio > 40_000) throw new Error("TIMEOUT");
-          token ??= await tokenSicredi(c, rpc);
-          const params = new URLSearchParams({
-            codigoBeneficiario: c.beneficiario,
-            cooperativa: c.cooperativa,
-            posto: c.posto,
-            dataLancamento: dia.split("-").reverse().join("/"),
-            tipoMovimento: "DEBITO",
-            pagina: String(pagina),
-          });
-          const buscar = () =>
-            fetchWithTimeout(
-              `${c.base}/cobranca/v1/cobranca-financeiro/movimentacoes/?${params}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "x-api-key": c.apiKey,
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-              },
-              5_000,
+      await executarTarifasSicredi(
+        secret,
+        {
+          rpc,
+          config: async () => {
+            if (bancoCarregado) return bancoCarregado;
+            const res = await fetchWithTimeout(
+              `${url}/rest/v1/sicredi_config?select=api_key,username,password,cooperativa,posto,codigo_beneficiario,ambiente&limit=2`,
+              { headers: dbHeaders },
+              8_000,
             );
-          let res = await buscar();
-          // O quadro do manual usa barras; o Postman da mesma seção usa hífens.
-          // Somente em400 tenta uma vez a outra representação documentada do mesmo dia.
-          if (res.status === 400) {
-            await res.body?.cancel();
+            if (!res.ok) throw new Error("CONVENIO_DIVERGENTE");
+            const rows = (await res.json()) as Record<string, string>[];
+            const c = rows[0];
+            if (
+              rows.length !== 1 ||
+              !c ||
+              !c["api_key"] ||
+              !c["password"] ||
+              c["username"] !== `${c["codigo_beneficiario"]}${c["cooperativa"]}`
+            )
+              throw new Error("CONVENIO_DIVERGENTE");
+            bancoCarregado = {
+              base: "https://api-parceiro.sicredi.com.br",
+              apiKey: c["api_key"]!,
+              username: c["username"]!,
+              password: c["password"]!,
+              cooperativa: c["cooperativa"]!,
+              posto: c["posto"]!,
+              beneficiario: c["codigo_beneficiario"]!,
+              ambiente: c["ambiente"]!,
+            };
+            return bancoCarregado;
+          },
+          consultar: async (c, dia, pagina) => {
             if (Date.now() - inicio > 40_000) throw new Error("TIMEOUT");
-            params.set("dataLancamento", dia.split("-").reverse().join("-"));
-            res = await buscar();
-          }
-          if (!res.ok) throw new Error("HTTP");
-          return await res.json().catch(() => {
-            throw new Error("RETORNO_INVALIDO");
-          });
+            token ??= await tokenSicredi(c, rpc);
+            const params = new URLSearchParams({
+              codigoBeneficiario: c.beneficiario,
+              cooperativa: c.cooperativa,
+              posto: c.posto,
+              dataLancamento: dia.split("-").reverse().join("/"),
+              tipoMovimento: "DEBITO",
+              pagina: String(pagina),
+            });
+            const buscar = () =>
+              fetchWithTimeout(
+                `${c.base}/cobranca/v1/cobranca-financeiro/movimentacoes/?${params}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "x-api-key": c.apiKey,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                },
+                5_000,
+              );
+            let res = await buscar();
+            // O quadro do manual usa barras; o Postman da mesma seção usa hífens.
+            // Somente em400 tenta uma vez a outra representação documentada do mesmo dia.
+            if (res.status === 400) {
+              await res.body?.cancel();
+              if (Date.now() - inicio > 40_000) throw new Error("TIMEOUT");
+              params.set("dataLancamento", dia.split("-").reverse().join("-"));
+              res = await buscar();
+            }
+            if (!res.ok) throw new Error("HTTP");
+            return await res.json().catch(() => {
+              throw new Error("RETORNO_INVALIDO");
+            });
+          },
         },
-      }),
+        4,
+      ),
       { headers },
     );
   } catch {

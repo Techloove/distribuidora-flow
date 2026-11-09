@@ -1,0 +1,14 @@
+{
+  "fase": 350,
+  "documentos_financeiro_cache_configuracao_ultimas_consultas_e_reservas_preservados": true,
+  "verificacoes": {
+    "historico_sem_corte": true,
+    "coleta_cinco_minutos": true,
+    "desconto_nao_e_tarifa": true,
+    "estorno_nao_e_nova_despesa": true,
+    "reserva_exclusiva_servidor": true,
+    "tarifa_desconto_reconhecida": true,
+    "tarifa_abatimento_reconhecida": true
+  },
+  "sql_sha256": "2c0e0c8307923989562151cee4c30f001dd57e08bccb351b8527274fca0622da"
+}

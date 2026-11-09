@@ -20,7 +20,8 @@ function codigo(v: unknown, length: number): string {
 export function tarifaIdentificada(descricao: string): boolean {
   return (
     /\b(TARIFAS?|TAXAS?|DESPESAS?|CUSTAS?|EMOLUMENTOS?)\b/i.test(descricao) &&
-    !/\b(ESTORNO|ESTORNADO|DEVOLUÇÃO|DEVOLUCAO|DESCONTO|ABATIMENTO)\b/i.test(descricao)
+    !/^\s*(ESTORNO|ESTORNAD[OA]|DEVOLUÇÃO|DEVOLUCAO)\b/i.test(descricao) &&
+    !/\bESTORNAD[OA]\b/i.test(descricao)
   );
 }
 /** Manual3.9.1 §7.21. Não infere tarifa a partir da diferença entre crédito e nominal. */

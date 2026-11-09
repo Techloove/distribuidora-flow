@@ -626,10 +626,11 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             <p className="text-xs text-muted-foreground">
               Os cartões consideram loja, cliente, banco e períodos selecionados; a situação
               selecionada filtra a listagem. Clique em um cartão para listar o grupo correspondente.
-              Tarifas e despesas de cobrança identificadas pelo banco chegam pela consulta
-              automática de movimentações financeiras. Configure conta e categoria por loja em
-              Liquidação e tarifa para contabilizar as despesas. Débitos sem identificação de tarifa
-              ficam para conferência; a ausência de informação não significa tarifa zero.
+              Tarifas de emissão, alterações, desconto, abatimento, baixa/cancelamento e liquidação
+              informadas pelo banco chegam pela coleta automática, inclusive para boletos
+              encerrados. Configure conta e categoria por loja em Liquidação e tarifa para
+              contabilizar as despesas. Débitos sem identificação de tarifa ficam para conferência;
+              a ausência de informação não significa tarifa zero.
             </p>
           )}
 

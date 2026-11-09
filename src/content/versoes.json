@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.8",
+    "data": "2026-11-09",
+    "titulo": "Importar automaticamente todas as tarifas do ciclo dos boletos",
+    "motivo": "Cobrir as tarifas de todo o ciclo dos boletos, acelerar a coleta recente e reconhecer despesas de operações de desconto/abatimento que podiam ser excluídas pela descrição.",
+    "novidades": [
+      "Coleta automática em lotes de até quatro datas a cada cinco minutos, priorizando hoje e os dias recentes, com histórico desde a primeira emissão e sem corte de 90 dias.",
+      "Tarifas de emissão, alteração, desconto, abatimento, baixa/cancelamento e liquidação são tratadas quando informadas pelo banco, inclusive em boletos já baixados ou cancelados.",
+      "Paginação completa, reutilização de configuração/token por lote e fila apenas para intervalos ausentes reduzem consultas repetidas. Mantidas as validações e proteções contra duplicidade; ausência de retorno não presume tarifa zero."
+    ]
+  },
+  {
     "versao": "1.43.7",
     "data": "2026-11-09",
     "titulo": "Adicionar cartão de boletos cancelados e baixados",

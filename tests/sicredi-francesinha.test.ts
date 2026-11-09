@@ -182,12 +182,17 @@ test("endpoint consulta a Francesinha com GET, parâmetros documentados e token 
   let persisted: Record<string, unknown> | undefined;
   let formatoComHifen = false;
   let httpStatus = 200;
+  let encerrouLote = false;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
     let out: unknown;
-    if (url.pathname.endsWith("sicredi_tarifas_reservar_280")) out = { ...c, dia, lease: "lease" };
-    else if (url.pathname.endsWith("sicredi_config"))
+    if (url.pathname.endsWith("sicredi_tarifas_reservar_280")) {
+      if (encerrouLote) {
+        encerrouLote = false;
+        out = {};
+      } else out = { ...c, dia, lease: "lease" };
+    } else if (url.pathname.endsWith("sicredi_config"))
       out = [
         {
           api_key: "API_PRIVADO",
@@ -211,6 +216,7 @@ test("endpoint consulta a Francesinha com GET, parâmetros documentados e token 
       out = page();
     } else if (url.pathname.endsWith("sicredi_tarifas_finalizar_280")) {
       persisted = body;
+      encerrouLote = true;
       out = 1;
     } else throw new Error("Chamada inesperada");
     return new Response(JSON.stringify(out), {
@@ -286,4 +292,52 @@ test("despesas de cobrança incluem taxas, custas e emolumentos sem interpretar 
     "DÉBITO NÃO IDENTIFICADO",
   ])
     expect(tarifaIdentificada(descricao)).toBe(false);
+});
+
+test("tarifas de desconto, abatimento, alteração e cancelamento são despesas, sem confundir com estorno", () => {
+  for (const descricao of [
+    "TARIFA DE ALTERACAO",
+    "TARIFA CONCESSAO DESCONTO",
+    "TARIFA ALTERACAO ABATIMENTO",
+    "TARIFA DE BAIXA",
+    "TARIFA CANCELAMENTO",
+    "TARIFA DEVOLUCAO TITULO",
+  ])
+    expect(tarifaIdentificada(descricao)).toBe(true);
+  for (const descricao of [
+    "DESCONTO CONCEDIDO",
+    "ABATIMENTO",
+    "ESTORNO DE TARIFA",
+    "DEVOLUCAO DE TAXA",
+    "TARIFA ESTORNADA",
+  ])
+    expect(tarifaIdentificada(descricao)).toBe(false);
+});
+
+test("lote de tarifas consulta vários dias completos e para quando a fila acaba", async () => {
+  const dias = ["2026-11-08", "2026-11-09"];
+  let atual = "",
+    reservas = 0;
+  const persistidos: Record<string, unknown>[] = [];
+  const r = await executarTarifasSicredi(
+    "secret",
+    {
+      rpc: async <T>(nome: string, args: Record<string, unknown>) => {
+        if (nome.includes("reservar")) {
+          reservas++;
+          atual = dias.shift() ?? "";
+          return (atual ? { ...c, dia: atual, lease: atual } : {}) as T;
+        }
+        persistidos.push(args);
+        return 1 as T;
+      },
+      config: async () => banco,
+      consultar: async () => page([{ ...movimento, dataLancamento: atual }]),
+    },
+    4,
+  );
+  expect(r).toEqual({ boletos: 2 });
+  expect(reservas).toBe(3);
+  expect(persistidos).toHaveLength(2);
+  expect(persistidos.map((p) => p["_lease"])).toEqual(["2026-11-08", "2026-11-09"]);
 });
