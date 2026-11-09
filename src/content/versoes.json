@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.1",
+    "data": "2026-11-09",
+    "titulo": "Automatizar a atualização dos boletos e simplificar os avisos da mensalidade",
+    "motivo": "Reduzir a espera na consulta dos boletos próximos, evitar consultas repetidas e exibir os avisos da mensalidade somente na antecedência do contrato.",
+    "novidades": [
+      "Sicredi: fila prioriza vencidos e próximos sete dias, com lotes limitados e cache por boleto de 15 minutos ou seis horas. Ao abrir Boletos, a solicitação respeita um intervalo global e a listagem acompanha as liquidações/baixas detectadas sem recarga a cada consulta pendente.",
+      "A conciliação preserva validação de valores, idempotência, convênio e permissões. A migração não emite boletos nem registra pagamentos.",
+      "Mensalidade em dia mostra apenas Próximo vencimento em X dias. Destaque e aviso ao entrar respeitam a antecedência configurada; vencimento e bloqueio mostram contagem diária, com tolerância do contrato."
+    ]
+  },
+  {
     "versao": "1.43.0",
     "data": "2026-11-06",
     "titulo": "Quitar todos os serviços pela fatura mensal da competência",

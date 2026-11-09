@@ -1,0 +1,13 @@
+# Consulta automática Sicredi — fase345
+
+O agendamento existente estava ativo, mas disputava a fila com mais de cem boletos, dez por ciclo. A nova seleção prioriza vencidos e vencimentos nos próximos sete dias. Respostas pendentes voltam à fila após 15 minutos nesse grupo e após seis horas para boletos mais distantes. Uma consulta atrasada por mais de 12 horas ganha prioridade para evitar retenção indefinida dos distantes. São intervalos mínimos; fila, indisponibilidade e processamento bancário podem ampliar o prazo.
+
+Ao entrar em Boletos, a RPC autenticada `sicredi_auto_solicitar_345` verifica acesso financeiro, loja, boletos elegíveis e fila vencida. Ela reutiliza o disparador HTTPS privado existente somente se o último lote e a última solicitação global tiverem pelo menos cinco minutos. A linha de configuração é bloqueada durante a decisão, impedindo várias abas/usuários de disparar em paralelo. Não retorna segredo, credenciais ou boletos ao solicitante. O navegador mantém cache de cinco minutos dessa solicitação e não chama o banco por boleto.
+
+O acompanhamento usa uma consulta resumida por minuto enquanto a tela estiver visível. Só invalida a lista após nova liquidação/baixa detectada, preservando os dados quando o lote apenas confirma pendências. A primeira leitura acompanha a carga inicial, sem uma recarga adicional. A consulta individual permanece disponível.
+
+Mantidos: convênio e ambiente de produção, lotes de até dez, reservas expirantes, limite do executor de 40 segundos, espera de erro de 30 minutos, diagnóstico seguro e conciliação financeira idempotente. A migração não emite boletos, não registra pagamentos nem recria o agendamento ou seu segredo. O endpoint já instalado continua em uso; não houve troca de destino.
+
+Validação: 329 testes unitários, 2.048 verificações, TypeScript, lint dos arquivos alterados, build, controles SQL/manual/datas/versão. `check-sicredi-prioridade-345.cjs` usa banco descartável para testar prioridade, limite, leases, cache, restrição por loja, intervalo global, rotação e erro sem baixa. `check-sicredi-automatico-database.cjs` também aplica a fase345 antes de testar recebimento completo, idempotência, corrida com consulta manual e pagamento divergente sem baixa. Teste de navegador com dados simulados conferiu cache ao reentrar, ausência de recargas por consultas pendentes, recarga única após mudança financeira e celular.
+
+A entrega também ajusta os avisos SaaS: em dia, somente contagem para o próximo vencimento; dentro da antecedência do contrato, destaque e aviso de entrada com contagem de vencimento e bloqueio. Datas e tolerância continuam determinadas pelo servidor; contagem em dias do calendário de São Paulo. Representantes continuam sem informações financeiras da plataforma.

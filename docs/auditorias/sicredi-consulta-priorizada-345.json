@@ -1,0 +1,14 @@
+{
+  "fase": 345,
+  "boletos_receber_movimentos_fila_config_e_agenda_preservados": true,
+  "verificacoes": {
+    "agenda_ativa": true,
+    "anon_bloqueado": true,
+    "espera_distante": true,
+    "rpc_autenticada": true,
+    "reserva_so_servidor": true,
+    "conclusao_so_servidor": true,
+    "diagnostico_preservado": true
+  },
+  "sql_sha256": "ecd412165a73800b772bae79ad0963b6c24d70a2f4a126cf51426a9f7017996e"
+}

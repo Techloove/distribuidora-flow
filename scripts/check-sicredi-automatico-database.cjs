@@ -91,6 +91,7 @@ select set_config('request.jwt.claim.role','service_role',false);`);
       .replace("create extension if not exists pg_cron;", "")
       .replace("create extension if not exists pg_net with schema extensions;", "");
     await db.exec(migration247);
+    await db.exec(readSql("fase345_sicredi_consulta_priorizada.sql"));
     await db.exec(`update sicredi_config set ambiente='producao';`);
     const t = await title(31);
     const b = await prepare(t);

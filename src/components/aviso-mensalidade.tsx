@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Wrench } from "lucide-react";
 import type { SaasStatus } from "@/lib/saas";
-import { avisoMensalidade } from "@/lib/avisos-saas";
+import { avisoMensalidade, proximoVencimento } from "@/lib/avisos-saas";
 import { dataBr } from "@/lib/formatacao";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,10 +31,13 @@ export function AvisoMensalidade({ status }: { status: SaasStatus | null }) {
         {aviso && <AlertTriangle aria-hidden="true" className="mt-1 size-6 shrink-0" />}
         <div>
           <h2 className={aviso ? "text-lg font-semibold" : "font-medium"}>
-            {aviso?.titulo ?? "Mensalidade da plataforma"}
+            {aviso?.titulo ??
+              (status.estado === "em_dia"
+                ? proximoVencimento(status)
+                : "Mensalidade da plataforma")}
           </h2>
           {aviso && <p className="mt-1 text-base font-bold">{aviso.prazo}</p>}
-          {status.vencimento && (
+          {aviso && status.vencimento && (
             <p className="mt-1 text-sm">
               Vencimento: {dataBr(status.vencimento)}
               {status.data_bloqueio && ` · Bloqueio a partir de ${dataBr(status.data_bloqueio)}`}
