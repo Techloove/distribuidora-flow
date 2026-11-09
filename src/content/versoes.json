@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.7",
+    "data": "2026-11-09",
+    "titulo": "Adicionar cartão de boletos cancelados e baixados",
+    "motivo": "Facilitar a conferência dos boletos baixados ou cancelados com total e acesso direto, no mesmo padrão dos demais cartões.",
+    "novidades": [
+      "Novo cartão Boletos Cancelados ao lado de Boletos vencidos, somando baixas e cancelamentos confirmados nos mesmos filtros de loja, banco, cliente e período.",
+      "Clique no cartão para listar os dois estados juntos. O filtro de situação também oferece Cancelados (baixados/cancelados); cancelamento apenas solicitado não entra no grupo.",
+      "Os quatro cartões se ajustam à largura da tela, mantendo o filtro inicial em aberto e as consultas individuais de cada situação."
+    ]
+  },
+  {
     "versao": "1.43.6",
     "data": "2026-11-09",
     "titulo": "Abrir Boletos em aberto e concluir autenticação do agendamento",

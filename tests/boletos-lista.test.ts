@@ -4,6 +4,7 @@ import {
   dataBoleto,
   filtrarBoletos,
   filtrosIniciaisBoletos,
+  boletoCancelado,
   periodoBoletosInvalido,
   ordenarBoletos,
   cancelamentoBoletoPendente,
@@ -201,4 +202,43 @@ test("lista abre em aberto, inclui vencidos registrados e preserva atalhos para 
     filtrarBoletos(dados, filtrosIniciaisBoletos({ boleto: "pago" }), nomes).map((b) => b.id),
   ).toContain("pago");
   expect(filtrarBoletos(dados, { status: "liquidado" }, nomes).map((b) => b.id)).toEqual(["pago"]);
+});
+
+test("grupo cancelados reúne baixados e cancelados confirmados respeitando cliente e período", () => {
+  const dados = [
+    { id: "baixado", status: "baixado", cliente_id: "a", valor: 100, vencimento: "2026-11-15" },
+    { id: "cancelado", status: "cancelado", cliente_id: "a", valor: 200, vencimento: "2026-11-20" },
+    {
+      id: "outro-cliente",
+      status: "baixado",
+      cliente_id: "b",
+      valor: 300,
+      vencimento: "2026-11-20",
+    },
+    {
+      id: "solicitado",
+      status: "registrado",
+      cliente_id: "a",
+      valor: 400,
+      vencimento: "2026-11-15",
+      retorno: { cancelamento_sicredi_pendente: true },
+    },
+    { id: "pago", status: "liquidado", cliente_id: "a", valor: 500, vencimento: "2026-11-15" },
+  ];
+  const cancelados = filtrarBoletos(
+    dados,
+    { status: "cancelados", cliente: "a", de: "2026-11-01", ate: "2026-11-30" },
+    () => "",
+  );
+  expect(cancelados.map((b) => b.id)).toEqual(["baixado", "cancelado"]);
+  expect(cancelados.reduce((s, b) => s + Number(b.valor), 0)).toBe(300);
+  expect(
+    filtrarBoletos(dados, { status: "cancelados", cliente: "a", ate: "2026-11-16" }, () => "").map(
+      (b) => b.id,
+    ),
+  ).toEqual(["baixado"]);
+  expect(boletoCancelado(dados[3]!)).toBe(false);
+  expect(
+    filtrarBoletos(dados, { status: "baixado", cliente: "a" }, () => "").map((b) => b.id),
+  ).toEqual(["baixado"]);
 });

@@ -50,6 +50,7 @@ import {
   filtrarBoletos,
   filtrosIniciaisBoletos,
   boletoVencido,
+  boletoCancelado,
   dataBoleto,
   periodoBoletosInvalido,
   agruparTarifasApi,
@@ -357,6 +358,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     .filter((b) => b["status"] === "liquidado")
     .reduce((s, b) => s + Number(b["valor_liquidado"] ?? b["valor"] ?? 0), 0);
 
+  const cancelados = boletosResumo
+    .filter(boletoCancelado)
+    .reduce((s, b) => s + Number(b["valor"] ?? 0), 0);
+
   const copiar = (v: unknown) => {
     void navigator.clipboard.writeText(String(v ?? ""));
     toast.success("Copiado");
@@ -494,7 +499,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             label="Situação do boleto"
             value={filtros["status"] ?? ""}
             onChange={(v) => setF("status", v)}
-            options={Object.entries(statusLabel).map(([value, label]) => ({ value, label }))}
+            options={[
+              ...Object.entries(statusLabel).map(([value, label]) => ({ value, label })),
+              { value: "cancelados", label: "Cancelados (baixados/cancelados)" },
+            ]}
           />
           <FilterText
             label="Vencimento de"
@@ -564,7 +572,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           </p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <button
             type="button"
             onClick={() => setF("status", "registrado")}
@@ -592,6 +600,16 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             <p className="text-sm text-destructive">Boletos vencidos</p>
             <p className="mt-2 text-2xl font-semibold text-destructive">{brl(vencido)}</p>
             <p className="mt-1 text-xs text-muted-foreground">Incluídos no total em aberto.</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setF("status", "cancelados")}
+            aria-pressed={filtros["status"] === "cancelados"}
+            className="rounded-lg border border-destructive/20 bg-card p-5 text-left transition-colors hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive aria-pressed:border-destructive aria-pressed:ring-2 aria-pressed:ring-destructive"
+          >
+            <p className="text-sm text-destructive">Boletos Cancelados</p>
+            <p className="mt-2 text-2xl font-semibold text-destructive">{brl(cancelados)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Baixados ou cancelados.</p>
           </button>
         </div>
 

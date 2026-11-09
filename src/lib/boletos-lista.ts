@@ -17,6 +17,11 @@ export function dataBoleto(value: unknown): string {
     : "";
 }
 
+/** Somente baixas e cancelamentos confirmados; uma solicitação pendente continua em aberto. */
+export function boletoCancelado(boleto: Row): boolean {
+  return ["baixado", "cancelado"].includes(String(boleto["status"]));
+}
+
 /** Atraso é informação visual; não muda o estado bancário nem movimenta o financeiro. */
 export function boletoVencido(boleto: Row, hoje = hojeSaoPaulo()): boolean {
   if (!["registrado", "vencido"].includes(String(boleto["status"]))) return false;
@@ -53,7 +58,11 @@ export function filtrarBoletos(rows: Row[], f: Filtros, cliente: (id: unknown) =
   const termo = normalizar(f["busca"]).trim();
   return rows.filter((b) => {
     if (f["cliente"] && String(b["cliente_id"]) !== f["cliente"]) return false;
-    if (f["status"] === "vencido" ? !boletoVencido(b) : f["status"] && b["status"] !== f["status"])
+    if (f["status"] === "cancelados") {
+      if (!boletoCancelado(b)) return false;
+    } else if (
+      f["status"] === "vencido" ? !boletoVencido(b) : f["status"] && b["status"] !== f["status"]
+    )
       return false;
     for (const [campo, de, ate] of periodos) {
       if (!f[de] && !f[ate]) continue;
