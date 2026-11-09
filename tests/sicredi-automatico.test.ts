@@ -137,7 +137,7 @@ test("endpoint distingue HTTP bancário sem copiar corpo privado e sem repetir c
   process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = "service-fixture";
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    if (url.endsWith("sicredi_auto_reservar_247"))
+    if (url.endsWith("sicredi_auto_reservar_348"))
       return Response.json({ lease: "lease", itens: [boleto] });
     if (url.includes("/sicredi_config?"))
       return Response.json([
@@ -198,7 +198,7 @@ test("token salvo com resposta RPC vazia permite continuar a consulta automátic
       const gravacoes: Record<string, unknown>[] = [];
       globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
-        if (url.endsWith("sicredi_auto_reservar_247"))
+        if (url.endsWith("sicredi_auto_reservar_348"))
           return Response.json({ lease: "lease", itens: [boleto] });
         if (url.includes("/sicredi_config?"))
           return Response.json([

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.4 · 2026-11-09
+Versão 1.43.5 · 2026-11-09
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -385,7 +385,7 @@ Cuidados:
 Entenda os cuidados com documentos bancários e fiscais.
 
 1. Para boletos, localize o título elegível e confira loja, cliente, valor, vencimento e a configuração bancária correspondente.
-2. A Consulta automática Sicredi acompanha os boletos API de produção em lotes de até dez a cada cinco minutos, mesmo com o sistema fechado. Ao abrir Boletos, um novo lote só é solicitado se necessário, com intervalo mínimo global de cinco minutos e sem repetir consultas recentes. Os vencidos e os vencimentos nos próximos sete dias têm prioridade: depois de uma resposta pendente, voltam à fila após 15 minutos; os demais, após seis horas. A rotação evita deixar boletos distantes indefinidamente na fila. Esses intervalos são mínimos; o tempo final depende da fila e do processamento do banco. A listagem atualiza após o acompanhamento detectar liquidação ou baixa confirmada, sem consultar cada boleto pelo navegador. Falhas mantêm a espera de 30 minutos e as validações financeiras existentes; dados incompletos não geram recebimento.
+2. A Consulta automática Sicredi acompanha todos os boletos API de produção em aberto, independentemente do vencimento, inclusive pagamentos antecipados. Os lotes têm até 20 boletos a cada cinco minutos, mesmo com o sistema fechado. Após resposta pendente, o intervalo mínimo é de 15 minutos para qualquer vencimento; o tempo para completar a lista depende da fila e da resposta bancária. A rotação consulta primeiro os que aguardam há mais tempo, com prioridade para novos movimentos identificados no banco. Esses movimentos apenas antecipam a consulta; não comprovam pagamento. Ao abrir a tela, a solicitação de lote compartilha um intervalo global de cinco minutos. A listagem acompanha liquidação/baixa confirmada sem consultar cada boleto pelo navegador. Falhas mantêm espera de 30 minutos, e dados incompletos não geram recebimento.
 3. Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.
 4. Em Contas a receber, abra Opções: Emitir boleto aparece quando a parcela não tem boleto registrado; Reimprimir boleto abre a impressão dos boletos já registrados ou liquidados. Registros pendentes ou em processamento mostram Consultar boleto para evitar emissão duplicada.
 5. Na reimpressão disponível em Contas a receber, Boletos, Pedidos e Separação, escolha Esta parcela, Mesmo pedido ou Mesmo cliente. Marque os boletos individualmente ou use Selecionar todos do grupo. Abra PDF selecionados para reunir os PDFs originais em um arquivo, baixar no celular/tablet ou imprimir. A seleção é limpa ao trocar o grupo. São respeitados a loja selecionada e seus acessos; boletos de outro cliente não entram no grupo.
@@ -417,7 +417,7 @@ Cuidados:
 - A integração fiscal ainda precisa de validação dos retornos reais e dos cenários fiscais antes da liberação de produção.
 - Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.
 - CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.
-- Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
+- Após publicar uma correção da consulta automática, confira também Versão confirmada no serviço em Boletos. O agendamento precisa executar o mesmo servidor atualizado da aplicação; atualizar somente a tela não comprova a execução do serviço. Aguardando confirmação indica que o serviço ainda não registrou a versão atual. Aguarde o próximo ciclo agendado. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
 - A consulta automática reconhece LIQUIDADO COMPE e situações bancárias de liquidação com qualificadores pelo mesmo critério da consulta manual. Continua exigindo os dados completos de data e valor e as validações financeiras para confirmar o recebimento. O processamento ocorre nos lotes agendados e respeita o intervalo de cada boleto; não é necessário consultar um por um. Boletos já liquidados ficam fora da fila e não geram outro recebimento. Tarifa de entrada/liquidação não comprova pagamento, e liquidação parcial ou estornada exige conferência.
 - A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem deduz tarifa pela diferença entre o valor emitido e recebido. No registro manual de despesa, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade.
 - A consulta de movimentações financeiras (Francesinha) traz débitos por boleto. A lista soma como despesas de cobrança os débitos identificados como tarifa, taxa, despesa, custa ou emolumento, excluindo estornos, devoluções, descontos e abatimentos; os demais aparecem como débitos a conferir. Sem retorno confirmado ou em caso de falha de acesso, não é exibida tarifa zero como se houvesse isenção.
@@ -573,6 +573,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.43.5 · 2026-11-09 · Corrigir o servidor do agendamento e consultar todos os boletos Sicredi
+
+Motivo da atualização: O agendamento usava um servidor antigo (1.34.1), mesmo com a tela atualizada, e os boletos distantes tinham espera de seis horas.
+
+- Agendamento direcionado ao domínio atual conferido pelo manifesto público. A execução passa a registrar sua própria versão para distinguir atualização da tela e do serviço.
+- Todos os boletos em aberto participam da mesma rotação, sem espera por proximidade do vencimento, em lotes de até 20 e intervalo mínimo de 15 minutos por boleto.
+- Novos movimentos bancários antecipam a conferência sem presumir pagamento. Mantidas validação de valores, data, convênio, reservas, permissões e proteção contra duplicidade.
 
 ### v1.43.4 · 2026-11-09 · Reconhecer liquidação COMPE na consulta automática Sicredi
 

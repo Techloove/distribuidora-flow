@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/lib/supabase-provider";
+import { VERSAO_SISTEMA } from "@/lib/versao";
 import { useCentro } from "@/lib/centro-store";
 export function SicrediAutomatico() {
   const { client, user, roles } = useSupabase();
@@ -41,6 +42,8 @@ export function SicrediAutomatico() {
         throw new Error("Acompanhamento automático indisponível. Confira a ativação da rotina.");
       return data as {
         ativo: boolean;
+        executor_versao?: string;
+        executor_em?: string;
         ultima_chamada: string | null;
         pendencias: number;
         ultima_verificacao: string | null;
@@ -85,7 +88,7 @@ export function SicrediAutomatico() {
                 ? "Agendamento preparado, aguardando a primeira chamada do servidor."
                 : atrasado
                   ? "Última chamada atrasada: confira o agendamento e a publicação do sistema."
-                  : "Rotina ativa: lotes a cada cinco minutos, com prioridade para vencidos e vencimentos nos próximos sete dias, mesmo com o sistema fechado."}
+                  : "Rotina ativa: todos os boletos em aberto são conferidos em lotes a cada cinco minutos, independentemente do vencimento, mesmo com o sistema fechado."}
           </p>
           {q.data?.ultima_chamada && (
             <p className="text-xs text-muted-foreground">
@@ -96,6 +99,16 @@ export function SicrediAutomatico() {
               .
             </p>
           )}
+          {q.data?.ativo && q.data.executor_versao !== VERSAO_SISTEMA && (
+            <p role="status" className="text-sm text-amber-800">
+              Aguardando confirmação da execução atualizada do serviço automático.
+            </p>
+          )}
+          {q.data?.executor_versao && (
+            <p className="text-xs text-muted-foreground">
+              Versão confirmada no serviço: {q.data.executor_versao}
+            </p>
+          )}
           {!!q.data?.pendencias && (
             <p role="alert" className="text-sm text-destructive">
               {q.data.pendencias} boleto(s) no filtro exigem conferência da consulta ou dos valores.
@@ -104,8 +117,10 @@ export function SicrediAutomatico() {
           )}
           <p className="text-xs text-muted-foreground">
             Ao abrir esta tela, o sistema verifica a necessidade de um novo lote, sem repetir
-            consultas recentes. Boletos próximos são reconsultados após 15 minutos; os mais
-            distantes, após seis horas. A lista acompanha os resultados automaticamente. A baixa
+            consultas recentes. Todos os vencimentos usam o mesmo intervalo mínimo de 15 minutos
+            entre consultas bem-sucedidas. O tempo para completar a lista depende da fila e da
+            resposta do banco. Novos movimentos de cobrança antecipam a conferência, mas não
+            confirmam pagamento por si só. A lista acompanha os resultados automaticamente. A baixa
             depende da liquidação informada pela API do banco. O prazo inclui o processamento
             bancário e a fila de consultas. Pagamentos incompletos ou divergentes ficam para
             conferência.

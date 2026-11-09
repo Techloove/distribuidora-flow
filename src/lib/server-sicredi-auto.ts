@@ -5,6 +5,7 @@ import {
 } from "./sicredi-diagnostico";
 import { fetchWithTimeout } from "./fetch-timeout";
 import { liquidacaoSicredi, situacaoBoletoSicredi } from "./sicredi-api";
+import { VERSAO_SISTEMA } from "./versao";
 import { tokenSicredi } from "./sicredi-token";
 
 type Boleto = {
@@ -26,7 +27,10 @@ type IO = {
 };
 /** Orquestrador sem efeitos de emissão: somente consulta e conciliação validada no banco. */
 export async function executarConsultaAutomatica(secret: string, io: IO) {
-  const reserva = await io.rpc<Reserva>("sicredi_auto_reservar_247", { _segredo: secret });
+  const reserva = await io.rpc<Reserva>("sicredi_auto_reservar_348", {
+    _segredo: secret,
+    _versao: VERSAO_SISTEMA,
+  });
   if (!reserva.itens.length) return { consultados: 0, processados: 0 };
   const agora = io.agora ?? Date.now;
   const limite = agora() + 40_000;

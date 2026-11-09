@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.5",
+    "data": "2026-11-09",
+    "titulo": "Corrigir o servidor do agendamento e consultar todos os boletos Sicredi",
+    "motivo": "O agendamento usava um servidor antigo (1.34.1), mesmo com a tela atualizada, e os boletos distantes tinham espera de seis horas.",
+    "novidades": [
+      "Agendamento direcionado ao domínio atual conferido pelo manifesto público. A execução passa a registrar sua própria versão para distinguir atualização da tela e do serviço.",
+      "Todos os boletos em aberto participam da mesma rotação, sem espera por proximidade do vencimento, em lotes de até 20 e intervalo mínimo de 15 minutos por boleto.",
+      "Novos movimentos bancários antecipam a conferência sem presumir pagamento. Mantidas validação de valores, data, convênio, reservas, permissões e proteção contra duplicidade."
+    ]
+  },
+  {
     "versao": "1.43.4",
     "data": "2026-11-09",
     "titulo": "Reconhecer liquidação COMPE na consulta automática Sicredi",

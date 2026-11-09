@@ -1,0 +1,17 @@
+{
+  "fase": 348,
+  "documentos_financeiro_segredo_consultas_e_reservas_preservados": true,
+  "manifestos_publicos_conferidos": {
+    "dominio_atual": "1.43.4",
+    "dominio_antigo": "1.34.1"
+  },
+  "verificacoes": {
+    "20_por_lote": true,
+    "anon_bloqueado": true,
+    "reserva_privada": true,
+    "agendamento_unico": true,
+    "destino_corrigido": true,
+    "espera_sem_vencimento": true
+  },
+  "sql_sha256": "b0d38149c335720f1121b5ad22bc785c3ad9b595382b00ec200ee00004b87d81"
+}
