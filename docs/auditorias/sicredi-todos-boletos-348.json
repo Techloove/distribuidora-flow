@@ -13,5 +13,18 @@
     "destino_corrigido": true,
     "espera_sem_vencimento": true
   },
-  "sql_sha256": "b0d38149c335720f1121b5ad22bc785c3ad9b595382b00ec200ee00004b87d81"
+  "sql_sha256": "b0d38149c335720f1121b5ad22bc785c3ad9b595382b00ec200ee00004b87d81",
+  "validacao_operacional": {
+    "conferido_em_utc": "2026-11-09T20:20:38.581945+00:00",
+    "executor_versao": "1.43.6",
+    "executor_confirmado_em_utc": "2026-11-09T20:20:01.437911+00:00",
+    "boleto": "600000597",
+    "status": "liquidado",
+    "valor_recebido": 1624.86,
+    "data_liquidacao": "2026-11-04",
+    "consulta_automatica_em_utc": "2026-11-09T20:20:03.441192+00:00",
+    "resultado_automatico": "liquidado",
+    "recebimentos_ativos": 1,
+    "consulta_individual_disparada_pelo_agente": false
+  }
 }
