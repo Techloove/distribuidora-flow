@@ -1,0 +1,11 @@
+# Liquidação COMPE — versão1.43.4
+
+A consulta automática comparava a situação bancária com `LIQUIDADO`/`LIQUIDADA` exatos. A consulta manual aceitava a palavra dentro da descrição e reconhecia `LIQUIDADO COMPE`. Isso explica o boleto 600000570: o agendamento guardou o resultado como pendente; a consulta manual posterior confirmou pagamento de R$ 1.624,87 em 04/11/2026. A verificação somente de leitura confirmou título pago e um único recebimento ativo.
+
+`situacaoBoletoSicredi` centraliza o reconhecimento usado nos dois caminhos. Normaliza maiúsculas e espaços e reconhece LIQUIDADO/LIQUIDADA com qualificadores, incluindo COMPE, além de BAIXADO/CANCELADO com qualificadores. Exige a palavra terminal no início e não trata descrições com negação, estorno, parcial ou pendente como confirmação. Não se usa a tarifa de entrada/liquidação como prova de pagamento.
+
+O reconhecimento encaminha a resposta à mesma validação existente `liquidacaoSicredi`, que exige data e valores completos. O banco de dados continua conciliando nominal, encargos, saldo, conta, convênio, ambiente e permissão financeira e impede duplicidade. Dados incompletos não geram recebimento; baixa/cancelamento não é liquidação.
+
+Nenhuma migração de banco ou alteração de fila foi necessária. Não houve nova chamada de banco com credencial de automação, reprocessamento manual nem outro recebimento do boleto 600000570 nesta entrega. O agendamento e os intervalos atuais permanecem: lotes a cada cinco minutos, reconsulta mínima de 15 minutos para vencidos/próximos sete dias e seis horas para distantes, com rotação e reservas. O tempo por boleto depende da fila e da disponibilidade do banco. A publicação não torna todos os estados bancários instantaneamente atualizados; os próximos ciclos usam a correção sem exigir clicar em cada boleto.
+
+Validação: 334 testes unitários, 2.094 verificações, TypeScript, lint, build, manual/versão/datas. Regressões exercitam o orquestrador e a consulta manual com COMPE, campo alternativo de situação, variação de espaços/caixa, dados incompletos, data inválida, tarifa e estados não pagos, além de baixa qualificada sem recebimento. O teste descartável de integração financeira também confirma idempotência, corrida com consulta manual, recebimento completo e divergências sem baixa.

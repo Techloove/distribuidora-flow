@@ -57,6 +57,7 @@ type Options = {
   missingNosso?: boolean;
   badCep?: boolean;
   liquidado?: boolean;
+  situacaoConsulta?: string;
   badSettlement?: boolean;
   invalidLine?: boolean;
   definitive?: boolean;
@@ -200,7 +201,9 @@ function backend(o: Options = {}) {
         out = { nossoNumero: "262000020", linhaDigitavel: line, codigoBarras: barcode };
       } else
         out = {
-          situacao: o.liquidado ? "LIQUIDADO" : o.bankBaixado ? "BAIXADO" : "REGISTRADO",
+          situacao:
+            o.situacaoConsulta ??
+            (o.liquidado ? "LIQUIDADO" : o.bankBaixado ? "BAIXADO" : "REGISTRADO"),
           linhaDigitavel: o.wrongLine ? "748" + "1".repeat(44) : line,
           dataMovimento: "2026-10-14",
           dadosLiquidacao: o.badSettlement
@@ -586,4 +589,14 @@ test("consulta preserva pedido em andamento e só registra baixado quando o banc
     if (!confirmado)
       expect(sync?.body["_retorno"]).toMatchObject({ cancelamento_sicredi_pendente: true });
   }
+});
+
+test("manual e automático aceitam LIQUIDADO COMPE com os mesmos dados validados", async () => {
+  const calls = backend({ situacaoConsulta: "LIQUIDADO COMPE" });
+  const r = await sicrediConsultarBoleto({ data: { boletoId: id, accessToken: "fixture-jwt" } });
+  expect(r.liquidado).toBe(true);
+  expect(r.situacao).toBe("liquidado compe");
+  expect(
+    calls.find((c) => c.path.endsWith("/sicredi_liquidar_api_224"))?.body._dados,
+  ).toMatchObject({ data: "2026-10-14", valor: 107 });
 });

@@ -6,6 +6,22 @@ export const SICREDI_SANDBOX = {
   username: "123456789",
   password: "teste123",
 } as const;
+/** Mesma identificação de situação na consulta manual e no agendamento.
+ * O estado só encaminha à conciliação; valores e data continuam obrigatórios.
+ */
+export function situacaoBoletoSicredi(json: Record<string, unknown>) {
+  const situacao = String(json["situacao"] ?? json["situacaoBoleto"] ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+  const inconsistente = /\b(ESTORNO|ESTORNADO|ESTORNADA|PARCIAL|PENDENTE|NAO|NÃO)\b/.test(situacao);
+  return {
+    situacao,
+    liquidado: !inconsistente && /^LIQUIDAD[OA](?:\s|$)/.test(situacao),
+    baixado: !inconsistente && /^(?:BAIXAD[OA]|CANCELAD[OA])(?:\s|$)/.test(situacao),
+  };
+}
+
 function money(value: unknown, name: string) {
   if (typeof value !== "number" && typeof value !== "string")
     throw new Error(`Sicredi não informou ${name}.`);

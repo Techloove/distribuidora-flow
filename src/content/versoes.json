@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.4",
+    "data": "2026-11-09",
+    "titulo": "Reconhecer liquidação COMPE na consulta automática Sicredi",
+    "motivo": "A consulta automática reconhecia apenas LIQUIDADO/LIQUIDADA exatos e tratava LIQUIDADO COMPE como pendente, enquanto a consulta manual reconhecia a liquidação.",
+    "novidades": [
+      "Consulta automática e manual passam a compartilhar o reconhecimento das situações bancárias, incluindo LIQUIDADO COMPE e baixas com qualificadores.",
+      "A confirmação continua exigindo data e valores válidos de liquidação e a conciliação idempotente existente. Tarifa, estado pendente, liquidação parcial ou estornada não são tratados como pagamento.",
+      "Boletos já liquidados não são recebidos novamente. Os lotes, cache, permissões e agendamento existentes continuam ativos, sem exigir consulta individual por boleto."
+    ]
+  },
+  {
     "versao": "1.43.3",
     "data": "2026-11-09",
     "titulo": "Contabilizar automaticamente tarifas e despesas dos boletos Sicredi",

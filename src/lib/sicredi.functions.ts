@@ -11,6 +11,7 @@ import { erroPersistenciaSicredi } from "./sicredi-persistencia";
 import {
   SICREDI_SANDBOX,
   liquidacaoSicredi,
+  situacaoBoletoSicredi,
   linhaDigitavelSicredi,
   motivoRecusaSicredi,
 } from "./sicredi-api";
@@ -649,13 +650,11 @@ export const sicrediConsultarBoleto = createServerFn({ method: "POST" })
         _vencimento_banco: boleto["vencimento_solicitado"],
       });
     }
-    const situacao = String(
-      (json["situacao"] as string) ?? (json["situacaoBoleto"] as string) ?? "",
-    ).toLowerCase();
-    if (!situacao.trim())
+    const estado = situacaoBoletoSicredi(json);
+    const situacao = estado.situacao.toLowerCase();
+    if (!situacao)
       throw new Error("Sicredi não informou uma situação válida. Nenhuma baixa foi registrada.");
-    const liquidado = situacao.includes("liquidad");
-    const baixado = situacao.includes("baixad") || situacao.includes("cancelad");
+    const { liquidado, baixado } = estado;
     if (liquidado) {
       if (c.ambiente === "homologacao")
         return {

@@ -253,3 +253,69 @@ test("token salvo com resposta RPC vazia permite continuar a consulta automátic
     else process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = keyOriginal;
   }
 });
+
+test("consulta automática reconhece LIQUIDADO COMPE e qualificadores como a manual", async () => {
+  for (const situacao of [
+    "LIQUIDADO COMPE",
+    " liquidado   compe ",
+    "LIQUIDADO EM CARTORIO",
+    "LIQUIDADA COMPE",
+  ]) {
+    const f = fixture({ situacao, dadosLiquidacao: { data: "2026-11-04", valor: 1624.87 } });
+    expect(await executarConsultaAutomatica("secret", f.io)).toEqual({
+      consultados: 1,
+      processados: 1,
+    });
+    expect(f.gravacoes[0]?.["_situacao"]).toBe("liquidado");
+    expect(f.gravacoes[0]?.["_dados"]).toEqual({
+      data: "2026-11-04",
+      valor: 1624.87,
+      juros: 0,
+      multa: 0,
+      desconto: 0,
+      abatimento: 0,
+    });
+  }
+  const f = fixture({
+    situacaoBoleto: "LIQUIDADO COMPE",
+    dataMovimento: "2026-11-04",
+    dadosLiquidacao: { data: "2026-11-05", valor: 1624.87 },
+  });
+  await executarConsultaAutomatica("secret", f.io);
+  expect(f.gravacoes[0]?.["_situacao"]).toBe("liquidado");
+  expect(f.gravacoes[0]?.["_dados"]).toMatchObject({ data: "2026-11-04", valor: 1624.87 });
+});
+
+test("COMPE sem dados de pagamento não liquida; tarifa e estado pendente não são pagamento", async () => {
+  for (const retorno of [
+    { situacao: "LIQUIDADO COMPE" },
+    { situacao: "LIQUIDADO COMPE", dadosLiquidacao: { data: "2026-02-30", valor: 1624.87 } },
+  ]) {
+    const f = fixture(retorno);
+    await executarConsultaAutomatica("secret", f.io);
+    expect(f.gravacoes[0]?.["_situacao"]).toBe("dados_incompletos");
+    expect(f.gravacoes[0]?.["_dados"]).toBeNull();
+  }
+  for (const situacao of [
+    "EM LIQUIDACAO",
+    "NAO LIQUIDADO",
+    "LIQUIDADO PARCIAL",
+    "LIQUIDADO ESTORNADO",
+    "TARIFA ENTRADA/LIQUIDACAO",
+  ]) {
+    const f = fixture({ situacao, dadosLiquidacao: { data: "2026-11-04", valor: 1.63 } });
+    const r = await executarConsultaAutomatica("secret", f.io);
+    expect(r.processados).toBe(0);
+    expect(f.gravacoes[0]?.["_dados"]).toBeNull();
+  }
+});
+
+test("baixa bancária qualificada é cancelamento, nunca recebimento", async () => {
+  const f = fixture({ situacao: "BAIXADO POR SOLICITACAO" });
+  expect(await executarConsultaAutomatica("secret", f.io)).toEqual({
+    consultados: 1,
+    processados: 0,
+  });
+  expect(f.gravacoes[0]?.["_situacao"]).toBe("baixado");
+  expect(f.gravacoes[0]?.["_dados"]).toBeNull();
+});

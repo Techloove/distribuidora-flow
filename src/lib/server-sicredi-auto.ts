@@ -4,7 +4,7 @@ import {
   type DiagnosticoConsultaSicredi,
 } from "./sicredi-diagnostico";
 import { fetchWithTimeout } from "./fetch-timeout";
-import { liquidacaoSicredi } from "./sicredi-api";
+import { liquidacaoSicredi, situacaoBoletoSicredi } from "./sicredi-api";
 import { tokenSicredi } from "./sicredi-token";
 
 type Boleto = {
@@ -56,18 +56,15 @@ export async function executarConsultaAutomatica(secret: string, io: IO) {
         try {
           const retorno = await io.consultar(b);
           consultados++;
-          const estado = String(retorno["situacao"] ?? retorno["situacaoBoleto"] ?? "")
-            .trim()
-            .toUpperCase();
-          if (["LIQUIDADO", "LIQUIDADA"].includes(estado)) {
+          const { situacao: estado, liquidado, baixado } = situacaoBoletoSicredi(retorno);
+          if (liquidado) {
             try {
               dados = liquidacaoSicredi(retorno);
               situacao = "liquidado";
             } catch {
               situacao = "dados_incompletos";
             }
-          } else if (["BAIXADO", "BAIXADA", "CANCELADO", "CANCELADA"].includes(estado))
-            situacao = "baixado";
+          } else if (baixado) situacao = "baixado";
           else situacao = estado ? "pendente" : "dados_incompletos";
         } catch (erro) {
           diagnostico = diagnosticoConsultaSicredi(erro);

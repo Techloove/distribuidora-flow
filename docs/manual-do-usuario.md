@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.3 · 2026-11-09
+Versão 1.43.4 · 2026-11-09
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -418,6 +418,7 @@ Cuidados:
 - Credenciais bancárias e fiscais devem ser configuradas por responsáveis autorizados, sem compartilhamento por chat.
 - CONSULTA_FALHOU na automação não confirma pagamento. O diagnóstico técnico da fase277 distingue obtenção do token e consulta do boleto, com tipo de falha e HTTP quando disponível. O responsável deve conferir a próxima tentativa; não force baixa ou reemissão para eliminar o alerta.
 - Após publicar uma correção da consulta automática, aguarde a próxima tentativa agendada. Os alertas são atualizados pela consulta; não reemita boletos ou force recebimentos para remover mensagens antigas.
+- A consulta automática reconhece LIQUIDADO COMPE e situações bancárias de liquidação com qualificadores pelo mesmo critério da consulta manual. Continua exigindo os dados completos de data e valor e as validações financeiras para confirmar o recebimento. O processamento ocorre nos lotes agendados e respeita o intervalo de cada boleto; não é necessário consultar um por um. Boletos já liquidados ficam fora da fila e não geram outro recebimento. Tarifa de entrada/liquidação não comprova pagamento, e liquidação parcial ou estornada exige conferência.
 - A tarifa não reduz a dívida do cliente: é uma despesa bancária separada. O sistema não presume tarifa fixa de R$1,63 nem deduz tarifa pela diferença entre o valor emitido e recebido. No registro manual de despesa, uma tarifa de cobrança é vinculada por boleto; tarifas já lançadas por outra rotina devem ser conferidas para evitar duplicidade.
 - A consulta de movimentações financeiras (Francesinha) traz débitos por boleto. A lista soma como despesas de cobrança os débitos identificados como tarifa, taxa, despesa, custa ou emolumento, excluindo estornos, devoluções, descontos e abatimentos; os demais aparecem como débitos a conferir. Sem retorno confirmado ou em caso de falha de acesso, não é exibida tarifa zero como se houvesse isenção.
 - A contabilização automática só começa depois de configurar e autorizar a loja. Ela gera saídas na conta escolhida, em Despesas Financeiras no DRE, sem reduzir o valor recebido do cliente. A instalação da fase282 não cria despesas. Confira os lançamentos anteriores antes de ativar o período retroativo.
@@ -572,6 +573,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.43.4 · 2026-11-09 · Reconhecer liquidação COMPE na consulta automática Sicredi
+
+Motivo da atualização: A consulta automática reconhecia apenas LIQUIDADO/LIQUIDADA exatos e tratava LIQUIDADO COMPE como pendente, enquanto a consulta manual reconhecia a liquidação.
+
+- Consulta automática e manual passam a compartilhar o reconhecimento das situações bancárias, incluindo LIQUIDADO COMPE e baixas com qualificadores.
+- A confirmação continua exigindo data e valores válidos de liquidação e a conciliação idempotente existente. Tarifa, estado pendente, liquidação parcial ou estornada não são tratados como pagamento.
+- Boletos já liquidados não são recebidos novamente. Os lotes, cache, permissões e agendamento existentes continuam ativos, sem exigir consulta individual por boleto.
 
 ### v1.43.3 · 2026-11-09 · Contabilizar automaticamente tarifas e despesas dos boletos Sicredi
 
