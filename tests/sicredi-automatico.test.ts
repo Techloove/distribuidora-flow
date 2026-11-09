@@ -191,7 +191,12 @@ test("token salvo com resposta RPC vazia permite continuar a consulta automátic
   process.env["EXT_SUPABASE_URL"] = "https://db.test";
   process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] = "service-fixture";
   try {
-    for (const statusVazio of [204, 200]) {
+    for (const [statusVazio, cabecalhoProprio] of [
+      [204, false],
+      [200, false],
+      [204, true],
+      [200, true],
+    ] as const) {
       let autenticacoes = 0,
         conclusoes = 0,
         consultas = 0;
@@ -234,7 +239,9 @@ test("token salvo com resposta RPC vazia permite continuar a consulta automátic
       const response = await atenderSicrediAutomatico(
         new Request("https://erp/api/sicredi/sincronizar", {
           method: "POST",
-          headers: { Authorization: `Bearer ${"a".repeat(64)}` },
+          headers: cabecalhoProprio
+            ? { "X-Sicredi-Automacao": "a".repeat(64) }
+            : { Authorization: `Bearer ${"a".repeat(64)}` },
         }),
       );
       expect(response.status).toBe(200);

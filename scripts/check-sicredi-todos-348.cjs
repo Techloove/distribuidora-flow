@@ -102,14 +102,27 @@ select set_config('request.jwt.claim.role','service_role',false);`);
       "create table sicredi_tarifas_api_280(boleto_id uuid,data_lancamento date,debitos jsonb,primary key(boleto_id,data_lancamento))",
     );
     const segredo = await scalar("select segredo from sicredi_auto_config_247");
+    // O job de tarifas compartilha o mesmo mecanismo de transporte; seu processamento é testado separadamente.
+    await db.exec(
+      `create function sicredi_tarifas_disparar_280() returns void language plpgsql as $fn$declare c public.sicredi_auto_config_247;begin select * into c from sicredi_auto_config_247 where id;perform net.http_post(url:=c.endpoint,headers:=jsonb_build_object('Authorization','Bearer '||c.segredo),body:='{}'::jsonb,timeout_milliseconds:=60000);end$fn$;`,
+    );
     const fase348 = readSql("fase348_sicredi_todos_boletos_executor.sql");
     await db.exec(fase348);
     await db.exec(fase348);
+    const fase349 = readSql("fase349_sicredi_autenticacao_agendamento.sql");
+    await db.exec(fase349);
+    await db.exec(fase349);
     assert.equal(
       await scalar("select endpoint from sicredi_auto_config_247"),
       "https://caparaosystem.com.br/api/sicredi/sincronizar",
     );
     assert.equal(await scalar("select segredo from sicredi_auto_config_247"), segredo);
+    assert.equal(
+      await scalar(
+        "select position('X-Sicredi-Automacao' in pg_get_functiondef('public.sicredi_auto_disparar_247()'::regprocedure))>0",
+      ),
+      true,
+    );
     const boletos = [];
     for (let i = 0; i < 24; i++) {
       const t = await title(100 + i);

@@ -245,7 +245,7 @@ test("endpoint consulta a Francesinha com GET, parâmetros documentados e token 
     const request = () =>
       new Request("https://erp/api/sicredi/tarifas", {
         method: "POST",
-        headers: { Authorization: `Bearer ${"a".repeat(64)}` },
+        headers: { "X-Sicredi-Automacao": "a".repeat(64) },
       });
     expect((await atenderTarifasSicredi(request())).status).toBe(200);
     expect(bancoCalls.map((call) => call.url.searchParams.get("dataLancamento"))).toEqual([

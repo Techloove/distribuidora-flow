@@ -48,6 +48,7 @@ import {
 import {
   alteracoesVencimentoConfirmadas,
   filtrarBoletos,
+  filtrosIniciaisBoletos,
   boletoVencido,
   dataBoleto,
   periodoBoletosInvalido,
@@ -82,7 +83,9 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const queryClient = useQueryClient();
   const canFinance =
     roles.includes("admin") || roles.includes("gestor") || roles.includes("financeiro");
-  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const [filtros, setFiltros] = useState<Record<string, string>>(() =>
+    filtrosIniciaisBoletos(referencia),
+  );
   const [cancelarBoleto, setCancelarBoleto] = useState<Row | null>(null);
   const [motivoBaixa, setMotivoBaixa] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
@@ -452,7 +455,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           </p>
         ) : null}
 
-        <FilterBar onClear={() => setFiltros({})}>
+        <FilterBar onClear={() => setFiltros(filtrosIniciaisBoletos(referencia))}>
           <FilterSelect
             label="Banco"
             value={filtros["banco"] ?? ""}

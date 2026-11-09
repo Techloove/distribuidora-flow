@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.5 · 2026-11-09
+Versão 1.43.6 · 2026-11-09
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -391,7 +391,7 @@ Entenda os cuidados com documentos bancários e fiscais.
 5. Na reimpressão disponível em Contas a receber, Boletos, Pedidos e Separação, escolha Esta parcela, Mesmo pedido ou Mesmo cliente. Marque os boletos individualmente ou use Selecionar todos do grupo. Abra PDF selecionados para reunir os PDFs originais em um arquivo, baixar no celular/tablet ou imprimir. A seleção é limpa ao trocar o grupo. São respeitados a loja selecionada e seus acessos; boletos de outro cliente não entram no grupo.
 6. Na impressão de muitos boletos, mantenha a janela aberta enquanto os PDFs são consultados. Lotes maiores aguardam automaticamente o limite de 20 consultas por minuto. Interromper impressão não emite nem cancela cobranças. Se o banco falhar, a lista mostra o erro; nenhum arquivo parcial é apresentado como completo.
 7. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
-8. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
+8. Ao entrar pelo menu Boletos ou limpar os filtros, a lista abre em Registrado (em aberto), incluindo os registrados vencidos. Use o cartão Liquidados ou o filtro Situação para consultar pagos e outras situações; Todos mostra todas. Atalhos para um boleto, título, pedido ou cliente preservam o contexto mesmo quando o boleto já está pago. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
 9. A lista começa pelo primeiro vencimento, em ordem crescente de cima para baixo, inclusive ao limpar os filtros. Em Ordenar por, escolha outra ordem de emissão ou vencimento se necessário. A ordenação respeita os filtros e mantém datas ausentes no final.
 10. Após confirmação da alteração de vencimento pelo Sicredi, a data aparece destacada em azul com Vencimento alterado na listagem. Em Opções, as tags mostram a data anterior e a nova, com a alteração mais recente primeiro. Solicitações pendentes, inconclusivas e recusadas não recebem essa marcação; o histórico respeita as permissões financeiras e de loja.
 11. Para mudar a data de um boleto registrado, abra Opções e use Alterar vencimento. O boleto e a parcela só mudam após confirmação do Sicredi. Uma recusa mostra o motivo de validação reconhecido, quando fornecido pelo banco. Se houver alteração pendente ou resposta inconclusiva, consulte antes de reenviar.
@@ -573,6 +573,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.43.6 · 2026-11-09 · Abrir Boletos em aberto e concluir autenticação do agendamento
+
+Motivo da atualização: Abrir a lista diretamente nos boletos em aberto e permitir autenticação do agendador no servidor atualizado sem confundir sua credencial com login/JWT.
+
+- Ao entrar em Boletos pelo menu ou limpar os filtros, a lista mostra os registrados em aberto, inclusive vencidos. Cartões e filtros continuam permitindo liquidados, cancelados e todas as situações.
+- Atalhos para boleto, título, pedido ou cliente preservam o contexto, inclusive quando o boleto já foi liquidado, evitando esconder o registro procurado.
+- Consulta e tarifas usam um cabeçalho privado próprio do agendamento, com validação do segredo existente e compatibilidade com o transporte anterior. Nenhuma credencial é exposta na interface.
 
 ### v1.43.5 · 2026-11-09 · Corrigir o servidor do agendamento e consultar todos os boletos Sicredi
 

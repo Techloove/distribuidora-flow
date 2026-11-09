@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.6",
+    "data": "2026-11-09",
+    "titulo": "Abrir Boletos em aberto e concluir autenticação do agendamento",
+    "motivo": "Abrir a lista diretamente nos boletos em aberto e permitir autenticação do agendador no servidor atualizado sem confundir sua credencial com login/JWT.",
+    "novidades": [
+      "Ao entrar em Boletos pelo menu ou limpar os filtros, a lista mostra os registrados em aberto, inclusive vencidos. Cartões e filtros continuam permitindo liquidados, cancelados e todas as situações.",
+      "Atalhos para boleto, título, pedido ou cliente preservam o contexto, inclusive quando o boleto já foi liquidado, evitando esconder o registro procurado.",
+      "Consulta e tarifas usam um cabeçalho privado próprio do agendamento, com validação do segredo existente e compatibilidade com o transporte anterior. Nenhuma credencial é exposta na interface."
+    ]
+  },
+  {
     "versao": "1.43.5",
     "data": "2026-11-09",
     "titulo": "Corrigir o servidor do agendamento e consultar todos os boletos Sicredi",

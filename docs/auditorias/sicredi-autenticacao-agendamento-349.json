@@ -1,0 +1,11 @@
+{
+  "fase": 349,
+  "financeiro_configuracao_e_segredo_preservados": true,
+  "verificacoes": {
+    "anon_bloqueado": true,
+    "disparo_privado": true,
+    "tarifas_cabecalho_privado": true,
+    "consulta_cabecalho_privado": true
+  },
+  "sql_sha256": "77fbd9769f7d47226aaa2552a9729a472defc628c45ffed8c09e6c156bba39be"
+}

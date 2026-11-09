@@ -3,6 +3,7 @@ import {
   alteracoesVencimentoConfirmadas,
   dataBoleto,
   filtrarBoletos,
+  filtrosIniciaisBoletos,
   periodoBoletosInvalido,
   ordenarBoletos,
   cancelamentoBoletoPendente,
@@ -184,4 +185,20 @@ test("tag de vencido respeita calendário e retorno, sem marcar boletos pagos ou
       () => "",
     ).map((b) => b["id"]),
   ).toEqual(["atrasado"]);
+});
+
+test("lista abre em aberto, inclui vencidos registrados e preserva atalhos para boletos liquidados", () => {
+  const dados = [
+    { id: "aberto", status: "registrado", vencimento: "2026-01-01" },
+    { id: "pago", status: "liquidado", vencimento: "2026-01-01" },
+    { id: "cancelado", status: "baixado" },
+  ];
+  const nomes = () => "";
+  expect(
+    filtrarBoletos(dados, filtrosIniciaisBoletos({ boleto: undefined }), nomes).map((b) => b.id),
+  ).toEqual(["aberto"]);
+  expect(
+    filtrarBoletos(dados, filtrosIniciaisBoletos({ boleto: "pago" }), nomes).map((b) => b.id),
+  ).toContain("pago");
+  expect(filtrarBoletos(dados, { status: "liquidado" }, nomes).map((b) => b.id)).toEqual(["pago"]);
 });

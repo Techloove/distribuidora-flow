@@ -93,7 +93,11 @@ export async function atenderSicrediAutomatico(request: Request): Promise<Respon
   const headers = { "Cache-Control": "no-store" };
   if (request.method !== "POST")
     return new Response(null, { status: 405, headers: { ...headers, Allow: "POST" } });
-  const secret = request.headers.get("Authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
+  // Cabeçalho próprio evita que proxies interpretem a credencial como login/JWT da aplicação.
+  const informado =
+    request.headers.get("x-sicredi-automacao") ??
+    request.headers.get("Authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
+  const secret = informado?.match(/^[a-f0-9]{64}$/)?.[0];
   if (!secret) return new Response(null, { status: 401, headers });
   const url = process.env["EXT_SUPABASE_URL"]?.replace(/\/$/, "");
   const key = process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"];

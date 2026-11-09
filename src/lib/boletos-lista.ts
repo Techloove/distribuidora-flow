@@ -1,6 +1,12 @@
+import type { BuscaReferencias } from "./referencias-registros";
 import { hojeSaoPaulo } from "./painel-trabalho";
 type Row = Record<string, unknown>;
 type Filtros = Record<string, string>;
+
+/** A lista abre em aberto; atalhos para um registro preservam seu contexto, mesmo se já pago. */
+export function filtrosIniciaisBoletos(referencia?: BuscaReferencias): Filtros {
+  return { status: referencia && Object.values(referencia).some(Boolean) ? "" : "registrado" };
+}
 
 /** As três datas de boleto são campos SQL date, sem conversão de fuso. */
 export function dataBoleto(value: unknown): string {
