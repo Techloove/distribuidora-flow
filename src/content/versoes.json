@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.43.2",
+    "data": "2026-11-09",
+    "titulo": "Corrigir a distinção entre lucro bruto e líquido nas vendas",
+    "motivo": "O lucro bruto do relatório descontava comissão e podia ficar igual ao líquido quando não havia outras despesas.",
+    "novidades": [
+      "Lucro bruto passa a representar vendas líquidas menos CMV. O líquido estimado desconta comissão, frete, tributos e despesas variáveis do pedido uma única vez.",
+      "Totais, rankings, pedidos, gráficos, comparação e exportações usam a mesma regra. Removida a alternância com/sem comissão; ordenação por bruto corrigida no servidor.",
+      "Fechamento do pedido considera também as despesas informadas nas vendas de estoque. Custos históricos, comissões, financeiro e permissões foram preservados. Despesas gerais permanecem na DRE, sem rateio automático."
+    ]
+  },
+  {
     "versao": "1.43.1",
     "data": "2026-11-09",
     "titulo": "Automatizar a atualização dos boletos e simplificar os avisos da mensalidade",

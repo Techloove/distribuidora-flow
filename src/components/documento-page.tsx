@@ -1410,11 +1410,9 @@ export function DocumentoPage({
               venda -
               custo -
               comissao -
-              (inter
-                ? Number(doc["custo_frete"] ?? 0) +
-                  Number(doc["tributos_estimados"] ?? 0) +
-                  Number(doc["despesas_variaveis"] ?? 0)
-                : 0);
+              Number(doc["custo_frete"] ?? 0) -
+              Number(doc["tributos_estimados"] ?? 0) -
+              Number(doc["despesas_variaveis"] ?? 0);
             const markup = custo > 0 ? (venda / custo - 1) * 100 : 0;
             const margem = venda > 0 ? (lucro / venda) * 100 : 0;
             const pct = (n: number) =>
@@ -1428,7 +1426,7 @@ export function DocumentoPage({
                 lucro < 0,
               ],
               [
-                inter ? "Resultado após ajustes" : "Lucro após comissão",
+                inter ? "Resultado após ajustes" : "Lucro líquido estimado",
                 semCusto ? "—" : brl(liquido),
                 liquido < 0,
               ],

@@ -103,6 +103,12 @@ const root = path.resolve(__dirname, ".."),
       assert(err, "Expected denial");
       if (re) assert.match(err.message, re);
     };
+    const correcao346 = fs.readFileSync(
+      path.join(root, "db/fase346_lucro_bruto_sem_comissao.sql"),
+      "utf8",
+    );
+    await d.exec(correcao346);
+    await d.exec(correcao346);
     await actor(1);
     let r = await rel();
     assert.equal(r.totais.pedidos, 1);
@@ -111,10 +117,20 @@ const root = path.resolve(__dirname, ".."),
     assert.equal(r.totais.custo, 360);
     assert.equal(r.totais.comissao, 45);
     assert.equal(r.totais.lucro_bruto_sem, 540);
-    assert.equal(r.totais.lucro_bruto_com, 495);
+    assert.equal(r.totais.lucro_bruto_com, 540);
     assert.equal(r.totais.lucro_liquido_sem, 480);
     assert.equal(r.totais.lucro_liquido_com, 435);
     assert.equal(r.totais.margem, 48.33);
+    assert.equal(r.pedidos[0].lucro_bruto_com, r.pedidos[0].vendas - r.pedidos[0].custo);
+    assert.equal(
+      r.pedidos[0].lucro_liquido_com,
+      r.pedidos[0].lucro_bruto_sem -
+        r.pedidos[0].comissao -
+        r.pedidos[0].frete -
+        r.pedidos[0].tributos -
+        r.pedidos[0].despesas,
+    );
+    assert.equal(r.ranking[0].lucro_bruto_com, r.ranking[0].lucro_bruto_sem);
     assert.equal(r.anterior.vendas, 500);
     assert.equal(r.pedidos.length, 1);
     assert.equal(r.produtos[0].codigo, "0007");
@@ -160,6 +176,13 @@ const root = path.resolve(__dirname, ".."),
     const baixo = await rel({ grupo: "cliente", ordem: "lucro_liquido", asc: true });
     const alto = await rel({ grupo: "cliente", ordem: "lucro_liquido" });
     assert.equal(baixo.ranking[0].chave, alto.ranking.at(-1).chave);
+    const brutoOrdenado = await rel({ grupo: "cliente", ordem: "lucro_bruto" });
+    const brutoLegado = await rel({ grupo: "cliente", ordem: "lucro_bruto_sem" });
+    assert.deepEqual(
+      brutoOrdenado.ranking.map((x) => x.chave),
+      brutoLegado.ranking.map((x) => x.chave),
+    );
+    for (const x of brutoOrdenado.ranking) assert.equal(x.lucro_bruto_com, x.lucro_bruto_sem);
     await actor(4);
     r = await rel();
     assert.equal(r.rentabilidade, false);

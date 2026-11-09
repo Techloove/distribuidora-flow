@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.1 · 2026-11-09
+Versão 1.43.2 · 2026-11-09
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -455,14 +455,15 @@ Acompanhe clientes, atividades e resultados da carteira.
 2. Consulte metas e compare o período selecionado com os resultados apresentados.
 3. Em Comissões, confira a situação dos valores e os recebimentos/devoluções que influenciam sua apuração.
 4. Use Relatórios de Vendas para analisar os resultados com os filtros corretos.
-5. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
-6. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
-7. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
-8. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. Essa escolha mantém ou atualiza somente a data comercial; a comissão usa a data da aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
-9. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
-10. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
-11. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
-12. Dentro do pedido, Datas do pedido mostra a data original preservada, a data comercial atual e a aprovação do ciclo. A data comercial pode ser atualizada na retomada sem substituir a original. Os prazos da condição de pagamento começam na aprovação: aprovado em 02/11 com prazo de 30 dias vence em 02/12. Antes da aprovação, a prévia considera aprovação hoje e é identificada como simulação.
+5. Lucro bruto é vendas líquidas menos o CMV, antes da comissão e de outras despesas. Lucro líquido estimado desconta do bruto a comissão, o custo de frete, os tributos estimados e as despesas variáveis registradas no pedido, uma única vez. Essa regra vale nos totais, pedidos, rankings, gráficos e exportações; não há alternância para chamar um resultado sem comissão de lucro líquido. A prévia de fechamento do pedido também desconta suas despesas. Despesas fixas e demais despesas gerais sem vínculo com o pedido são apuradas na DRE, sem rateio automático nas vendas.
+6. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
+7. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
+8. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
+9. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. Essa escolha mantém ou atualiza somente a data comercial; a comissão usa a data da aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
+10. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
+11. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
+12. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
+13. Dentro do pedido, Datas do pedido mostra a data original preservada, a data comercial atual e a aprovação do ciclo. A data comercial pode ser atualizada na retomada sem substituir a original. Os prazos da condição de pagamento começam na aprovação: aprovado em 02/11 com prazo de 30 dias vence em 02/12. Antes da aprovação, a prévia considera aprovação hoje e é identificada como simulação.
 
 Cuidados:
 
@@ -570,6 +571,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.43.2 · 2026-11-09 · Corrigir a distinção entre lucro bruto e líquido nas vendas
+
+Motivo da atualização: O lucro bruto do relatório descontava comissão e podia ficar igual ao líquido quando não havia outras despesas.
+
+- Lucro bruto passa a representar vendas líquidas menos CMV. O líquido estimado desconta comissão, frete, tributos e despesas variáveis do pedido uma única vez.
+- Totais, rankings, pedidos, gráficos, comparação e exportações usam a mesma regra. Removida a alternância com/sem comissão; ordenação por bruto corrigida no servidor.
+- Fechamento do pedido considera também as despesas informadas nas vendas de estoque. Custos históricos, comissões, financeiro e permissões foram preservados. Despesas gerais permanecem na DRE, sem rateio automático.
 
 ### v1.43.1 · 2026-11-09 · Automatizar a atualização dos boletos e simplificar os avisos da mensalidade
 

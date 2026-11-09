@@ -85,7 +85,6 @@ export function RelatoriosVendas() {
   const [grupo, setGrupo] = useState("rota"),
     [ordem, setOrdem] = useState("vendas"),
     [asc, setAsc] = useState(false);
-  const [comissao, setComissao] = useState("com");
   const [pagina, setPagina] = useState(0),
     [paginaPedidos, setPaginaPedidos] = useState(0);
   const [aba, setAba] = useState("visao");
@@ -130,17 +129,11 @@ export function RelatoriosVendas() {
         asc,
         pagina,
         paginaPedidos,
-        comissao,
       ],
       getModalidade(),
     ],
     enabled: !!client && permitido && valido && !cv.isLoading && !cv.error,
     queryFn: async () => {
-      const ordenacao =
-        (ordem === "lucro_bruto" || ordem === "lucro_liquido" || ordem === "margem") &&
-        comissao === "sem"
-          ? `${ordem}_sem`
-          : ordem;
       const { data, error } = await client!.rpc("relatorio_vendas_230", {
         _inicio: filtros.inicio,
         _fim: filtros.fim,
@@ -151,7 +144,7 @@ export function RelatoriosVendas() {
         _busca: busca.trim(),
         _status: filtros.status,
         _grupo: grupo,
-        _ordem: ordenacao,
+        _ordem: ordem,
         _asc: asc,
         _pagina: pagina,
         _pagina_pedidos: paginaPedidos,
@@ -169,8 +162,8 @@ export function RelatoriosVendas() {
     total = dados?.totais ?? {},
     anterior = dados?.anterior ?? {};
   const lucro = dados?.rentabilidade === true && perm.pode("vendas_rentabilidade_ver");
-  const brutoKey = `lucro_bruto_${comissao}`,
-    liquidoKey = `lucro_liquido_${comissao}`;
+  const brutoKey = "lucro_bruto_sem",
+    liquidoKey = "lucro_liquido_com";
   const setF = (key: string, value: string) => {
     setFiltros((f) => ({ ...f, [key]: value }));
     setPagina(0);
@@ -372,28 +365,19 @@ export function RelatoriosVendas() {
             <section className="rounded-xl border bg-card p-4 space-y-4">
               <div className="flex flex-wrap justify-between gap-3">
                 <h2 className="font-semibold">Rentabilidade do período</h2>
-                <select
-                  aria-label="Considerar comissão no lucro"
-                  className="rounded border bg-background p-2 text-sm"
-                  value={comissao}
-                  onChange={(e) => {
-                    setComissao(e.target.value);
-                    setPagina(0);
-                  }}
-                >
-                  <option value="com">Com comissão</option>
-                  <option value="sem">Sem comissão</option>
-                </select>
+                <p className="text-sm text-muted-foreground">
+                  Bruto antes das despesas; líquido após comissão e despesas do pedido.
+                </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Indicador
-                  label={`Lucro bruto ${comissao === "com" ? "com" : "sem"} comissão`}
+                  label="Lucro bruto"
                   valor={brl(total[brutoKey])}
                   anterior={anterior[brutoKey]}
                   atual={total[brutoKey]}
                 />
                 <Indicador
-                  label={`Lucro líquido estimado ${comissao === "com" ? "com" : "sem"} comissão`}
+                  label="Lucro líquido estimado"
                   valor={brl(total[liquidoKey])}
                   anterior={anterior[liquidoKey]}
                   atual={total[liquidoKey]}
@@ -453,8 +437,8 @@ export function RelatoriosVendas() {
                           ["Custo do frete", "frete"],
                           ["Tributos estimados", "tributos"],
                           ["Despesas variáveis", "despesas"],
-                          ["Lucro líquido sem comissão", "lucro_liquido_sem"],
-                          ["Lucro líquido com comissão", "lucro_liquido_com"],
+                          ["Lucro bruto", brutoKey],
+                          ["Lucro líquido estimado", liquidoKey],
                         ]
                       : []),
                   ].map(([label, key]) => (
@@ -503,7 +487,7 @@ export function RelatoriosVendas() {
                         {lucro && (
                           <Bar
                             dataKey={liquidoKey}
-                            name={`Lucro estimado ${comissao === "com" ? "com" : "sem"} comissão`}
+                            name="Lucro líquido estimado"
                             isAnimationActive={false}
                             fill="#0d9488"
                             radius={[4, 4, 0, 0]}
@@ -526,7 +510,7 @@ export function RelatoriosVendas() {
                     ? [
                         {
                           key: liquidoKey,
-                          label: `Lucro líquido estimado ${comissao === "com" ? "com" : "sem"} comissão`,
+                          label: "Lucro líquido estimado",
                         },
                       ]
                     : []),
@@ -672,7 +656,7 @@ export function RelatoriosVendas() {
                     ? [
                         {
                           key: liquidoKey,
-                          label: `Lucro líquido estimado ${comissao === "com" ? "com" : "sem"} comissão`,
+                          label: "Lucro líquido estimado",
                         },
                       ]
                     : []),
@@ -696,10 +680,9 @@ export function RelatoriosVendas() {
                 mudar após uma devolução.
               </p>
               <p>
-                Lucro bruto sem comissão = vendas líquidas − CMV. A opção com comissão também
-                desconta a comissão. Lucro líquido estimado = lucro bruto − custo de frete −
-                tributos estimados − despesas variáveis informados nos pedidos. A comissão é
-                descontada uma única vez.
+                Lucro bruto = vendas líquidas − CMV, antes de comissão e demais despesas. Lucro
+                líquido estimado = lucro bruto − comissão − custo de frete − tributos estimados −
+                despesas variáveis informados nos pedidos. A comissão é descontada uma única vez.
               </p>
               <p>
                 O CMV usa o custo histórico do item; na ausência, usa custo médio, preço de custo ou
