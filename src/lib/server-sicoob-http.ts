@@ -213,3 +213,56 @@ export async function testarSandboxSicoob(
       "O sandbox Sicoob retornou uma resposta sem os dados esperados de boleto. A conexão não foi habilitada.",
     );
 }
+
+/** Cliente exclusivo para leitura do extrato; não oferece rota de transferência. */
+export async function consultarExtratoContaSicoob(
+  clientId: string,
+  cert: CertificadoSicoob,
+  path: string,
+  io: TransporteSicoob = transporteSicoob,
+) {
+  const { SICOOB_CONTA_BASE, SICOOB_CONTA_SCOPES } = await import("./sicoob-extrato");
+  if (
+    !/^\/extrato\/\d{1,2}\/\d{4}\?/.test(path) ||
+    path.includes("..") ||
+    path.includes("#") ||
+    path.includes("\\")
+  )
+    throw Error("Consulta de extrato inválida.");
+  validarCertificadoSicoob(cert);
+  const token = await io(
+    SICOOB_AUTH,
+    "POST",
+    { "Content-Type": "application/x-www-form-urlencoded" },
+    new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      scope: SICOOB_CONTA_SCOPES,
+    }).toString(),
+    cert,
+  );
+  if (
+    token.status !== 200 ||
+    typeof token.json["access_token"] !== "string" ||
+    !token.json["access_token"]
+  )
+    throw Error(
+      "Sicoob não autorizou o extrato. Confira Client ID de Conta Corrente, certificado e escopos cco_consulta e openid.",
+    );
+  const r = await io(
+    SICOOB_CONTA_BASE + path,
+    "GET",
+    {
+      Accept: "application/json",
+      Authorization: "Bearer " + token.json["access_token"],
+      client_id: clientId,
+    },
+    undefined,
+    cert,
+  );
+  if (r.status !== 200)
+    throw Error(
+      `Consulta do extrato recusada pelo Sicoob (HTTP ${r.status}). Confira a conta e a liberação do aplicativo.`,
+    );
+  return r.json;
+}

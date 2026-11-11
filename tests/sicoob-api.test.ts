@@ -16,6 +16,7 @@ import {
 } from "../src/lib/sicoob-api";
 import {
   clienteSicoob,
+  consultarExtratoContaSicoob,
   testarSandboxSicoob,
   validarCertificadoSicoob,
   type CertificadoSicoob,
@@ -318,4 +319,43 @@ test("mock oficial é reconhecido separadamente e continua inválido como boleto
     { nossoNumero: "-2147483648" },
   ])
     expect(respostaSimuladaSicoob({ ...mock, ...extra })).toBe(false);
+});
+
+test("extrato usa outro Client ID e apenas escopos de consulta, sem alterar cobrança", async () => {
+  const calls: {
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: string | undefined;
+  }[] = [];
+  const io: TransporteSicoob = async (url, method, headers, body) => {
+    calls.push({ url, method, headers, body });
+    return url === SICOOB_AUTH
+      ? { status: 200, json: { access_token: "extrato-token-falso" } }
+      : { status: 200, json: { transacoes: [] } };
+  };
+  const path =
+    "/extrato/11/2026?diaInicial=1&diaFinal=10&agruparCNAB=false&numeroContaCorrente=123";
+  expect(await consultarExtratoContaSicoob("client-extrato", cert, path, io)).toEqual({
+    transacoes: [],
+  });
+  expect(new URLSearchParams(calls[0]!.body).get("scope")).toBe("cco_consulta openid");
+  expect(new URLSearchParams(calls[0]!.body).get("client_id")).toBe("client-extrato");
+  expect(calls[1]!.url).toBe("https://api.sicoob.com.br/conta-corrente/v4" + path);
+  expect(calls[1]!.method).toBe("GET");
+  expect(calls[1]!.headers["client_id"]).toBe("client-extrato");
+  expect(calls[1]!.headers["Authorization"]).toBe("Bearer extrato-token-falso");
+  for (const p of [
+    "/transferencias",
+    "https://outro/extrato/11/2026?",
+    "/extrato/11/2026?../transferencias",
+  ])
+    await expect(consultarExtratoContaSicoob("client-extrato", cert, p, io)).rejects.toThrow();
+  expect(calls).toHaveLength(2);
+  await expect(
+    consultarExtratoContaSicoob("client", cert, path, async () => ({
+      status: 403,
+      json: { access_token: "NAO_EXIBIR" },
+    })),
+  ).rejects.toThrow("não autorizou o extrato");
 });

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.45.0",
+    "data": "2026-11-11",
+    "titulo": "Consulta do extrato Sicoob junto às configurações de boletos",
+    "motivo": "Permite configurar o aplicativo de Conta Corrente e conferir o extrato sem modificar a emissão de boletos.",
+    "novidades": [
+      "Em Lojas → Sicoob → Produção, aplicativo de Conta Corrente com Client ID, conta e certificado próprios no cofre.",
+      "Consulta manual do extrato com filtro mensal e diário, sem agrupamento CNAB, respeitando permissões e intervalo entre consultas.",
+      "Tabela de conferência indica possíveis tarifas sem lançar despesas ou baixar pagamentos. Nenhuma automação de conciliação Sicoob foi ativada."
+    ]
+  },
+  {
     "versao": "1.44.0",
     "data": "2026-11-11",
     "titulo": "Configuração das condições de emissão dos boletos Sicoob",

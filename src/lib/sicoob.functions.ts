@@ -681,3 +681,77 @@ export const sicoobPdfBoleto = createServerFn({ method: "POST" })
       throw Error("PDF bancário inválido.");
     return { base64: pdf };
   });
+
+/** Conta Corrente é outro aplicativo e só oferece consulta nesta integração. */
+export const sicoobExtratoConfig = createServerFn({ method: "POST" })
+  .inputValidator((d: Sessao & { centroId: string }) => d)
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_extrato_get", true);
+    return rpc<{ clientId: string; numeroConta: string; certificado: boolean; versao: number }>(
+      "sicoob_extrato_config_352",
+      { _actor: actor.id, _centro: uuid(d.centroId) },
+    );
+  });
+export const sicoobExtratoSalvar = createServerFn({ method: "POST" })
+  .inputValidator(
+    (
+      d: Sessao & {
+        centroId: string;
+        clientId: string;
+        numeroConta: string;
+        versao: number;
+        pfx?: string;
+        senha?: string;
+      },
+    ) => d,
+  )
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_extrato_save", true);
+    if (
+      !/^[A-Za-z0-9._-]{1,150}$/.test(d.clientId) ||
+      !/^\d{1,18}$/.test(d.numeroConta) ||
+      !Number.isSafeInteger(Number(d.numeroConta)) ||
+      Number(d.numeroConta) <= 0
+    )
+      throw Error("Confira Client ID de Conta Corrente e conta sem pontuação.");
+    if (!Number.isInteger(d.versao) || d.versao < 0)
+      throw Error("Versão da configuração inválida.");
+    if (d.senha && !d.pfx) throw Error("Para substituir a senha, envie também o certificado.");
+    const segredo = d.pfx ? { pfx: d.pfx, senha: d.senha ?? "" } : null;
+    if (segredo) validarCertificadoSicoob(segredo);
+    await rpc("sicoob_extrato_salvar_352", {
+      _actor: actor.id,
+      _centro: uuid(d.centroId),
+      _client: d.clientId,
+      _conta: d.numeroConta,
+      _versao: d.versao,
+      _segredo: segredo,
+    });
+    return {
+      mensagem: "Aplicativo de Conta Corrente salvo. A configuração dos boletos foi preservada.",
+    };
+  });
+export const sicoobConsultarExtrato = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: Sessao & { centroId: string; mes: string; diaInicial: number; diaFinal: number }) => d,
+  )
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_extrato_read", true);
+    const { consultaExtratoSicoob, extratoParaConferenciaSicoob } =
+      await import("./sicoob-extrato");
+    consultaExtratoSicoob("1", d.mes, d.diaInicial, d.diaFinal, hojeSaoPaulo());
+    const c = await rpc<{ clientId: string; numeroConta: string; certificado: CertificadoSicoob }>(
+      "sicoob_extrato_reservar_352",
+      { _actor: actor.id, _centro: uuid(d.centroId) },
+    );
+    const { consultarExtratoContaSicoob } = await import("./server-sicoob-http");
+    const raw = await consultarExtratoContaSicoob(
+      c.clientId,
+      c.certificado,
+      consultaExtratoSicoob(c.numeroConta, d.mes, d.diaInicial, d.diaFinal, hojeSaoPaulo()),
+    );
+    return {
+      transacoes: extratoParaConferenciaSicoob(raw),
+      consultadoEm: new Date().toISOString(),
+    };
+  });

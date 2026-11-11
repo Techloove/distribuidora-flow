@@ -466,6 +466,56 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
     assert.equal(replay351.boleto.id, first351.boleto.id);
     assert.equal(replay351.operacao.id, first351.operacao.id);
     await db.exec("rollback");
+    const snapshot352 = await scalar(
+      "select jsonb_build_object('boletos',(select jsonb_agg(to_jsonb(b) order by id) from boletos b),'titulos',(select jsonb_agg(to_jsonb(t) order by id) from contas_receber t),'cobranca',(select jsonb_agg(to_jsonb(c) order by centro_id,ambiente) from sicoob_config_316 c))",
+    );
+    const migration352 = fs.readFileSync("db/fase352_sicoob_extrato_leitura.sql", "utf8");
+    await db.exec(migration352);
+    await db.exec(migration352);
+    assert.equal(
+      await scalar(
+        "select has_function_privilege('authenticated','sicoob_extrato_reservar_352(uuid,uuid)','execute')",
+      ),
+      false,
+    );
+    await assert.rejects(
+      () =>
+        q("select sicoob_extrato_salvar_352($1,$2,'extrato-client','123',0,null)", [id(2), id(10)]),
+      /administrador/,
+    );
+    await q("select sicoob_extrato_salvar_352($1,$2,'extrato-client','123',0,$3)", [
+      id(1),
+      id(10),
+      { pfx: "pfx-falso-fixture", senha: "segredo-falso" },
+    ]);
+    const safe352 = await scalar("select sicoob_extrato_config_352($1,$2)", [id(1), id(10)]);
+    assert.deepEqual(safe352, {
+      clientId: "extrato-client",
+      numeroConta: "123",
+      certificado: true,
+      versao: 1,
+    });
+    assert.doesNotMatch(JSON.stringify(safe352), /pfx|senha|segredo/);
+    await assert.rejects(
+      () => q("select sicoob_extrato_salvar_352($1,$2,'outro','999',0,null)", [id(1), id(10)]),
+      /outra sessão/,
+    );
+    await q("select sicoob_extrato_salvar_352($1,$2,'extrato-client','123',1,null)", [
+      id(1),
+      id(10),
+    ]);
+    const priv352 = await scalar("select sicoob_extrato_reservar_352($1,$2)", [id(1), id(10)]);
+    assert.equal(priv352.certificado.senha, "segredo-falso");
+    await assert.rejects(
+      () => q("select sicoob_extrato_reservar_352($1,$2)", [id(1), id(10)]),
+      /quinze segundos/,
+    );
+    assert.equal(
+      await scalar(
+        "select jsonb_build_object('boletos',(select jsonb_agg(to_jsonb(b) order by id) from boletos b),'titulos',(select jsonb_agg(to_jsonb(t) order by id) from contas_receber t),'cobranca',(select jsonb_agg(to_jsonb(c) order by centro_id,ambiente) from sicoob_config_316 c))",
+      ).then(JSON.stringify),
+      JSON.stringify(snapshot352),
+    );
     console.log(
       "OK: configuração por loja/ambiente, cofre privado, permissões, idempotência, aprovação/liberação, confirmações bancárias, vencimentos, cancelamento, descontos e sandbox isolado do financeiro.",
     );

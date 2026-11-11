@@ -1,3 +1,4 @@
+import { SicoobExtratoConfiguracao } from "./sicoob-extrato-configuracao";
 import { SicoobCondicoesEmissao } from "./sicoob-condicoes-emissao";
 import { padraoEmissaoSicoob } from "@/lib/sicoob-emissao";
 import { useEffect, useState } from "react";
@@ -327,6 +328,9 @@ export function SicoobConfiguracao({
             desativa novas emissões até a próxima validação. Os registros anteriores são
             preservados.
           </p>
+          {modo === "producao" && (
+            <SicoobExtratoConfiguracao key={centroId} centroId={centroId} editar={editar} />
+          )}
         </>
       )}
     </section>
