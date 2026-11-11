@@ -1,5 +1,4 @@
 import { AcoesBoletoSicoob } from "./acoes-boleto-sicoob";
-import { SicoobSandbox } from "./sicoob-sandbox";
 import { sicoobConsultarBoleto } from "@/lib/sicoob.functions";
 import { getModalidade } from "@/lib/modalidade-store";
 import { CondicoesBoletoSicredi } from "@/components/condicoes-boleto-sicredi";
@@ -427,7 +426,6 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         </AlertDialogContent>
       </AlertDialog>
       <div className="space-y-6">
-        <SicoobSandbox key={centro || "todas"} centroId={centro || ""} />
         {bancoLoja.data?.["banco"] !== "sicoob" && <SicrediAutomatico />}
         <p className="text-sm text-muted-foreground">
           Emita boletos em{" "}
@@ -444,8 +442,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         {bancoLoja.data?.["banco"] === "sicoob" ? (
           <p className="rounded-lg border p-3 text-sm">
             Sicoob · produção {bancoLoja.data["ativo"] === true ? "habilitada" : "desativada"}.
-            Testes isolados estão na área Sandbox acima. Configure os ambientes em Lojas → Cobrança
-            por loja.
+            Emissões reais usam a configuração de produção da loja. Configure banco e condições em
+            Lojas → Cobrança por loja.
           </p>
         ) : config.data && !config.data.configurado ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">

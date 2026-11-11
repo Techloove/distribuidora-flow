@@ -1,3 +1,4 @@
+import { SicoobTarifasConfiguracao } from "./sicoob-tarifas-configuracao";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -112,8 +113,8 @@ export function SicoobExtratoConfiguracao({
         <h4 className="font-semibold">Conta Corrente · Extrato e conferência de tarifas</h4>
         <p className="mt-1 text-sm text-muted-foreground">
           Use o Client ID do aplicativo de Conta Corrente. Esta configuração é separada da emissão
-          de boletos. A consulta é somente de leitura; ainda não importa despesas nem baixa
-          pagamentos.
+          de boletos. A consulta abaixo é de conferência. A contabilização das tarifas é configurada
+          separadamente nesta seção; pagamentos não são baixados por esta consulta.
         </p>
       </div>
       {q.isPending ? (
@@ -319,6 +320,7 @@ export function SicoobExtratoConfiguracao({
           )}
         </>
       )}
+      <SicoobTarifasConfiguracao key={centroId} centroId={centroId} />
       {erro && (
         <p
           role="alert"

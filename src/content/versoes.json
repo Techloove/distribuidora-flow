@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.46.0",
+    "data": "2026-11-11",
+    "titulo": "Contabilização de tarifas Sicoob somente de boletos emitidos pelo sistema",
+    "motivo": "Contabiliza tarifas de cobrança do Sicoob sem importar despesas de boletos antigos emitidos diretamente pelo banco.",
+    "novidades": [
+      "Configuração de conta Sicoob vinculada à loja, categoria de despesa financeira, data inicial e ativação. Coleta agendada a cada quinze minutos, alternando meses da janela de extrato.",
+      "Somente débitos identificados com referência explícita ao nosso número e emissão real registrada pelo ERP. Documento isolado, boletos antigos, sandbox e tarifas sem vínculo comprovado não são importados.",
+      "Identificador bancário evita duplicidades; estornos, divergências e despesas preexistentes ficam para conferência, sem relançamento. Ativação e primeira conciliação real dependem da configuração e dos retornos do banco.",
+      "Testes de homologação transferidos de Boletos para Lojas → Sicoob → Sandbox · testes. Listagem de boletos reais continua compartilhada entre bancos, com filtro por loja."
+    ]
+  },
+  {
     "versao": "1.45.2",
     "data": "2026-11-11",
     "titulo": "Preserva ambiente e configuração ao retomar a tela",

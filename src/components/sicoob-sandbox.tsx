@@ -94,7 +94,9 @@ export function SicoobSandbox({ centroId }: { centroId: string }) {
       open={open}
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer font-semibold">Sicoob · testes sandbox por loja</summary>
+      <summary className="cursor-pointer font-semibold">
+        Testes opcionais de homologação Sicoob
+      </summary>
       <div className="mt-4 space-y-4">
         <p className="rounded-lg border bg-muted/30 p-3 text-sm">
           <strong>SANDBOX · sem efeito financeiro.</strong> Os registros abaixo são testes do banco.

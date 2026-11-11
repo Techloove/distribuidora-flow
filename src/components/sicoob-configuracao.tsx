@@ -1,3 +1,4 @@
+import { SicoobSandbox } from "./sicoob-sandbox";
 import { SicoobExtratoConfiguracao } from "./sicoob-extrato-configuracao";
 import { SicoobCondicoesEmissao } from "./sicoob-condicoes-emissao";
 import { padraoEmissaoSicoob } from "@/lib/sicoob-emissao";
@@ -175,7 +176,7 @@ export function SicoobConfiguracao({
         </strong>
         <p className="mt-1">
           {modo === "homologacao"
-            ? "Boletos de sandbox ficam em Boletos → Testes Sicoob, por loja. Não geram títulos nem alteram contas a receber, estoque ou comissões."
+            ? "Os boletos de sandbox ficam na área de testes desta configuração, por loja. Não geram títulos nem alteram contas a receber, estoque ou comissões."
             : "Habilite somente após o aplicativo ser aprovado pelo banco e a autenticação ser testada. Os boletos ficam vinculados à conta financeira desta loja."}
         </p>
         <p className="mt-2 break-all text-xs text-muted-foreground">
@@ -357,6 +358,7 @@ export function SicoobConfiguracao({
             desativa novas emissões até a próxima validação. Os registros anteriores são
             preservados.
           </p>
+          {modo === "homologacao" && <SicoobSandbox key={centroId} centroId={centroId} />}
           {modo === "producao" && (
             <SicoobExtratoConfiguracao key={centroId} centroId={centroId} editar={editar} />
           )}

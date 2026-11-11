@@ -755,3 +755,66 @@ export const sicoobConsultarExtrato = createServerFn({ method: "POST" })
       consultadoEm: new Date().toISOString(),
     };
   });
+
+export type ConfigTarifasSicoob = {
+  ativo: boolean;
+  inicio: string;
+  categoriaId: string | null;
+  versao: number;
+  ultimaConsulta: string | null;
+  erro: string | null;
+  conta: { id: string; nome: string } | null;
+  categorias: { id: string; nome: string }[];
+  lancados: number;
+  conferir: number;
+};
+export const sicoobTarifasConfig = createServerFn({ method: "POST" })
+  .inputValidator((d: Sessao & { centroId: string }) => d)
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_tarifas_get", true);
+    return rpc<ConfigTarifasSicoob>("sicoob_tarifas_get_355", {
+      _actor: actor.id,
+      _centro: uuid(d.centroId),
+    });
+  });
+export const sicoobTarifasSalvar = createServerFn({ method: "POST" })
+  .inputValidator(
+    (
+      d: Sessao & {
+        centroId: string;
+        categoriaId: string;
+        inicio: string;
+        ativo: boolean;
+        versao: number;
+      },
+    ) => d,
+  )
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_tarifas_save", true);
+    dataSicoob(d.inicio);
+    if (typeof d.ativo !== "boolean" || !Number.isInteger(d.versao) || d.versao < 0)
+      throw Error("Configuração de tarifas inválida.");
+    await rpc("sicoob_tarifas_salvar_355", {
+      _actor: actor.id,
+      _centro: uuid(d.centroId),
+      _categoria: uuid(d.categoriaId),
+      _inicio: d.inicio,
+      _ativo: d.ativo,
+      _versao: d.versao,
+    });
+    return {
+      mensagem:
+        "Configuração salva. Apenas tarifas vinculadas a boletos emitidos pelo sistema serão contabilizadas.",
+    };
+  });
+export const sicoobTarifasSincronizar = createServerFn({ method: "POST" })
+  .inputValidator((d: Sessao & { centroId: string }) => d)
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_config_tarifas_sync", true);
+    const { executarTarifasSicoob } = await import("./server-sicoob-tarifas");
+    const r = await rpc<import("./server-sicoob-tarifas").ReservaTarifasSicoob>(
+      "sicoob_tarifas_reservar_355",
+      { _actor: actor.id, _centro: uuid(d.centroId) },
+    );
+    return executarTarifasSicoob(r, rpc);
+  });

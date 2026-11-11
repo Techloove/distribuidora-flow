@@ -47,6 +47,10 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/api/sicoob/tarifas") {
+        const { atenderTarifasSicoob } = await import("./lib/server-sicoob-tarifas");
+        return await atenderTarifasSicoob(request);
+      }
       if (new URL(request.url).pathname === "/api/sicredi/tarifas") {
         const { atenderTarifasSicredi } = await import("./lib/server-sicredi-tarifas");
         return await atenderTarifasSicredi(request);
