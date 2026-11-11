@@ -115,3 +115,15 @@ test("lote do cliente conserva pedidos diferentes e exclui outros clientes e cic
     ).map((v) => v.id),
   ).toEqual(["segundo"]);
 });
+
+test("emissão identifica a loja das parcelas e recusa loja ausente ou mistura", async () => {
+  const { centroEmissaoTitulos } = await import("../src/lib/boletos-documento");
+  expect(centroEmissaoTitulos([{ centro_id: "cimento" }])).toBe("cimento");
+  expect(centroEmissaoTitulos([{ centro_id: "ferragens" }, { centro_id: "ferragens" }])).toBe(
+    "ferragens",
+  );
+  expect(centroEmissaoTitulos([])).toBe("");
+  expect(centroEmissaoTitulos([{}])).toBe("");
+  expect(centroEmissaoTitulos([{ centro_id: "cimento" }, { centro_id: "ferragens" }])).toBe("");
+  expect(centroEmissaoTitulos([{ centro_id: "cimento" }, {}])).toBe("");
+});

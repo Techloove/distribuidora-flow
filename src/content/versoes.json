@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.47.0",
+    "data": "2026-11-11",
+    "titulo": "Edição de títulos e banco correto na emissão por loja",
+    "motivo": "Permite editar títulos em aberto com segurança e corrige a identificação do banco da loja na emissão.",
+    "novidades": [
+      "A emissão consulta o banco da loja gravada nas parcelas, exibe Sicoob ou Sicredi corretamente e revalida a configuração antes do envio. Cimento usa Sicoob e Ferragens usa Sicredi conforme a configuração de cada loja.",
+      "Opções → Editar dados do título em Contas a Receber e Contas a Pagar para usuários financeiros autorizados.",
+      "Edição de documento, emissão, vencimento, descrição e observações; valor e categoria também são editáveis nos lançamentos manuais.",
+      "Títulos a receber com boleto emitido ou em processamento não oferecem edição; o servidor repete a validação antes de salvar.",
+      "Bloqueia títulos pagos, parciais, cancelados ou com histórico de baixa, protege a origem, registra auditoria e impede sobrescrever alterações de outra sessão."
+    ]
+  },
+  {
     "versao": "1.46.0",
     "data": "2026-11-11",
     "titulo": "Contabilização de tarifas Sicoob somente de boletos emitidos pelo sistema",

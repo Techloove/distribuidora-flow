@@ -20,6 +20,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { sicrediEmitirBoleto } from "@/lib/sicredi.functions";
 import {
   boletoAtual,
+  centroEmissaoTitulos,
   saldoTituloBoleto,
   type TituloBoleto,
   type BoletoDocumento,
@@ -73,7 +74,7 @@ function BoletosDocumento(props: Props) {
   if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
   return <JanelaBoletos key={props.pedidoId ?? props.contaId} {...props} />;
 }
-function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBoleto }: Props) {
+function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Props) {
   const { client, session, user } = useSupabase();
   const permissoes = usePermissoesRotinas();
   const qc = useQueryClient();
@@ -87,24 +88,6 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
     [progresso, setProgresso] = useState("");
   const trabalhando = useRef(false);
   const chave = ["emissao-boletos", user?.id, pedidoId, contaId];
-  const cobranca = useQuery({
-    queryKey: ["cobranca-emissao", user?.id, centroId],
-    enabled: open && !!client,
-    queryFn: async () => {
-      const { data, error } = await client!
-        .from("cobranca_centros")
-        .select("banco,canal,ativo")
-        .eq("centro_id", centroId)
-        .maybeSingle();
-      if (error) throw new Error("Não foi possível consultar a cobrança do centro.");
-      return data;
-    },
-  });
-  const habilitado =
-    ["sicredi", "sicoob"].includes(cobranca.data?.banco ?? "") &&
-    (cobranca.data?.banco !== "sicoob" || permissoes.pode("sicoob_operar")) &&
-    cobranca.data?.canal === "api" &&
-    cobranca.data?.ativo === true;
   const consulta = useQuery({
     queryKey: chave,
     enabled: open && !!client && !!session,
@@ -115,7 +98,7 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
           client!
             .from("contas_receber")
             .select(
-              "id,pedido_id,parcela,vencimento,valor,status,juros,multa,acrescimo,desconto,valor_pago",
+              "id,pedido_id,centro_id,parcela,vencimento,valor,status,juros,multa,acrescimo,desconto,valor_pago",
             )
             .eq(contaId ? "id" : "pedido_id", contaId ?? pedidoId!)
             .order("parcela")
@@ -145,6 +128,29 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
       return { titulos, boletos, pendentes: pendentes.map((p) => p.conta_receber_id) };
     },
   });
+  const centroDocumento = centroEmissaoTitulos(consulta.data?.titulos ?? []);
+  const cobranca = useQuery({
+    queryKey: ["cobranca-emissao", user?.id, centroDocumento],
+    enabled: open && !!client && !!centroDocumento,
+    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+    queryFn: async () => {
+      const { data, error } = await client!
+        .from("cobranca_centros")
+        .select("banco,canal,ativo")
+        .eq("centro_id", centroDocumento)
+        .maybeSingle();
+      if (error) throw new Error("Não foi possível consultar a cobrança do centro.");
+      return data;
+    },
+  });
+  const habilitado =
+    cobranca.isSuccess &&
+    !cobranca.isFetching &&
+    ["sicredi", "sicoob"].includes(cobranca.data?.banco ?? "") &&
+    (cobranca.data?.banco !== "sicoob" || permissoes.pode("sicoob_operar")) &&
+    cobranca.data?.canal === "api" &&
+    cobranca.data?.ativo === true;
   const pedidoLiberacao = pedidoId || consulta.data?.titulos[0]?.pedido_id || "";
   const liberacao = useQuery({
     queryKey: ["liberacao-boleto-255", user?.id, pedidoLiberacao],
@@ -199,9 +205,24 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
     setProgresso("");
     let emitidos = 0;
     try {
+      const atual = await cobranca.refetch();
+      if (
+        atual.isError ||
+        !atual.data?.ativo ||
+        atual.data.canal !== "api" ||
+        !["sicoob", "sicredi"].includes(atual.data.banco)
+      )
+        throw new Error(
+          "A configuração bancária da loja mudou ou está indisponível. Atualize antes de emitir.",
+        );
+      if (atual.data.banco === "sicoob" && !permissoes.pode("sicoob_operar"))
+        throw new Error("Sem permissão para emitir no Sicoob.");
+      const emitir = atual.data.banco === "sicoob" ? emitirSicoob : emitirApi;
       for (const [i, l] of escolhidas.entries()) {
+        if (l.titulo.centro_id !== centroDocumento)
+          throw new Error("A loja da parcela diverge da configuração consultada.");
         setProgresso(`Emitindo ${i + 1} de ${escolhidas.length}…`);
-        await (cobranca.data?.banco === "sicoob" ? emitirSicoob : emitirApi)({
+        await emitir({
           data: { contaId: l.titulo.id, accessToken: session.access_token },
         });
         emitidos++;
@@ -310,12 +331,16 @@ function JanelaBoletos({ pedidoId, contaId, centroId, compact = false, statusBol
               {modo === "emitir" && (
                 <p className="text-sm text-muted-foreground">
                   {cobranca.isPending
-                    ? "Consultando banco do centro…"
+                    ? centroDocumento
+                      ? "Consultando banco da loja do título…"
+                      : consulta.isPending
+                        ? "Consultando a loja do título…"
+                        : "Não foi possível determinar uma única loja para as parcelas. Confira o cadastro do título."
                     : cobranca.isError
                       ? cobranca.error.message
                       : habilitado
-                        ? "Sicredi · API. O centro do documento define o banco de cobrança."
-                        : "Novas emissões indisponíveis neste centro. Configure a cobrança em Centros. Boletos já emitidos continuam disponíveis na reimpressão."}
+                        ? `${cobranca.data?.banco === "sicoob" ? "Sicoob" : "Sicredi"} · API de produção. A loja gravada no título define o banco da emissão.`
+                        : "Novas emissões indisponíveis neste centro. Configure a cobrança em Lojas. Boletos já emitidos continuam disponíveis na reimpressão."}
                 </p>
               )}
               {consulta.isPending && <p role="status">Carregando parcelas e boletos…</p>}

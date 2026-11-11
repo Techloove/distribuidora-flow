@@ -1,4 +1,5 @@
 export type TituloBoleto = {
+  centro_id?: string | null;
   pedido_id?: string | null;
   id: string;
   parcela: number;
@@ -84,4 +85,14 @@ export function boletosParaImpressao<T extends BoletoDocumento & { cliente_id?: 
       boletoImprimivel(b) &&
       (!b.conta_receber_id || boletoAtual(rows, b.conta_receber_id)?.id === b.id),
   );
+}
+
+/** A cobrança segue a loja persistida nas parcelas, nunca o filtro da tela. */
+export function centroEmissaoTitulos(titulos: Pick<TituloBoleto, "centro_id">[]) {
+  const centro = titulos[0]?.centro_id;
+  return typeof centro === "string" &&
+    centro.length > 0 &&
+    titulos.every((t) => t.centro_id === centro)
+    ? centro
+    : "";
 }

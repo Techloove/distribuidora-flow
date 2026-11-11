@@ -1,3 +1,5 @@
+import { EditarTituloDialog } from "./editar-titulo-dialog";
+import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { SearchSelect } from "@/components/ui/search-select";
 import { recalcularBaixa } from "@/lib/baixa-titulo";
 import { NovoTituloDialog } from "@/components/novo-titulo-dialog";
@@ -106,6 +108,8 @@ export function TitulosPage({
   const [descontoBaixa, setDescontoBaixa] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [openNovo, setOpenNovo] = useState(false);
+  const [editarTitulo, setEditarTitulo] = useState<string | null>(null);
+  const permissoesEdicao = usePermissoesRotinas();
   const [openBaixaLote, setOpenBaixaLote] = useState(false);
 
   const canFinance =
@@ -185,6 +189,22 @@ export function TitulosPage({
     },
   });
 
+  const titulosComBoleto = useMemo(
+    () =>
+      new Set(
+        (boletos.data ?? [])
+          .filter((b) => b["status"] !== "erro" || !!b["nosso_numero"])
+          .map((b) => String(b["conta_receber_id"])),
+      ),
+    [boletos.data],
+  );
+  const podeEditarTitulo = (r: Row) =>
+    canFinance &&
+    permissoesEdicao.pode(isReceber ? "receber_editar" : "pagar_editar") &&
+    ["aberto", "vencido"].includes(String(r["status"])) &&
+    Number(r["valor_pago"] ?? r["pago"] ?? 0) === 0 &&
+    (!isReceber ||
+      (!boletos.isPending && !boletos.isError && !titulosComBoleto.has(String(r["id"]))));
   const boletoPorConta = useMemo(() => {
     const map = new Map<string, Row>();
     for (const b of boletos.data ?? []) {
@@ -731,7 +751,7 @@ export function TitulosPage({
                       >
                         {config.baixaLabel}
                       </Button>
-                      {isReceber && (
+                      {(isReceber || podeEditarTitulo(r)) && (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button size="sm" variant="outline" className="w-full">
@@ -745,6 +765,15 @@ export function TitulosPage({
                             className="no-print w-64 p-3 data-[state=closed]:hidden"
                           >
                             <div className="flex flex-col gap-2 [&_button]:h-auto [&_button]:min-h-9 [&_button]:w-full [&_button]:whitespace-normal">
+                              {podeEditarTitulo(r) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditarTitulo(String(r["id"]))}
+                                >
+                                  Editar dados do título
+                                </Button>
+                              )}
                               {isReceber && <HistoricoTitulo titulo={r} />}
                               {isReceber && <AcoesFinanceirasTitulo titulo={r} />}
                               {isReceber && canFinance ? (
@@ -981,6 +1010,18 @@ export function TitulosPage({
         </DialogContent>
       </Dialog>
 
+      {editarTitulo && (
+        <EditarTituloDialog
+          tabela={config.table}
+          id={editarTitulo}
+          onClose={() => setEditarTitulo(null)}
+          onSaved={() => {
+            setEditarTitulo(null);
+            void queryClient.invalidateQueries();
+            toast.success("Título atualizado.");
+          }}
+        />
+      )}
       {openNovo && (
         <NovoTituloDialog
           receber={isReceber}
