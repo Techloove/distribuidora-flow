@@ -11,6 +11,7 @@ import {
 } from "./server-sicoob-http";
 import {
   condicoesSicoob,
+  periodoRecuperacaoSicoob,
   respostaSimuladaSicoob,
   dataSicoob,
   dinheiroSicoob,
@@ -329,8 +330,7 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
     const q = new URLSearchParams({
       numeroCliente: String(p.config.numero_cliente),
       numeroCpfCnpj: doc,
-      dataInicio: String(req["dataVencimento"]),
-      dataFim: String(req["dataVencimento"]),
+      ...periodoRecuperacaoSicoob(req["dataVencimento"]),
     });
     const r = await p.api(`/pagadores/${encodeURIComponent(doc)}/boletos?` + q);
     if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);

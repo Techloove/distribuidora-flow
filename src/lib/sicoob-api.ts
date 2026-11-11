@@ -63,6 +63,16 @@ export function dataSicoob(v: unknown) {
     throw Error("Data bancária inválida.");
   return s;
 }
+/** A lista por pagador filtra vencimentos, não datas de emissão. */
+export function periodoRecuperacaoSicoob(vencimentoOriginal: unknown) {
+  const vencimento = dataSicoob(vencimentoOriginal);
+  const deslocar = (dias: number) => {
+    const data = new Date(vencimento + "T00:00:00.000Z");
+    data.setUTCDate(data.getUTCDate() + dias);
+    return data.toISOString().slice(0, 10);
+  };
+  return { dataInicio: deslocar(-30), dataFim: deslocar(30) };
+}
 export function condicoesSicoob(raw: Record<string, unknown>): CondicoesSicoob {
   const situacao = String(raw["situacaoBoleto"] ?? "")
     .normalize("NFD")

@@ -17,3 +17,7 @@ A consulta apresentada depois retornou HTTP 204. Esse status significa processam
 A coleção oficial descreve dataInicio/dataFim da lista por pagador como vencimento inicial/final; a busca já utilizava esses campos corretamente. A query agora também inclui numeroCpfCnpj, além do documento no caminho, conforme os parâmetros da coleção. A recusa POST HTTP 403 continua sem causa específica comprovada.
 
 19 testes aprovados (142 expectativas) e Chromium validando mensagem informativa, ausência de confirmação/impressão e zero chamadas aos emissores. Sem nova migração SQL e sem requisição bancária real durante os testes.
+
+## Atualização 1.47.3 — período ampliado
+
+A recuperação por pagador consulta agora vencimentos de 30 dias antes até 30 dias depois do vencimento original persistido na tentativa. Não aplica filtro de situação. Mantém a correspondência exata de seuNumero, beneficiário e modalidade, seguida das demais validações de identidade. Não altera título, credenciais nem reenvia emissão. O HTTP 403 anterior não é resolvido por ampliar a consulta. Sem nova migração SQL.
