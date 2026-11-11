@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.47.5",
+    "data": "2026-11-11",
+    "titulo": "Respeita limite de período na consulta Sicoob",
+    "motivo": "O Sicoob recusou a consulta ampliada porque o período máximo por requisição é de 35 dias.",
+    "novidades": [
+      "Divide a recuperação por pagador em duas consultas de até 31 dias, preservando a abrangência de 30 dias antes e depois do vencimento original.",
+      "Consulta as duas janelas mesmo quando uma retorna sem conteúdo. Uma falha impede sincronizar resultados parciais; não há nova emissão."
+    ]
+  },
+  {
     "versao": "1.47.4",
     "data": "2026-11-11",
     "titulo": "Corrige consulta direta do boleto Sicoob na listagem",

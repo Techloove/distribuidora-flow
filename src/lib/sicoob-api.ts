@@ -4,11 +4,9 @@ export const SICOOB_SANDBOX = "https://sandbox.sicoob.com.br/sicoob/sandbox/cobr
 export const SICOOB_AUTH =
   "https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token";
 // Escopos da Cobrança Bancária v3; webhooks não são usados nesta integração.
-export const SICOOB_SCOPES = [
-  "boletos_inclusao",
-  "boletos_consulta",
-  "boletos_alteracao",
-].join(" ");
+export const SICOOB_SCOPES = ["boletos_inclusao", "boletos_consulta", "boletos_alteracao"].join(
+  " ",
+);
 export type SicoobConfig = {
   ambiente: "producao" | "homologacao";
   centro_id: string;
@@ -71,7 +69,11 @@ export function periodoRecuperacaoSicoob(vencimentoOriginal: unknown) {
     data.setUTCDate(data.getUTCDate() + dias);
     return data.toISOString().slice(0, 10);
   };
-  return { dataInicio: deslocar(-30), dataFim: deslocar(30) };
+  // Duas janelas sem sobreposição; cada uma tem no máximo 31 dias inclusivos.
+  return [
+    { dataInicio: deslocar(-30), dataFim: vencimento },
+    { dataInicio: deslocar(1), dataFim: deslocar(30) },
+  ];
 }
 export function condicoesSicoob(raw: Record<string, unknown>): CondicoesSicoob {
   const situacao = String(raw["situacaoBoleto"] ?? "")

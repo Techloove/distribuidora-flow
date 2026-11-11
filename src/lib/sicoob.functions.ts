@@ -1,3 +1,4 @@
+import { consultarPagadorSicoob } from "./sicoob-consulta";
 import { erroOperacaoSicoob, consultaVaziaSicoob } from "./sicoob-erros";
 import { validarEmissaoSicoob, condicoesEmissaoSicoob, type EmissaoSicoob } from "./sicoob-emissao";
 import { createServerFn } from "@tanstack/react-start";
@@ -11,7 +12,6 @@ import {
 } from "./server-sicoob-http";
 import {
   condicoesSicoob,
-  periodoRecuperacaoSicoob,
   respostaSimuladaSicoob,
   dataSicoob,
   dinheiroSicoob,
@@ -327,19 +327,13 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
       doc = String(pagador["numeroCpfCnpj"] ?? "");
     if (!/^[0-9A-Za-z]{11,14}$/.test(doc))
       throw Error("Documento do pagador indisponível para recuperar a emissão.");
-    const q = new URLSearchParams({
-      numeroCliente: String(p.config.numero_cliente),
-      numeroCpfCnpj: doc,
-      ...periodoRecuperacaoSicoob(req["dataVencimento"]),
-    });
-    const r = await p.api(`/pagadores/${encodeURIComponent(doc)}/boletos?` + q);
-    if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
-    if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
-    if (!Array.isArray(r.json["resultado"]))
-      throw Error(
-        "Emissão ainda não recuperada no banco. Não emita novamente antes da conferência.",
-      );
-    const encontrados = (r.json["resultado"] as unknown[])
+    const registros = await consultarPagadorSicoob(
+      p.api,
+      p.config.numero_cliente,
+      doc,
+      req["dataVencimento"],
+    );
+    const encontrados = registros
       .map(obj)
       .filter(
         (x) =>
