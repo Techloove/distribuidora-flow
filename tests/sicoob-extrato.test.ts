@@ -56,3 +56,29 @@ test("conferência retira CPF e saldos, aceita identificador ausente e não tran
   expect(() => extratoParaConferenciaSicoob({})).toThrow();
   expect(() => extratoParaConferenciaSicoob({ transacoes: [null] })).toThrow();
 });
+
+test("extrato aceita envelope resultado, sem confundir ausência de transações com limite", () => {
+  expect(
+    extratoParaConferenciaSicoob({
+      resultado: { transacoes: [{ tipo: "DEBITO", valor: "1.02", descricao: "TARIFA" }] },
+    })[0],
+  ).toMatchObject({ valor: 1.02 });
+  expect(extratoParaConferenciaSicoob({ transacoes: [] })).toEqual([]);
+  expect(() =>
+    extratoParaConferenciaSicoob({
+      resultado: { transacoes: null, saldoAtual: "VALOR_PRIVADO" },
+      access_token: "TOKEN_PRIVADO",
+    }),
+  ).toThrow("não trouxe a lista");
+  try {
+    extratoParaConferenciaSicoob({
+      resultado: { saldoAtual: "VALOR_PRIVADO" },
+      access_token: "TOKEN_PRIVADO",
+    });
+  } catch (e) {
+    expect(String(e)).not.toMatch(/VALOR_PRIVADO|TOKEN_PRIVADO/);
+  }
+  expect(() => extratoParaConferenciaSicoob({ transacoes: Array(10001).fill({}) })).toThrow(
+    "10.000",
+  );
+});

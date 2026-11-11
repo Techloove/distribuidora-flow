@@ -260,6 +260,10 @@ export async function consultarExtratoContaSicoob(
     undefined,
     cert,
   );
+  if (r.status === 403)
+    throw Error(
+      "Sicoob recusou o acesso ao extrato (HTTP 403), após obter o token. Confirme com o banco a autorização do aplicativo de Conta Corrente para esta conta e o certificado vinculado. Reduzir o período não resolve essa recusa.",
+    );
   if (r.status !== 200)
     throw Error(
       `Consulta do extrato recusada pelo Sicoob (HTTP ${r.status}). Confira a conta e a liberação do aplicativo.`,

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.45.1",
+    "data": "2026-11-11",
+    "titulo": "Distingue recusa de acesso e formato do extrato Sicoob",
+    "motivo": "Distingue recusa de acesso e formato do extrato Sicoob",
+    "novidades": [
+      "Distingue retorno sem lista, limite de movimentos e recusa HTTP 403 no extrato Sicoob.",
+      "Aceita transações na raiz ou em resultado; ausência da lista não é tratada como extrato sem movimentos. Diagnóstico não exibe valores ou credenciais.",
+      "A autorização bancária do extrato ainda precisa ser confirmada; nenhuma automação financeira é ativada."
+    ]
+  },
+  {
     "versao": "1.45.0",
     "data": "2026-11-11",
     "titulo": "Consulta do extrato Sicoob junto às configurações de boletos",

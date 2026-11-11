@@ -351,6 +351,15 @@ test("extrato usa outro Client ID e apenas escopos de consulta, sem alterar cobr
     "/extrato/11/2026?../transferencias",
   ])
     await expect(consultarExtratoContaSicoob("client-extrato", cert, p, io)).rejects.toThrow();
+  let consultas403 = 0;
+  await expect(
+    consultarExtratoContaSicoob("client-extrato", cert, path, async () => {
+      consultas403++;
+      return consultas403 === 1
+        ? { status: 200, json: { access_token: "falso" } }
+        : { status: 403, json: { mensagem: "nao-expor-corpo" } };
+    }),
+  ).rejects.toThrow("após obter o token");
   expect(calls).toHaveLength(2);
   await expect(
     consultarExtratoContaSicoob("client", cert, path, async () => ({

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.45.0 · 2026-11-11
+Versão 1.45.1 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -441,7 +441,7 @@ Configure a cobrança da loja e entenda a diferença entre resposta de teste e b
 6. Para produção, solicite ao banco a liberação da API Cobrança Bancária v3, Client ID de produção, certificado A1 vinculado ao aplicativo e números do beneficiário e conta. O contrato de cobrança é opcional e deve ser preenchido somente sob orientação do banco. O aplicativo deve autorizar os escopos boletos_inclusao, boletos_consulta e boletos_alteracao. Em Lojas → Cobrança por loja → Sicoob → Produção, configure também a conta financeira, salve desativado e teste a autenticação. Siga a homologação orientada pelo Sicoob antes de habilitar cobranças reais.
 7. Em Pedidos ou Contas a receber, Emitir boleto usa o banco configurado na loja do título. Essa emissão é de produção; ela não usa automaticamente o sandbox. Uma loja sem produção habilitada permanece bloqueada para emissão real. Boletos já emitidos preservam o banco original para consulta e PDF.
 8. Em Lojas → Sicoob → Produção, Condições padrão de novas emissões configura espécie, formato A4 (uma via, três vias ou autoenvelopável), Pix, limite de pagamento, multa fixa ou percentual, juros por dia ou taxa mensal, desconto fixo ou percentual com uma faixa de prazo, protesto, negativação e até cinco instruções. Prazos de encargos são contados após o vencimento; desconto, antes dele. Zero no limite não envia data limite. O desconto não pode vencer antes da emissão. Salve, teste a conexão e habilite novamente. Boletos anteriores não são alterados. Protesto, negativação e Pix dependem do convênio. Descontos por antecipação diária e múltiplas faixas não são configurados nesta tela.
-9. Em Lojas → Sicoob → Produção → Conta Corrente, configure o Client ID do aplicativo autorizado para Conta Corrente v4, a conta com dígito sem pontuação, o arquivo A1 e a senha. Essa configuração é independente da cobrança e exclusiva de administrador com acesso à loja e à configuração bancária. O certificado fica no cofre; não precisa reenviar ao mudar outro dado. A consulta usa cco_consulta e openid, sem transferências. Salve e use Consultar extrato / testar conexão. Selecione mês e dias, no mês atual ou até três meses anteriores, sem datas futuras. Aguarde quinze segundos entre consultas. O extrato vem sem agrupamento CNAB; a opção de possíveis tarifas é apenas um filtro de descrição. A tabela não cria recebimentos ou despesas, não confirma vínculo de tarifa com boleto e não faz conciliação automática. Dados do extrato não são gravados no financeiro.
+9. Em Lojas → Sicoob → Produção → Conta Corrente, configure o Client ID do aplicativo autorizado para Conta Corrente v4, a conta com dígito sem pontuação, o arquivo A1 e a senha. Essa configuração é independente da cobrança e exclusiva de administrador com acesso à loja e à configuração bancária. O certificado fica no cofre; não precisa reenviar ao mudar outro dado. A consulta usa cco_consulta e openid, sem transferências. Salve e use Consultar extrato / testar conexão. Selecione mês e dias, no mês atual ou até três meses anteriores, sem datas futuras. Aguarde quinze segundos entre consultas. Se a consulta retornar HTTP 403 após a autenticação, confirme com o Sicoob a autorização da conta no aplicativo e o certificado vinculado; diminuir o período não resolve a recusa. Se não houver a lista de transações, a tela apresenta apenas nomes técnicos do retorno para diagnóstico e não conclui que o extrato está vazio. O extrato vem sem agrupamento CNAB; a opção de possíveis tarifas é apenas um filtro de descrição. A tabela não cria recebimentos ou despesas, não confirma vínculo de tarifa com boleto e não faz conciliação automática. Dados do extrato não são gravados no financeiro.
 10. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
 
 Cuidados:
@@ -575,6 +575,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.45.1 · 2026-11-11 · Distingue recusa de acesso e formato do extrato Sicoob
+
+Motivo da atualização: Distingue recusa de acesso e formato do extrato Sicoob
+
+- Distingue retorno sem lista, limite de movimentos e recusa HTTP 403 no extrato Sicoob.
+- Aceita transações na raiz ou em resultado; ausência da lista não é tratada como extrato sem movimentos. Diagnóstico não exibe valores ou credenciais.
+- A autorização bancária do extrato ainda precisa ser confirmada; nenhuma automação financeira é ativada.
 
 ### v1.45.0 · 2026-11-11 · Consulta do extrato Sicoob junto às configurações de boletos
 

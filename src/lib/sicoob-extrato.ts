@@ -41,10 +41,30 @@ export function valorExtratoSicoob(raw: unknown): number | null {
     return Number(s.replace(/\./g, "").replace(",", "."));
   return null;
 }
-export function extratoParaConferenciaSicoob(raw: Record<string, unknown>) {
-  if (!Array.isArray(raw["transacoes"]) || raw["transacoes"].length > 10000)
-    throw Error("Extrato incompleto ou acima do limite; consulte um período menor.");
-  return raw["transacoes"].map((r: unknown) => {
+export function extratoParaConferenciaSicoob(raw: unknown) {
+  const objeto = (x: unknown): x is Record<string, unknown> =>
+    !!x && typeof x === "object" && !Array.isArray(x);
+  const raiz = objeto(raw) ? raw : {};
+  const corpo = Object.hasOwn(raiz, "transacoes")
+    ? raiz
+    : objeto(raiz["resultado"])
+      ? raiz["resultado"]
+      : raiz;
+  const transacoes = corpo["transacoes"];
+  if (!Array.isArray(transacoes)) {
+    // Somente nomes técnicos, nunca valores, saldos, documentos ou credenciais.
+    const campos = (x: Record<string, unknown>) =>
+      Object.keys(x)
+        .filter((k) => /^[a-zA-Z_][a-zA-Z_]{0,39}$/.test(k))
+        .slice(0, 12)
+        .join(", ") || "nenhum";
+    throw Error(
+      `O Sicoob respondeu, mas não trouxe a lista de transações no formato esperado. Campos recebidos: ${campos(raiz)}${corpo !== raiz ? `; resultado: ${campos(corpo)}` : ""}. Isso não confirma ausência de movimentos.`,
+    );
+  }
+  if (transacoes.length > 10000)
+    throw Error("O extrato ultrapassou 10.000 movimentos. Consulte um período menor.");
+  return transacoes.map((r: unknown) => {
     if (!r || typeof r !== "object" || Array.isArray(r))
       throw Error("Transação de extrato inválida.");
     const x = r as Record<string, unknown>;
