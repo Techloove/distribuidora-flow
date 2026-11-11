@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.47.6",
+    "data": "2026-11-11",
+    "titulo": "Confirma tentativa Sicoob pela consulta individual",
+    "motivo": "A recuperação por pagador localizou uma tentativa, mas a situação retornada não foi reconhecida.",
+    "novidades": [
+      "Após localizar a identificação original por pagador, confirma os dados pela consulta individual do nosso número antes de sincronizar.",
+      "Situação desconhecida ou ausente continua bloqueando confirmação e alterações, com diagnóstico limitado ao nome da situação, sem corpo bruto."
+    ]
+  },
+  {
     "versao": "1.47.5",
     "data": "2026-11-11",
     "titulo": "Respeita limite de período na consulta Sicoob",

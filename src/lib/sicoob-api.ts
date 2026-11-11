@@ -82,7 +82,9 @@ export function condicoesSicoob(raw: Record<string, unknown>): CondicoesSicoob {
     .toUpperCase()
     .trim();
   if (!["EM ABERTO", "BAIXADO", "LIQUIDADO"].includes(situacao))
-    throw Error("Situação Sicoob não reconhecida. Confira o retorno antes de prosseguir.");
+    throw Error(
+      `Situação Sicoob não reconhecida${/^[A-Z0-9 À-Ü_/-]{1,50}$/.test(situacao) ? ` (${situacao})` : situacao === "" ? " (não informada pelo banco)" : ""}. Confira o retorno antes de prosseguir.`,
+    );
   const tipo = Number(raw["tipoDesconto"]);
   if (!Number.isInteger(tipo) || tipo < 0 || tipo > 6)
     throw Error("Tipo de desconto Sicoob ausente ou inválido.");

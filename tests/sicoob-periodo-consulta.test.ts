@@ -66,3 +66,12 @@ test("falha na segunda janela impede usar resultado parcial", async () => {
     ),
   ).rejects.toThrow("HTTP 403");
 });
+
+import { condicoesSicoob } from "../src/lib/sicoob-api";
+test("situação desconhecida nunca confirma título e informa somente diagnóstico limitado", () => {
+  expect(() => condicoesSicoob({ situacaoBoleto: "Em processamento" })).toThrow("EM PROCESSAMENTO");
+  expect(() => condicoesSicoob({})).toThrow("não informada pelo banco");
+  expect(() => condicoesSicoob({ situacaoBoleto: "token=segredo" })).toThrow(
+    "Situação Sicoob não reconhecida. Confira",
+  );
+});

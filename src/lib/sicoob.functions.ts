@@ -346,7 +346,22 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
       throw Error(
         "Banco ainda não confirmou uma única emissão para este identificador. Consulte novamente; não houve reenvio.",
       );
-    raw = encontrados[0]!;
+    const encontrado = encontrados[0]!;
+    const nossoNumero = String(encontrado["nossoNumero"] ?? "");
+    if (!/^[0-9]{1,18}$/.test(nossoNumero) || /^0+$/.test(nossoNumero))
+      throw Error(
+        "Registro localizado sem nosso número válido. Confira no Sicoob antes de prosseguir.",
+      );
+    // A lista identifica o título; a consulta individual confirma seus dados atuais.
+    const detalhe = await p.api(
+      "/boletos?" + queryBanco(p.config, { ...p.b, nosso_numero: nossoNumero }),
+    );
+    if (detalhe.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
+    if (detalhe.status !== 200)
+      throw Error(erroOperacaoSicoob("Consulta", detalhe.status, detalhe.motivo));
+    raw = obj(detalhe.json["resultado"]);
+    if (String(raw["nossoNumero"]) !== nossoNumero)
+      throw Error("Consulta individual diverge do registro localizado. Confira no Sicoob.");
   }
   const c = condicoesSicoob(raw);
   validaIdentidade(c, p.b, p.config, raw);
