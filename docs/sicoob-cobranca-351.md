@@ -22,4 +22,4 @@ Limitações: não implementa descontos por antecipação diária (tipos 3–6),
 
 Validação: testes unitários de parâmetros e datas; fixture PostgreSQL descartável com cofre simulado, permissões, migração repetível, preservação financeira, versão, snapshot e recuperação; conferência visual em Chromium, desktop e celular. Nenhum boleto real emitido nos testes.
 
-Implantação: aplicar db/fase351_sicoob_condicoes_emissao.sql antes de publicar a versão 1.44.0. A tentativa de instalação nesta sessão retornou HTTP 401 (Invalid access token); não houve aplicação no banco. A primeira emissão e o modelo completo da resposta 200 de GET /boletos ainda precisam ser conferidos em produção.
+Implantação: aplicar db/fase351_sicoob_condicoes_emissao.sql antes de publicar a versão 1.44.0. A tentativa de instalação automática retornou HTTP 401 (Invalid access token). O usuário confirmou a aplicação manual com sucesso pelo SQL Editor em 11/11/2026; essa confirmação permite prosseguir com a publicação, sem verificação independente pelo acesso indisponível. A primeira emissão e o modelo completo da resposta 200 de GET /boletos ainda precisam ser conferidos em produção.
