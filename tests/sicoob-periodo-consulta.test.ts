@@ -75,3 +75,11 @@ test("situação desconhecida nunca confirma título e informa somente diagnóst
     "Situação Sicoob não reconhecida. Confira",
   );
 });
+
+import { linhaDigitavelSicoob } from "../src/lib/sicoob-api";
+test("linha do DDA aceita formatação e impede banco diferente ou entrada incompleta", () => {
+  const linha = "75691.30102 01416.303608 00038.490017 7 16300000005000";
+  expect(linhaDigitavelSicoob(linha)).toBe("75691301020141630360800038490017716300000005000");
+  for (const valor of ["748" + "0".repeat(44), "756123", "756" + "A".repeat(44), ""])
+    expect(() => linhaDigitavelSicoob(valor)).toThrow("47 dígitos");
+});

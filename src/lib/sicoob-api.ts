@@ -61,6 +61,13 @@ export function dataSicoob(v: unknown) {
     throw Error("Data bancária inválida.");
   return s;
 }
+export function linhaDigitavelSicoob(value: unknown) {
+  const linha = String(value ?? "").replace(/[ .\-\s]/g, "");
+  if (!/^756[0-9]{44}$/.test(linha))
+    throw Error("Informe a linha digitável Sicoob com 47 dígitos, iniciada por 756.");
+  return linha;
+}
+
 /** A lista por pagador filtra vencimentos, não datas de emissão. */
 export function periodoRecuperacaoSicoob(vencimentoOriginal: unknown) {
   const vencimento = dataSicoob(vencimentoOriginal);

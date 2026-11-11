@@ -50,7 +50,8 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
     [confirmar, setConfirmar] = useState(false),
     [busy, setBusy] = useState(false),
     [erro, setErro] = useState(""),
-    [chave, setChave] = useState("");
+    [chave, setChave] = useState(""),
+    [linhaConsulta, setLinhaConsulta] = useState("");
   const admin = roles.includes("admin"),
     financeiro = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r)),
     id = String(boleto["id"]),
@@ -92,13 +93,15 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
       ].map((k) => qc.invalidateQueries({ queryKey: [k] })),
     );
   }
-  async function acao(check = false) {
+  async function acao(check = false, linha?: string) {
     if (busy || !session) return;
     setBusy(true);
     setErro("");
     try {
       if (check) {
-        const r = await consultar({ data: alvo });
+        const r = await consultar({
+          data: { ...alvo, ...(linha !== undefined ? { linhaDigitavel: linha } : {}) },
+        });
         if (!r.condicoes) toast.info(r.nota ?? "Consulta sem retorno de boleto.");
         else
           toast.success(
@@ -211,6 +214,34 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
           </span>
         )}
       </div>
+      {!sandbox && !boleto["nosso_numero"] && (
+        <details className="w-full text-sm">
+          <summary className="cursor-pointer">Consultar pela linha digitável do DDA</summary>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <div className="min-w-64 flex-1 space-y-1">
+              <Label htmlFor={`sicoob-linha-${id}`}>Linha digitável Sicoob (47 dígitos)</Label>
+              <Input
+                id={`sicoob-linha-${id}`}
+                value={linhaConsulta}
+                maxLength={65}
+                onChange={(e) => setLinhaConsulta(e.target.value)}
+                disabled={busy}
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || !linhaConsulta.trim()}
+              onClick={() => void acao(true, linhaConsulta)}
+            >
+              Consultar linha sem emitir
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Só vincula se o banco confirmar o identificador original e os dados desta tentativa.
+          </p>
+        </details>
+      )}
       {erro && !tipo && (
         <p role="alert" className="text-sm text-destructive">
           {erro}

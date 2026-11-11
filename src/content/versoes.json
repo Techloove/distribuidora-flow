@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.47.7",
+    "data": "2026-11-11",
+    "titulo": "Consulta tentativa Sicoob pela linha digitável do DDA",
+    "motivo": "O DDA mostra uma cobrança real, mas a tentativa no ERP ainda precisa ser identificada e confirmada.",
+    "novidades": [
+      "Consulta diretamente pela linha digitável Sicoob informada pelo usuário, sem nova emissão.",
+      "Antes de vincular, exige identificação original, convênio, valor, dados da tentativa e a mesma linha retornada pelo banco. Nenhuma baixa de pagamento é feita por essa consulta."
+    ]
+  },
+  {
     "versao": "1.47.6",
     "data": "2026-11-11",
     "titulo": "Confirma tentativa Sicoob pela consulta individual",

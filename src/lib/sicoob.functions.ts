@@ -12,6 +12,7 @@ import {
 } from "./server-sicoob-http";
 import {
   condicoesSicoob,
+  linhaDigitavelSicoob,
   respostaSimuladaSicoob,
   dataSicoob,
   dinheiroSicoob,
@@ -299,7 +300,11 @@ async function registrarMock(actor: string, testeId: string, raw: Row) {
     condicoes: null,
   };
 }
-async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<typeof contexto>>) {
+async function consultarContexto(
+  d: Alvo & { linhaDigitavel?: string },
+  actor: string,
+  p: Awaited<ReturnType<typeof contexto>>,
+) {
   let raw: Row;
   if (
     d.sandbox &&
@@ -312,7 +317,19 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
       if (respostaSimuladaSicoob(mock)) return registrarMock(actor, String(p.b["id"]), mock);
     }
   }
-  if (p.b["nosso_numero"]) {
+  if (d.linhaDigitavel !== undefined) {
+    if (d.sandbox) throw Error("Consulta por linha digitável disponível somente em produção.");
+    const q = new URLSearchParams({
+      numeroCliente: String(p.config.numero_cliente),
+      codigoModalidade: "1",
+      linhaDigitavel: linhaDigitavelSicoob(d.linhaDigitavel),
+    });
+    if (p.config.numero_contrato) q.set("numeroContratoCobranca", String(p.config.numero_contrato));
+    const r = await p.api("/boletos?" + q);
+    if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
+    if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
+    raw = obj(r.json["resultado"]);
+  } else if (p.b["nosso_numero"]) {
     const r = await p.api("/boletos?" + queryBanco(p.config, p.b));
     if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
     if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
@@ -365,6 +382,8 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
   }
   const c = condicoesSicoob(raw);
   validaIdentidade(c, p.b, p.config, raw);
+  if (d.linhaDigitavel !== undefined && c.linhaDigitavel !== linhaDigitavelSicoob(d.linhaDigitavel))
+    throw Error("Linha digitável retornada diverge da consulta. Nenhum vínculo foi alterado.");
   const resultado = await rpc<{
     situacao: string;
     confirmado: boolean;
@@ -378,7 +397,7 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
   return { condicoes: c, ...resultado };
 }
 export const sicoobConsultarBoleto = createServerFn({ method: "POST" })
-  .inputValidator((d: Alvo) => d)
+  .inputValidator((d: Alvo & { linhaDigitavel?: string }) => d)
   .handler(async ({ data: d }) => {
     const actor = await acesso(d.accessToken, "sicoob_consultar"),
       p = await contexto(d, actor.id);

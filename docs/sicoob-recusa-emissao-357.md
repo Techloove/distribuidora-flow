@@ -41,3 +41,11 @@ Revisão de separação dos bancos: o componente de emissão usa o centro das pa
 Na tentativa em processamento, o usuário recebeu Situação Sicoob não reconhecida; na tentativa antiga, nenhum registro correspondente. Pelo caminho do código, a primeira mensagem ocorre depois de localizar correspondência exata na lista por pagador, sem provar ainda que o título esteja registrado ou pago. Não há acesso ao corpo real para afirmar qual situação veio.
 
 Depois de localizar o identificador original na lista, a recuperação passa a consultar GET /boletos pelo nosso número encontrado. Exige nosso número válido, igualdade do identificador entre as respostas e todas as validações existentes de convênio, modalidade, seu número, valor e pagador. HTTP 204, resposta inválida ou situação desconhecida não sincronizam nem reenviam emissão. Diagnóstico de situação é limitado a 50 caracteres de letras/números/espaços e separadores, sem corpo bruto. Não foram modificados os dois registros reais nem suas credenciais. Sem SQL novo.
+
+## Atualização 1.47.7 — consulta pela linha do DDA
+
+O usuário apresentou cobrança no DDA para CIMENTOS CAPARAO LTDA, banco Sicoob, R$ 50,00, com linha digitável. Isso evidencia a cobrança bancária; o print não estabelece qual tentativa local corresponde ao registro e não confirma pagamento.
+
+A listagem oferece consulta por linha digitável para tentativas sem nosso número. A função autenticada consulta exclusivamente GET /boletos em produção com numeroCliente, modalidade, linha de 47 dígitos iniciada por 756 e contrato opcional da configuração original da loja. Antes da sincronização, mantém validação do convênio, seuNumero original, valor, pagador quando presente, nosso número quando existente e exige a mesma linha no retorno. Divergências não são vinculadas por semelhança de valor ou data. Não há POST de emissão nem baixa financeira.
+
+15 testes passaram; Chromium com sessão e resposta fictícios confirmou preenchimento e uma consulta, zero emissões. Não foi realizada consulta autenticada real a partir do ambiente de desenvolvimento. A recuperação em produção depende do retorno do banco; situações desconhecidas continuam bloqueadas. Sem SQL novo.
