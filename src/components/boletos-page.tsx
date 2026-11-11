@@ -1,3 +1,4 @@
+import { SicoobAutomatico } from "./sicoob-automatico";
 import { AcoesBoletoSicoob } from "./acoes-boleto-sicoob";
 import { sicoobConsultarBoleto } from "@/lib/sicoob.functions";
 import { getModalidade } from "@/lib/modalidade-store";
@@ -643,6 +644,9 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
             <p role="alert" className="text-sm text-destructive">
               {financeiroTarifas.error.message}
             </p>
+          )}
+          {bancoLoja.data?.["banco"] === "sicoob" && centro && (
+            <SicoobAutomatico centroId={centro} />
           )}
           {bancoLoja.data?.["banco"] !== "sicoob" && statusTarifas.data && (
             <p className="text-xs text-muted-foreground">

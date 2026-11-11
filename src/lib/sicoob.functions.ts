@@ -859,3 +859,15 @@ export const sicoobTarifasSincronizar = createServerFn({ method: "POST" })
     );
     return executarTarifasSicoob(r, rpc);
   });
+
+export const sicoobStatusAutomatico = createServerFn({ method: "POST" })
+  .inputValidator((d: Sessao & { centroId: string }) => d)
+  .handler(async ({ data: d }) => {
+    const actor = await acesso(d.accessToken, "sicoob_auto_status");
+    return rpc<{
+      ativo: boolean;
+      ultimaConsulta: string | null;
+      falhas: number;
+      baixarFinanceiro: boolean;
+    }>("sicoob_auto_status_358", { _actor: actor.id, _centro: uuid(d.centroId) });
+  });

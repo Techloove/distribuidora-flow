@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.48.0",
+    "data": "2026-11-11",
+    "titulo": "Automatiza conferência bancária dos boletos Sicoob",
+    "motivo": "Boletos Sicoob ainda exigiam consulta manual para atualizar a situação bancária, inclusive quando pagos antecipadamente.",
+    "novidades": [
+      "Nova fila agendada consulta títulos reais emitidos pelo ERP, independentemente do vencimento, com lotes limitados, reserva exclusiva e espera progressiva após falhas.",
+      "Preserva o último estado confirmado e evita sincronizações repetidas sem mudança; a tela informa a última conferência e falhas.",
+      "Tarifas continuam no agendamento próprio da fase355, com vínculo explícito e sem duplicação. A baixa financeira de pagamentos ainda depende da validação de valor recebido e data no retorno real; não usa valor nominal ou tarifa como prova.",
+      "Requer aplicar fase358 no Supabase. Diagnóstico restrito a nomes de campos e valores/datas financeiros, sem credenciais ou dados do pagador."
+    ]
+  },
+  {
     "versao": "1.47.7",
     "data": "2026-11-11",
     "titulo": "Consulta tentativa Sicoob pela linha digitável do DDA",

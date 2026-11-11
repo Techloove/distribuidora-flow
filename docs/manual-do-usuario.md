@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.47.7 · 2026-11-11
+Versão 1.48.0 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -450,7 +450,7 @@ Cuidados:
 
 - Token e senha não são exibidos novamente. Sandbox e produção usam configurações e credenciais separadas. Certificado A1 é exigido na produção; não é exigido para o token sandbox.
 - Testes ficam em registros separados e não criam contas a receber, recebimentos, estoque ou comissões. Baixa de boleto real não cancela venda nem quita o título. Desconto ou abatimento concedido não cria recebimento.
-- A consulta Sicoob pode identificar liquidação, mas o recebimento financeiro não é automático nesta integração. Confira data e valor efetivamente recebidos em Contas a receber. A automação de tarifas Sicredi não se aplica ao Sicoob.
+- Após instalar a fase358, a situação dos boletos Sicoob de produção emitidos pelo ERP é consultada automaticamente pelo servidor, sem depender de abrir a página. A fila é executada a cada cinco minutos em lotes pequenos, incluindo vencimentos futuros; cada título em aberto é reagendado para quinze minutos e falhas têm espera progressiva. Em Boletos, selecione a loja Sicoob para ver a última consulta e falhas. O último estado confirmado é preservado após recusa HTTP 403, falha de conexão ou resposta incompleta. Situação bancária Liquidado não é baixa financeira: o recebimento ainda exige validar os campos efetivos de valor recebido e data do retorno real. Confira em Contas a receber; o sistema não assume a data de consulta nem usa valor nominal ou tarifa como prova de pagamento. Tarifas Sicoob seguem a configuração própria da fase355 e somente débitos com vínculo explícito a novas emissões do ERP são importados; lançamentos antigos e tarifas agrupadas sem referência não são atribuídos por estimativa.
 - HTTP 401/403 indica recusa de autorização: recopie Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica limite ou instabilidade. Sucesso da conexão não homologa produção.
 
 ## Agenda, metas, comissões e relatórios
@@ -577,6 +577,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.48.0 · 2026-11-11 · Automatiza conferência bancária dos boletos Sicoob
+
+Motivo da atualização: Boletos Sicoob ainda exigiam consulta manual para atualizar a situação bancária, inclusive quando pagos antecipadamente.
+
+- Nova fila agendada consulta títulos reais emitidos pelo ERP, independentemente do vencimento, com lotes limitados, reserva exclusiva e espera progressiva após falhas.
+- Preserva o último estado confirmado e evita sincronizações repetidas sem mudança; a tela informa a última conferência e falhas.
+- Tarifas continuam no agendamento próprio da fase355, com vínculo explícito e sem duplicação. A baixa financeira de pagamentos ainda depende da validação de valor recebido e data no retorno real; não usa valor nominal ou tarifa como prova.
+- Requer aplicar fase358 no Supabase. Diagnóstico restrito a nomes de campos e valores/datas financeiros, sem credenciais ou dados do pagador.
 
 ### v1.47.7 · 2026-11-11 · Consulta tentativa Sicoob pela linha digitável do DDA
 
