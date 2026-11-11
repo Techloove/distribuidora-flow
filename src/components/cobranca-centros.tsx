@@ -21,6 +21,7 @@ export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
   const centros = useQuery({
     queryKey: ["cobranca-centros", user?.id],
     enabled: !!client,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await client!
         .from("centros")
@@ -36,7 +37,8 @@ export function CobrancaCentros({ lojaId }: { lojaId?: string } = {}) {
     <section className="mt-6 rounded-xl border bg-card p-5" id="cobranca">
       <h2 className="font-semibold">Cobrança por loja</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Cada loja mantém seu banco e convênio. Configure Sicredi ou Sicoob separadamente; o sandbox Sicoob não ativa cobranças em produção.
+        Cada loja mantém seu banco e convênio. Configure Sicredi ou Sicoob separadamente; o sandbox
+        Sicoob não ativa cobranças em produção.
       </p>
       {lojaId === undefined && (
         <div className="mt-4 max-w-lg">
@@ -85,11 +87,13 @@ function ConfiguracaoCentro({ centro, nome }: { centro: string; nome: string }) 
   const config = useQuery({
     queryKey: ["sicredi_config_segura", user?.id, centro],
     enabled: !!session,
+    refetchOnWindowFocus: false,
     queryFn: () => get({ data: { centro_id: centro, accessToken: session!.access_token } }),
   });
   const contas = useQuery({
     queryKey: ["cobranca-contas", user?.id, centro],
     enabled: !!client,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await client!
         .from("contas_financeiras")

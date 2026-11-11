@@ -153,6 +153,7 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
   const [valores, setValores] = useState<Record<string, string>>({});
   const q = useQuery({
     queryKey: ["loja-parametros", user?.id, loja],
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await client!.rpc("listar_parametros_loja_243", { _loja: loja });
       if (error) throw new Error(error.message);
@@ -266,6 +267,7 @@ function VendedoresIntermediacao({ loja }: { loja: string }) {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const q = useQuery({
     queryKey: ["intermediacao-vendedores-config", user?.id, loja],
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const [reps, grants] = await Promise.all([
         client!.from("representantes").select("id,nome,profile_id").eq("ativo", true).order("nome"),

@@ -28,8 +28,37 @@ export function SicoobConfiguracao({
     get = useServerFn(sicoobConfigGet),
     save = useServerFn(sicoobConfigSalvar),
     test = useServerFn(sicoobTestarConexao);
-  const [modo, setModo] = useState<Modo>("homologacao"),
-    [form, setForm] = useState({ ...vazio }),
+  const chaveAmbiente = session?.user.id ? `sicoob-ambiente:${session.user.id}:${centroId}` : "";
+  const [preferencia, setPreferencia] = useState<{ chave: string; modo: Modo } | null>(null);
+  const modo: Modo = preferencia?.chave === chaveAmbiente ? preferencia.modo : "producao";
+  useEffect(() => {
+    if (!chaveAmbiente) {
+      setPreferencia(null);
+      return;
+    }
+    let escolhido: Modo = "producao";
+    try {
+      if (window.localStorage.getItem(chaveAmbiente) === "homologacao") escolhido = "homologacao";
+    } catch {
+      /* A navegação permanece disponível com armazenamento bloqueado. */
+    }
+    setPreferencia({ chave: chaveAmbiente, modo: escolhido });
+    setForm({ ...vazio });
+    setToken("");
+    setPfx("");
+    setSenha("");
+    setArquivo("");
+    setError("");
+  }, [chaveAmbiente]);
+  function setModo(escolhido: Modo) {
+    setPreferencia({ chave: chaveAmbiente, modo: escolhido });
+    try {
+      window.localStorage.setItem(chaveAmbiente, escolhido);
+    } catch {
+      /* Sem persistência neste navegador. */
+    }
+  }
+  const [form, setForm] = useState({ ...vazio }),
     [condicoes, setCondicoes] = useState({ ...padraoEmissaoSicoob }),
     [token, setToken] = useState(""),
     [pfx, setPfx] = useState(""),
@@ -39,7 +68,7 @@ export function SicoobConfiguracao({
     [error, setError] = useState("");
   const q = useQuery({
     queryKey: ["sicoob-config", session?.user.id, centroId, modo],
-    enabled: !!session,
+    enabled: !!session && preferencia?.chave === chaveAmbiente,
     refetchOnWindowFocus: false,
     queryFn: () => get({ data: { centroId, ambiente: modo, accessToken: session!.access_token } }),
   });

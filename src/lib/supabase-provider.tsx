@@ -1,3 +1,4 @@
+import { deveRevalidarNavegacao } from "./sessao-navegacao";
 import { AvisoInicialMensalidade } from "@/components/aviso-mensalidade";
 import type { SaasStatus } from "./saas";
 import { clienteAnalitico } from "./modalidade-consultas";
@@ -60,9 +61,10 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
         const { data: listener } = sb.auth.onAuthStateChange((event, next) => {
           if (!active) return;
           setPasswordRecovery((anterior) => estadoRecuperacaoSenha(anterior, event));
+          const revalidar = deveRevalidarNavegacao(event, previousUser, next?.user.id ?? null);
           revision++;
           accept(next);
-          if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+          if (revalidar) {
             void router.invalidate();
           }
         });

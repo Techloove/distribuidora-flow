@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.45.2",
+    "data": "2026-11-11",
+    "titulo": "Preserva ambiente e configuração ao retomar a tela",
+    "motivo": "Evita retorno inesperado ao Sandbox e recarga da navegação e dos formulários ao retomar a mesma sessão.",
+    "novidades": [
+      "Retomar uma aba com o mesmo usuário não revalida desnecessariamente a navegação. Entrada, troca de usuário, saída e atualização de cadastro continuam revalidando.",
+      "Formulários de cobrança e regras da loja não recarregam por foco da janela, preservando edição e posição na tela.",
+      "Configuração Sicoob abre em Produção quando não há preferência salva.",
+      "Lembra a última aba selecionada por usuário e loja neste navegador, inclusive após recarregar ou atualizar o sistema.",
+      "Escolher uma aba não habilita emissões nem altera credenciais ou configurações bancárias."
+    ]
+  },
+  {
     "versao": "1.45.1",
     "data": "2026-11-11",
     "titulo": "Distingue recusa de acesso e formato do extrato Sicoob",

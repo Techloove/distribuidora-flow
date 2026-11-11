@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.45.1 · 2026-11-11
+Versão 1.45.2 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -433,7 +433,7 @@ Cuidados:
 
 Configure a cobrança da loja e entenda a diferença entre resposta de teste e boleto registrado.
 
-1. Em Lojas → Cobrança por loja, selecione a loja, escolha Sicoob e abra Sandbox · testes. Cadastre Client ID e token do portal Sicoob. Use Preencher números de exemplo do sandbox se o portal não fornecer outros números de beneficiário e conta. Salve a configuração.
+1. Em Lojas → Cobrança por loja, selecione a loja e escolha Sicoob. A tela abre em Produção quando não há preferência salva e lembra a última aba escolhida por usuário e loja neste navegador, inclusive após atualização. Trocar de aba não ativa a emissão. Ao alternar janelas ou abas do navegador, a retomada da mesma sessão não reinicia a navegação, e os formulários de cobrança e regras da loja não são recarregados apenas por foco. Para testes, abra Sandbox · testes. Cadastre Client ID e token do portal Sicoob. Use Preencher números de exemplo do sandbox se o portal não fornecer outros números de beneficiário e conta. Salve a configuração.
 2. Clique Testar conexão e, após o sucesso, Habilitar testes. A validação pertence à configuração salva: alterações de credenciais ou convênio exigem novo teste. A conta financeira de produção não participa da ativação do sandbox. O campo vazio do token preserva o segredo já salvo.
 3. Em Boletos, selecione a loja no topo e abra Sicoob · testes sandbox por loja. Use Preencher pagador de exemplo ou os dados definidos no portal, informe valor e vencimento e clique Emitir no sandbox.
 4. O sandbox público pode devolver dados fixos com nosso número negativo, diferentes dos enviados. O sistema identifica esse caso como Resposta simulada recebida. A linha mantém o valor e vencimento solicitados e a resposta fica no histórico; não é um boleto registrado. Para tentativa antiga em processamento com Identificação bancária inválida, clique Consultar Sicoob, sem emitir novamente.
@@ -575,6 +575,16 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.45.2 · 2026-11-11 · Preserva ambiente e configuração ao retomar a tela
+
+Motivo da atualização: Evita retorno inesperado ao Sandbox e recarga da navegação e dos formulários ao retomar a mesma sessão.
+
+- Retomar uma aba com o mesmo usuário não revalida desnecessariamente a navegação. Entrada, troca de usuário, saída e atualização de cadastro continuam revalidando.
+- Formulários de cobrança e regras da loja não recarregam por foco da janela, preservando edição e posição na tela.
+- Configuração Sicoob abre em Produção quando não há preferência salva.
+- Lembra a última aba selecionada por usuário e loja neste navegador, inclusive após recarregar ou atualizar o sistema.
+- Escolher uma aba não habilita emissões nem altera credenciais ou configurações bancárias.
 
 ### v1.45.1 · 2026-11-11 · Distingue recusa de acesso e formato do extrato Sicoob
 
