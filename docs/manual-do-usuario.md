@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.47.1 · 2026-11-11
+Versão 1.47.2 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -444,7 +444,7 @@ Configure a cobrança da loja e entenda a diferença entre resposta de teste e b
 8. Em Lojas → Sicoob → Produção, Condições padrão de novas emissões configura espécie, formato A4 (uma via, três vias ou autoenvelopável), Pix, limite de pagamento, multa fixa ou percentual, juros por dia ou taxa mensal, desconto fixo ou percentual com uma faixa de prazo, protesto, negativação e até cinco instruções. Prazos de encargos são contados após o vencimento; desconto, antes dele. Zero no limite não envia data limite. O desconto não pode vencer antes da emissão. Salve, teste a conexão e habilite novamente. Boletos anteriores não são alterados. Protesto, negativação e Pix dependem do convênio. Descontos por antecipação diária e múltiplas faixas não são configurados nesta tela.
 9. Em Lojas → Sicoob → Produção → Conta Corrente, configure o Client ID do aplicativo autorizado para Conta Corrente v4, a conta com dígito sem pontuação, o arquivo A1 e a senha. Essa configuração é independente da cobrança e exclusiva de administrador com acesso à loja e à configuração bancária. O certificado fica no cofre; não precisa reenviar ao mudar outro dado. A consulta usa cco_consulta e openid, sem transferências. Salve e use Consultar extrato / testar conexão. Selecione mês e dias, no mês atual ou até três meses anteriores, sem datas futuras. Aguarde quinze segundos entre consultas. Se a consulta retornar HTTP 403 após a autenticação, confirme com o Sicoob a autorização da conta no aplicativo e o certificado vinculado; diminuir o período não resolve a recusa. Se não houver a lista de transações, a tela apresenta apenas nomes técnicos do retorno para diagnóstico e não conclui que o extrato está vazio. O extrato vem sem agrupamento CNAB; a opção de possíveis tarifas é apenas um filtro de descrição. A tabela não cria recebimentos ou despesas, não confirma vínculo de tarifa com boleto e não faz conciliação automática. Dados do extrato não são gravados no financeiro.
 10. Em Lojas → Sicoob → Produção → Conta Corrente → Contabilização de tarifas dos novos boletos, confira a conta financeira Sicoob vinculada à cobrança da loja, escolha categoria de despesa financeira e data inicial e ative a contabilização. A conta do extrato deve coincidir com a da cobrança. Sincronizar tarifas agora consulta um mês por execução; a coleta também é agendada a cada quinze minutos e alterna os meses desde a data inicial dentro da janela de três meses do extrato. Apenas débitos de tarifas de cobrança com identificador bancário e referência explícita ao nosso número de boleto de produção emitido pelo ERP são lançados como saída e despesa financeira. Boletos antigos feitos diretamente no banco e movimentos sem vínculo comprovado ficam fora. O número de documento isolado do extrato não é usado como prova do vínculo. A mesma tarifa não é lançada duas vezes; estornos, divergências e possíveis despesas manuais anteriores exigem conferência. A instalação não ativa nem lança tarifas; configure antes de sincronizar. Sem boletos reais emitidos pelo ERP, a coleta é dispensada. Essa rotina não baixa recebimentos dos clientes.
-11. Se a emissão Sicoob falhar ou ficar em processamento, use Consultar tentativa no Sicoob (sem emitir) na janela de emissão para conferir o registro antes de outra tentativa. Essa ação consulta o banco e pode recuperar um registro confirmado, sem enviar outro POST de emissão. Mensagens de recusa reconhecidas aparecem com as credenciais ocultadas. HTTP 403 após obter o token requer conferir com o Sicoob a liberação do aplicativo de Cobrança v3, certificado e permissão da operação; autenticação testada não confirma autorização de emissão. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
+11. Se a emissão Sicoob falhar ou ficar em processamento, use Consultar tentativa no Sicoob (sem emitir) na janela de emissão para conferir o registro antes de outra tentativa. Essa ação consulta o banco e pode recuperar um registro confirmado, sem enviar outro POST de emissão. HTTP 204 significa consulta processada sem conteúdo e aparece como informação: não confirma que o boleto inexiste, não resolve recusa anterior e não autoriza reenvio automático. Uma lista sem o identificador correspondente também não confirma emissão. Mensagens de recusa reconhecidas aparecem com as credenciais ocultadas. HTTP 403 após obter o token requer conferir com o Sicoob a liberação do aplicativo de Cobrança v3, certificado e permissão da operação; autenticação testada não confirma autorização de emissão. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
 
 Cuidados:
 
@@ -577,6 +577,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.47.2 · 2026-11-11 · Trata consulta Sicoob sem conteúdo como informação
+
+Motivo da atualização: A consulta HTTP 204 concluída sem conteúdo era apresentada como erro de banco sem motivo.
+
+- Consulta sem conteúdo ou sem registro correspondente apresenta aviso informativo, sem confirmar inexistência ou liberar nova emissão automaticamente.
+- Preserva estado da tentativa e pendências; retorno vazio não é contado como emissão concluída.
+- Recuperação por pagador também envia numeroCpfCnpj na query, conforme a coleção oficial, mantendo a busca pelo vencimento. A recusa HTTP 403 da emissão precisa ser esclarecida com o Sicoob.
 
 ### v1.47.1 · 2026-11-11 · Diagnóstico da recusa Sicoob e consulta sem nova emissão
 

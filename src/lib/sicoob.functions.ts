@@ -1,4 +1,4 @@
-import { erroOperacaoSicoob } from "./sicoob-erros";
+import { erroOperacaoSicoob, consultaVaziaSicoob } from "./sicoob-erros";
 import { validarEmissaoSicoob, condicoesEmissaoSicoob, type EmissaoSicoob } from "./sicoob-emissao";
 import { createServerFn } from "@tanstack/react-start";
 import { enforceRateLimit, requireServerAuth } from "./server-auth";
@@ -313,6 +313,7 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
   }
   if (p.b["nosso_numero"]) {
     const r = await p.api("/boletos?" + queryBanco(p.config, p.b));
+    if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
     if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
     raw = obj(r.json["resultado"]);
   } else {
@@ -327,10 +328,12 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
       throw Error("Documento do pagador indisponível para recuperar a emissão.");
     const q = new URLSearchParams({
       numeroCliente: String(p.config.numero_cliente),
+      numeroCpfCnpj: doc,
       dataInicio: String(req["dataVencimento"]),
       dataFim: String(req["dataVencimento"]),
     });
     const r = await p.api(`/pagadores/${encodeURIComponent(doc)}/boletos?` + q);
+    if (r.status === 204) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"]);
     if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
     if (!Array.isArray(r.json["resultado"]))
       throw Error(
@@ -344,6 +347,7 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
           Number(x["numeroCliente"]) === p.config.numero_cliente &&
           Number(x["codigoModalidade"]) === 1,
       );
+    if (encontrados.length === 0) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"], 200);
     if (encontrados.length !== 1)
       throw Error(
         "Banco ainda não confirmou uma única emissão para este identificador. Consulte novamente; não houve reenvio.",
@@ -395,13 +399,15 @@ export const sicoobAlterarBoleto = createServerFn({ method: "POST" })
     if (p.b["sicoob_pendente_316"]) {
       const c = await consultarContexto(d, actor.id, p);
       return {
-        mensagem: c.pendente
-          ? "Solicitação pendente: a consulta ainda não confirmou o resultado. Nenhuma instrução foi reenviada."
-          : "Situação atualizada no banco. Confira o histórico antes de nova alteração.",
+        mensagem:
+          c.nota ??
+          (c.pendente
+            ? "Solicitação pendente: a consulta ainda não confirmou o resultado. Nenhuma instrução foi reenviada."
+            : "Situação atualizada no banco. Confira o histórico antes de nova alteração."),
       };
     }
     const atual = await consultarContexto(d, actor.id, p);
-    if (!atual.condicoes) throw Error(mensagemMock);
+    if (!atual.condicoes) throw Error(atual.nota ?? mensagemMock);
     if (JSON.stringify(atual.condicoes) !== JSON.stringify(d.anterior))
       throw Error("As condições bancárias mudaram. Atualize a prévia antes de confirmar.");
     const i = instrucaoSicoob(
@@ -536,6 +542,8 @@ async function emitirReserva(
     !(await rpc<boolean>("sicoob_enviar_316", { _actor: actor, _operacao: reserva.operacao["id"] }))
   ) {
     const c = await consultarContexto(alvo, actor, p);
+    if (c.situacao === "SEM_RESULTADO")
+      throw Error(c.nota ?? "Registro ainda não confirmado no banco.");
     return {
       boletoId: String(b["id"]),
       mensagem: "Registro recuperado por consulta; não houve reenvio.",

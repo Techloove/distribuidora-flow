@@ -99,9 +99,12 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
     try {
       if (check) {
         const r = await consultar({ data: alvo });
-        toast.success(
-          r.pendente ? "Solicitação ainda pendente no banco." : "Situação Sicoob atualizada.",
-        );
+        if (!r.condicoes) toast.info(r.nota ?? "Consulta sem retorno de boleto.");
+        else
+          toast.success(
+            r.nota ??
+              (r.pendente ? "Solicitação ainda pendente no banco." : "Situação Sicoob atualizada."),
+          );
       } else {
         if (!c || !tipo) return;
         const r = await alterar({

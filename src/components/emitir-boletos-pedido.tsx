@@ -85,6 +85,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     [modo, setModo] = useState<"emitir" | "imprimir">("emitir");
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
+  const [avisoConsulta, setAvisoConsulta] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null),
     [progresso, setProgresso] = useState("");
   const trabalhando = useRef(false);
@@ -196,10 +197,12 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     trabalhando.current = true;
     setBusy(true);
     setErro(null);
+    setAvisoConsulta(null);
     setSelected([]);
     try {
       const r = await consultarSicoob({ data: { boletoId, accessToken: session.access_token } });
-      toast.success(r.nota ?? `Consulta Sicoob: ${r.situacao}.`);
+      if (!r.condicoes) setAvisoConsulta(r.nota ?? "Consulta sem retorno de boleto.");
+      else toast.success(r.nota ?? `Consulta Sicoob: ${r.situacao}.`);
       if (r.situacao === "EM ABERTO" || r.situacao === "LIQUIDADO") setModo("imprimir");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível consultar a tentativa.");
@@ -221,6 +224,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     trabalhando.current = true;
     setBusy(true);
     setErro(null);
+    setAvisoConsulta(null);
     setProgresso("");
     let emitidos = 0;
     try {
@@ -275,6 +279,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
           setOpen(true);
           setSelected([]);
           setErro(null);
+          setAvisoConsulta(null);
           setModo("emitir");
         }}
       >
@@ -321,6 +326,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
                     setModo("emitir");
                     setSelected([]);
                     setErro(null);
+                    setAvisoConsulta(null);
                   }}
                 >
                   Emitir pendentes
@@ -332,6 +338,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
                     setModo("imprimir");
                     setSelected([]);
                     setErro(null);
+                    setAvisoConsulta(null);
                   }}
                 >
                   Reimprimir emitidos
@@ -366,6 +373,11 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
               {consulta.isError && (
                 <p role="alert" className="text-sm text-destructive">
                   {consulta.error.message}
+                </p>
+              )}
+              {avisoConsulta && (
+                <p role="status" className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  {avisoConsulta}
                 </p>
               )}
               {erro && (

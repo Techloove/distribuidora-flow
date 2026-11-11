@@ -36,3 +36,14 @@ export function erroOperacaoSicoob(
 ) {
   return `${operacao} Sicoob retornou HTTP ${status}.${motivo ? ` Motivo do banco: ${motivo}.` : " O banco não forneceu um motivo reconhecido."}${status === 403 ? " Confira a liberação do aplicativo de Cobrança Bancária v3, certificado vinculado e permissão da operação." : ""} Consulte a tentativa antes de emitir novamente.`;
 }
+
+/** Consulta sem conteúdo não confirma registro, rejeição ou permissão de emissão. */
+export function consultaVaziaSicoob(pendente: boolean, status = 204) {
+  return {
+    situacao: "SEM_RESULTADO",
+    confirmado: false,
+    pendente,
+    condicoes: null,
+    nota: `Consulta concluída (HTTP ${status}), sem boleto localizado para os filtros informados. Nenhuma nova emissão foi enviada. Isso não confirma a inexistência do boleto nem resolve uma recusa anterior de emissão; confira o registro e a autorização do aplicativo com o Sicoob antes de reenviar.`,
+  };
+}

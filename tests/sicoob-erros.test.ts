@@ -1,5 +1,9 @@
 import { test, expect } from "bun:test";
-import { motivoRecusaSicoob, erroOperacaoSicoob } from "../src/lib/sicoob-erros";
+import {
+  motivoRecusaSicoob,
+  erroOperacaoSicoob,
+  consultaVaziaSicoob,
+} from "../src/lib/sicoob-erros";
 test("motivo lê mensagens oficiais sem corpo bruto e remove credenciais", () => {
   const r = motivoRecusaSicoob(
     {
@@ -26,4 +30,16 @@ test("resposta genérica e limites não inventam diagnóstico", () => {
   expect(r).toContain("HTTP 403");
   expect(r).toContain("permissão da operação");
   expect(r).not.toContain("senha incorreta");
+});
+
+test("204 preserva pendência sem confirmar emissão e não gera dados de liquidação", () => {
+  const r = consultaVaziaSicoob(true);
+  expect(r.situacao).toBe("SEM_RESULTADO");
+  expect(r.pendente).toBe(true);
+  expect(r.confirmado).toBe(false);
+  expect(r.condicoes).toBeNull();
+  expect(r.nota).toContain("HTTP 204");
+  expect(r.nota).toContain("não confirma a inexistência");
+  expect(consultaVaziaSicoob(false, 200).nota).toContain("HTTP 200");
+  expect(consultaVaziaSicoob(false).pendente).toBe(false);
 });

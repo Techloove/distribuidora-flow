@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.47.2",
+    "data": "2026-11-11",
+    "titulo": "Trata consulta Sicoob sem conteúdo como informação",
+    "motivo": "A consulta HTTP 204 concluída sem conteúdo era apresentada como erro de banco sem motivo.",
+    "novidades": [
+      "Consulta sem conteúdo ou sem registro correspondente apresenta aviso informativo, sem confirmar inexistência ou liberar nova emissão automaticamente.",
+      "Preserva estado da tentativa e pendências; retorno vazio não é contado como emissão concluída.",
+      "Recuperação por pagador também envia numeroCpfCnpj na query, conforme a coleção oficial, mantendo a busca pelo vencimento. A recusa HTTP 403 da emissão precisa ser esclarecida com o Sicoob."
+    ]
+  },
+  {
     "versao": "1.47.1",
     "data": "2026-11-11",
     "titulo": "Diagnóstico da recusa Sicoob e consulta sem nova emissão",

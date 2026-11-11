@@ -9,3 +9,11 @@ A janela oferece Consultar tentativa no Sicoob (sem emitir) para erros e tentati
 A configuração agora diz Autenticação testada: obter token não comprova liberação para incluir boletos. HTTP 403 pode exigir verificar com o banco a autorização do aplicativo Cobrança Bancária v3, certificado vinculado e operação. Não é possível afirmar a causa específica apenas pelo status.
 
 Verificação: 18 testes unitários/regressões, 134 expectativas; certificado fictício, motivo sanitizado e ausência de repetição do POST. Chromium com tentativa fictícia confirma consulta e erro visível, zero chamadas aos emissores e layout no celular. Typecheck, lint, build e controles de versão/manual/datas aprovados. Nenhum boleto real foi emitido, reemitido, cancelado ou alterado durante a validação. Não há nova migração SQL.
+
+## Atualização 1.47.2 — consulta sem conteúdo
+
+A consulta apresentada depois retornou HTTP 204. Esse status significa processamento sem conteúdo, sem provar existência/inexistência do registro ou autorização para inclusão. O retorno agora é SEM_RESULTADO, com condições nulas e pendência local preservada; aparece como informação, não como erro bancário sem motivo. Nenhuma sincronização de título, confirmação de emissão ou nova chamada POST ocorre a partir desse retorno. Recuperações de emissão não contam o retorno vazio como boleto emitido.
+
+A coleção oficial descreve dataInicio/dataFim da lista por pagador como vencimento inicial/final; a busca já utilizava esses campos corretamente. A query agora também inclui numeroCpfCnpj, além do documento no caminho, conforme os parâmetros da coleção. A recusa POST HTTP 403 continua sem causa específica comprovada.
+
+19 testes aprovados (142 expectativas) e Chromium validando mensagem informativa, ausência de confirmação/impressão e zero chamadas aos emissores. Sem nova migração SQL e sem requisição bancária real durante os testes.
