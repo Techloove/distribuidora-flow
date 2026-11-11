@@ -1,3 +1,5 @@
+import { SicoobCondicoesEmissao } from "./sicoob-condicoes-emissao";
+import { padraoEmissaoSicoob } from "@/lib/sicoob-emissao";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,6 +29,7 @@ export function SicoobConfiguracao({
     test = useServerFn(sicoobTestarConexao);
   const [modo, setModo] = useState<Modo>("homologacao"),
     [form, setForm] = useState({ ...vazio }),
+    [condicoes, setCondicoes] = useState({ ...padraoEmissaoSicoob }),
     [token, setToken] = useState(""),
     [pfx, setPfx] = useState(""),
     [senha, setSenha] = useState(""),
@@ -47,6 +50,7 @@ export function SicoobConfiguracao({
       numeroConta: String(q.data.numero_conta || ""),
       numeroContrato: String(q.data.numero_contrato || ""),
     });
+    setCondicoes(q.data.condicoes_emissao);
     setToken("");
     setPfx("");
     setSenha("");
@@ -54,6 +58,8 @@ export function SicoobConfiguracao({
     setError("");
   }, [q.data, modo]);
   const dirty =
+    JSON.stringify(condicoes) !==
+      JSON.stringify(q.data?.condicoes_emissao ?? padraoEmissaoSicoob) ||
     !!token ||
     !!pfx ||
     !!senha ||
@@ -76,6 +82,7 @@ export function SicoobConfiguracao({
           : await save({
               data: {
                 ...form,
+                condicoesEmissao: condicoes,
                 centroId,
                 contaId: modo === "producao" ? contaId : "",
                 ambiente: modo,
@@ -264,6 +271,13 @@ export function SicoobConfiguracao({
               </>
             )}
           </fieldset>
+          {modo === "producao" && (
+            <SicoobCondicoesEmissao
+              value={condicoes}
+              onChange={setCondicoes}
+              disabled={!editar || busy}
+            />
+          )}
           {error && (
             <p
               role="alert"

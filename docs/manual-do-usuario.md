@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.9 · 2026-11-11
+Versão 1.44.0 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -440,7 +440,8 @@ Configure a cobrança da loja e entenda a diferença entre resposta de teste e b
 5. Respostas fixas comprovam comunicação, mas não confirmam PDF, alteração de vencimento, desconto, abatimento ou baixa daquele teste. As ações operacionais não são oferecidas sobre esse exemplo. Se houver boleto válido com resposta correspondente no ambiente contratado, as ações dependem de consulta e confirmação bancária.
 6. Para produção, solicite ao banco a liberação da API Cobrança Bancária v3, Client ID de produção, certificado A1 vinculado ao aplicativo e números do beneficiário e conta. O contrato de cobrança é opcional e deve ser preenchido somente sob orientação do banco. O aplicativo deve autorizar os escopos boletos_inclusao, boletos_consulta e boletos_alteracao. Em Lojas → Cobrança por loja → Sicoob → Produção, configure também a conta financeira, salve desativado e teste a autenticação. Siga a homologação orientada pelo Sicoob antes de habilitar cobranças reais.
 7. Em Pedidos ou Contas a receber, Emitir boleto usa o banco configurado na loja do título. Essa emissão é de produção; ela não usa automaticamente o sandbox. Uma loja sem produção habilitada permanece bloqueada para emissão real. Boletos já emitidos preservam o banco original para consulta e PDF.
-8. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
+8. Em Lojas → Sicoob → Produção, Condições padrão de novas emissões configura espécie, formato A4 (uma via, três vias ou autoenvelopável), Pix, limite de pagamento, multa fixa ou percentual, juros por dia ou taxa mensal, desconto fixo ou percentual com uma faixa de prazo, protesto, negativação e até cinco instruções. Prazos de encargos são contados após o vencimento; desconto, antes dele. Zero no limite não envia data limite. O desconto não pode vencer antes da emissão. Salve, teste a conexão e habilite novamente. Boletos anteriores não são alterados. Protesto, negativação e Pix dependem do convênio. Descontos por antecipação diária e múltiplas faixas não são configurados nesta tela.
+9. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
 
 Cuidados:
 
@@ -573,6 +574,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.44.0 · 2026-11-11 · Configuração das condições de emissão dos boletos Sicoob
+
+Motivo da atualização: Permite definir as condições dos novos boletos Sicoob por loja antes da emissão.
+
+- Configura espécie, formato do PDF, Pix, limite de pagamento, multa, juros, desconto com uma faixa de prazo, protesto, negativação e instruções.
+- Padrões iniciais sem encargos, descontos, protesto ou negativação. Alterações exigem salvar, testar e habilitar novamente. Boletos existentes preservados.
+- Descontos por antecipação diária e múltiplas faixas não estão disponíveis nesta configuração. A primeira emissão real ainda precisa ser conferida no banco.
 
 ### v1.43.9 · 2026-11-11 · Corrige permissões de autenticação da API Sicoob v3
 

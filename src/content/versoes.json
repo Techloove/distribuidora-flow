@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.44.0",
+    "data": "2026-11-11",
+    "titulo": "Configuração das condições de emissão dos boletos Sicoob",
+    "motivo": "Permite definir as condições dos novos boletos Sicoob por loja antes da emissão.",
+    "novidades": [
+      "Configura espécie, formato do PDF, Pix, limite de pagamento, multa, juros, desconto com uma faixa de prazo, protesto, negativação e instruções.",
+      "Padrões iniciais sem encargos, descontos, protesto ou negativação. Alterações exigem salvar, testar e habilitar novamente. Boletos existentes preservados.",
+      "Descontos por antecipação diária e múltiplas faixas não estão disponíveis nesta configuração. A primeira emissão real ainda precisa ser conferida no banco."
+    ]
+  },
+  {
     "versao": "1.43.9",
     "data": "2026-11-11",
     "titulo": "Corrige permissões de autenticação da API Sicoob v3",

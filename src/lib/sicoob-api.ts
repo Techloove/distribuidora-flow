@@ -18,6 +18,7 @@ export type SicoobConfig = {
   numero_contrato: number | null;
   ativo: boolean;
   versao: number;
+  condicoes_emissao?: import("./sicoob-emissao").EmissaoSicoob;
   certificado_configurado: boolean;
   autenticado_em: string | null;
 };

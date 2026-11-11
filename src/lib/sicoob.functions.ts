@@ -1,3 +1,4 @@
+import { validarEmissaoSicoob, condicoesEmissaoSicoob, type EmissaoSicoob } from "./sicoob-emissao";
 import { createServerFn } from "@tanstack/react-start";
 import { enforceRateLimit, requireServerAuth } from "./server-auth";
 import { fetchWithTimeout } from "./fetch-timeout";
@@ -123,12 +124,13 @@ export const sicoobConfigGet = createServerFn({ method: "POST" })
     await rpc("validar_sicoob_316", { _actor: actor.id, _centro: uuid(d.centroId), _admin: false });
     const rows = await ler(
       d.accessToken,
-      `sicoob_config_316?select=centro_id,ambiente,client_id,numero_cliente,numero_conta,numero_contrato,versao,autenticado_em,autenticado_versao,segredo_id,ativo&centro_id=eq.${uuid(d.centroId)}&ambiente=eq.${ambiente(d.ambiente)}`,
+      `sicoob_config_316?select=centro_id,ambiente,client_id,numero_cliente,numero_conta,numero_contrato,versao,autenticado_em,autenticado_versao,segredo_id,ativo,condicoes_emissao&centro_id=eq.${uuid(d.centroId)}&ambiente=eq.${ambiente(d.ambiente)}`,
     );
     const r = rows[0];
     return {
       centro_id: d.centroId,
       ambiente: d.ambiente,
+      condicoes_emissao: validarEmissaoSicoob(r?.["condicoes_emissao"]),
       client_id: String(r?.["client_id"] ?? ""),
       numero_cliente: Number(r?.["numero_cliente"] ?? 0),
       numero_conta: Number(r?.["numero_conta"] ?? 0),
@@ -150,6 +152,7 @@ export const sicoobConfigSalvar = createServerFn({ method: "POST" })
         numeroCliente: string;
         numeroConta: string;
         numeroContrato: string;
+        condicoesEmissao?: EmissaoSicoob;
         contaId: string;
         ativo: boolean;
         versao: number;
@@ -178,11 +181,12 @@ export const sicoobConfigSalvar = createServerFn({ method: "POST" })
     }
     if ((modo === "producao" && d.tokenSandbox) || (modo === "homologacao" && d.pfx))
       throw Error("Credencial não corresponde ao ambiente selecionado.");
-    await rpc("sicoob_config_salvar_316", {
+    await rpc("sicoob_config_salvar_351", {
       _actor: actor.id,
       _centro: uuid(d.centroId),
       _ambiente: modo,
       _config: {
+        condicoes_emissao: validarEmissaoSicoob(d.condicoesEmissao),
         client_id: client,
         numero_cliente: numero(d.numeroCliente, true),
         numero_conta: numero(d.numeroConta, true),
@@ -273,7 +277,12 @@ function queryBanco(cfg: SicoobConfig, b: Row, pdf = false) {
     nossoNumero: String(b["nosso_numero"]),
   });
   if (cfg.numero_contrato) q.set("numeroContratoCobranca", String(cfg.numero_contrato));
-  if (pdf) q.set("gerarPdf", "true");
+  if (pdf) {
+    q.set("gerarPdf", "true");
+    const snapshot = obj(b["sicoob_snapshot_316"]);
+    const condicoes = validarEmissaoSicoob(snapshot["condicoes_emissao"]);
+    q.set("tipoFormularioImpressaoPDF", String(condicoes.formulario));
+  }
   return q.toString();
 }
 const mensagemMock =
@@ -507,6 +516,7 @@ function payloadEmissao(
     codigoNegativacao: 3,
     gerarPdf: true,
     codigoCadastrarPIX: 2,
+    ...condicoesEmissaoSicoob(cfg.condicoes_emissao, vencimento, valor, hojeSaoPaulo()),
     pagador: { ...pagador, numeroCpfCnpj: doc },
   };
 }
@@ -611,8 +621,8 @@ export const sicoobEmitirBoleto = createServerFn({ method: "POST" })
       },
     );
     const r = await rpc<{ boleto: Row; operacao: Row; recuperar: boolean }>(
-      "sicoob_reservar_emissao_316",
-      { _actor: actor.id, _conta: uuid(d.contaId), _payload: payload },
+      "sicoob_reservar_emissao_351",
+      { _actor: actor.id, _conta: uuid(d.contaId), _payload: payload, _versao: p.config.versao },
     );
     return emitirReserva(d, actor.id, r, false);
   });

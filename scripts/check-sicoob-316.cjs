@@ -350,6 +350,122 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
       ),
       false,
     );
+    const before351 = await q("select to_jsonb(b) dados from boletos b order by id");
+    const financial351 = await q("select to_jsonb(t) dados from contas_receber t order by id");
+    const cfg351 = await scalar(
+      "select to_jsonb(c) from sicoob_config_316 c where centro_id=$1 and ambiente='producao'",
+      [id(10)],
+    );
+    const migration351 = fs.readFileSync("db/fase351_sicoob_condicoes_emissao.sql", "utf8");
+    await db.exec(migration351);
+    await db.exec(migration351);
+    assert.deepEqual(await q("select to_jsonb(b) dados from boletos b order by id"), before351);
+    assert.deepEqual(
+      await q("select to_jsonb(t) dados from contas_receber t order by id"),
+      financial351,
+    );
+    assert.equal(
+      await scalar(
+        "select has_function_privilege('authenticated','sicoob_config_salvar_351(uuid,uuid,jsonb,uuid,boolean,int,jsonb,text)','execute')",
+      ),
+      false,
+    );
+    const config351 = {
+      client_id: cfg351.client_id,
+      numero_cliente: cfg351.numero_cliente,
+      numero_conta: cfg351.numero_conta,
+      numero_contrato: cfg351.numero_contrato,
+      condicoes_emissao: { multaTipo: 2, multaValor: 2 },
+    };
+    await assert.rejects(
+      () =>
+        q("select sicoob_config_salvar_351($1,$2,$3,$4,true,$5)", [
+          id(1),
+          id(10),
+          config351,
+          id(70),
+          cfg351.versao,
+        ]),
+      /Salve/,
+    );
+    await assert.rejects(
+      () =>
+        q("select sicoob_config_salvar_351($1,$2,$3,$4,false,$5)", [
+          id(2),
+          id(10),
+          config351,
+          id(70),
+          cfg351.versao,
+        ]),
+      /administrador/,
+    );
+    await q("select sicoob_config_salvar_351($1,$2,$3,$4,false,$5)", [
+      id(1),
+      id(10),
+      config351,
+      id(70),
+      cfg351.versao,
+    ]);
+    const after351 = await scalar(
+      "select to_jsonb(c) from sicoob_config_316 c where centro_id=$1 and ambiente='producao'",
+      [id(10)],
+    );
+    assert.deepEqual(after351.condicoes_emissao, config351.condicoes_emissao);
+    assert.equal(after351.autenticado_em, null);
+    assert.equal(after351.ativo, false);
+    assert.equal(after351.versao, cfg351.versao + 1);
+    await assert.rejects(
+      () =>
+        q("select sicoob_reservar_emissao_351($1,$2,$3,$4)", [
+          id(1),
+          id(40),
+          payload,
+          cfg351.versao,
+        ]),
+      /condições/,
+    );
+    assert.deepEqual(await q("select to_jsonb(b) dados from boletos b order by id"), before351);
+    assert.deepEqual(
+      await q("select to_jsonb(t) dados from contas_receber t order by id"),
+      financial351,
+    );
+    await db.exec("begin");
+    await q("select sicoob_autenticado_316($1,$2,$3,'producao')", [id(1), id(10), after351.versao]);
+    await q("select sicoob_config_salvar_351($1,$2,$3,$4,true,$5)", [
+      id(1),
+      id(10),
+      config351,
+      id(70),
+      after351.versao,
+    ]);
+    await q(
+      "insert into contas_receber(id,centro_id,cliente_id,status,documento,parcela,valor,vencimento) values($1,$2,$3,'aberto','TESTE351',1,100,'2027-01-20')",
+      [id(140), id(10), id(20)],
+    );
+    const payload351 = { ...payload, dataVencimento: "2027-01-20" };
+    const first351 = await scalar("select sicoob_reservar_emissao_351($1,$2,$3,$4)", [
+      id(1),
+      id(140),
+      payload351,
+      after351.versao,
+    ]);
+    assert.equal(first351.recuperar, false);
+    assert.deepEqual(
+      await scalar("select sicoob_snapshot_316->'condicoes_emissao' from boletos where id=$1", [
+        first351.boleto.id,
+      ]),
+      config351.condicoes_emissao,
+    );
+    const replay351 = await scalar("select sicoob_reservar_emissao_351($1,$2,$3,$4)", [
+      id(1),
+      id(140),
+      payload351,
+      after351.versao,
+    ]);
+    assert.equal(replay351.recuperar, true);
+    assert.equal(replay351.boleto.id, first351.boleto.id);
+    assert.equal(replay351.operacao.id, first351.operacao.id);
+    await db.exec("rollback");
     console.log(
       "OK: configuração por loja/ambiente, cofre privado, permissões, idempotência, aprovação/liberação, confirmações bancárias, vencimentos, cancelamento, descontos e sandbox isolado do financeiro.",
     );
