@@ -1,3 +1,4 @@
+import { erroOperacaoSicoob } from "./sicoob-erros";
 import { validarEmissaoSicoob, condicoesEmissaoSicoob, type EmissaoSicoob } from "./sicoob-emissao";
 import { createServerFn } from "@tanstack/react-start";
 import { enforceRateLimit, requireServerAuth } from "./server-auth";
@@ -312,7 +313,7 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
   }
   if (p.b["nosso_numero"]) {
     const r = await p.api("/boletos?" + queryBanco(p.config, p.b));
-    if (r.status !== 200) throw Error("Sicoob não retornou o boleto. Nenhum reenvio foi feito.");
+    if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
     raw = obj(r.json["resultado"]);
   } else {
     const ops = await ler(
@@ -330,7 +331,8 @@ async function consultarContexto(d: Alvo, actor: string, p: Awaited<ReturnType<t
       dataFim: String(req["dataVencimento"]),
     });
     const r = await p.api(`/pagadores/${encodeURIComponent(doc)}/boletos?` + q);
-    if (r.status !== 200 || !Array.isArray(r.json["resultado"]))
+    if (r.status !== 200) throw Error(erroOperacaoSicoob("Consulta", r.status, r.motivo));
+    if (!Array.isArray(r.json["resultado"]))
       throw Error(
         "Emissão ainda não recuperada no banco. Não emita novamente antes da conferência.",
       );
@@ -540,6 +542,7 @@ async function emitirReserva(
       ...c,
     };
   }
+  let retornoRegistrado = false;
   try {
     const r = await p.api("/boletos", "POST", obj(reserva.operacao["requisicao"]));
     if (r.status !== 200) {
@@ -547,9 +550,10 @@ async function emitirReserva(
         _actor: actor,
         _operacao: reserva.operacao["id"],
         _estado: [400, 401, 403, 404, 405, 406, 422].includes(r.status) ? "recusado" : "incerto",
-        _nota: `Emissão retornou HTTP ${r.status}.`,
+        _nota: erroOperacaoSicoob("Emissão", r.status, r.motivo),
       });
-      throw Error(`Emissão Sicoob retornou HTTP ${r.status}. Consulte antes de repetir.`);
+      retornoRegistrado = true;
+      throw Error(erroOperacaoSicoob("Emissão", r.status, r.motivo));
     }
     const raw = obj(r.json["resultado"]);
     if (sandbox && respostaSimuladaSicoob(raw)) {
@@ -570,12 +574,13 @@ async function emitirReserva(
         : "Boleto registrado no Sicoob.",
     };
   } catch (e) {
-    await rpc("sicoob_estado_operacao_316", {
-      _actor: actor,
-      _operacao: reserva.operacao["id"],
-      _estado: "incerto",
-      _nota: "Registro sem confirmação local. Recuperar por consulta antes de nova emissão.",
-    });
+    if (!retornoRegistrado)
+      await rpc("sicoob_estado_operacao_316", {
+        _actor: actor,
+        _operacao: reserva.operacao["id"],
+        _estado: "incerto",
+        _nota: "Registro sem confirmação local. Recuperar por consulta antes de nova emissão.",
+      });
     throw e;
   }
 }

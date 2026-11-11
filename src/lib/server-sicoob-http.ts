@@ -1,3 +1,4 @@
+import { motivoRecusaSicoob } from "./sicoob-erros";
 // Exclusivo do servidor: mTLS com certificado A1. Nunca aceita endereço fornecido pelo cliente.
 import { request } from "node:https";
 import { createSecureContext } from "node:tls";
@@ -17,7 +18,11 @@ export function validarCertificadoSicoob(c: CertificadoSicoob) {
     throw Error("Não foi possível abrir o certificado A1. Confira o arquivo e a senha.");
   }
 }
-export type RespostaSicoob = { status: number; json: Record<string, unknown> };
+export type RespostaSicoob = {
+  status: number;
+  json: Record<string, unknown>;
+  motivo?: string | null;
+};
 export type TransporteSicoob = (
   url: string,
   method: string,
@@ -153,7 +158,7 @@ export async function clienteSicoob(
       path.startsWith("//")
     )
       throw Error("Operação bancária inválida.");
-    return io(
+    const resposta = await io(
       SICOOB_BASE + path,
       method,
       {
@@ -165,6 +170,17 @@ export async function clienteSicoob(
       body ? JSON.stringify(body) : undefined,
       cert,
     );
+    if (resposta.status >= 400)
+      return {
+        ...resposta,
+        motivo: motivoRecusaSicoob(resposta.json, [
+          bearer,
+          cert.pfx ?? "",
+          cert.senha ?? "",
+          clientId,
+        ]),
+      };
+    return resposta;
   };
 }
 

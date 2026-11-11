@@ -1,5 +1,5 @@
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
-import { sicoobEmitirBoleto } from "@/lib/sicoob.functions";
+import { sicoobEmitirBoleto, sicoobConsultarBoleto } from "@/lib/sicoob.functions";
 import { brl as money, dataBr } from "@/lib/formatacao";
 import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
 import { useRef, useState } from "react";
@@ -79,7 +79,8 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
   const permissoes = usePermissoesRotinas();
   const qc = useQueryClient();
   const emitirApi = useServerFn(sicrediEmitirBoleto),
-    emitirSicoob = useServerFn(sicoobEmitirBoleto);
+    emitirSicoob = useServerFn(sicoobEmitirBoleto),
+    consultarSicoob = useServerFn(sicoobConsultarBoleto);
   const [open, setOpen] = useState(false),
     [modo, setModo] = useState<"emitir" | "imprimir">("emitir");
   const [selected, setSelected] = useState<string[]>([]),
@@ -190,6 +191,24 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
       ),
     ]);
   };
+  async function consultarTentativa(boletoId: string) {
+    if (trabalhando.current || !session) return;
+    trabalhando.current = true;
+    setBusy(true);
+    setErro(null);
+    setSelected([]);
+    try {
+      const r = await consultarSicoob({ data: { boletoId, accessToken: session.access_token } });
+      toast.success(r.nota ?? `Consulta Sicoob: ${r.situacao}.`);
+      if (r.situacao === "EM ABERTO" || r.situacao === "LIQUIDADO") setModo("imprimir");
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível consultar a tentativa.");
+    } finally {
+      await atualizar();
+      trabalhando.current = false;
+      setBusy(false);
+    }
+  }
   async function executar() {
     if (
       trabalhando.current ||
@@ -409,6 +428,25 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
                                 : ""}
                               {l.emitir && " · Disponível para emissão"}
                             </span>
+                            {l.boleto?.banco === "sicoob" &&
+                              ["erro", "pendente", "em_processamento"].includes(
+                                l.boleto.status,
+                              ) && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="mt-2"
+                                  disabled={busy}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    void consultarTentativa(l.boleto!.id);
+                                  }}
+                                >
+                                  Consultar tentativa no Sicoob (sem emitir)
+                                </Button>
+                              )}
                           </span>
                         </label>
                       );

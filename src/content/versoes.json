@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.47.1",
+    "data": "2026-11-11",
+    "titulo": "Diagnóstico da recusa Sicoob e consulta sem nova emissão",
+    "motivo": "A primeira emissão retornou HTTP 403; o sistema exibia apenas o status e ocultava o motivo de validação do banco.",
+    "novidades": [
+      "Exibe e registra mensagens de recusa reconhecidas do Sicoob, removendo credenciais antes da apresentação.",
+      "Em tentativas Sicoob com erro, pendentes ou em processamento, a janela oferece Consultar tentativa no Sicoob (sem emitir). Não cria outra cobrança.",
+      "A configuração identifica autenticação testada, distinguindo a obtenção do token da autorização bancária de emissão. A liberação do aplicativo e do convênio precisa ser confirmada pelo banco quando houver HTTP 403."
+    ]
+  },
+  {
     "versao": "1.47.0",
     "data": "2026-11-11",
     "titulo": "Edição de títulos e banco correto na emissão por loja",

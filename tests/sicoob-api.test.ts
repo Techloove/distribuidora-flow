@@ -219,7 +219,7 @@ test("sandbox usa token e host próprios, não pede certificado nem chama OAuth/
   await expect(clienteSicoob("client-sandbox", {}, io, "homologacao")).rejects.toThrow();
 });
 test("produção exige A1 válido e obtém OAuth com escopos bancários, sem mandar token sandbox", async () => {
-  for (const nome of ["sicoob-api", "server-sicoob-http"])
+  for (const nome of ["sicoob-api", "sicredi-api", "sicoob-erros", "server-sicoob-http"])
     writeFileSync(
       join(temp, nome + ".js"),
       ts.transpileModule(readFileSync("src/lib/" + nome + ".ts", "utf8"), {
@@ -367,4 +367,26 @@ test("extrato usa outro Client ID e apenas escopos de consulta, sem alterar cobr
       json: { access_token: "NAO_EXIBIR" },
     })),
   ).rejects.toThrow("não autorizou o extrato");
+});
+
+test("recusa de emissão preserva HTTP e motivo sanitizado sem repetir POST", async () => {
+  let chamadas = 0;
+  const api = await clienteSicoob("client-prod", cert, async (url) => {
+    chamadas++;
+    return url === SICOOB_AUTH
+      ? { status: 200, json: { access_token: "TOKEN-BANCARIO-PRIVADO" } }
+      : {
+          status: 403,
+          json: {
+            mensagens: [
+              { codigo: "BOL403", mensagem: "Acesso negado token=TOKEN-BANCARIO-PRIVADO" },
+            ],
+          },
+        };
+  });
+  const r = await api("/boletos", "POST", { valor: 50 });
+  expect(r.status).toBe(403);
+  expect(r.motivo).toContain("BOL403");
+  expect(r.motivo).not.toContain("TOKEN-BANCARIO-PRIVADO");
+  expect(chamadas).toBe(2);
 });

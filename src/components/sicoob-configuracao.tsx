@@ -223,7 +223,7 @@ export function SicoobConfiguracao({
             {q.data.certificado_configurado
               ? "Credencial guardada no cofre"
               : "Aguardando credenciais"}
-            {q.data.autenticado_em ? " · Conexão testada" : ""}
+            {q.data.autenticado_em ? " · Autenticação testada" : ""}
           </p>
           <fieldset disabled={!editar || busy} className="grid gap-3 sm:grid-cols-2">
             {(
