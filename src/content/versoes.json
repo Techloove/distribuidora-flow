@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.43.9",
+    "data": "2026-11-11",
+    "titulo": "Corrige permissões de autenticação da API Sicoob v3",
+    "motivo": "A autenticação solicitava nomes de escopos divergentes da documentação atual da Cobrança Bancária v3.",
+    "novidades": [
+      "Solicita boletos_inclusao, boletos_consulta e boletos_alteracao, conforme a documentação v3.",
+      "Mantém certificado A1 e endereços bancários; a autorização real depende de novo teste de conexão em produção."
+    ]
+  },
+  {
     "versao": "1.43.8",
     "data": "2026-11-09",
     "titulo": "Importar automaticamente todas as tarifas do ciclo dos boletos",

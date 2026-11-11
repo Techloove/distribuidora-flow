@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.43.8 · 2026-11-09
+Versão 1.43.9 · 2026-11-11
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -438,7 +438,7 @@ Configure a cobrança da loja e entenda a diferença entre resposta de teste e b
 3. Em Boletos, selecione a loja no topo e abra Sicoob · testes sandbox por loja. Use Preencher pagador de exemplo ou os dados definidos no portal, informe valor e vencimento e clique Emitir no sandbox.
 4. O sandbox público pode devolver dados fixos com nosso número negativo, diferentes dos enviados. O sistema identifica esse caso como Resposta simulada recebida. A linha mantém o valor e vencimento solicitados e a resposta fica no histórico; não é um boleto registrado. Para tentativa antiga em processamento com Identificação bancária inválida, clique Consultar Sicoob, sem emitir novamente.
 5. Respostas fixas comprovam comunicação, mas não confirmam PDF, alteração de vencimento, desconto, abatimento ou baixa daquele teste. As ações operacionais não são oferecidas sobre esse exemplo. Se houver boleto válido com resposta correspondente no ambiente contratado, as ações dependem de consulta e confirmação bancária.
-6. Para produção, solicite ao banco a liberação da API Cobrança Bancária v3, Client ID de produção, certificado A1 vinculado ao aplicativo e números do beneficiário, conta e contrato. Em Lojas → Cobrança por loja → Sicoob → Produção, configure também a conta financeira, salve desativado e teste a autenticação. Siga a homologação orientada pelo Sicoob antes de habilitar cobranças reais.
+6. Para produção, solicite ao banco a liberação da API Cobrança Bancária v3, Client ID de produção, certificado A1 vinculado ao aplicativo e números do beneficiário e conta. O contrato de cobrança é opcional e deve ser preenchido somente sob orientação do banco. O aplicativo deve autorizar os escopos boletos_inclusao, boletos_consulta e boletos_alteracao. Em Lojas → Cobrança por loja → Sicoob → Produção, configure também a conta financeira, salve desativado e teste a autenticação. Siga a homologação orientada pelo Sicoob antes de habilitar cobranças reais.
 7. Em Pedidos ou Contas a receber, Emitir boleto usa o banco configurado na loja do título. Essa emissão é de produção; ela não usa automaticamente o sandbox. Uma loja sem produção habilitada permanece bloqueada para emissão real. Boletos já emitidos preservam o banco original para consulta e PDF.
 8. Nos boletos Sicoob operacionais, Opções permite consulta e alteração de vencimento; administrador pode solicitar baixa, desconto e abatimento com motivo e confirmação. Uma resposta inconclusiva mantém a solicitação pendente: consulte antes de repetir. Vencimento da parcela muda somente após confirmação e conferência do título.
 
@@ -573,6 +573,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.43.9 · 2026-11-11 · Corrige permissões de autenticação da API Sicoob v3
+
+Motivo da atualização: A autenticação solicitava nomes de escopos divergentes da documentação atual da Cobrança Bancária v3.
+
+- Solicita boletos_inclusao, boletos_consulta e boletos_alteracao, conforme a documentação v3.
+- Mantém certificado A1 e endereços bancários; a autorização real depende de novo teste de conexão em produção.
 
 ### v1.43.8 · 2026-11-09 · Importar automaticamente todas as tarifas do ciclo dos boletos
 

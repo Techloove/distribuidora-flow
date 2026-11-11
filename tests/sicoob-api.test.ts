@@ -254,6 +254,7 @@ test("produção exige A1 válido e obtém OAuth com escopos bancários, sem man
   const api = await clienteSicoob("client-prod", cert, io);
   await api("/boletos/123", "PATCH", { numeroCliente: 12345 });
   expect(calls[0]!.url).toBe(SICOOB_AUTH);
+  expect(SICOOB_SCOPES).toBe("boletos_inclusao boletos_consulta boletos_alteracao");
   expect(new URLSearchParams(calls[0]!.body).get("scope")).toBe(SICOOB_SCOPES);
   expect(new URLSearchParams(calls[0]!.body).get("grant_type")).toBe("client_credentials");
   expect(calls[1]!.url).toBe(SICOOB_BASE + "/boletos/123");

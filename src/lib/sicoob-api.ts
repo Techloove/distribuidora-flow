@@ -3,15 +3,11 @@ export const SICOOB_BASE = "https://api.sicoob.com.br/cobranca-bancaria/v3";
 export const SICOOB_SANDBOX = "https://sandbox.sicoob.com.br/sicoob/sandbox/cobranca-bancaria/v3";
 export const SICOOB_AUTH =
   "https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token";
+// Escopos da Cobrança Bancária v3; webhooks não são usados nesta integração.
 export const SICOOB_SCOPES = [
-  "cobranca_boletos_consultar",
-  "cobranca_boletos_incluir",
-  "cobranca_boletos_pagador",
-  "cobranca_boletos_segunda_via",
-  "cobranca_boletos_baixa",
-  "cobranca_boletos_prorrogacoes_data_vencimento",
-  "cobranca_boletos_descontos",
-  "cobranca_boletos_abatimentos",
+  "boletos_inclusao",
+  "boletos_consulta",
+  "boletos_alteracao",
 ].join(" ");
 export type SicoobConfig = {
   ambiente: "producao" | "homologacao";
