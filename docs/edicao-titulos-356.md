@@ -26,4 +26,4 @@ Chromium: edição manual e moeda brasileira, título atualizado, opção ausent
 
 ## Implantação
 
-Aplicar db/fase356_editar_titulos.sql antes da publicação. O acesso de gerenciamento Supabase da sessão retorna HTTP 401; a aplicação automática ainda não ocorreu. Após instalar e publicar, recarregar a página para obter as novas permissões. A baixa automática Sicoob permanece pendente da validação do primeiro retorno real de pagamento e não é implementada nesta entrega.
+Aplicar db/fase356_editar_titulos.sql antes da publicação. O acesso de gerenciamento Supabase da sessão retorna HTTP 401; a aplicação automática não ocorreu. O usuário confirmou a execução manual com sucesso em 11/11/2026; essa confirmação não foi verificada independentemente pelo acesso de gerenciamento indisponível. Após instalar e publicar, recarregar a página para obter as novas permissões. A baixa automática Sicoob permanece pendente da validação do primeiro retorno real de pagamento e não é implementada nesta entrega.
