@@ -1009,7 +1009,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 <AlterarVencimentoBoleto boleto={b} />
                                 <CondicoesBoletoSicredi boleto={b} />
                                 <AcoesBoletoSicoob boleto={b} />
-                                {b["pedido_id"] ? (
+                                {b["banco"] === "sicoob" &&
+                                ["erro", "pendente", "em_processamento"].includes(
+                                  String(b["status"]),
+                                ) ? null : b["pedido_id"] ? (
                                   <EmitirBoletosPedido
                                     pedidoId={String(b["pedido_id"])}
                                     centroId={String(b["centro_id"] ?? "")}

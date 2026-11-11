@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.47.4",
+    "data": "2026-11-11",
+    "titulo": "Corrige consulta direta do boleto Sicoob na listagem",
+    "motivo": "O botão Consultar boleto da listagem abria a janela de emissão.",
+    "novidades": [
+      "Consulta Sicoob diretamente na listagem, com mensagem de resultado ou erro, sem abrir a emissão.",
+      "Oculta o atalho de emissão para tentativas Sicoob com erro, pendentes ou em processamento na listagem."
+    ]
+  },
+  {
     "versao": "1.47.3",
     "data": "2026-11-11",
     "titulo": "Amplia consulta de recuperação de boletos Sicoob",

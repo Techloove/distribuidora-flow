@@ -21,3 +21,9 @@ A coleção oficial descreve dataInicio/dataFim da lista por pagador como vencim
 ## Atualização 1.47.3 — período ampliado
 
 A recuperação por pagador consulta agora vencimentos de 30 dias antes até 30 dias depois do vencimento original persistido na tentativa. Não aplica filtro de situação. Mantém a correspondência exata de seuNumero, beneficiário e modalidade, seguida das demais validações de identidade. Não altera título, credenciais nem reenvia emissão. O HTTP 403 anterior não é resolvido por ampliar a consulta. Sem nova migração SQL.
+
+## Atualização 1.47.4 — consulta direta na listagem
+
+O atalho Consultar boleto na listagem usava o componente de emissão da parcela. A listagem agora oferece Consultar boleto no Sicoob, que chama diretamente a consulta autenticada existente e apresenta o resultado ou erro. Tentativas Sicoob com erro, pendentes ou em processamento não mostram o atalho de emissão nessa listagem. As demais rotinas de emissão permanecem com suas proteções existentes. A mensagem genérica de falha de transporte não sugere certificado inválido: não há evidência para esse diagnóstico.
+
+Chromium com sessão e retorno fictícios verificou uma consulta, zero emissões e zero diálogos abertos; nenhuma requisição ao banco real. Typecheck, lint e build aprovados. Sem SQL novo. O erro real de conexão ainda precisa de diagnóstico no servidor.

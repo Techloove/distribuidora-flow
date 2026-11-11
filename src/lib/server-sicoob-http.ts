@@ -91,7 +91,7 @@ export const transporteSicoob: TransporteSicoob = (endereco, method, headers, bo
     req.on("error", () =>
       reject(
         Error(
-          "Não foi possível conectar ao Sicoob com o certificado da loja. Confira a conexão e a validade do A1.",
+          "Falha de conexão segura entre o sistema e o Sicoob. Esse retorno não confirma certificado inválido. Consulte a tentativa antes de emitir novamente.",
         ),
       ),
     );

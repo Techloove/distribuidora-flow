@@ -163,6 +163,11 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
   return (
     <>
       <div className="flex flex-wrap gap-2">
+        {!sandbox && (
+          <Button size="sm" variant="secondary" disabled={busy} onClick={() => void acao(true)}>
+            {busy ? "Consultando Sicoob…" : "Consultar boleto no Sicoob"}
+          </Button>
+        )}
         {sandbox && (
           <>
             <Button size="sm" variant="outline" disabled={busy} onClick={() => void acao(true)}>
@@ -206,6 +211,11 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
           </span>
         )}
       </div>
+      {erro && !tipo && (
+        <p role="alert" className="text-sm text-destructive">
+          {erro}
+        </p>
+      )}
       <Dialog
         open={!!tipo}
         onOpenChange={(v) => {
