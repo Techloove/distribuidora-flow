@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.49.2",
+    "data": "2026-11-12",
+    "titulo": "Filtra títulos ERP antes de validar identificadores LIQUI",
+    "motivo": "A validação de identificadores era aplicada às linhas externas antes da seleção dos boletos emitidos pelo ERP, podendo bloquear o arquivo inteiro.",
+    "novidades": [
+      "A triagem usa primeiro referências de emissões ERP confirmadas; dados externos em texto livre não precisam seguir o formato do identificador gerado pelo ERP.",
+      "Mantém as validações financeiras e de identidade completas nos candidatos selecionados. Identificador inválido agora indica o campo e não gera recebimento.",
+      "Orienta sobre o vínculo do aplicativo/plano quando o gateway retorna Not registered to plan, sem atribuir a recusa ao certificado.",
+      "Requer aplicar fase360 após publicação. Ela instala o seletor de referências e reagenda leituras paradas nesse parser, sem emitir ou quitar diretamente."
+    ]
+  },
+  {
     "versao": "1.49.1",
     "data": "2026-11-12",
     "titulo": "Preserva detalhes da recusa bancária na coleta LIQUI",

@@ -7,24 +7,24 @@ const objeto = (v: unknown): Row => {
   if (!v || typeof v !== "object" || Array.isArray(v)) throw Error("LIQUI_OBJETO_INVALIDO");
   return v as Row;
 };
-const inteiro = (v: unknown) => {
-  const s = String(v ?? "");
+const inteiro = (v: unknown, campo: string) => {
+  const s = String(v ?? "").trim();
   if (!/^[0-9]{1,18}$/.test(s) || (typeof v === "number" && !Number.isSafeInteger(v)))
-    throw Error("LIQUI_IDENTIFICACAO_INVALIDA");
+    throw Error("LIQUI_IDENTIFICACAO_INVALIDA_" + campo);
   return s.replace(/^0+(?=\d)/, "");
 };
+/** Triagem de candidatos, sem validar dados financeiros de boletos externos ao ERP. */
 export function referenciaLiquiSicoob(v: unknown) {
   const r = objeto(v);
   if (r["siglaMovimento"] !== "LIQUI") throw Error("LIQUI_MOVIMENTO_DIVERGENTE");
-  const seuNumero = String(r["seuNumero"] ?? "");
-  if (!/^[a-zA-Z0-9._/-]{0,50}$/.test(seuNumero)) throw Error("LIQUI_IDENTIFICACAO_INVALIDA");
-  return {
-    numeroCliente: inteiro(r["numeroCliente"]),
-    numeroConta: inteiro(r["numeroContaCorrente"]),
-    nossoNumero: inteiro(r["numeroTitulo"]),
-    seuNumero,
-    modalidade: inteiro(r["modalidade"]),
+  const texto = (v: unknown) => {
+    if (!["string", "number"].includes(typeof v)) return null;
+    const s = String(v).trim();
+    return s.length <= 250 && !/\p{Cc}/u.test(s) ? s : null;
   };
+  // O helper SQL usa somente estas referências para procurar emissões ERP confirmadas.
+  // A validação estrita de TODOS os identificadores continua depois da seleção.
+  return { seuNumero: texto(r["seuNumero"]), codigoBarras: texto(r["codigoBarras"]) };
 }
 export function normalizarLiquiSicoob(v: unknown, inicio: string, fim: string) {
   const r = objeto(v);
@@ -58,22 +58,22 @@ export function normalizarLiquiSicoob(v: unknown, inicio: string, fim: string) {
         Math.round(abatimento * 100)
   )
     throw Error("LIQUI_VALORES_DIVERGENTES");
-  const codigo = String(r["codigoBarras"] ?? "");
-  const seuNumero = String(r["seuNumero"] ?? "");
+  const codigo = String(r["codigoBarras"] ?? "").trim();
+  const seuNumero = String(r["seuNumero"] ?? "").trim();
   if (
     !/^756\d{41}$/.test(codigo) ||
     !/^[a-zA-Z0-9._/-]{1,50}$/.test(seuNumero) ||
-    inteiro(r["modalidade"]) !== "1"
+    inteiro(r["modalidade"], "MODALIDADE") !== "1"
   )
     throw Error("LIQUI_TITULO_INVALIDO");
   const registro = {
-    numeroCliente: inteiro(r["numeroCliente"]),
-    numeroConta: inteiro(r["numeroContaCorrente"]),
-    nossoNumero: inteiro(r["numeroTitulo"]),
+    numeroCliente: inteiro(r["numeroCliente"], "CLIENTE"),
+    numeroConta: inteiro(r["numeroContaCorrente"], "CONTA"),
+    nossoNumero: inteiro(r["numeroTitulo"], "NOSSO_NUMERO"),
     seuNumero,
     codigoBarras: codigo,
     contratoCobranca:
-      r["numeroContratoCobranca"] == null ? null : inteiro(r["numeroContratoCobranca"]),
+      r["numeroContratoCobranca"] == null ? null : inteiro(r["numeroContratoCobranca"], "CONTRATO"),
     data,
     dataMovimento,
     nominal,

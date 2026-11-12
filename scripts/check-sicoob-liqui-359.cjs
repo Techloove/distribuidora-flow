@@ -41,6 +41,7 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
       .match(/create or replace function public\.receber_titulo\([\s\S]*?\$\$;/)[0];
     await db.exec(receiver);
     await db.exec(fs.readFileSync("db/fase359_sicoob_liqui_financeiro.sql", "utf8"));
+    await db.exec(fs.readFileSync("db/fase360_sicoob_referencias_liqui.sql", "utf8"));
     assert.equal(
       (
         await db.query(
@@ -91,8 +92,13 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
     const apply = (job, file, reg) =>
       db.query("select sicoob_liqui_arquivo_359($1,$2,$3,$4) as r", [job.id, job.lease, file, reg]);
     await assert.rejects(() => apply({ ...j, lease: id(99) }, 101, [event]), /inválido/);
-    const r = await apply(j, 101, [event, event]);
+    const r = await apply(j, 101, [
+      { ...event, numeroConta: "999", chave: "f".repeat(64) },
+      event,
+      event,
+    ]);
     assert.equal(r.rows[0].r.baixados, 1);
+    assert.equal(r.rows[0].r.ignorados, 1);
     assert.equal(
       Number((await db.query("select valor_pago,status from contas_receber")).rows[0].valor_pago),
       50,
@@ -179,6 +185,29 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
     ).rows[0].r;
     assert.equal(refs.length, 1);
     assert.equal(refs[0].nossoNumero, "3850");
+    const novosRefs = (
+      await db.query("select sicoob_liqui_identificar_360($1,$2,$3) as r", [
+        j.id,
+        j.lease,
+        [
+          { seuNumero: "NF antiga – venda 123", codigoBarras: "756" + "9".repeat(41) },
+          { seuNumero: "encargos", codigoBarras: null },
+          { seuNumero: null, codigoBarras: "756" + "0".repeat(40) + "1" },
+        ],
+      ])
+    ).rows[0].r;
+    assert.equal(novosRefs.length, 1);
+    assert.equal(novosRefs[0].nossoNumero, "3850");
+    assert.equal(novosRefs[0].codigoBarras, "756" + "0".repeat(40) + "1");
+    assert.equal(
+      (
+        await db.query(
+          "select has_function_privilege('authenticated','sicoob_liqui_identificar_360(uuid,uuid,jsonb)','EXECUTE') as ok",
+        )
+      ).rows[0].ok,
+      false,
+    );
+
     const comEncargos = {
       ...event,
       nossoNumero: "3850",

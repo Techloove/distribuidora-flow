@@ -60,3 +60,10 @@ test("mensagens de gateway e erro aninhado são sanitizadas, sem conservar o cor
     "Recurso não autorizado",
   );
 });
+
+test("Not registered to plan orienta conferir vínculo de API, sem diagnosticar certificado inválido", () => {
+  const r = erroOperacaoSicoob("Consulta", 403, "Forbidden : Not registered to plan");
+  expect(r).toContain("plano da API");
+  expect(r).toContain("produção");
+  expect(r).not.toContain("certificado");
+});

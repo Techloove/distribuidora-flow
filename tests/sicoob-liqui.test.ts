@@ -105,7 +105,7 @@ function deps(j: JobLiquiSicoob) {
       name.includes("reservar")
         ? j
         : name.includes("identificar")
-          ? [{ nossoNumero: "3849", seuNumero: "origem" }]
+          ? [{ nossoNumero: "3849", seuNumero: "origem", codigoBarras: linha.codigoBarras }]
           : {}
     ) as T;
   };
@@ -150,7 +150,7 @@ test("lista completa é exigida e cada arquivo é baixado uma vez; não chama em
   expect(e.calls[2]?.args["_arquivo"]).toBe(2);
   expect(e.calls.map((c) => c.name)).toEqual([
     "sicoob_liqui_reservar_359",
-    "sicoob_liqui_identificar_359",
+    "sicoob_liqui_identificar_360",
     "sicoob_liqui_arquivo_359",
   ]);
 });
@@ -208,4 +208,41 @@ test("403 no download preserva motivo tratado, rastreio e etapa, sem corpo bruto
     camposResposta: ["message", "pagador"],
   });
   expect(JSON.stringify(diagnostico)).not.toContain("NÃO EXPOR");
+});
+
+test("registro externo com texto livre e IDs incompletos não bloqueia recebimento ERP", async () => {
+  const d = deps({ ...job, estado: "baixar", codigo: 99, arquivos: [1], feitos: [] });
+  const antigo = {
+    ...linha,
+    numeroTitulo: null,
+    numeroCliente: "fora do ERP",
+    modalidade: null,
+    seuNumero: "NF antiga – venda 123",
+    codigoBarras: "756" + "9".repeat(41),
+    valorLiquido: "formato externo",
+  };
+  await executarLiquidacoesSicoob("s", d.rpc, async () => async () => ({
+    status: 200,
+    json: { resultado: { arquivo: zip([antigo, linha]) } },
+  }));
+  const identificar = d.calls.find((c) => c.name === "sicoob_liqui_identificar_360");
+  expect(identificar?.args["_referencias"]).toEqual([
+    { seuNumero: "NF antiga – venda 123", codigoBarras: antigo.codigoBarras },
+    { seuNumero: "origem", codigoBarras: linha.codigoBarras },
+  ]);
+  const aplicar = d.calls.find((c) => c.name === "sicoob_liqui_arquivo_359");
+  const registros = aplicar?.args["_registros"] as Record<string, unknown>[];
+  expect(registros).toHaveLength(1);
+  expect(registros[0]?.["nossoNumero"]).toBe("3849");
+});
+test("candidato ERP com identificador inválido continua bloqueado e informa o campo", async () => {
+  const d = deps({ ...job, estado: "baixar", codigo: 99, arquivos: [1], feitos: [] });
+  await expect(
+    executarLiquidacoesSicoob("s", d.rpc, async () => async () => ({
+      status: 200,
+      json: { resultado: { arquivo: zip([{ ...linha, numeroContaCorrente: "inválido" }]) } },
+    })),
+  ).rejects.toThrow("LIQUI_IDENTIFICACAO_INVALIDA_CONTA");
+  expect(d.calls.some((c) => c.name === "sicoob_liqui_arquivo_359")).toBe(false);
+  expect(d.calls.at(-1)?.args["_acao"]).toBe("erro");
 });

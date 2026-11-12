@@ -37,7 +37,7 @@ export function erroOperacaoSicoob(
   status: number,
   motivo?: string | null,
 ) {
-  return `${operacao} Sicoob retornou HTTP ${status}.${motivo ? ` Motivo do banco: ${motivo}.` : " O banco não forneceu um motivo reconhecido."}${status === 403 ? " Confira a liberação do aplicativo de Cobrança Bancária v3, certificado vinculado e permissão da operação." : ""} Consulte a tentativa antes de emitir novamente.`;
+  return `${operacao} Sicoob retornou HTTP ${status}.${motivo ? ` Motivo do banco: ${motivo}.` : " O banco não forneceu um motivo reconhecido."}${status === 403 ? (/not registered to plan/i.test(motivo ?? "") ? " O gateway recusou o vínculo do aplicativo com o plano da API. Confirme com o Sicoob a associação e a publicação do aplicativo na API de produção." : " Confira a liberação do aplicativo de Cobrança Bancária v3, certificado vinculado e permissão da operação.") : ""} Consulte a tentativa antes de emitir novamente.`;
 }
 
 /** Consulta sem conteúdo não confirma registro, rejeição ou permissão de emissão. */

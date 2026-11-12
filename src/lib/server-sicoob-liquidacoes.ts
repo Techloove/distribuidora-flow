@@ -133,13 +133,19 @@ export async function executarLiquidacoesSicoob(
         .filter((k) => /^[a-zA-Z][a-zA-Z0-9]{0,60}$/.test(k))
         .slice(0, 100);
       const referencias = registros.map(referenciaLiquiSicoob);
-      const permitidos = await rpc<{ nossoNumero: string; seuNumero: string }[]>(
-        "sicoob_liqui_identificar_359",
-        { _job: job.id, _lease: job.lease, _referencias: referencias },
-      );
-      const chaves = new Set(permitidos.map((r) => JSON.stringify([r.nossoNumero, r.seuNumero])));
-      const selecionados = registros.filter((_r, i) =>
-        chaves.has(JSON.stringify([referencias[i]!.nossoNumero, referencias[i]!.seuNumero])),
+      const permitidos = await rpc<
+        { nossoNumero: string; seuNumero: string; codigoBarras: string }[]
+      >("sicoob_liqui_identificar_360", {
+        _job: job.id,
+        _lease: job.lease,
+        _referencias: referencias,
+      });
+      const numeros = new Set(permitidos.map((r) => r.seuNumero));
+      const codigos = new Set(permitidos.map((r) => r.codigoBarras).filter(Boolean));
+      const selecionados = registros.filter(
+        (_r, i) =>
+          (referencias[i]!.seuNumero !== null && numeros.has(referencias[i]!.seuNumero!)) ||
+          (referencias[i]!.codigoBarras !== null && codigos.has(referencias[i]!.codigoBarras!)),
       );
       valores = selecionados
         .slice(0, 2)
@@ -147,7 +153,9 @@ export async function executarLiquidacoesSicoob(
           Object.fromEntries(
             Object.entries(r as Record<string, unknown>).filter(
               ([k, v]) =>
-                /^(?:valor[A-Za-z]{0,45}|data[A-Za-z]{0,45}|numeroTitulo)$/.test(k) &&
+                /^(?:valor[A-Za-z]{0,45}|data[A-Za-z]{0,45}|numeroTitulo|numeroCliente|numeroContaCorrente|modalidade|numeroContratoCobranca)$/.test(
+                  k,
+                ) &&
                 ((typeof v === "number" && Number.isFinite(v)) ||
                   (typeof v === "string" && v.length <= 40 && /^[0-9T:+., Z/-]+$/.test(v))),
             ),
@@ -194,7 +202,11 @@ export async function atenderLiquidacoesSicoob(request: Request): Promise<Respon
       },
       15000,
     );
-    if (!r.ok) throw Error("Persistência indisponível");
+    if (!r.ok) {
+      if (r.status === 404 && nome === "sicoob_liqui_identificar_360")
+        throw Error("LIQUI_ATUALIZAR_REFERENCIAS");
+      throw Error("Persistência indisponível");
+    }
     return (await r.json()) as T;
   };
   try {

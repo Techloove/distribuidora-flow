@@ -1,6 +1,8 @@
 -- Somente leitura. Uma única consulta reúne todas as seções no mesmo resultado.
 -- Não exibe certificado, senha, token, segredo ou dados pessoais do pagador.
 select jsonb_build_object(
+ 'hora_banco',now(),
+ 'hora_brasilia',to_char(now() at time zone 'America/Sao_Paulo','DD/MM/YYYY HH24:MI:SS'),
  'boletos',coalesce((
   select jsonb_agg(jsonb_build_object(
    'nosso_numero',b.nosso_numero,'status_bancario',b.status,'valor_titulo',b.valor,
@@ -12,7 +14,8 @@ select jsonb_build_object(
  ),'[]'::jsonb),
  'ultimas_coletas',coalesce((
   select jsonb_agg(to_jsonb(x)) from (
-   select centro_id,inicio,fim,estado,codigo,arquivos,feitos,proxima,erros,erro,diagnostico
+   select centro_id,inicio,fim,estado,codigo,arquivos,feitos,proxima,erros,erro,diagnostico,updated_at,
+    coalesce(lease_ate>now(),false) as reserva_ativa,lease_ate
    from public.sicoob_liqui_jobs_359 order by updated_at desc limit 5
   ) x
  ),'[]'::jsonb),
@@ -22,6 +25,13 @@ select jsonb_build_object(
    from public.sicoob_liqui_eventos_359 e join public.boletos b on b.id=e.boleto_id
    where e.estado='conferir' and b.banco='sicoob' and b.nosso_numero='3849'
    order by e.created_at desc limit 5
+  ) x
+ ),'[]'::jsonb),
+ 'execucoes_recentes',coalesce((
+  select jsonb_agg(to_jsonb(x)) from (
+   select j.jobname,r.status,r.start_time,r.end_time
+   from cron.job_run_details r join cron.job j on j.jobid=r.jobid
+   where j.jobname='sicoob-liqui-359' order by r.start_time desc limit 5
   ) x
  ),'[]'::jsonb),
  'agendamentos',coalesce((
