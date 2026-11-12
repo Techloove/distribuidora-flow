@@ -96,3 +96,45 @@ test("retorno liquidado é encaminhado para sincronização sem criar dados de b
   ]);
   expect(calls[1]?.args).not.toHaveProperty("_valorPago");
 });
+
+test("inclusão sem nosso número é confirmada somente com identificador original e valor", async () => {
+  const calls: Record<string, unknown>[] = [];
+  const rpc = async <T>(name: string, args: Record<string, unknown>): Promise<T> => {
+    calls.push(args);
+    return (
+      name.includes("reservar")
+        ? {
+            lease: "l",
+            itens: [
+              {
+                id: "novo",
+                recuperar_emissao: true,
+                nosso_numero: null,
+                seu_numero: "Teste2/1",
+                valor: 25,
+              },
+            ],
+          }
+        : null
+    ) as T;
+  };
+  const raw = {
+    situacaoBoleto: "Em Aberto",
+    nossoNumero: 3850,
+    numeroCliente: 12345,
+    codigoModalidade: 1,
+    seuNumero: "Teste2/1",
+    valor: 25,
+    dataVencimento: "2026-11-18",
+    valorAbatimento: 0,
+    tipoDesconto: 0,
+    linhaDigitavel: "756" + "0".repeat(44),
+    codigoBarras: "756" + "0".repeat(41),
+  };
+  await executarSicoobAutomatico("s", rpc, async () => raw);
+  expect((calls[1]?.["_banco"] as Record<string, unknown>)["nossoNumero"]).toBe("3850");
+  calls.length = 0;
+  await executarSicoobAutomatico("s", rpc, async () => ({ ...raw, valor: 50 }));
+  expect(calls[1]?.["_banco"]).toBeNull();
+  expect(calls[1]?.["_erro"]).toBe("CONSULTA_NAO_CONFIRMADA");
+});

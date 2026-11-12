@@ -25,6 +25,7 @@ export type CondicoesSicoob = {
   numeroCliente: number;
   codigoModalidade: number;
   seuNumero: string;
+  identificacaoBoletoEmpresa?: string;
   valor: number;
   vencimento: string;
   abatimento: number;
@@ -117,6 +118,9 @@ export function condicoesSicoob(raw: Record<string, unknown>): CondicoesSicoob {
     numeroCliente: Number(raw["numeroCliente"]),
     codigoModalidade: 1,
     seuNumero: String(raw["seuNumero"] ?? ""),
+    ...(raw["identificacaoBoletoEmpresa"] === undefined
+      ? {}
+      : { identificacaoBoletoEmpresa: String(raw["identificacaoBoletoEmpresa"]) }),
     valor: dinheiroSicoob(raw["valor"]),
     vencimento: dataSicoob(raw["dataVencimento"]),
     abatimento: dinheiroSicoob(raw["valorAbatimento"]),

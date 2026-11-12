@@ -1,3 +1,4 @@
+import { consultarEmissaoPendenteSicoob } from "./sicoob-confirmacao-emissao";
 import { clienteSicoob, type CertificadoSicoob } from "./server-sicoob-http";
 import { condicoesSicoob, type SicoobConfig } from "./sicoob-api";
 import { fetchWithTimeout } from "./fetch-timeout";
@@ -7,7 +8,12 @@ export type ItemSicoobAuto = {
   id: string;
   centro_id: string;
   actor: string;
-  nosso_numero: string;
+  nosso_numero: string | null;
+  recuperar_emissao?: boolean;
+  seu_numero?: string;
+  identificacao_empresa?: string;
+  valor?: number;
+  vencimento_emissao?: string;
   versao: number;
   pagador_documento?: string;
 };
@@ -47,13 +53,20 @@ export async function executarSicoobAutomatico(
         const raw = await consultar(item);
         diagnostico = diagnosticoPagamentoSicoob(raw);
         banco = condicoesSicoob(raw);
-        if (banco.nossoNumero !== item.nosso_numero) throw Error("Identificação divergente");
+        if (item.valor !== undefined && banco.valor !== Number(item.valor))
+          throw Error("Valor divergente");
+        if (item.recuperar_emissao) {
+          if (!item.seu_numero || banco.seuNumero !== item.seu_numero)
+            throw Error("Identificação divergente");
+        } else if (banco.nossoNumero !== item.nosso_numero) throw Error("Identificação divergente");
         consultados++;
       } catch (e) {
         banco = null;
-        erro =
-          e instanceof Error && /^HTTP_[0-9]{3}$/.test(e.message)
-            ? e.message
+        const http = e instanceof Error ? e.message.match(/\bHTTP[ _]([0-9]{3})\b/) : null;
+        erro = http
+          ? `HTTP_${http[1]}`
+          : e instanceof Error && e.message === "ADIADO"
+            ? "ADIADO"
             : "CONSULTA_NAO_CONFIRMADA";
       }
     await rpc("sicoob_auto_finalizar_358", {
@@ -93,6 +106,7 @@ export async function atenderSicoobAutomatico(request: Request): Promise<Respons
     return (await r.json()) as T;
   };
   try {
+    const limiteConsultas = Date.now() + 40_000;
     const cache = new Map<
       string,
       { config: SicoobConfig; api: Awaited<ReturnType<typeof clienteSicoob>> }
@@ -110,22 +124,41 @@ export async function atenderSicoobAutomatico(request: Request): Promise<Respons
         c = { config: p.config, api: await clienteSicoob(p.config.client_id, p.certificado) };
         cache.set(chave, c);
       }
-      const q = new URLSearchParams({
-        numeroCliente: String(c.config.numero_cliente),
-        codigoModalidade: "1",
-        nossoNumero: item.nosso_numero,
-      });
-      if (c.config.numero_contrato)
-        q.set("numeroContratoCobranca", String(c.config.numero_contrato));
-      const r = await c.api("/boletos?" + q);
-      if (
-        r.status !== 200 ||
-        !r.json["resultado"] ||
-        typeof r.json["resultado"] !== "object" ||
-        Array.isArray(r.json["resultado"])
-      )
-        throw Error(r.status !== 200 ? "HTTP_" + r.status : "Resposta não confirmada");
-      const raw = r.json["resultado"] as Record<string, unknown>;
+      const api = c.api;
+      const consultar = (path: string) => {
+        if (Date.now() + 15_000 > limiteConsultas) throw Error("ADIADO");
+        return api(path);
+      };
+      let raw: Record<string, unknown>;
+      if (item.recuperar_emissao) {
+        raw = await consultarEmissaoPendenteSicoob(
+          consultar,
+          c.config.numero_cliente,
+          item.pagador_documento ?? "",
+          item.vencimento_emissao ?? "",
+          item.seu_numero ?? "",
+          c.config.numero_contrato,
+          item.identificacao_empresa,
+        );
+      } else {
+        if (!item.nosso_numero) throw Error("Identificação indisponível");
+        const q = new URLSearchParams({
+          numeroCliente: String(c.config.numero_cliente),
+          codigoModalidade: "1",
+          nossoNumero: item.nosso_numero,
+        });
+        if (c.config.numero_contrato)
+          q.set("numeroContratoCobranca", String(c.config.numero_contrato));
+        const r = await consultar("/boletos?" + q);
+        if (
+          r.status !== 200 ||
+          !r.json["resultado"] ||
+          typeof r.json["resultado"] !== "object" ||
+          Array.isArray(r.json["resultado"])
+        )
+          throw Error(r.status !== 200 ? "HTTP_" + r.status : "Resposta não confirmada");
+        raw = r.json["resultado"] as Record<string, unknown>;
+      }
       if (
         raw["numeroContaCorrente"] !== undefined &&
         Number(raw["numeroContaCorrente"]) !== c.config.numero_conta
@@ -137,6 +170,11 @@ export async function atenderSicoobAutomatico(request: Request): Promise<Respons
         Number(raw["numeroContratoCobranca"]) !== c.config.numero_contrato
       )
         throw Error("Contrato divergente");
+      if (
+        item.identificacao_empresa &&
+        String(raw["identificacaoBoletoEmpresa"] ?? "") !== item.identificacao_empresa
+      )
+        throw Error("Identificador da empresa divergente");
       const pagador = raw["pagador"] as Record<string, unknown> | undefined;
       const recebido = String(pagador?.["numeroCpfCnpj"] ?? "")
         .replace(/[^0-9A-Za-z]/g, "")

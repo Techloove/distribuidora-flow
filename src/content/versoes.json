@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.51.0",
+    "data": "2026-11-12",
+    "titulo": "Confirma emissões Sicoob automaticamente e usa documento/parcela nas novas emissões",
+    "motivo": "Emissão já registrada no banco podia ficar sem confirmação local; o número do documento no PDF usava um identificador técnico em vez do documento do título.",
+    "novidades": [
+      "Consulta individual automática após resposta inicial não confirmada, sem repetir POST de emissão.",
+      "Fila do servidor recupera inclusões ERP enviadas/incertas sem nosso número; interface distingue pendência de sucesso e acompanha a situação.",
+      "Novas emissões usam documento/parcela no campo impresso e mantêm identificador técnico separado, com conferência adicional contra documento reutilizado.",
+      "Preserva boletos anteriores, pagamentos, tarifas e operações de vencimento/abatimento já confirmadas.",
+      "Requer fase362 após publicação; teste real do próximo boleto deve conferir a confirmação e o documento no PDF do banco."
+    ]
+  },
+  {
     "versao": "1.50.0",
     "data": "2026-11-12",
     "titulo": "Contabiliza tarifa individual Sicoob LIQUI sem duplicar o extrato",

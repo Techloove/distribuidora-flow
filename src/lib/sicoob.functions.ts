@@ -1,3 +1,4 @@
+import { confirmarRespostaEmissaoSicoob } from "./sicoob-confirmacao-emissao";
 import { consultarPagadorSicoob } from "./sicoob-consulta";
 import { erroOperacaoSicoob, consultaVaziaSicoob } from "./sicoob-erros";
 import { validarEmissaoSicoob, condicoesEmissaoSicoob, type EmissaoSicoob } from "./sicoob-emissao";
@@ -252,6 +253,13 @@ function validaIdentidade(c: CondicoesSicoob, b: Row, cfg: SicoobConfig, raw: Ro
     );
   const snap = obj(b["sicoob_snapshot_316"]);
   if (
+    snap["identificacao_empresa"] &&
+    c.identificacaoBoletoEmpresa !== snap["identificacao_empresa"]
+  )
+    throw Error(
+      "Identificador da empresa divergente no retorno bancário. Consulte antes de vincular.",
+    );
+  if (
     cfg.numero_contrato &&
     raw["numeroContratoCobranca"] !== undefined &&
     Number(raw["numeroContratoCobranca"]) !== cfg.numero_contrato
@@ -352,7 +360,11 @@ async function consultarContexto(
         (x) =>
           String(x["seuNumero"]) === String(p.b["seu_numero"]) &&
           Number(x["numeroCliente"]) === p.config.numero_cliente &&
-          Number(x["codigoModalidade"]) === 1,
+          Number(x["codigoModalidade"]) === 1 &&
+          (!obj(p.b["sicoob_snapshot_316"])["identificacao_empresa"] ||
+            x["identificacaoBoletoEmpresa"] === undefined ||
+            String(x["identificacaoBoletoEmpresa"]) ===
+              obj(p.b["sicoob_snapshot_316"])["identificacao_empresa"]),
       );
     if (encontrados.length === 0) return consultaVaziaSicoob(!!p.b["sicoob_pendente_316"], 200);
     if (encontrados.length !== 1)
@@ -577,7 +589,7 @@ async function emitirReserva(
   let retornoRegistrado = false;
   try {
     const r = await p.api("/boletos", "POST", obj(reserva.operacao["requisicao"]));
-    if (r.status !== 200) {
+    if (![200, 201, 202].includes(r.status)) {
       await rpc("sicoob_estado_operacao_316", {
         _actor: actor,
         _operacao: reserva.operacao["id"],
@@ -592,13 +604,29 @@ async function emitirReserva(
       await registrarMock(actor, String(b["id"]), raw);
       return { boletoId: String(b["id"]), mensagem: mensagemMock };
     }
-    const c = condicoesSicoob({ ...raw, situacaoBoleto: raw["situacaoBoleto"] ?? "Em Aberto" });
-    validaIdentidade(c, b, p.config, raw);
-    await rpc(sandbox ? "sicoob_sandbox_sincronizar_316" : "sicoob_sincronizar_316", {
-      _actor: actor,
-      _boleto: b["id"],
-      _banco: c,
-    });
+    const aceitar = async (retorno: Row) => {
+      const c = condicoesSicoob({
+        ...retorno,
+        situacaoBoleto: retorno["situacaoBoleto"] ?? "Em Aberto",
+      });
+      validaIdentidade(c, b, p.config, retorno);
+      await rpc(sandbox ? "sicoob_sandbox_sincronizar_316" : "sicoob_sincronizar_316", {
+        _actor: actor,
+        _boleto: b["id"],
+        _banco: c,
+      });
+    };
+    if (sandbox) await aceitar(raw);
+    else
+      await confirmarRespostaEmissaoSicoob(raw, aceitar, async (nn) => {
+        // O número é apenas filtro de leitura; todos os dados continuam validados antes de persistir.
+        const consulta = await consultarContexto(alvo, actor, {
+          ...p,
+          b: { ...p.b, nosso_numero: nn },
+        });
+        if (!consulta.condicoes || consulta.situacao === "SEM_RESULTADO")
+          throw Error("Registro ainda não confirmado");
+      });
     return {
       boletoId: String(b["id"]),
       mensagem: sandbox
@@ -613,6 +641,13 @@ async function emitirReserva(
         _estado: "incerto",
         _nota: "Registro sem confirmação local. Recuperar por consulta antes de nova emissão.",
       });
+    if (!sandbox && !retornoRegistrado)
+      return {
+        boletoId: String(b["id"]),
+        confirmacaoPendente: true,
+        mensagem:
+          "Emissão sem confirmação local; consulta automática pendente. Não emita novamente. O registro será conferido pelo servidor.",
+      };
     throw e;
   }
 }

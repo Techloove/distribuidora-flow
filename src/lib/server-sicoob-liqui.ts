@@ -62,7 +62,9 @@ export function normalizarLiquiSicoob(v: unknown, inicio: string, fim: string) {
   const seuNumero = String(r["seuNumero"] ?? "").trim();
   if (
     !/^756\d{41}$/.test(codigo) ||
-    !/^[a-zA-Z0-9._/-]{1,50}$/.test(seuNumero) ||
+    !seuNumero ||
+    seuNumero.length > 50 ||
+    /\p{Cc}/u.test(seuNumero) ||
     inteiro(r["modalidade"], "MODALIDADE") !== "1"
   )
     throw Error("LIQUI_TITULO_INVALIDO");

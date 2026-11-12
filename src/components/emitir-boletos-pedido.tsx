@@ -93,6 +93,11 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
   const consulta = useQuery({
     queryKey: chave,
     enabled: open && !!client && !!session,
+    refetchInterval: (query) =>
+      !busy &&
+      query.state.data?.boletos.some((b) => b.banco === "sicoob" && b.status === "em_processamento")
+        ? 10_000
+        : false,
     queryFn: async () => {
       // Todas as leituras usam a sessão/RLS. Não busca títulos de outros pedidos.
       const [titulos, boletos, pendentes] = await Promise.all([
@@ -227,6 +232,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     setAvisoConsulta(null);
     setProgresso("");
     let emitidos = 0;
+    let pendentes = 0;
     try {
       const atual = await cobranca.refetch();
       if (
@@ -245,13 +251,22 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
         if (l.titulo.centro_id !== centroDocumento)
           throw new Error("A loja da parcela diverge da configuração consultada.");
         setProgresso(`Emitindo ${i + 1} de ${escolhidas.length}…`);
-        await emitir({
+        const resultado = await emitir({
           data: { contaId: l.titulo.id, accessToken: session.access_token },
         });
-        emitidos++;
+        if ("confirmacaoPendente" in resultado && resultado.confirmacaoPendente) pendentes++;
+        else emitidos++;
       }
-      toast.success(`${emitidos} boleto(s) emitido(s). Selecione os boletos para obter o PDF.`);
-      setModo("imprimir");
+      if (pendentes) {
+        const mensagem = `${emitidos} boleto(s) confirmado(s); ${pendentes} aguardando confirmação automática no Sicoob. Não é necessário emitir novamente.`;
+        setAvisoConsulta(
+          "Confirmação acompanhada automaticamente. A lista será atualizada enquanto houver emissão Sicoob em processamento.",
+        );
+        toast.info(mensagem);
+      } else {
+        toast.success(`${emitidos} boleto(s) emitido(s). Selecione os boletos para obter o PDF.`);
+        setModo("imprimir");
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : "Não foi possível concluir a operação.";
       setErro(

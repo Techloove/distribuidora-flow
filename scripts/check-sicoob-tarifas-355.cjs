@@ -191,6 +191,8 @@ create function net.http_post(url text,headers jsonb,body jsonb,timeout_millisec
         fee,
         hoje,
       });
+    if (process.argv.includes("--confirmacao"))
+      await require("./check-sicoob-confirmacao-362.cjs")({ db, q, scalar, id, hoje });
     await q("select sicoob_tarifas_salvar_355($1,$2,$3,current_date,false,1)", [
       id(1),
       id(10),

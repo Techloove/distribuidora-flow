@@ -246,3 +246,13 @@ test("candidato ERP com identificador inválido continua bloqueado e informa o c
   expect(d.calls.some((c) => c.name === "sicoob_liqui_arquivo_359")).toBe(false);
   expect(d.calls.at(-1)?.args["_acao"]).toBe("erro");
 });
+
+test("documento/parcela textual mantém a conciliação sem aceitar caracteres de controle", () => {
+  expect(
+    normalizarLiquiSicoob({ ...linha, seuNumero: "NF Açúcar/1" }, "2026-11-10", "2026-11-11")
+      .seuNumero,
+  ).toBe("NF Açúcar/1");
+  expect(() =>
+    normalizarLiquiSicoob({ ...linha, seuNumero: "NF\u00001/1" }, "2026-11-10", "2026-11-11"),
+  ).toThrow("LIQUI_TITULO_INVALIDO");
+});
