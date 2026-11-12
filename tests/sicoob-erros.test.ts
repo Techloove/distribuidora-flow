@@ -43,3 +43,20 @@ test("204 preserva pendência sem confirmar emissão e não gera dados de liquid
   expect(consultaVaziaSicoob(false, 200).nota).toContain("HTTP 200");
   expect(consultaVaziaSicoob(false).pendente).toBe(false);
 });
+
+test("mensagens de gateway e erro aninhado são sanitizadas, sem conservar o corpo bruto", () => {
+  const r = motivoRecusaSicoob(
+    {
+      httpMessage: "Forbidden",
+      moreInformation: "Aplicativo app-secreto recusado. Bearer token-oculto",
+      pagador: { nome: "NAO-EXIBIR" },
+    },
+    ["app-secreto"],
+  );
+  expect(r).toContain("Forbidden");
+  expect(r).toContain("recusado");
+  expect(r).not.toMatch(/app-secreto|token-oculto|NAO-EXIBIR/);
+  expect(motivoRecusaSicoob({ error: { message: "Recurso não autorizado" } })).toContain(
+    "Recurso não autorizado",
+  );
+});

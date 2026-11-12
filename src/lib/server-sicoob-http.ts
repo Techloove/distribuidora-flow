@@ -22,7 +22,33 @@ export type RespostaSicoob = {
   status: number;
   json: Record<string, unknown>;
   motivo?: string | null;
+  rastreio?: Record<string, string>;
 };
+/** Somente IDs públicos de atendimento e data da resposta, nunca cookies ou cabeçalhos de autenticação. */
+export function rastreioRespostaSicoob(
+  headers: Record<string, string | string[] | undefined>,
+  segredos: readonly string[] = [],
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const nome of [
+    "x-request-id",
+    "x-correlation-id",
+    "x-amzn-requestid",
+    "x-amz-apigw-id",
+    "x-sicoob-request-id",
+    "x-b3-traceid",
+    "trace-id",
+    "date",
+  ]) {
+    const valor = headers[nome];
+    if (typeof valor !== "string" || valor.length > 160 || !/^[A-Za-z0-9._:/+,= -]+$/.test(valor))
+      continue;
+    if (segredos.some((s) => !!s && (valor === s || (s.length >= 6 && valor.includes(s)))))
+      continue;
+    out[nome] = valor;
+  }
+  return out;
+}
 export type TransporteSicoob = (
   url: string,
   method: string,
@@ -76,6 +102,12 @@ export const transporteSicoob: TransporteSicoob = (endereco, method, headers, bo
           try {
             resolve({
               status: res.statusCode ?? 0,
+              rastreio: rastreioRespostaSicoob(res.headers, [
+                headers["Authorization"]?.replace(/^Bearer /, "") ?? "",
+                headers["client_id"] ?? "",
+                cert.senha ?? "",
+                cert.pfx ?? "",
+              ]),
               json: texto ? (JSON.parse(texto) as Record<string, unknown>) : {},
             });
           } catch {

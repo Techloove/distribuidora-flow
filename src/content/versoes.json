@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.49.1",
+    "data": "2026-11-12",
+    "titulo": "Preserva detalhes da recusa bancária na coleta LIQUI",
+    "motivo": "O relatório LIQUI ficou pronto, mas o download recebeu HTTP 403 e a rotina conservava apenas o código HTTP, descartando o motivo já tratado.",
+    "novidades": [
+      "O diagnóstico passa a mostrar etapa, método, recurso, motivo sanitizado e identificadores públicos de rastreamento retornados pelo banco.",
+      "Mantém solicitação e arquivos pendentes para nova tentativa, sem criar outra emissão nem confirmar recebimento após recusa.",
+      "Reconhece mensagens estruturadas de gateway, preservando a remoção de credenciais. Não altera autenticação ou permissões; a causa do HTTP 403 real ainda precisa ser confirmada.",
+      "Não requer novo SQL de instalação. O diagnóstico unificado reúne as seções em uma única consulta."
+    ]
+  },
+  {
     "versao": "1.49.0",
     "data": "2026-11-12",
     "titulo": "Integra arquivos LIQUI à baixa financeira Sicoob",

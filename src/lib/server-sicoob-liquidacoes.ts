@@ -47,6 +47,30 @@ export async function executarLiquidacoesSicoob(
     rpc("sicoob_liqui_etapa_359", { _job: job.id, _lease: job.lease, _acao, _dados });
   let campos: string[] = [];
   let valores: Record<string, unknown>[] = [];
+  let respostaHttp: Record<string, unknown> | null = null;
+  const verificarHttp = (
+    r: RespostaSicoob,
+    permitidos: number[],
+    recurso: string,
+    metodo: string,
+  ) => {
+    if (permitidos.includes(r.status)) return;
+    respostaHttp = {
+      etapa: job.estado,
+      metodo,
+      recurso,
+      status: r.status,
+      motivo: r.motivo ?? null,
+      rastreio: r.rastreio ?? {},
+      camposResposta:
+        r.json && typeof r.json === "object"
+          ? Object.keys(r.json)
+              .filter((k) => /^[a-zA-Z][a-zA-Z0-9_]{0,60}$/.test(k))
+              .slice(0, 40)
+          : [],
+    };
+    throw Error("HTTP_" + r.status);
+  };
   try {
     const api = await criarApi(job);
     const q = new URLSearchParams({
@@ -60,7 +84,7 @@ export async function executarLiquidacoesSicoob(
         dataInicial: job.inicio,
         dataFinal: job.fim,
       });
-      if (![200, 201, 202].includes(r.status)) throw Error("HTTP_" + r.status);
+      verificarHttp(r, [200, 201, 202], "/boletos/movimentacoes", "POST");
       const codigo = idBanco(
         (r.json["resultado"] as Record<string, unknown> | undefined)?.["codigoSolicitacao"],
       );
@@ -73,7 +97,7 @@ export async function executarLiquidacoesSicoob(
         await etapa("aguardar");
         return { aguardando: true };
       }
-      if (r.status !== 200) throw Error("HTTP_" + r.status);
+      verificarHttp(r, [200], "/boletos/movimentacoes", "GET");
       const resultado = r.json["resultado"] as Record<string, unknown> | undefined;
       if (!resultado || !Array.isArray(resultado["idArquivos"]))
         throw Error("LIQUI_LISTA_INCOMPLETA");
@@ -94,7 +118,7 @@ export async function executarLiquidacoesSicoob(
       if (!arquivo) throw Error("LIQUI_ARQUIVO_AUSENTE");
       q.set("idArquivo", String(arquivo));
       const r = await api("/boletos/movimentacoes/download?" + q);
-      if (r.status !== 200) throw Error("HTTP_" + r.status);
+      verificarHttp(r, [200], "/boletos/movimentacoes/download", "GET");
       const base64 = (r.json["resultado"] as Record<string, unknown> | undefined)?.["arquivo"];
       const registros = registrosZipSicoob(base64);
       campos = [
@@ -143,7 +167,7 @@ export async function executarLiquidacoesSicoob(
       e instanceof Error && /^(?:HTTP_[0-9]{3}|LIQUI_[A-Z_]+|CONFIG_ALTERADA)$/.test(e.message)
         ? e.message
         : "LIQUI_RETORNO_INVALIDO";
-    await etapa("erro", { codigo, diagnostico: { campos, valores } });
+    await etapa("erro", { codigo, diagnostico: { campos, valores, respostaHttp } });
     throw Error(codigo);
   }
 }

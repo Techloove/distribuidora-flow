@@ -169,3 +169,43 @@ test("lista vazia sem confirmação de total zero continua aguardando, IDs textu
   }));
   expect(e.calls[1]?.args["_dados"]).toEqual({ ids: [101, 102] });
 });
+
+test("403 no download preserva motivo tratado, rastreio e etapa, sem corpo bruto ou nova solicitação", async () => {
+  const d = deps({
+    ...job,
+    estado: "baixar",
+    codigo: 223647729,
+    arquivos: [100007494],
+    feitos: [],
+  });
+  let chamadas = 0;
+  await expect(
+    executarLiquidacoesSicoob("s", d.rpc, async () => async (path, method) => {
+      chamadas++;
+      expect(path).toContain("codigoSolicitacao=223647729");
+      expect(path).toContain("idArquivo=100007494");
+      expect(method).toBeUndefined();
+      return {
+        status: 403,
+        json: { message: "recusa", pagador: { nome: "NÃO EXPOR" } },
+        motivo: "Sem permissão para download",
+        rastreio: { "x-request-id": "req-123" },
+      };
+    }),
+  ).rejects.toThrow("HTTP_403");
+  expect(chamadas).toBe(1);
+  expect(d.calls).toHaveLength(2);
+  const diagnostico = (d.calls[1]?.args["_dados"] as Record<string, unknown>)[
+    "diagnostico"
+  ] as Record<string, unknown>;
+  expect(diagnostico["respostaHttp"]).toEqual({
+    etapa: "baixar",
+    metodo: "GET",
+    recurso: "/boletos/movimentacoes/download",
+    status: 403,
+    motivo: "Sem permissão para download",
+    rastreio: { "x-request-id": "req-123" },
+    camposResposta: ["message", "pagador"],
+  });
+  expect(JSON.stringify(diagnostico)).not.toContain("NÃO EXPOR");
+});

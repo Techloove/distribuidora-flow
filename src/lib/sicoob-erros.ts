@@ -12,6 +12,7 @@ export function motivoRecusaSicoob(raw: unknown, segredos: readonly string[] = [
       v["message"],
       v["error_description"],
       v["detail"],
+      v["httpMessage"],
       typeof v["error"] === "string" ? v["error"] : null,
     ].find((x) => typeof x === "string" && x.trim());
     if (typeof m !== "string") return null;
@@ -23,6 +24,8 @@ export function motivoRecusaSicoob(raw: unknown, segredos: readonly string[] = [
   };
   const partes = [
     mensagem(r),
+    mensagem(r["error"]),
+    typeof r["moreInformation"] === "string" ? mensagem({ message: r["moreInformation"] }) : null,
     ...[r["mensagens"], r["erros"], r["errors"]].flatMap((a) =>
       Array.isArray(a) ? a.slice(0, 3).map(mensagem) : [],
     ),

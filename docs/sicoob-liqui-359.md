@@ -31,3 +31,14 @@ O valorTarifaMovimento do LIQUI é armazenado no comprovante de retorno para con
 As referências públicas estão em `docs/sicoob-revisao-colecao-postman.md`. São referências comunitárias, não certificação da resposta real desta cooperativa. A integração aceita apenas o contrato validado e mantém erro/conferência se houver variação.
 
 Testes Bun validam ZIP/CRC/limites, campos financeiros, distinção entre data efetiva e movimento, equivalência da equação, HTTP201/204/403, etapas e todos os IDs de arquivos. PGlite executa o receber_titulo real da fase71, sem substituí-lo por stub: testa conta Sicoob, entrada e título pago, repetição de arquivo/evento, baixa manual prévia, mora/desconto/abatimento, mudança de configuração, privilégios e ausência de segunda despesa de tarifa. Não há emissão nem chamada bancária real nos testes.
+
+
+## Diagnóstico de recusas HTTP — 1.49.1
+
+O retorno real confirmou solicitação aceita e arquivo disponível, seguido de HTTP 403 no download. O GET, o caminho, os três parâmetros e os nomes/valores dos cabeçalhos funcionais foram comparados com a coleção oficial enviada e correspondem à documentação. Isso não identifica, por si só, a razão da recusa bancária.
+
+A rotina descartava o motivo já sanitizado pelo cliente HTTP e conservava somente HTTP_403. Agora conserva em diagnostico.respostaHttp a etapa, método, recurso, status, motivo tratado, nomes dos campos retornados e rastreio permitido pelo banco. A lista de cabeçalhos de rastreio é fechada (IDs de atendimento e data), valida caracteres/tamanho e remove valores que correspondam a credenciais conhecidas; não inclui cookies, Authorization, certificado ou corpo bruto. Mensagens estruturadas de gateway e error.message também usam a sanitização bancária.
+
+Não há alteração de token, escopo, certificado ou permissão por suposição; o HTTP 403 real continua sem causa confirmada até a próxima resposta enriquecida ou análise do suporte Sicoob. A solicitação e os arquivos pendentes são preservados; nenhum novo boleto é emitido, nenhum download recusado é tratado como recebimento e nenhum relatório pronto é substituído automaticamente. Não exige nova migração: usa o diagnóstico JSON já existente da fase359.
+
+O script de diagnóstico unificado faz uma única consulta, evitando mostrar só a última seção no SQL Editor.
