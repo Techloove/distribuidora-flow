@@ -49,6 +49,7 @@ import {
   alteracoesVencimentoConfirmadas,
   filtrarBoletos,
   valorRecebidoBoleto,
+  tarifaLiquiBoleto,
   totalBoletosLiquidados,
   filtrosIniciaisBoletos,
   boletoVencido,
@@ -728,6 +729,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                         : "—";
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
+                    const tarifaLiqui = tarifaLiquiBoleto(b);
                     const financeiro = financeiroTarifas.data?.get(id);
                     const tarifaStatus = (
                       tarifa?.["movimentos_financeiros"] as { status?: string } | null
@@ -856,6 +858,18 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                     Há outros débitos a conferir
                                   </span>
                                 )}
+                              </>
+                            ) : tarifaLiqui !== null ? (
+                              <>
+                                <strong className="whitespace-nowrap">{brl(tarifaLiqui)}</strong>
+                                <span className="block text-muted-foreground">
+                                  API Sicoob · LIQUI
+                                </span>
+                                <span className="block text-muted-foreground">
+                                  {tarifa
+                                    ? "Conferir despesa vinculada no financeiro"
+                                    : "Informada pelo banco; contabilização pendente"}
+                                </span>
                               </>
                             ) : tarifas.isPending || tarifasApi.isPending ? (
                               "Conferindo…"

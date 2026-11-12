@@ -175,3 +175,17 @@ export function alteracoesVencimentoConfirmadas(boleto: Row) {
         b.id.localeCompare(a.id),
     );
 }
+
+/** Tarifa individual confirmada no recebimento LIQUI; não soma o débito agrupado do extrato. */
+export function tarifaLiquiBoleto(boleto: Row): number | null {
+  if (
+    boleto["banco"] !== "sicoob" ||
+    boleto["canal"] !== "api" ||
+    boleto["ambiente"] !== "producao"
+  )
+    return null;
+  const recebimento = boleto["sicoob_recebimento_359"];
+  if (!recebimento || typeof recebimento !== "object" || Array.isArray(recebimento)) return null;
+  const valor = (recebimento as Row)["tarifa"];
+  return typeof valor === "number" && Number.isFinite(valor) && valor >= 0 ? valor : null;
+}

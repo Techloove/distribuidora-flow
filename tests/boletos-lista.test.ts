@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import {
   alteracoesVencimentoConfirmadas,
   dataBoleto,
+  tarifaLiquiBoleto,
   filtrarBoletos,
   filtrosIniciaisBoletos,
   boletoCancelado,
@@ -266,4 +267,20 @@ test("cartão acompanha liquidação sem confundir zero padrão com recebimento 
       { ...liquidado, valor: 0.2 },
     ]),
   ).toBe(0.3);
+});
+
+test("tarifa LIQUI individual não depende do extrato agrupado nem vira tarifa Sicredi", () => {
+  const boleto = {
+    banco: "sicoob",
+    canal: "api",
+    ambiente: "producao",
+    sicoob_recebimento_359: { tarifa: 1.44 },
+  };
+  expect(tarifaLiquiBoleto(boleto)).toBe(1.44);
+  expect(tarifaLiquiBoleto({ ...boleto, banco: "sicredi" })).toBeNull();
+  expect(tarifaLiquiBoleto({ ...boleto, ambiente: "sandbox" })).toBeNull();
+  for (const tarifa of [null, undefined, "1.44", -1, Infinity]) {
+    expect(tarifaLiquiBoleto({ ...boleto, sicoob_recebimento_359: { tarifa } })).toBeNull();
+  }
+  expect(tarifaLiquiBoleto({ ...boleto, sicoob_recebimento_359: { tarifa: 0 } })).toBe(0);
 });
