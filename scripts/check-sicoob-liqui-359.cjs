@@ -42,6 +42,8 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
     await db.exec(receiver);
     await db.exec(fs.readFileSync("db/fase359_sicoob_liqui_financeiro.sql", "utf8"));
     await db.exec(fs.readFileSync("db/fase360_sicoob_referencias_liqui.sql", "utf8"));
+    if (process.argv.includes("--rapido"))
+      await require("./check-sicoob-rapido-363.cjs")({ db, id });
     assert.equal(
       (
         await db.query(
@@ -63,6 +65,16 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
     assert.ok(j.fim >= j.inicio);
     assert.equal((await reserve()).id, undefined);
     await step(j, "solicitacao", { codigo: 99 });
+    if (process.argv.includes("--rapido"))
+      assert.equal(
+        (
+          await db.query(
+            "select proxima=date_trunc('minute',updated_at)+interval '1 minute' as ok from sicoob_liqui_jobs_359 where id=$1",
+            [j.id],
+          )
+        ).rows[0].ok,
+        true,
+      );
     await db.exec("update sicoob_liqui_jobs_359 set proxima=now()");
     j = await reserve();
     assert.equal(j.estado, "aguardar");
@@ -234,6 +246,33 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
     assert.equal(
       (await db.query("select * from movimentos_financeiros where tipo='saida'")).rows.length,
       0,
+    );
+    // Arquivos vazios encerram só o ciclo consultado, sem apagar ou criar movimentos financeiros.
+    await db.query(
+      "update sicoob_liqui_jobs_359 set estado='aguardar',arquivos='{}',feitos='{}',lease=gen_random_uuid(),lease_ate=now()+interval '3 minutes' where id=$1",
+      [j.id],
+    );
+    const vazio = (await db.query("select * from sicoob_liqui_jobs_359 where id=$1", [j.id]))
+      .rows[0];
+    await step(vazio, "arquivos", { ids: [] });
+    assert.equal(
+      (await db.query("select estado from sicoob_liqui_jobs_359 where id=$1", [j.id])).rows[0]
+        .estado,
+      "concluido",
+    );
+    assert.equal((await db.query("select * from movimentos_financeiros")).rows.length, 2);
+    // Um boleto ainda sem recebimento continua elegível após o ciclo vazio.
+    await db.exec(`insert into contas_receber(id,centro_id,valor,documento,parcela) values('${id(20)}','${id(2)}',11,'Teste3',1);
+      insert into boletos(id,centro_id,banco,canal,ambiente,status,nosso_numero,seu_numero,codigo_barras,valor,data_emissao,conta_receber_id,conta_cobranca_id,sicoob_snapshot_316)
+      values('${id(21)}','${id(2)}','sicoob','api','producao','registrado','3851','Teste3/1','756${"1".repeat(41)}',11,(now() at time zone 'America/Sao_Paulo')::date,'${id(20)}','${id(7)}','{"numero_cliente":123,"numero_conta":456}');
+      insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(21)}','emissao','confirmado');
+      update sicoob_liqui_config_359 set proxima_consulta=now();`);
+    const seguinte = await reserve();
+    assert.equal(seguinte.estado, "solicitar");
+    assert.notEqual(seguinte.id, vazio.id);
+    assert.equal(
+      (await db.query("select status from contas_receber where id=$1", [id(20)])).rows[0].status,
+      "aberto",
     );
     await db.exec("update sicoob_liqui_config_359 set ativo=false");
     await assert.rejects(

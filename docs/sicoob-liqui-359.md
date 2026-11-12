@@ -44,3 +44,15 @@ A rotina descartava o motivo já sanitizado pelo cliente HTTP e conservava somen
 Não há alteração de token, escopo, certificado ou permissão por suposição; o HTTP 403 real continua sem causa confirmada até a próxima resposta enriquecida ou análise do suporte Sicoob. A solicitação e os arquivos pendentes são preservados; nenhum novo boleto é emitido, nenhum download recusado é tratado como recebimento e nenhum relatório pronto é substituído automaticamente. Não exige nova migração: usa o diagnóstico JSON já existente da fase359.
 
 O script de diagnóstico unificado faz uma única consulta, evitando mostrar só a última seção no SQL Editor.
+
+
+## Consulta concluída sem registros — 1.52.1
+
+O diagnóstico real da solicitação223733787, de12/11/2026, confirmou GET de status de movimentações com HTTP400, código5002 e mensagem `Solicitação não retornou nenhum registro.`. Isso estava sendo classificado como falha e bloqueava a conclusão do ciclo sem arquivos.
+
+O coletor reconhece exclusivamente essa combinação na etapa `aguardar`, com mensagens estruturadas consistentes e sem outros dados de resultado. Usa a transição existente de lista de arquivos vazia para concluir o ciclo e manter a agenda das próximas consultas. Não inventa registros, liquidação, arquivo ou tarifa. O mesmo código5002 já foi observado com mensagem de período inválido; esse caso continua recusado. Emissão/solicitação inicial, download, mensagens conflitantes, corpo inesperado e demais HTTP400 também continuam como erro.
+
+Não requer SQL nem credencial nova. O aviso atual desaparece após uma execução agendada concluir a solicitação; a espera já marcada após falhas é preservada. Contadores e diagnóstico antigos podem permanecer no histórico de um job concluído, sem representar erro atual. Os registros financeiros anteriores não são alterados. A próxima coleta pode encontrar pagamentos novos no mesmo período; concluir sem registros não exclui boletos da rotina.
+
+
+O diagnóstico unificado passou a listar todas as emissões ERP Sicoob confirmadas, incluindo documento/parcela e `tarifas_boletos`, em vez de restringir ao3849. Nos testes reais informados pelo usuário,3851 (R$11) foi pago por Pix e3850 (nominal R$25, abatimento R$5) por código de barras. Esses pagamentos ainda dependem de retorno bancário para confirmar valor/data/contabilização; informar o pagamento não cria baixa manual nem prova que o arquivo já esteja disponível. A coleta usa a mesma validação de identidade e valores para os dois meios.

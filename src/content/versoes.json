@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.52.1",
+    "data": "2026-11-12",
+    "titulo": "Corrige consulta Sicoob sem registros e reduz espera pelos pagamentos",
+    "motivo": "O Sicoob retorna HTTP400/código5002 quando uma solicitação não possui registros; a coleta tratava esse caso como falha e repetia o status sem concluir o ciclo.",
+    "novidades": [
+      "Reconhece a mensagem exata de solicitação sem registros apenas no GET de status LIQUI e conclui o ciclo sem arquivos ou lançamentos financeiros.",
+      "Com fase363, consulta abertos em cinco minutos e processa etapas LIQUI por minuto; mantém backoffs, credenciais e regras financeiras.",
+      "Preserva erros reais: código5002 com outro motivo, mensagens conflitantes e respostas em outras etapas não são aceitos como vazio.",
+      "Mantém novas consultas agendadas e o histórico de diagnósticos; o aviso corrente é regularizado na próxima coleta válida. A redução dos intervalos requer fase363; o tratamento de consulta vazia funciona após a publicação."
+    ]
+  },
+  {
     "versao": "1.52.0",
     "data": "2026-11-12",
     "titulo": "Compartilha histórico e destaques dos boletos e abre PDF após emissão",

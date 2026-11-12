@@ -35,6 +35,38 @@ const idBanco = (v: unknown, zero = false) => {
   if (!Number.isSafeInteger(n) || n < (zero ? 0 : 1)) throw Error("LIQUI_ID_INVALIDO");
   return n;
 };
+/** Resposta real do status da solicitação: 5002 também é usado em outros erros, por isso exige a mensagem exata. */
+function solicitacaoSemRegistros(r: RespostaSicoob) {
+  if (
+    r.status !== 400 ||
+    !r.json ||
+    typeof r.json !== "object" ||
+    Array.isArray(r.json) ||
+    Object.keys(r.json).some((k) => k !== "mensagens")
+  )
+    return false;
+  const mensagens = r.json["mensagens"];
+  return (
+    Array.isArray(mensagens) &&
+    mensagens.length > 0 &&
+    mensagens.every((m) => {
+      if (!m || typeof m !== "object" || Array.isArray(m)) return false;
+      const x = m as Record<string, unknown>;
+      const texto =
+        typeof x["mensagem"] === "string"
+          ? x["mensagem"]
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .trim()
+              .toUpperCase()
+          : "";
+      return (
+        String(x["codigo"]) === "5002" &&
+        /^SOLICITACAO NAO RETORNOU NENHUM REGISTRO\.?$/.test(texto)
+      );
+    })
+  );
+}
 export async function executarLiquidacoesSicoob(
   segredo: string,
   rpc: Rpc,
@@ -96,6 +128,11 @@ export async function executarLiquidacoesSicoob(
       if (r.status === 204) {
         await etapa("aguardar");
         return { aguardando: true };
+      }
+      if (solicitacaoSemRegistros(r)) {
+        // Somente na consulta do status. Não converte todo 400/5002 em sucesso.
+        await etapa("arquivos", { ids: [] });
+        return { semRegistros: true };
       }
       verificarHttp(r, [200], "/boletos/movimentacoes", "GET");
       const resultado = r.json["resultado"] as Record<string, unknown> | undefined;

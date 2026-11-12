@@ -902,6 +902,8 @@ export const sicoobStatusAutomatico = createServerFn({ method: "POST" })
       ultimaConsulta: string | null;
       falhas: number;
       baixarFinanceiro: boolean;
+      intervaloAbertoMinutos?: number;
+      intervaloLiquiMinutos?: number;
       ultimaLiqui?: string | null;
       erroLiqui?: string | null;
       pendenciasLiqui?: number;

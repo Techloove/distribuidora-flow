@@ -56,16 +56,19 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
             </p>
           )}
           <p>
-            Emissões ainda sem confirmação são recuperadas por consulta pelo servidor após instalar
-            a fase362, sem novo envio. Em aberto: consultas a cada quinze minutos, incluindo
-            vencimentos futuros. Já liquidados: nova conferência a cada seis horas. Falhas podem
-            ampliar o intervalo entre tentativas. Tarifas seguem a configuração da loja: liquidação
-            individual pelo LIQUI e outras tarifas pelo extrato com vínculo comprovado.
+            Emissões ainda sem confirmação são recuperadas por consulta pelo servidor, sem novo
+            envio. Em aberto: consultas em lotes a cada {q.data.intervaloAbertoMinutos ?? 15}{" "}
+            minutos, incluindo vencimentos futuros. Já liquidados: reconferência a cada seis horas.
+            A identificação de novos pagamentos não espera esse intervalo. Falhas podem ampliar o
+            intervalo entre tentativas. Tarifas seguem a configuração da loja: liquidação individual
+            pelo LIQUI e outras tarifas pelo extrato com vínculo comprovado.
           </p>
           {q.data.baixarFinanceiro ? (
             <>
               <p>
-                Baixa financeira por arquivos de liquidação: ativa. Último ciclo concluído:{" "}
+                Baixa financeira por arquivos de liquidação: ativa. Etapas verificadas a cada{" "}
+                {q.data.intervaloLiquiMinutos ?? 5} minuto(s), conforme disponibilidade do banco.
+                Último ciclo concluído:{" "}
                 {q.data.ultimaLiqui
                   ? dataHoraBr(q.data.ultimaLiqui)
                   : "aguardando primeiro retorno"}

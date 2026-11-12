@@ -256,3 +256,59 @@ test("documento/parcela textual mantém a conciliação sem aceitar caracteres d
     normalizarLiquiSicoob({ ...linha, seuNumero: "NF\u00001/1" }, "2026-11-10", "2026-11-11"),
   ).toThrow("LIQUI_TITULO_INVALIDO");
 });
+
+test("400/5002 sem registros conclui somente o status, sem arquivo ou recebimento inventado", async () => {
+  const d = deps({ ...job, estado: "aguardar", codigo: 223733787 });
+  const paths: string[] = [];
+  const retorno = {
+    status: 400,
+    json: {
+      mensagens: [{ codigo: "5002", mensagem: "Solicitação não retornou nenhum registro." }],
+    },
+  };
+  expect(
+    await executarLiquidacoesSicoob("s", d.rpc, async () => async (path, method) => {
+      paths.push(path);
+      expect(method).toBeUndefined();
+      return retorno;
+    }),
+  ).toEqual({ semRegistros: true });
+  expect(paths).toHaveLength(1);
+  expect(paths[0]).toContain("codigoSolicitacao=223733787");
+  expect(d.calls.map((c) => c.name)).toEqual([
+    "sicoob_liqui_reservar_359",
+    "sicoob_liqui_etapa_359",
+  ]);
+  expect(d.calls[1]?.args["_acao"]).toBe("arquivos");
+  expect(d.calls[1]?.args["_dados"]).toEqual({ ids: [] });
+  for (const [estado, codigo, arquivos] of [
+    ["solicitar", null, []],
+    ["baixar", 99, [1]],
+  ] as const) {
+    const x = deps({ ...job, estado, codigo, arquivos: [...arquivos] });
+    await expect(
+      executarLiquidacoesSicoob("s", x.rpc, async () => async () => retorno),
+    ).rejects.toThrow("HTTP_400");
+    expect(x.calls[1]?.args["_acao"]).toBe("erro");
+  }
+});
+test("mesmo 5002 com período inválido ou mensagem conflitante continua erro", async () => {
+  for (const mensagens of [
+    [{ codigo: "5002", mensagem: "O período informado não pode ser maior que 35 dias." }],
+    [{ codigo: "9999", mensagem: "Solicitação não retornou nenhum registro." }],
+    [
+      { codigo: "5002", mensagem: "Solicitação não retornou nenhum registro." },
+      { codigo: "403", mensagem: "Acesso negado" },
+    ],
+    [],
+  ]) {
+    const d = deps({ ...job, estado: "aguardar", codigo: 99 });
+    await expect(
+      executarLiquidacoesSicoob("s", d.rpc, async () => async () => ({
+        status: 400,
+        json: { mensagens },
+      })),
+    ).rejects.toThrow("HTTP_400");
+    expect(d.calls[1]?.args["_acao"]).toBe("erro");
+  }
+});
