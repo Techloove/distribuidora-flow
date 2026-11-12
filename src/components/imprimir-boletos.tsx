@@ -1,5 +1,5 @@
 import { sicoobPdfBoleto } from "@/lib/sicoob.functions";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, Loader2, Printer } from "lucide-react";
@@ -17,6 +17,7 @@ import { useCentro } from "@/lib/centro-store";
 import { sicrediPdfBoleto } from "@/lib/sicredi.functions";
 import {
   boletosParaImpressao,
+  boletosParaAberturaAutomatica,
   unirPdfsBoletos,
   type BoletoDocumento,
 } from "@/lib/boletos-documento";
@@ -71,7 +72,8 @@ export function PainelImpressaoBoletos({
   boletoId,
   onBusy,
   onVoltar,
-}: Contexto & { onBusy?: (busy: boolean) => void; onVoltar?: () => void }) {
+  autoContas,
+}: Contexto & { onBusy?: (busy: boolean) => void; onVoltar?: () => void; autoContas?: string[] }) {
   const { client, user, session } = useSupabase();
   const { centro } = useCentro();
   const obterPdf = useServerFn(sicrediPdfBoleto),
@@ -151,63 +153,81 @@ export function PainelImpressaoBoletos({
       return boletosParaImpressao(rows, a.cliente);
     },
   });
-  const rows = query.data ?? [];
-  const chosen = rows.filter((b) => selected.includes(b.id));
-  async function imprimir() {
-    if (running.current || !session || !chosen.length || query.isFetching) return;
-    running.current = true;
-    cancel.current = false;
-    setBusy(true);
-    onBusy?.(true);
-    setError("");
-    setPdf(null);
-    try {
-      const files: string[] = [];
-      for (const [i, b] of chosen.entries()) {
-        // Distribui as consultas para respeitar o teto bancário de 20 por minuto,
-        // incluindo consultas recentes feitas em outras telas pelo mesmo usuário.
-        if (i > 0 && i % 20 === 0) {
-          setProgress("Aguardando o limite bancário para continuar…");
-          for (let second = 0; second < 61 && !cancel.current; second++)
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+  const rows = useMemo(() => query.data ?? [], [query.data]);
+  const chosen = useMemo(() => rows.filter((b) => selected.includes(b.id)), [rows, selected]);
+  const imprimir = useCallback(
+    async (lote: Registro[] = chosen) => {
+      if (running.current || !session || !lote.length || query.isFetching) return;
+      running.current = true;
+      cancel.current = false;
+      setBusy(true);
+      onBusy?.(true);
+      setError("");
+      setPdf(null);
+      try {
+        const files: string[] = [];
+        for (const [i, b] of lote.entries()) {
+          // Distribui as consultas para respeitar o teto bancário de 20 por minuto,
+          // incluindo consultas recentes feitas em outras telas pelo mesmo usuário.
+          if (i > 0 && i % 20 === 0) {
+            setProgress("Aguardando o limite bancário para continuar…");
+            for (let second = 0; second < 61 && !cancel.current; second++)
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+          if (cancel.current)
+            throw new Error("Impressão interrompida. Nenhuma cobrança foi criada ou alterada.");
+          setProgress(`Obtendo PDF ${i + 1} de ${lote.length}…`);
+          let result;
+          try {
+            result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
+              data: { boletoId: b.id, accessToken: session.access_token },
+            });
+          } catch (e) {
+            if (!(e instanceof Error) || !e.message.includes("Limite de consultas atingido"))
+              throw e;
+            setProgress("Limite de consultas atingido. Aguardando para continuar…");
+            for (let second = 0; second < 61 && !cancel.current; second++)
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (cancel.current) throw new Error("Impressão interrompida.");
+            result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
+              data: { boletoId: b.id, accessToken: session.access_token },
+            });
+          }
+          files.push(result.base64);
         }
-        if (cancel.current)
-          throw new Error("Impressão interrompida. Nenhuma cobrança foi criada ou alterada.");
-        setProgress(`Obtendo PDF ${i + 1} de ${chosen.length}…`);
-        let result;
-        try {
-          result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
-            data: { boletoId: b.id, accessToken: session.access_token },
-          });
-        } catch (e) {
-          if (!(e instanceof Error) || !e.message.includes("Limite de consultas atingido")) throw e;
-          setProgress("Limite de consultas atingido. Aguardando para continuar…");
-          for (let second = 0; second < 61 && !cancel.current; second++)
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          if (cancel.current) throw new Error("Impressão interrompida.");
-          result = await (b.banco === "sicoob" ? obterPdfSicoob : obterPdf)({
-            data: { boletoId: b.id, accessToken: session.access_token },
-          });
-        }
-        files.push(result.base64);
+        if (cancel.current) throw new Error("Impressão interrompida.");
+        const bytes = await unirPdfsBoletos(files);
+        if (cancel.current) throw new Error("Impressão interrompida.");
+        setMock(lote.some((b) => b.ambiente === "homologacao"));
+        setReady(false);
+        setPdf(URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" })));
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "Não foi possível reunir os PDFs. Tente novamente.",
+        );
+      } finally {
+        running.current = false;
+        setBusy(false);
+        onBusy?.(false);
+        setProgress("");
       }
-      if (cancel.current) throw new Error("Impressão interrompida.");
-      const bytes = await unirPdfsBoletos(files);
-      if (cancel.current) throw new Error("Impressão interrompida.");
-      setMock(chosen.some((b) => b.ambiente === "homologacao"));
-      setReady(false);
-      setPdf(URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" })));
-    } catch (e) {
+    },
+    [chosen, session, query.isFetching, obterPdf, obterPdfSicoob, onBusy],
+  );
+  const autoAberto = useRef(false);
+  useEffect(() => {
+    if (autoAberto.current || !autoContas?.length || query.isFetching || !query.isSuccess) return;
+    autoAberto.current = true;
+    const lote = boletosParaAberturaAutomatica(rows, autoContas);
+    if (!lote.length) {
       setError(
-        e instanceof Error ? e.message : "Não foi possível reunir os PDFs. Tente novamente.",
+        "Os boletos ainda não estão disponíveis para impressão. Atualize a seleção; não é necessário emitir novamente.",
       );
-    } finally {
-      running.current = false;
-      setBusy(false);
-      onBusy?.(false);
-      setProgress("");
+      return;
     }
-  }
+    setSelected(lote.map((b) => b.id));
+    void imprimir(lote);
+  }, [autoContas, rows, query.isFetching, query.isSuccess, imprimir]);
   return (
     <div className="space-y-4">
       {pdf ? (

@@ -1,8 +1,8 @@
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { sicoobEmitirBoleto, sicoobConsultarBoleto } from "@/lib/sicoob.functions";
 import { brl as money, dataBr } from "@/lib/formatacao";
-import { ImprimirBoletos, PainelImpressaoBoletos } from "@/components/imprimir-boletos";
-import { useRef, useState } from "react";
+import { PainelImpressaoBoletos } from "@/components/imprimir-boletos";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Barcode, Loader2 } from "lucide-react";
@@ -20,6 +20,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { sicrediEmitirBoleto } from "@/lib/sicredi.functions";
 import {
   boletoAtual,
+  boletosParaAberturaAutomatica,
   centroEmissaoTitulos,
   saldoTituloBoleto,
   type TituloBoleto,
@@ -42,6 +43,8 @@ type Props = {
   centroId: string;
   compact?: boolean;
   statusBoleto?: string | null;
+  consultando?: boolean;
+  falhaConsulta?: boolean;
 };
 export function EmitirBoletosPedido(props: {
   pedidoId: string;
@@ -59,14 +62,6 @@ export function EmitirBoletoTitulo(props: {
 }) {
   const { roles } = useSupabase();
   if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
-  if (props.consultando || props.falhaConsulta)
-    return (
-      <Button size="sm" variant="outline" disabled>
-        {props.falhaConsulta ? "Consulta de boleto indisponível" : "Consultando boleto…"}
-      </Button>
-    );
-  if (["registrado", "liquidado"].includes(props.statusBoleto ?? ""))
-    return <ImprimirBoletos contaId={props.contaId} />;
   return <BoletosDocumento {...props} compact />;
 }
 function BoletosDocumento(props: Props) {
@@ -74,7 +69,14 @@ function BoletosDocumento(props: Props) {
   if (!roles.some((r) => ["admin", "gestor", "financeiro"].includes(r))) return null;
   return <JanelaBoletos key={props.pedidoId ?? props.contaId} {...props} />;
 }
-function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Props) {
+function JanelaBoletos({
+  pedidoId,
+  contaId,
+  compact = false,
+  statusBoleto,
+  consultando,
+  falhaConsulta,
+}: Props) {
   const { client, session, user } = useSupabase();
   const permissoes = usePermissoesRotinas();
   const qc = useQueryClient();
@@ -83,6 +85,8 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     consultarSicoob = useServerFn(sicoobConsultarBoleto);
   const [open, setOpen] = useState(false),
     [modo, setModo] = useState<"emitir" | "imprimir">("emitir");
+  const [autoContas, setAutoContas] = useState<string[]>([]);
+  const [aguardandoImpressao, setAguardandoImpressao] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
   const [avisoConsulta, setAvisoConsulta] = useState<string | null>(null);
@@ -135,6 +139,15 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
       return { titulos, boletos, pendentes: pendentes.map((p) => p.conta_receber_id) };
     },
   });
+  useEffect(() => {
+    if (!open || busy || modo !== "emitir" || !aguardandoImpressao.length || consulta.isFetching)
+      return;
+    if (boletosParaAberturaAutomatica(consulta.data?.boletos ?? [], aguardandoImpressao).length) {
+      setAutoContas(aguardandoImpressao);
+      setAguardandoImpressao([]);
+      setModo("imprimir");
+    }
+  }, [open, busy, modo, aguardandoImpressao, consulta.data, consulta.isFetching]);
   const centroDocumento = centroEmissaoTitulos(consulta.data?.titulos ?? []);
   const cobranca = useQuery({
     queryKey: ["cobranca-emissao", user?.id, centroDocumento],
@@ -208,7 +221,11 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
       const r = await consultarSicoob({ data: { boletoId, accessToken: session.access_token } });
       if (!r.condicoes) setAvisoConsulta(r.nota ?? "Consulta sem retorno de boleto.");
       else toast.success(r.nota ?? `Consulta Sicoob: ${r.situacao}.`);
-      if (r.situacao === "EM ABERTO" || r.situacao === "LIQUIDADO") setModo("imprimir");
+      if (r.situacao === "EM ABERTO" || r.situacao === "LIQUIDADO") {
+        const b = consulta.data?.boletos.find((b) => b.id === boletoId);
+        setAutoContas(b?.conta_receber_id ? [b.conta_receber_id] : []);
+        setModo("imprimir");
+      }
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível consultar a tentativa.");
     } finally {
@@ -231,6 +248,9 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
     setErro(null);
     setAvisoConsulta(null);
     setProgresso("");
+    const contasDaEmissao = escolhidas.map((l) => l.titulo.id);
+    setAutoContas([]);
+    setAguardandoImpressao([]);
     let emitidos = 0;
     let pendentes = 0;
     try {
@@ -258,13 +278,15 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
         else emitidos++;
       }
       if (pendentes) {
+        setAguardandoImpressao(contasDaEmissao);
         const mensagem = `${emitidos} boleto(s) confirmado(s); ${pendentes} aguardando confirmação automática no Sicoob. Não é necessário emitir novamente.`;
         setAvisoConsulta(
           "Confirmação acompanhada automaticamente. A lista será atualizada enquanto houver emissão Sicoob em processamento.",
         );
         toast.info(mensagem);
       } else {
-        toast.success(`${emitidos} boleto(s) emitido(s). Selecione os boletos para obter o PDF.`);
+        toast.success(`${emitidos} boleto(s) emitido(s). Abrindo a prévia para impressão.`);
+        setAutoContas(contasDaEmissao);
         setModo("imprimir");
       }
     } catch (e) {
@@ -295,15 +317,27 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
           setSelected([]);
           setErro(null);
           setAvisoConsulta(null);
-          setModo("emitir");
+          setModo(
+            contaId && ["registrado", "liquidado"].includes(statusBoleto ?? "")
+              ? "imprimir"
+              : "emitir",
+          );
+          setAutoContas([]);
+          setAguardandoImpressao([]);
         }}
       >
         <Barcode className="size-4" />
-        {contaId
-          ? ["pendente", "em_processamento"].includes(statusBoleto ?? "")
-            ? "Consultar boleto"
-            : "Emitir boleto"
-          : "Boletos do pedido"}
+        {falhaConsulta
+          ? "Consulta de boleto indisponível"
+          : consultando
+            ? "Consultando boleto…"
+            : contaId
+              ? ["registrado", "liquidado"].includes(statusBoleto ?? "")
+                ? "Reimprimir boleto"
+                : ["pendente", "em_processamento"].includes(statusBoleto ?? "")
+                  ? "Consultar boleto"
+                  : "Emitir boleto"
+              : "Boletos do pedido"}
       </Button>
       <Dialog
         open={open}
@@ -329,6 +363,7 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
               contaId={contaId}
               pedidoId={pedidoId}
               onBusy={setBusy}
+              autoContas={autoContas}
               onVoltar={() => setModo("emitir")}
             />
           ) : (
@@ -350,6 +385,8 @@ function JanelaBoletos({ pedidoId, contaId, compact = false, statusBoleto }: Pro
                   variant="outline"
                   disabled={busy}
                   onClick={() => {
+                    setAutoContas([]);
+                    setAguardandoImpressao([]);
                     setModo("imprimir");
                     setSelected([]);
                     setErro(null);

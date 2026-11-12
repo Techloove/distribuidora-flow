@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.52.0",
+    "data": "2026-11-12",
+    "titulo": "Compartilha histórico e destaques dos boletos e abre PDF após emissão",
+    "motivo": "Destaques e histórico da listagem liam apenas estruturas Sicredi; a emissão confirmada ainda exigia selecionar novamente o boleto para abrir o PDF.",
+    "novidades": [
+      "Apresentação compartilhada para vencimento, abatimento, desconto, pendências e histórico de Sicredi/Sicoob, preservando as regras bancárias e permissões específicas.",
+      "Preserva a janela ao mudar o status/carregamento; emissão confirmada abre automaticamente a prévia dos PDFs das parcelas recém-confirmadas; confirmação tardia é acompanhada enquanto a janela estiver aberta.",
+      "Reimpressão manual mantém seleção e escopo; não imprime ciclos antigos ou parcelas ainda pendentes e não reenvia cobranças para obter PDF.",
+      "Contrato comum e testes de paridade orientam melhorias futuras nos dois bancos. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.51.0",
     "data": "2026-11-12",
     "titulo": "Confirma emissões Sicoob automaticamente e usa documento/parcela nas novas emissões",

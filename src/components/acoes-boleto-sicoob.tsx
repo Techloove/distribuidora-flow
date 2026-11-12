@@ -194,7 +194,7 @@ export function AcoesBoletoSicoob({ boleto, sandbox = false }: { boleto: Row; sa
             {nomes[t]}
           </Button>
         ))}
-        {Number((boleto["retorno"] as Row | null)?.["abatimento"] ?? 0) > 0 && (
+        {sandbox && Number((boleto["retorno"] as Row | null)?.["abatimento"] ?? 0) > 0 && (
           <p className="text-xs text-primary">
             Abatimento Sicoob confirmado: {brl((boleto["retorno"] as Row)["abatimento"])}
           </p>

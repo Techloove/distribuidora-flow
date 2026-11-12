@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { PDFDocument } from "pdf-lib";
 import {
   boletoAtual,
+  boletosParaAberturaAutomatica,
   boletoImprimivel,
   saldoTituloBoleto,
   unirPdfsBoletos,
@@ -126,4 +127,22 @@ test("emissão identifica a loja das parcelas e recusa loja ausente ou mistura",
   expect(centroEmissaoTitulos([{}])).toBe("");
   expect(centroEmissaoTitulos([{ centro_id: "cimento" }, { centro_id: "ferragens" }])).toBe("");
   expect(centroEmissaoTitulos([{ centro_id: "cimento" }, {}])).toBe("");
+});
+
+test("abertura após emissão reúne somente parcelas confirmadas e nunca o ciclo antigo", () => {
+  const antigo = b("antigo", "registrado", "2026-11-01");
+  const novo = {
+    ...b("novo", "em_processamento", "2026-11-12"),
+    banco: "sicoob",
+    linha_digitavel: null,
+  };
+  expect(boletosParaAberturaAutomatica([antigo, novo], ["conta1"])).toEqual([]);
+  const registrado = { ...novo, status: "registrado", linha_digitavel: "756" + "1".repeat(44) };
+  expect(boletosParaAberturaAutomatica([antigo, registrado], ["conta1", "conta1"])).toEqual([
+    registrado,
+  ]);
+  expect(boletosParaAberturaAutomatica([registrado], ["conta1", "inexistente"])).toEqual([]);
+  const outro = { ...b("outro", "registrado", "2026-11-12"), conta_receber_id: "conta2" };
+  expect(boletosParaAberturaAutomatica([registrado, outro], ["conta1"])).toEqual([registrado]);
+  expect(boletosParaAberturaAutomatica([registrado, outro], ["conta1", "conta2"])).toHaveLength(2);
 });

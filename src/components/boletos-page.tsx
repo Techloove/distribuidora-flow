@@ -1,3 +1,5 @@
+import { apresentacaoBoleto } from "@/lib/boleto-apresentacao";
+import { HistoricoBoleto } from "./historico-boleto";
 import { resumoTarifasSicoob } from "@/lib/sicoob-tarifas";
 import { SicoobAutomatico } from "./sicoob-automatico";
 import { AcoesBoletoSicoob } from "./acoes-boleto-sicoob";
@@ -23,7 +25,7 @@ import { Copy, Loader2, Printer, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { brl, dataBr } from "@/lib/formatacao";
+import { brl, dataBr, dataHoraBr } from "@/lib/formatacao";
 import { ErpLayout } from "@/components/erp-layout";
 import { SicrediCnabPanel } from "@/components/sicredi-cnab-panel";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
@@ -47,7 +49,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  alteracoesVencimentoConfirmadas,
   filtrarBoletos,
   valorRecebidoBoleto,
   tarifaLiquiBoleto,
@@ -139,13 +140,12 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         let query = client!
           .from("boletos")
           .select(
-            "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at),abatimentos_confirmados:sicredi_condicoes_historico_292!sicredi_condicoes_historico_292_boleto_id_fkey(id,tipo,estado,motivo,esperado,updated_at,created_at)",
+            "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at),historico_condicoes:sicredi_condicoes_historico_292!sicredi_condicoes_historico_292_boleto_id_fkey(id,tipo,estado,motivo,anterior,esperado,updated_at,created_at),operacoes_sicoob:sicoob_operacoes_316!sicoob_operacoes_316_boleto_id_fkey(id,tipo,estado,motivo,nota,anterior,esperado,created_at,updated_at)",
           )
-          .eq("alteracoes_vencimento.estado", "confirmado")
-          .eq("abatimentos_confirmados.estado", "confirmado")
-          .in("abatimentos_confirmados.tipo", ["abatimento", "cancelar_abatimento"])
-          .order("updated_at", { referencedTable: "abatimentos_confirmados", ascending: false })
-          .limit(1, { referencedTable: "abatimentos_confirmados" })
+          .order("updated_at", { referencedTable: "historico_condicoes", ascending: false })
+          .limit(30, { referencedTable: "historico_condicoes" })
+          .order("created_at", { referencedTable: "operacoes_sicoob", ascending: false })
+          .limit(30, { referencedTable: "operacoes_sicoob" })
           .order("vencimento", { ascending: false })
           .order("id");
         if (centro) query = query.eq("centro_id", centro);
@@ -730,35 +730,13 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                     const st = String(b["status"]);
                     const boletoCancelado = ["baixado", "cancelado"].includes(st);
                     const id = String(b["id"]);
-                    const alteracoes = alteracoesVencimentoConfirmadas(b);
+                    const apresentacao = apresentacaoBoleto(b);
+                    const alteracoes = apresentacao.alteracoes;
                     const alteracao = alteracoes[0];
-                    const condicoes = b["condicoes_sicredi_292"] as Row | null;
-                    const valorAbatimento = Number(condicoes?.["abatimento"] ?? 0);
-                    const temAbatimento = Number.isFinite(valorAbatimento) && valorAbatimento > 0;
-                    const historicoAbatimento = Array.isArray(b["abatimentos_confirmados"])
-                      ? (b["abatimentos_confirmados"] as Row[]).find(
-                          (h) =>
-                            h["estado"] === "confirmado" &&
-                            h["tipo"] === "abatimento" &&
-                            Number((h["esperado"] as Row | null)?.["abatimento"]) ===
-                              valorAbatimento,
-                        )
-                      : undefined;
-                    const confirmadoEm = historicoAbatimento
-                      ? new Date(
-                          String(
-                            historicoAbatimento["updated_at"] ?? historicoAbatimento["created_at"],
-                          ),
-                        )
-                      : null;
-                    const dataAbatimento =
-                      confirmadoEm && Number.isFinite(confirmadoEm.getTime())
-                        ? confirmadoEm.toLocaleString("pt-BR", {
-                            timeZone: "America/Sao_Paulo",
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })
-                        : "—";
+                    const valorAbatimento = apresentacao.abatimento;
+                    const temAbatimento = valorAbatimento > 0;
+                    const historicoAbatimento = apresentacao.historicoAbatimento;
+                    const dataAbatimento = dataHoraBr(historicoAbatimento?.atualizadoEm);
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
                     const tarifaLiqui = tarifaLiquiBoleto(b);
@@ -837,6 +815,24 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 <span className="block text-[11px] font-medium">
                                   Confirmado · ver Opções
                                 </span>
+                              </div>
+                            )}
+                            {apresentacao.descontos.length > 0 && (
+                              <div
+                                className="my-1 whitespace-normal rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-primary"
+                                aria-label="Descontos bancários confirmados"
+                              >
+                                <p className="font-semibold">Desconto bancário · ver Opções</p>
+                                {apresentacao.descontos.map((d, i) => (
+                                  <p key={i} className="text-[11px]">
+                                    {apresentacao.unidadeDesconto === "percentual"
+                                      ? `${Number(d["valor"]).toLocaleString("pt-BR")}%`
+                                      : apresentacao.unidadeDesconto === "valor"
+                                        ? brl(d["valor"])
+                                        : "Regra bancária de desconto"}{" "}
+                                    até {dataBr(d["data"])}
+                                  </p>
+                                ))}
                               </div>
                             )}
                             <p>
@@ -972,6 +968,15 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 ? "Cancelamento solicitado"
                                 : (statusLabel[st] ?? st)}
                             </span>
+                            {apresentacao.eventos.some(
+                              (e) =>
+                                ["solicitado", "enviado", "incerto"].includes(e.estado) &&
+                                e.tipo !== "emissao",
+                            ) && (
+                              <span className="block text-xs text-amber-700">
+                                Há solicitação aguardando confirmação · ver histórico
+                              </span>
+                            )}
                             {st !== "vencido" && boletoVencido(b) && (
                               <span className="ml-1 inline-block rounded-full bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
                                 Vencido
@@ -1007,7 +1012,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   aria-label="Detalhes do abatimento confirmado"
                                 >
                                   <p className="font-semibold">
-                                    Abatimento confirmado no Sicredi: {brl(valorAbatimento)}
+                                    Abatimento confirmado no {apresentacao.nome}:{" "}
+                                    {brl(valorAbatimento)}
                                   </p>
                                   <p>
                                     Valor nominal: {brl(b["valor"])} · Após abatimento:{" "}
@@ -1016,7 +1022,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   </p>
                                   {historicoAbatimento ? (
                                     <>
-                                      <p>Motivo: {String(historicoAbatimento["motivo"])}</p>
+                                      <p>Motivo: {historicoAbatimento.motivo}</p>
                                       <p className="text-xs">Confirmado em {dataAbatimento}</p>
                                     </>
                                   ) : (
@@ -1054,7 +1060,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   aria-label="Histórico de alterações de vencimento confirmadas"
                                 >
                                   <p className="text-xs font-medium text-muted-foreground">
-                                    Alterações confirmadas pelo Sicredi · mais recente primeiro
+                                    Alterações confirmadas pelo {apresentacao.nome} · mais recente
+                                    primeiro
                                   </p>
                                   <div className="flex flex-wrap gap-2">
                                     {alteracoes.map((a) => (
@@ -1069,6 +1076,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                   </div>
                                 </div>
                               )}
+                              <HistoricoBoleto
+                                eventos={apresentacao.eventos}
+                                banco={apresentacao.nome}
+                              />
                               <p className="mb-3 break-all text-xs">
                                 <span className="font-medium">Linha digitável:</span>{" "}
                                 {String(b["linha_digitavel"] ?? "Não disponível")}

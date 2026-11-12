@@ -145,6 +145,17 @@ export function ordenarBoletos(rows: Row[], ordem: string): Row[] {
 }
 
 export function cancelamentoBoletoPendente(b: Row): boolean {
+  if (b["banco"] === "sicoob")
+    return (
+      b["status"] === "registrado" &&
+      Array.isArray(b["operacoes_sicoob"]) &&
+      (b["operacoes_sicoob"] as Row[]).some(
+        (o) =>
+          o["id"] === b["sicoob_pendente_316"] &&
+          o["tipo"] === "baixar" &&
+          ["reservado", "enviado", "incerto"].includes(String(o["estado"])),
+      )
+    );
   const retorno = b["retorno"];
   return (
     b["status"] === "registrado" &&

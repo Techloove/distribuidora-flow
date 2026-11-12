@@ -96,3 +96,14 @@ export function centroEmissaoTitulos(titulos: Pick<TituloBoleto, "centro_id">[])
     ? centro
     : "";
 }
+
+/** A abertura após emissão só seleciona os ciclos imprimíveis das parcelas confirmadas. */
+export function boletosParaAberturaAutomatica<T extends BoletoDocumento>(
+  rows: T[],
+  contas: string[],
+): T[] {
+  const ids = [...new Set(contas)];
+  if (!ids.length) return [];
+  const lote = ids.map((id) => boletoAtual(rows, id));
+  return lote.every((b) => boletoImprimivel(b)) ? (lote as T[]) : [];
+}
