@@ -372,6 +372,20 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     });
     const seuNumero = String(reserva["seu_numero"] ?? "").trim();
     if (!seuNumero) throw new Error("Não foi possível reservar o identificador do boleto.");
+    // A chave técnica permanece no ERP; apenas ciclos novos usam documento/parcela no PDF.
+    const documentoBanco =
+      reserva["sicredi_documento_365"] == null
+        ? seuNumero
+        : String(reserva["sicredi_documento_365"]);
+    const idTituloEmpresa = reserva["sicredi_documento_365"] == null ? null : seuNumero;
+    if (
+      !documentoBanco ||
+      documentoBanco.length > 10 ||
+      Array.from(documentoBanco).some(
+        (letra) => letra.charCodeAt(0) < 32 || letra.charCodeAt(0) === 127,
+      )
+    )
+      throw new Error("Documento/parcela Sicredi inválido. Confira o título antes de emitir.");
     conferirConvenio(reserva, c);
     const modalidadeReserva = reserva["sicredi_tipo_emissao_364"];
     if (
@@ -397,7 +411,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
           "Emissão de teste inconclusiva. A consulta de recuperação não está documentada no sandbox; confira o registro com o Sicredi antes de reenviar.",
         );
       const consulta = await fetchWithTimeout(
-        `${c.base}/cobranca/boleto/v1/boletos/cadastrados?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&seuNumero=${encodeURIComponent(seuNumero)}`,
+        `${c.base}/cobranca/boleto/v1/boletos/cadastrados?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&${idTituloEmpresa ? "idTituloEmpresa" : "seuNumero"}=${encodeURIComponent(idTituloEmpresa ?? seuNumero)}`,
         { headers: headers(c, tk) },
       );
       if (consulta.status !== 404) {
@@ -413,7 +427,8 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         const item = matches[0] as Record<string, unknown>;
         const pagador = item["pagador"] as Record<string, unknown> | undefined;
         if (
-          item["seuNumero"] !== seuNumero ||
+          item["seuNumero"] !== documentoBanco ||
+          (idTituloEmpresa !== null && item["idTituloEmpresa"] !== idTituloEmpresa) ||
           Number(item["valorNominal"]) !== Number(reserva["valor"]) ||
           String(pagador?.["documento"] ?? "") !== documentoPagador
         )
@@ -468,7 +483,8 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       tipoCobranca: c.tipoCobranca,
       codigoBeneficiario: c.beneficiario,
       especieDocumento: c.especieDocumento,
-      seuNumero,
+      seuNumero: documentoBanco,
+      ...(idTituloEmpresa ? { idTituloEmpresa } : {}),
       dataVencimento: vencimento,
       valor: Number(Number(row["saldo"] ?? 0).toFixed(2)),
       ...(c.tipoDesconto !== "NAO_TEM_DESCONTO" && c.valorDesconto1 > 0 && dataDesconto1
@@ -591,6 +607,12 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       try {
         json = JSON.parse(txt) as Record<string, unknown>;
         linhaDigitavelSicredi(json["linhaDigitavel"]);
+        if (
+          idTituloEmpresa &&
+          ((json["seuNumero"] != null && json["seuNumero"] !== documentoBanco) ||
+            (json["idTituloEmpresa"] != null && json["idTituloEmpresa"] !== idTituloEmpresa))
+        )
+          throw new Error("Identificação do documento divergente no retorno.");
         if (!/^\d{9}$/.test(String(json["nossoNumero"] ?? "")))
           throw new Error("Nosso número inválido");
       } catch {

@@ -160,7 +160,40 @@ select set_config('request.jwt.claim.role','service_role',false);`);
         tipo_cobranca: "HIBRIDO",
         dias_multa: 0,
       });
+      if (process.argv.includes("--documento")) {
+        const legacy = await prepare(await title(98));
+        const migration = readSql("fase365_sicredi_documento_impresso.sql");
+        const originalConfig = (await db.query("select * from sicredi_config")).rows;
+        await db.exec(migration);
+        await db.exec(migration);
+        assert.deepEqual((await db.query("select * from sicredi_config")).rows, originalConfig);
+        assert.equal(
+          (await db.query("select sicredi_documento_365 from boletos where id=$1", [legacy.id]))
+            .rows[0].sicredi_documento_365,
+          null,
+        );
+        await db.query("update boletos set status='erro' where id=$1", [legacy.id]);
+        const retry = await prepare(id(98));
+        assert.equal(retry.seu_numero, legacy.seu_numero);
+        assert.equal(retry.sicredi_documento_365, null);
+        await db.query("update boletos set status='cancelado' where id=$1", [legacy.id]);
+        await title(97);
+        await db.query("update contas_receber set documento='DOCUMENTO LONGO' where id=$1", [
+          id(97),
+        ]);
+        await assert.rejects(prepare(id(97)), /10 caracteres/);
+        assert.equal(
+          (
+            await db.query("select count(*)::int n from boletos where conta_receber_id=$1", [
+              id(97),
+            ])
+          ).rows[0].n,
+          0,
+        );
+      }
       const hybrid = await prepare(await title(99));
+      if (process.argv.includes("--documento"))
+        assert.equal(hybrid.sicredi_documento_365, "MANUAL/1");
       assert.equal(hybrid.sicredi_tipo_emissao_364, "HIBRIDO");
       assert.equal(hybrid.tipo_cobranca, "HIBRIDO");
       await assert.rejects(save("sicredi", id(10), true, id(22), api), /Concilie/);
@@ -182,6 +215,12 @@ select set_config('request.jwt.claim.role','service_role',false);`);
         /QR Code/,
       );
       await db.query("update boletos set status='cancelado' where id=$1", [hybrid.id]);
+      if (process.argv.includes("--documento")) {
+        const reissued = await prepare(id(99));
+        assert.notEqual(reissued.seu_numero, hybrid.seu_numero);
+        assert.equal(reissued.sicredi_documento_365, hybrid.sicredi_documento_365);
+        await db.query("update boletos set status='cancelado' where id=$1", [reissued.id]);
+      }
       await save("sicredi", id(10), true, id(22), api);
       assert.equal(
         (await db.query("select tipo_cobranca from boletos where id=$1", [hybrid.id])).rows[0]
@@ -190,6 +229,7 @@ select set_config('request.jwt.claim.role','service_role',false);`);
       );
     }
     const b = await prepare(t);
+    if (process.argv.includes("--documento")) assert.equal(b.sicredi_documento_365, null);
     assert.equal(b.centro_id, id(10));
     assert.equal(b.conta_cobranca_id, id(22));
     assert.equal(b.ambiente, "producao");

@@ -48,6 +48,8 @@ type Options = {
   pdfStatus?: number;
   pdfMessage?: string;
   hibrido?: boolean;
+  documentoSnapshot?: string;
+  empresaDivergente?: boolean;
   semSnapshot?: boolean;
   pixInvalido?: boolean;
   papel?: string;
@@ -180,6 +182,7 @@ function backend(o: Options = {}) {
         valor: 100,
         vencimento: date,
         tentativas: o.legacyCounter ? 1 : o.retry ? 2 : 1,
+        sicredi_documento_365: o.documentoSnapshot,
         sicredi_tipo_emissao_364: o.semSnapshot ? null : o.hibrido ? "HIBRIDO" : "NORMAL",
         emissao_retentativa: o.retry,
         emissao_inconclusiva: !o.definitive,
@@ -192,7 +195,10 @@ function backend(o: Options = {}) {
       if (o.recovery === "missing") return new Response("{}", { status: 404 });
       if (o.recovery === "unavailable") return new Response("{}", { status: 503 });
       const item = {
-        seuNumero: "1234567890",
+        seuNumero: o.documentoSnapshot ?? "1234567890",
+        ...(o.documentoSnapshot
+          ? { idTituloEmpresa: o.empresaDivergente ? "9999999999" : "1234567890" }
+          : {}),
         ...(o.hibrido ? { nossoNumero: "262000020" } : {}),
         valorNominal: o.recovery === "wrong" ? 101 : 100,
         pagador: { documento: "12345678000195" },
@@ -708,4 +714,78 @@ test("outras recusas do PDF não são repetidas nem expõem resposta bruta", asy
     ).rejects.toThrow(`HTTP ${option.pdfStatus}`);
     expect(calls.filter((c) => c.path.endsWith("/boletos/pdf"))).toHaveLength(1);
   }
+});
+
+test("híbrido novo envia documento/parcela impresso e separa chave de recuperação", async () => {
+  const calls = backend({ hibrido: true, documentoSnapshot: "TextePix/1" });
+  await emitir();
+  const request = calls.find(
+    (c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos",
+  )!;
+  expect(request.body).toMatchObject({
+    tipoCobranca: "HIBRIDO",
+    seuNumero: "TextePix/1",
+    idTituloEmpresa: "1234567890",
+  });
+  expect(
+    calls.find((c) => c.path.endsWith("/registrar_boleto_sicredi_servidor"))?.body._seu_numero,
+  ).toBe("1234567890");
+});
+test("híbrido novo recupera pelo idTituloEmpresa e confere o documento", async () => {
+  const calls = backend({
+    hibrido: true,
+    documentoSnapshot: "TextePix/1",
+    retry: true,
+    recovery: "found",
+  });
+  await emitir();
+  const consulta = calls.find((c) => c.path.endsWith("/boletos/cadastrados"))!;
+  expect(consulta.query.get("idTituloEmpresa")).toBe("1234567890");
+  expect(consulta.query.has("seuNumero")).toBe(false);
+  expect(calls.some((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos")).toBe(
+    false,
+  );
+  backend({
+    hibrido: true,
+    documentoSnapshot: "TextePix/1",
+    retry: true,
+    recovery: "found",
+    empresaDivergente: true,
+  });
+  await expect(emitir()).rejects.toThrow("diverge");
+});
+test("normal e tentativas híbridas antigas conservam identificação e consulta anteriores", async () => {
+  const normal = backend();
+  await emitir();
+  const request = normal.find(
+    (c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos",
+  )!;
+  expect(request.body.seuNumero).toBe("1234567890");
+  expect(request.body).not.toHaveProperty("idTituloEmpresa");
+  const old = backend({ hibrido: true, retry: true, recovery: "found" });
+  await emitir();
+  const consulta = old.find((c) => c.path.endsWith("/boletos/cadastrados"))!;
+  expect(consulta.query.get("seuNumero")).toBe("1234567890");
+  expect(consulta.query.has("idTituloEmpresa")).toBe(false);
+});
+
+test("identificação contraditória no aceite não confirma documento híbrido incorreto", async () => {
+  const calls = backend({
+    hibrido: true,
+    documentoSnapshot: "TextePix/1",
+    postStatus: 201,
+    postBody: {
+      nossoNumero: "262000020",
+      linhaDigitavel: line,
+      codigoBarras: barcode,
+      seuNumero: "OUTRO/1",
+    },
+  });
+  await expect(emitir()).rejects.toThrow("dados completos");
+  expect(calls.some((c) => c.path.endsWith("/registrar_boleto_sicredi_servidor"))).toBe(false);
+  expect(
+    calls.some(
+      (c) => c.path.endsWith("/sicredi_marcar_emissao_224") && c.body._estado === "inconclusivo",
+    ),
+  ).toBe(true);
 });

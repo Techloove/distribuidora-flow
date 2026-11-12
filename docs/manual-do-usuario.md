@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.53.1 · 2026-11-12
+Versão 1.53.2 · 2026-11-12
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -386,7 +386,7 @@ Cuidados:
 Entenda os cuidados com documentos bancários e fiscais.
 
 1. Para boletos, localize o título elegível e confira loja, cliente, valor, vencimento e a configuração bancária correspondente.
-2. Sicredi API: em Lojas, escolha Normal (só boleto) ou Híbrido (boleto + Pix). A instalação da fase364 mantém a configuração atual; salve Híbrido somente quando quiser usá-lo nas novas emissões e com o convênio habilitado pelo banco. Boletos já emitidos conservam a modalidade original. Concilie tentativas pendentes antes de trocar. No híbrido, configure os dias da multa como zero, sem carência adicional: juros e multa configurados passam a valer após o vencimento; a multa é única e os juros seguem a taxa. Datas específicas de carência podem retirar o Pix no Sicredi e são bloqueadas. O QR e o copia e cola vêm do banco; TXID sozinho não gera Pix. O PDF continua sendo a via bancária. Se o Sicredi responder boleto não localizado ao buscar o PDF, o sistema faz até três consultas do mesmo arquivo, com uma breve espera. Persistindo a indisponibilidade, use Abrir PDF novamente mais tarde; não emita outra cobrança. Outras recusas não são repetidas automaticamente. Retorno incompleto permanece pendente e deve ser consultado, sem emitir novamente. Vencimento, abatimento e descontos preservam histórico e exigem confirmação bancária. Liquidação Pix segue as validações de valor e data efetivos, sem presumir tarifa zero ou baixa imediata. A modalidade foi validada com respostas simuladas; o primeiro híbrido real ainda exige conferência de registro, PDF/QR e liquidação.
+2. Sicredi API: em Lojas, escolha Normal (só boleto) ou Híbrido (boleto + Pix). A instalação da fase364 mantém a configuração atual; salve Híbrido somente quando quiser usá-lo nas novas emissões e com o convênio habilitado pelo banco. Boletos já emitidos conservam a modalidade original. Concilie tentativas pendentes antes de trocar. No híbrido, configure os dias da multa como zero, sem carência adicional: juros e multa configurados passam a valer após o vencimento; a multa é única e os juros seguem a taxa. Datas específicas de carência podem retirar o Pix no Sicredi e são bloqueadas. O QR e o copia e cola vêm do banco; TXID sozinho não gera Pix. O PDF continua sendo a via bancária. Após instalar a fase365, novas emissões Híbridas Sicredi enviam documento/parcela do título no Número do Documento, como Teste2/1. Esse texto deve ter até 10 caracteres e não conter quebras de linha; ajuste o documento antes de emitir se ultrapassar o limite. A chave técnica permanece separada em idTituloEmpresa para recuperar envios sem duplicar cobranças. Boletos e tentativas anteriores conservam a identificação originalmente enviada; a instalação não altera nem reemite documentos bancários. Se o Sicredi responder boleto não localizado ao buscar o PDF, o sistema faz até três consultas do mesmo arquivo, com uma breve espera. Persistindo a indisponibilidade, use Abrir PDF novamente mais tarde; não emita outra cobrança. Outras recusas não são repetidas automaticamente. Retorno incompleto permanece pendente e deve ser consultado, sem emitir novamente. Vencimento, abatimento e descontos preservam histórico e exigem confirmação bancária. Liquidação Pix segue as validações de valor e data efetivos, sem presumir tarifa zero ou baixa imediata. A modalidade foi validada com respostas simuladas; o primeiro híbrido real ainda exige conferência de registro, PDF/QR e liquidação.
 3. A Consulta automática Sicredi acompanha todos os boletos API de produção em aberto, independentemente do vencimento, inclusive pagamentos antecipados. Os lotes têm até 20 boletos a cada cinco minutos, mesmo com o sistema fechado. Após resposta pendente, o intervalo mínimo é de 15 minutos para qualquer vencimento; o tempo para completar a lista depende da fila e da resposta bancária. A rotação consulta primeiro os que aguardam há mais tempo, com prioridade para novos movimentos identificados no banco. Esses movimentos apenas antecipam a consulta; não comprovam pagamento. Ao abrir a tela, a solicitação de lote compartilha um intervalo global de cinco minutos. A listagem acompanha liquidação/baixa confirmada sem consultar cada boleto pelo navegador. Falhas mantêm espera de 30 minutos, e dados incompletos não geram recebimento.
 4. Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.
 5. Em Contas a receber, abra Opções: Emitir boleto aparece quando a parcela não tem boleto registrado; Reimprimir boleto abre a impressão dos boletos já registrados ou liquidados. Registros pendentes ou em processamento mostram Consultar boleto para evitar emissão duplicada.
@@ -578,6 +578,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.53.2 · 2026-11-12 · Corrige documento impresso nas novas emissões híbridas Sicredi
+
+Motivo da atualização: O primeiro híbrido exibiu o identificador técnico no Número do Documento, em vez da referência do título.
+
+- Após fase365, novas emissões Híbridas Sicredi enviam documento/parcela em seuNumero e conservam a chave técnica separada em idTituloEmpresa.
+- Preserva o envio Normal, boletos já registrados e a recuperação de tentativas anteriores; não modifica PDFs históricos nem reemite cobranças.
+- Valida o limite bancário de 10 caracteres sem truncar o documento e recupera novos envios pela chave única do ciclo. Reemissão após cancelamento recebe nova chave técnica.
+- Requer fase365 após publicação. Payload, consultas e SQL foram testados com respostas simuladas; o documento no próximo PDF híbrido real ainda deve ser conferido.
 
 ### v1.53.1 · 2026-11-12 · Repete consulta de PDF Sicredi temporariamente indisponível
 

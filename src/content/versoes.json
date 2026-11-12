@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.53.2",
+    "data": "2026-11-12",
+    "titulo": "Corrige documento impresso nas novas emissões híbridas Sicredi",
+    "motivo": "O primeiro híbrido exibiu o identificador técnico no Número do Documento, em vez da referência do título.",
+    "novidades": [
+      "Após fase365, novas emissões Híbridas Sicredi enviam documento/parcela em seuNumero e conservam a chave técnica separada em idTituloEmpresa.",
+      "Preserva o envio Normal, boletos já registrados e a recuperação de tentativas anteriores; não modifica PDFs históricos nem reemite cobranças.",
+      "Valida o limite bancário de 10 caracteres sem truncar o documento e recupera novos envios pela chave única do ciclo. Reemissão após cancelamento recebe nova chave técnica.",
+      "Requer fase365 após publicação. Payload, consultas e SQL foram testados com respostas simuladas; o documento no próximo PDF híbrido real ainda deve ser conferido."
+    ]
+  },
+  {
     "versao": "1.53.1",
     "data": "2026-11-12",
     "titulo": "Repete consulta de PDF Sicredi temporariamente indisponível",
