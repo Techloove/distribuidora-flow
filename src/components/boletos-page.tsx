@@ -1154,6 +1154,15 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                     <Copy className="size-4" />
                                   </Button>
                                 ) : null}
+                                {b["canal"] === "api" &&
+                                st === "registrado" &&
+                                b["qrcode_pix"] &&
+                                b["txid"] ? (
+                                  <BoletoPix
+                                    payload={String(b["qrcode_pix"])}
+                                    txid={String(b["txid"])}
+                                  />
+                                ) : null}
                                 {b["canal"] === "cnab240" ? (
                                   <div className="space-y-2">
                                     <span className="text-xs text-muted-foreground">

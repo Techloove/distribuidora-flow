@@ -1,3 +1,4 @@
+import { validarModalidadeSicredi } from "./sicredi-hibrido";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchWithTimeout } from "./fetch-timeout";
 
@@ -219,7 +220,11 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
         ["homologacao", "producao"],
         "ambiente",
       ),
-      tipo_cobranca: oneOf(text(data.tipo_cobranca || "NORMAL"), ["NORMAL"], "tipo de cobrança"),
+      tipo_cobranca: oneOf(
+        text(data.tipo_cobranca || "NORMAL"),
+        ["NORMAL", "HIBRIDO"],
+        "tipo de cobrança",
+      ),
       especie_documento: text(data.especie_documento).trim() || "DUPLICATA_MERCANTIL_INDICACAO",
       tipo_juro: oneOf(
         text(data.tipo_juro || "ISENTO"),
@@ -250,6 +255,12 @@ export const sicrediConfigSave = createServerFn({ method: "POST" })
       informativo: text(data.informativo).trim() || null,
       mensagem: text(data.mensagem).trim() || null,
     };
+
+    validarModalidadeSicredi(
+      payload["tipo_cobranca"],
+      Number(payload["multa"]),
+      Number(payload["dias_multa"]),
+    );
 
     const sandboxKey = text(data.sandbox_api_key).trim();
     if (sandboxKey) payload["sandbox_api_key"] = sandboxKey;

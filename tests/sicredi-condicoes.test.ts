@@ -50,14 +50,7 @@ test("rejeita valor nominal arbitrário, percentuais, datas, status e combinaç�
   expect(() => instrucaoSicredi(c, { tipo: "cancelar_abatimento" }, hoje)).toThrow("Não há");
   for (const data of ["2026-02-30", "2026-10-28", "2026-11-21"])
     expect(() => instrucaoSicredi(c, { tipo: "data_desconto", ordem: 1, data }, hoje)).toThrow();
-  for (const situacao of [
-    "LIQUIDADO",
-    "BAIXADO POR SOLICITACAO",
-    "EM CARTORIO",
-    "PROTESTADO",
-    "EM CARTEIRA PIX",
-    "",
-  ])
+  for (const situacao of ["LIQUIDADO", "BAIXADO POR SOLICITACAO", "EM CARTORIO", "PROTESTADO", ""])
     expect(() =>
       instrucaoSicredi({ ...c, situacao }, { tipo: "abatimento", valor: 10 }, hoje),
     ).toThrow();
@@ -83,4 +76,9 @@ test("confirma somente snapshot completo; não confirma por status de PATCH", ()
     { ...bank, descontos: [...bank.descontos, ...bank.descontos] },
   ])
     expect(() => condicoesSicredi(bad)).toThrow();
+});
+
+test("híbrido em carteira admite abatimento com os mesmos limites", () => {
+  const c = condicoesSicredi({ ...bank, situacao: "EM CARTEIRA PIX" });
+  expect(instrucaoSicredi(c, { tipo: "abatimento", valor: 5 }, hoje).esperado.abatimento).toBe(5);
 });

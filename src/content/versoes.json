@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.53.0",
+    "data": "2026-11-12",
+    "titulo": "Sicredi: modalidade híbrida opcional com boleto e Pix",
+    "motivo": "Permite escolher boleto tradicional ou híbrido com Pix no convênio API Sicredi, preservando a modalidade das emissões anteriores.",
+    "novidades": [
+      "Adiciona Normal e Híbrido em Lojas; a instalação mantém a configuração atual e só novas emissões usam a escolha salva.",
+      "Fixa a modalidade por ciclo e bloqueia troca enquanto houver tentativa pendente; não reemite boletos existentes.",
+      "Confere QR Code e TXID bancários, recupera o Pix por consulta sem repetir emissão e mantém PDF original, histórico e validação financeira.",
+      "Híbrido exige multa sem carência adicional; condições em carteira Pix conservam limites, permissões e confirmação bancária.",
+      "Requer fase364 antes de ativar o híbrido. Testes usam respostas simuladas; o primeiro híbrido real ainda precisa de conferência de PDF, QR e liquidação."
+    ]
+  },
+  {
     "versao": "1.52.1",
     "data": "2026-11-12",
     "titulo": "Corrige consulta Sicoob sem registros e reduz espera pelos pagamentos",

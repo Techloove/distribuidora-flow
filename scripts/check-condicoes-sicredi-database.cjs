@@ -41,6 +41,14 @@ const root = path.resolve(__dirname, ".."),
     );
     await d.exec(sql);
     await d.exec(sql);
+    if (process.argv.includes("--hibrido")) {
+      const migration = fs.readFileSync(path.join(root, "db/fase364_sicredi_hibrido.sql"), "utf8");
+      const start = migration.indexOf(
+        "create or replace function public.sicredi_reservar_condicoes_292(",
+      );
+      const end = migration.indexOf("notify pgrst", start);
+      await d.exec(migration.slice(start, end));
+    }
     // A ACL real do helper é privada; o teste anterior deixava EXECUTE PUBLIC na fixture.
     await d.exec(
       "revoke all on function ator_financeiro_pode_acessar_centro(uuid,uuid) from public,anon,authenticated;grant execute on function ator_financeiro_pode_acessar_centro(uuid,uuid) to service_role;set role authenticated",
@@ -76,7 +84,7 @@ const root = path.resolve(__dirname, ".."),
         tipoDesconto: "SEM_DESCONTO",
         descontos: [],
         vencimento: "2026-11-20",
-        situacao: "EM CARTEIRA",
+        situacao: process.argv.includes("--hibrido") ? "EM CARTEIRA PIX" : "EM CARTEIRA",
       },
       esperado = { ...anterior, abatimento: 10 };
     const reservar = (key = 40, actor = 1) =>

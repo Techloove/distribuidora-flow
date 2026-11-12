@@ -68,7 +68,7 @@ export function CondicoesBoletoSicredi({ boleto }: { boleto: Record<string, unkn
     : (c?.descontos[0]?.ordem ?? 1);
   const editavel =
     !!c &&
-    ["EM CARTEIRA", "VENCIDO"].includes(c.situacao) &&
+    ["EM CARTEIRA", "EM CARTEIRA PIX", "VENCIDO"].includes(c.situacao) &&
     boleto["status"] === "registrado" &&
     !pendente;
   async function atualizar() {

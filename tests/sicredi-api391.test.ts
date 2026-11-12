@@ -1,3 +1,5 @@
+import { gerarBrCode } from "../src/lib/sicredi-cnab";
+const qrFixture = gerarBrCode("pix-qrcode.sicredi.com.br/qr/v2/cobv/fixture");
 import { afterAll, afterEach, beforeAll, expect, mock, test } from "bun:test";
 import {
   liquidacaoSicredi,
@@ -42,6 +44,9 @@ const id = "00000000-0000-4000-8000-000000000007",
   barcode = "748" + "1".repeat(41),
   date = "2026-11-30";
 type Options = {
+  hibrido?: boolean;
+  semSnapshot?: boolean;
+  pixInvalido?: boolean;
   papel?: string;
   negarBaixa?: boolean;
   sandbox?: boolean;
@@ -125,7 +130,7 @@ function backend(o: Options = {}) {
           posto: "02",
           codigo_beneficiario: "00623",
           ambiente: o.configChanged && reads > 1 ? "homologacao" : ambiente,
-          tipo_cobranca: "NORMAL",
+          tipo_cobranca: o.hibrido ? "HIBRIDO" : "NORMAL",
           validade_apos_vencimento: 90,
         },
       ];
@@ -171,6 +176,7 @@ function backend(o: Options = {}) {
         valor: 100,
         vencimento: date,
         tentativas: o.legacyCounter ? 1 : o.retry ? 2 : 1,
+        sicredi_tipo_emissao_364: o.semSnapshot ? null : o.hibrido ? "HIBRIDO" : "NORMAL",
         emissao_retentativa: o.retry,
         emissao_inconclusiva: !o.definitive,
         ambiente,
@@ -183,6 +189,7 @@ function backend(o: Options = {}) {
       if (o.recovery === "unavailable") return new Response("{}", { status: 503 });
       const item = {
         seuNumero: "1234567890",
+        ...(o.hibrido ? { nossoNumero: "262000020" } : {}),
         valorNominal: o.recovery === "wrong" ? 101 : 100,
         pagador: { documento: "12345678000195" },
         linhaDigitavel: line,
@@ -198,9 +205,17 @@ function backend(o: Options = {}) {
         if (o.timeout) throw new Error("fixture-timeout");
         if (o.postStatus)
           return new Response(JSON.stringify(o.postBody ?? {}), { status: o.postStatus });
-        out = { nossoNumero: "262000020", linhaDigitavel: line, codigoBarras: barcode };
+        out = {
+          nossoNumero: "262000020",
+          linhaDigitavel: line,
+          codigoBarras: barcode,
+          ...(o.hibrido && !o.pixInvalido ? { qrCode: qrFixture, txid: "a".repeat(32) } : {}),
+        };
       } else
         out = {
+          ...(o.hibrido
+            ? { nossoNumero: "262000020", codigoQrCode: qrFixture, txId: "a".repeat(32) }
+            : {}),
           situacao:
             o.situacaoConsulta ??
             (o.liquidado ? "LIQUIDADO" : o.bankBaixado ? "BAIXADO" : "REGISTRADO"),
@@ -599,4 +614,50 @@ test("manual e automático aceitam LIQUIDADO COMPE com os mesmos dados validados
   expect(
     calls.find((c) => c.path.endsWith("/sicredi_liquidar_api_224"))?.body._dados,
   ).toMatchObject({ data: "2026-10-14", valor: 107 });
+});
+
+test("híbrido envia modalidade, conserva Pix do banco e não envia carência", async () => {
+  const calls = backend({ hibrido: true });
+  await sicrediEmitirBoleto({ data: { accessToken: "fixture-jwt", contaId: id } });
+  expect(JSON.stringify(calls)).toContain("HIBRIDO");
+  expect(JSON.stringify(calls)).toContain(qrFixture);
+  expect(JSON.stringify(calls)).not.toContain("dataInicioMulta");
+});
+test("híbrido sem QR bancário fica inconclusivo, sem registrar sucesso", async () => {
+  const calls = backend({ hibrido: true, pixInvalido: true });
+  await expect(
+    sicrediEmitirBoleto({ data: { accessToken: "fixture-jwt", contaId: id } }),
+  ).rejects.toThrow("sem Pix válido");
+  expect(JSON.stringify(calls)).not.toContain("registrar_boleto_sicredi_servidor");
+});
+
+test("híbrido recupera QR pela consulta individual sem repetir o POST", async () => {
+  const calls = backend({ hibrido: true, retry: true, recovery: "found" });
+  const result = await emitir();
+  expect(result.qrCode).toBe(qrFixture);
+  expect(
+    calls.filter((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos"),
+  ).toHaveLength(0);
+  expect(
+    calls.some(
+      (c) => c.path === "/cobranca/boleto/v2/boletos" && c.query.get("nossoNumero") === "262000020",
+    ),
+  ).toBe(true);
+});
+test("pagamento Pix usa a mesma liquidação validada do Sicredi", async () => {
+  const calls = backend({ situacaoConsulta: "LIQUIDADO PIX" });
+  await sicrediConsultarBoleto({ data: { accessToken: "fixture-jwt", boletoId: id } });
+  expect(
+    calls.find((c) => c.path.endsWith("/sicredi_liquidar_api_224"))?.body._dados,
+  ).toMatchObject({ valor: 107, juros: 5, multa: 2 });
+});
+
+test("normal continua emitindo antes da instalação da nova fase, híbrido exige reserva da modalidade", async () => {
+  backend({ semSnapshot: true });
+  await expect(emitir()).resolves.toHaveProperty("nossoNumero");
+  const calls = backend({ semSnapshot: true, hibrido: true });
+  await expect(emitir()).rejects.toThrow("fase364");
+  expect(calls.some((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos")).toBe(
+    false,
+  );
 });

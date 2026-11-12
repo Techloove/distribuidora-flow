@@ -57,7 +57,11 @@ export const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
       {
         name: "tipo_cobranca",
         label: "Tipo de cobrança",
-        options: [{ value: "NORMAL", label: "Normal (só boleto)" }],
+        options: [
+          { value: "NORMAL", label: "Normal (só boleto)" },
+          { value: "HIBRIDO", label: "Híbrido (boleto + Pix)" },
+        ],
+        hint: "Vale para novas emissões. O híbrido exige convênio habilitado pelo Sicredi; boletos existentes permanecem iguais.",
       },
       {
         name: "especie_documento",
@@ -91,7 +95,7 @@ export const gruposSicredi: { titulo: string; campos: CampoSicredi[] }[] = [
         name: "dias_multa",
         label: "Multa após (dias do vencimento)",
         type: "number",
-        hint: "Quantidade de dias após o vencimento para iniciar a multa.",
+        hint: "No normal, dias após o vencimento. No híbrido, use zero (sem carência adicional): juros e multa a partir do dia seguinte ao vencimento.",
       },
     ],
   },

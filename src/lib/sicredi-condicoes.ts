@@ -64,8 +64,8 @@ export function condicoesSicredi(json: Record<string, unknown>): CondicoesSicred
   };
 }
 export function instrucaoSicredi(c: CondicoesSicredi, i: InstrucaoSicredi, hoje: string) {
-  if (!["EM CARTEIRA", "VENCIDO"].includes(c.situacao))
-    throw new Error("Somente boleto normal em carteira ou vencido permite esta alteração.");
+  if (!["EM CARTEIRA", "EM CARTEIRA PIX", "VENCIDO"].includes(c.situacao))
+    throw new Error("Somente boleto em carteira ou vencido permite esta alteração.");
   const esperado: CondicoesSicredi = structuredClone(c);
   let endpoint: string, body: Record<string, unknown>;
   const valor = i.valor === undefined ? 0 : dinheiro(i.valor);

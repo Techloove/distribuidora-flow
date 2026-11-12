@@ -1,3 +1,4 @@
+import { validarModalidadeSicredi, pixSicredi } from "./sicredi-hibrido";
 import {
   condicoesSicredi,
   condicoesCorrespondem,
@@ -362,6 +363,7 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       throw new Error("Título sem saldo válido.");
     const c = await conf(String(row["centro_id"] ?? ""));
     const tk = await token(c);
+    validarModalidadeSicredi(c.tipoCobranca, c.multa, c.diasMulta);
     // Reserva a emissão antes da chamada externa: serializa concorrência e
     // aloca um seuNumero novo quando houver reemissão após baixa/cancelamento.
     const reserva = await serviceRpc<DbRow>("preparar_boleto_sicredi_servidor", {
@@ -371,6 +373,12 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
     const seuNumero = String(reserva["seu_numero"] ?? "").trim();
     if (!seuNumero) throw new Error("Não foi possível reservar o identificador do boleto.");
     conferirConvenio(reserva, c);
+    const modalidadeReserva = reserva["sicredi_tipo_emissao_364"];
+    if (
+      (c.tipoCobranca === "HIBRIDO" || modalidadeReserva != null) &&
+      modalidadeReserva !== c.tipoCobranca
+    )
+      throw new Error("Instale a fase364 e confira a modalidade da reserva antes de emitir.");
     if (
       Number(row["saldo"]) !== Number(reserva["valor"]) ||
       row["vencimento"] !== reserva["vencimento"]
@@ -415,6 +423,26 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         linhaDigitavelSicredi(item["linhaDigitavel"]);
         if (!/^\d{44}$/.test(String(item["codigoBarras"] ?? "")))
           throw new Error("Sicredi retornou registro anterior sem código de barras válido.");
+        if (c.tipoCobranca === "HIBRIDO") {
+          if (!/^\d{9}$/.test(String(item["nossoNumero"] ?? "")))
+            throw new Error("Registro híbrido sem nosso número. Concilie antes de reenviar.");
+          const detalhe = await fetchWithTimeout(
+            `${c.base}/cobranca/boleto/v2/boletos?codigoBeneficiario=${encodeURIComponent(c.beneficiario)}&nossoNumero=${encodeURIComponent(String(item["nossoNumero"]))}`,
+            { headers: headers(c, tk) },
+          );
+          if (!detalhe.ok)
+            throw new Error("Não foi possível recuperar o Pix. Nenhum boleto foi reenviado.");
+          const dados = (await detalhe.json()) as Record<string, unknown>;
+          if (
+            String(dados["nossoNumero"]) !== String(item["nossoNumero"]) ||
+            linhaDigitavelSicredi(dados["linhaDigitavel"]) !==
+              linhaDigitavelSicredi(item["linhaDigitavel"])
+          )
+            throw new Error(
+              "Identificação do Pix recuperado divergente. Concilie antes de reenviar.",
+            );
+          Object.assign(item, pixSicredi(dados, "HIBRIDO"));
+        }
         recuperado = item;
       }
     }
@@ -576,6 +604,19 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
         );
       }
     }
+    let pix: { qrCode: string; txid: string };
+    try {
+      pix = pixSicredi(json, c.tipoCobranca);
+    } catch {
+      await serviceRpc("sicredi_marcar_emissao_224", {
+        _actor: user.id,
+        _boleto: reserva["id"],
+        _estado: "inconclusivo",
+      });
+      throw new Error(
+        "Registro híbrido sem Pix válido no retorno. Consulte o boleto antes de reenviar.",
+      );
+    }
     const retorno = jsonPayload(txt);
     await serviceRpc("registrar_boleto_sicredi_servidor", {
       _actor_id: user.id,
@@ -584,8 +625,8 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       _nosso_numero: String(json["nossoNumero"] ?? ""),
       _linha_digitavel: String(json["linhaDigitavel"] ?? ""),
       _codigo_barras: String(json["codigoBarras"] ?? ""),
-      _qrcode_pix: String(json["qrCode"] ?? json["txid"] ?? ""),
-      _txid: String(json["txid"] ?? ""),
+      _qrcode_pix: pix.qrCode,
+      _txid: pix.txid,
       _cooperativa: c.cooperativa,
       _posto: c.posto,
       _codigo_beneficiario: c.beneficiario,
@@ -602,8 +643,8 @@ export const sicrediEmitirBoleto = createServerFn({ method: "POST" })
       nossoNumero: String(json["nossoNumero"] ?? ""),
       linhaDigitavel: String(json["linhaDigitavel"] ?? ""),
       codigoBarras: String(json["codigoBarras"] ?? ""),
-      qrCode: String(json["qrCode"] ?? json["txid"] ?? ""),
-      txid: String(json["txid"] ?? ""),
+      qrCode: pix.qrCode,
+      txid: pix.txid,
       cooperativa: c.cooperativa,
       posto: c.posto,
       beneficiario: c.beneficiario,
@@ -1062,7 +1103,8 @@ export const sicrediConferirCondicoes = createServerFn({ method: "POST" })
     const esperado = rows[0]["esperado"] as CondicoesSicredi;
     const terminal = /^(LIQUIDAD|BAIXAD)/.test(banco.situacao);
     const confirmado =
-      ["EM CARTEIRA", "VENCIDO"].includes(banco.situacao) && condicoesCorrespondem(banco, esperado);
+      ["EM CARTEIRA", "EM CARTEIRA PIX", "VENCIDO"].includes(banco.situacao) &&
+      condicoesCorrespondem(banco, esperado);
     if (terminal || confirmado)
       await serviceRpc("sicredi_finalizar_condicoes_292", {
         _actor: user.id,

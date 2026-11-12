@@ -133,3 +133,16 @@ test("erros de constraints não expõem segredos", async () => {
   });
   await expect(sicrediConfigSave({ data: input })).rejects.toThrow("fase237");
 });
+
+test("híbrido é opcional e impede carência sem modificar a configuração salva", async () => {
+  let calls = backend();
+  await sicrediConfigSave({ data: { ...input, tipo_cobranca: "HIBRIDO", dias_multa: 0 } });
+  expect(
+    calls.find((c) => c.path.endsWith("/salvar_cobranca_centro_237"))?.body._api,
+  ).toMatchObject({ tipo_cobranca: "HIBRIDO", juros: 2, multa: 3, dias_multa: 0 });
+  calls = backend();
+  await expect(
+    sicrediConfigSave({ data: { ...input, tipo_cobranca: "HIBRIDO", dias_multa: 1 } }),
+  ).rejects.toThrow("zero");
+  expect(calls.some((c) => c.path.endsWith("/salvar_cobranca_centro_237"))).toBe(false);
+});

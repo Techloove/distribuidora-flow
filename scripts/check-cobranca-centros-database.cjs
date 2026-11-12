@@ -81,6 +81,19 @@ select set_config('request.jwt.claim.role','service_role',false);`);
     await db.exec(migration237);
     assert.deepEqual((await db.query("select * from sicredi_config")).rows, before);
     assert.equal((await db.query("select count(*) n from cobranca_centros")).rows[0].n, 0);
+    if (process.argv.includes("--hibrido")) {
+      const conditions = readSql("fase292_sicredi_desconto_abatimento.sql");
+      await db.exec(
+        conditions.slice(
+          conditions.indexOf("create table"),
+          conditions.indexOf("create or replace function public.proteger_condicoes"),
+        ),
+      );
+      const m = readSql("fase364_sicredi_hibrido.sql");
+      await db.exec(m);
+      await db.exec(m);
+      assert.deepEqual((await db.query("select * from sicredi_config")).rows, before);
+    }
     const title = async (n, centro = id(10)) => {
       await db.query(
         `insert into contas_receber(id,centro_id,status,valor,vencimento,documento,parcela,conta_financeira_id) values($1,$2,'aberto',100,'2026-11-30','MANUAL',1,$3)`,
@@ -132,6 +145,50 @@ select set_config('request.jwt.claim.role','service_role',false);`);
     assert.equal(cfg.api_key, "fixture-legacy-key");
     assert.equal(cfg.password, "fixture-password");
     await assert.rejects(save("sicredi", id(11), true, id(21), api), /outro centro/);
+    if (process.argv.includes("--hibrido")) {
+      await assert.rejects(
+        save("sicredi", id(10), true, id(22), {
+          ...api,
+          tipo_cobranca: "HIBRIDO",
+          multa: 2,
+          dias_multa: 3,
+        }),
+        /carencia/,
+      );
+      await save("sicredi", id(10), true, id(22), {
+        ...api,
+        tipo_cobranca: "HIBRIDO",
+        dias_multa: 0,
+      });
+      const hybrid = await prepare(await title(99));
+      assert.equal(hybrid.sicredi_tipo_emissao_364, "HIBRIDO");
+      assert.equal(hybrid.tipo_cobranca, "HIBRIDO");
+      await assert.rejects(save("sicredi", id(10), true, id(22), api), /Concilie/);
+      await assert.rejects(
+        db.query(
+          "select registrar_boleto_sicredi_servidor($1,$2,$3,'262000020',$4,$5,null,null,$6,$7,$8,$9,'{}')",
+          [
+            id(1),
+            id(99),
+            hybrid.seu_numero,
+            "74891121150039736789903123451001187340000000050",
+            "748" + "1".repeat(41),
+            hybrid.cooperativa,
+            hybrid.posto,
+            hybrid.codigo_beneficiario,
+            hybrid.ambiente,
+          ],
+        ),
+        /QR Code/,
+      );
+      await db.query("update boletos set status='cancelado' where id=$1", [hybrid.id]);
+      await save("sicredi", id(10), true, id(22), api);
+      assert.equal(
+        (await db.query("select tipo_cobranca from boletos where id=$1", [hybrid.id])).rows[0]
+          .tipo_cobranca,
+        "HIBRIDO",
+      );
+    }
     const b = await prepare(t);
     assert.equal(b.centro_id, id(10));
     assert.equal(b.conta_cobranca_id, id(22));
@@ -149,7 +206,7 @@ select set_config('request.jwt.claim.role','service_role',false);`);
     );
     await assert.rejects(
       save("sicredi", id(10), true, id(22), { ...api, tipo_cobranca: "HIBRIDO" }),
-      /boleto normal/,
+      process.argv.includes("--hibrido") ? /Concilie/ : /boleto normal/,
     );
     await assert.rejects(
       db.query("select sicredi_salvar_convenio_223($1,$2,null,true)", [id(1), JSON.stringify(api)]),
