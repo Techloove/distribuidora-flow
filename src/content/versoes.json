@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.53.1",
+    "data": "2026-11-12",
+    "titulo": "Repete consulta de PDF Sicredi temporariamente indisponível",
+    "motivo": "O Sicredi pode confirmar o registro antes de disponibilizar o PDF, retornando HTTP422/boleto não localizado na primeira impressão.",
+    "novidades": [
+      "Faz até três consultas GET do mesmo PDF quando o banco responde exatamente boleto não localizado, com espera de 1,5 e 3 segundos.",
+      "Mantém o registro e nunca reenvia emissão para imprimir. Se a indisponibilidade persistir, orienta tentar novamente; outras recusas não são repetidas.",
+      "Substitui o JSON bruto do banco por mensagens de impressão claras. Não exige novo SQL nem muda configurações bancárias."
+    ]
+  },
+  {
     "versao": "1.53.0",
     "data": "2026-11-12",
     "titulo": "Sicredi: modalidade híbrida opcional com boleto e Pix",

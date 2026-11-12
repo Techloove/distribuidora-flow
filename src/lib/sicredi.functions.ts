@@ -798,13 +798,35 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
     const c = await conf();
     conferirConvenio(boleto, c);
     const tk = await token(c);
-    const res = await fetchWithTimeout(
-      `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=${encodeURIComponent(linha)}`,
-      { headers: headers(c, tk) },
-    );
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`PDF do boleto indisponivel (${res.status}): ${txt.slice(0, 300)}`);
+    const url = `${c.base}/cobranca/boleto/v1/boletos/pdf?linhaDigitavel=${encodeURIComponent(linha)}`;
+    let res: Response;
+    for (let tentativa = 0; ; tentativa++) {
+      // Somente GET do mesmo PDF. O registro bancário nunca é reenviado para imprimir.
+      res = await fetchWithTimeout(url, { headers: headers(c, tk) });
+      if (res.ok) break;
+      const texto = await res.text();
+      let naoLocalizado = false;
+      try {
+        const erro = JSON.parse(texto) as Record<string, unknown>;
+        const mensagem = String(erro["message"] ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+        naoLocalizado = res.status === 422 && /^Boleto nao localizado[.!]?(?:\s|$)/i.test(mensagem);
+      } catch {
+        /* Resposta desconhecida não autoriza repetição. */
+      }
+      if (naoLocalizado && tentativa < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (tentativa + 1)));
+        continue;
+      }
+      if (naoLocalizado)
+        throw new Error(
+          "O Sicredi ainda não localizou o PDF nesta consulta. O registro do boleto foi preservado. Aguarde um pouco e tente Abrir PDF novamente, sem emitir outro boleto. Se persistir, consulte o boleto no banco.",
+        );
+      throw new Error(
+        `Não foi possível obter o PDF no Sicredi (HTTP ${res.status}). Tente novamente mais tarde. Nenhum boleto foi emitido nesta consulta.`,
+      );
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     if (new TextDecoder().decode(buf.subarray(0, 5)) !== "%PDF-")

@@ -44,6 +44,9 @@ const id = "00000000-0000-4000-8000-000000000007",
   barcode = "748" + "1".repeat(41),
   date = "2026-11-30";
 type Options = {
+  pdfFalhas?: number;
+  pdfStatus?: number;
+  pdfMessage?: string;
   hibrido?: boolean;
   semSnapshot?: boolean;
   pixInvalido?: boolean;
@@ -86,7 +89,8 @@ function backend(o: Options = {}) {
     posto = o.sandbox ? "03" : "02",
     ben = o.sandbox ? "12345" : "00623",
     ambiente = o.sandbox ? "homologacao" : "producao";
-  let reads = 0;
+  let reads = 0,
+    pdfReads = 0;
   globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
     const u = new URL(String(input)),
       p = u.pathname,
@@ -196,11 +200,20 @@ function backend(o: Options = {}) {
         codigoBarras: barcode,
       };
       out = o.recovery === "multiple" ? [item, item] : [item];
-    } else if (p.endsWith("/boletos/pdf"))
+    } else if (p.endsWith("/boletos/pdf")) {
+      if (++pdfReads <= (o.pdfFalhas ?? 0))
+        return new Response(
+          JSON.stringify({
+            message:
+              o.pdfMessage ??
+              "Boleto não localizado. Verifique os dados informados ou entre em contato com o Beneficiário.",
+          }),
+          { status: o.pdfStatus ?? 422 },
+        );
       return new Response("%PDF-1.7\nfixture", {
         headers: { "Content-Type": "application/octet-stream" },
       });
-    else if (u.hostname === "api-parceiro.sicredi.com.br" && p.endsWith("/boletos")) {
+    } else if (u.hostname === "api-parceiro.sicredi.com.br" && p.endsWith("/boletos")) {
       if (init?.method === "POST") {
         if (o.timeout) throw new Error("fixture-timeout");
         if (o.postStatus)
@@ -660,4 +673,39 @@ test("normal continua emitindo antes da instalação da nova fase, híbrido exig
   expect(calls.some((c) => c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos")).toBe(
     false,
   );
+});
+
+test("PDF recém-registrado não localizado é buscado novamente sem reenviar a cobrança", async () => {
+  const calls = backend({ pdfFalhas: 1 });
+  const result = await sicrediPdfBoleto({ data: { boletoId: id, accessToken: "fixture-jwt" } });
+  expect(atob(result.base64)).toStartWith("%PDF-");
+  const pdf = calls.filter((c) => c.path.endsWith("/boletos/pdf"));
+  expect(pdf).toHaveLength(2);
+  expect(pdf.every((c) => c.method === "GET" && c.query.get("linhaDigitavel") === line)).toBe(true);
+  expect(
+    calls.some(
+      (c) =>
+        c.path.endsWith("/preparar_boleto_sicredi_servidor") ||
+        (c.method === "POST" && c.path === "/cobranca/boleto/v1/boletos"),
+    ),
+  ).toBe(false);
+});
+test("PDF persistentemente indisponível limita consultas e orienta sem expor JSON bancário", async () => {
+  const calls = backend({ pdfFalhas: 99 });
+  await expect(
+    sicrediPdfBoleto({ data: { boletoId: id, accessToken: "fixture-jwt" } }),
+  ).rejects.toThrow("sem emitir outro boleto");
+  expect(calls.filter((c) => c.path.endsWith("/boletos/pdf"))).toHaveLength(3);
+}, 10000);
+test("outras recusas do PDF não são repetidas nem expõem resposta bruta", async () => {
+  for (const option of [
+    { pdfStatus: 403 },
+    { pdfStatus: 422, pdfMessage: "Beneficiário inválido. fixture-private" },
+  ]) {
+    const calls = backend({ pdfFalhas: 99, ...option });
+    await expect(
+      sicrediPdfBoleto({ data: { boletoId: id, accessToken: "fixture-jwt" } }),
+    ).rejects.toThrow(`HTTP ${option.pdfStatus}`);
+    expect(calls.filter((c) => c.path.endsWith("/boletos/pdf"))).toHaveLength(1);
+  }
 });
