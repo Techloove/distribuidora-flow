@@ -8,6 +8,24 @@ export function filtrosIniciaisBoletos(referencia?: BuscaReferencias): Filtros {
   return { status: referencia && Object.values(referencia).some(Boolean) ? "" : "registrado" };
 }
 
+/** Zero é o valor padrão de títulos sem valor de liquidação recebido do banco. */
+export function valorRecebidoBoleto(boleto: Row): number | null {
+  const valor = Number(boleto["valor_liquidado"]);
+  return boleto["status"] === "liquidado" && Number.isFinite(valor) && valor > 0 ? valor : null;
+}
+
+/** Total de títulos liquidados: usa valor nominal quando o recebido não foi informado. */
+export function totalBoletosLiquidados(rows: Row[]): number {
+  return (
+    rows
+      .filter((b) => b["status"] === "liquidado")
+      .reduce((centavos, b) => {
+        const valor = valorRecebidoBoleto(b) ?? Number(b["valor"] ?? 0);
+        return centavos + (Number.isFinite(valor) && valor > 0 ? Math.round(valor * 100) : 0);
+      }, 0) / 100
+  );
+}
+
 /** As três datas de boleto são campos SQL date, sem conversão de fuso. */
 export function dataBoleto(value: unknown): string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";

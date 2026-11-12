@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.48.0 · 2026-11-11
+Versão 1.48.1 · 2026-11-12
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -450,7 +450,7 @@ Cuidados:
 
 - Token e senha não são exibidos novamente. Sandbox e produção usam configurações e credenciais separadas. Certificado A1 é exigido na produção; não é exigido para o token sandbox.
 - Testes ficam em registros separados e não criam contas a receber, recebimentos, estoque ou comissões. Baixa de boleto real não cancela venda nem quita o título. Desconto ou abatimento concedido não cria recebimento.
-- Após instalar a fase358, a situação dos boletos Sicoob de produção emitidos pelo ERP é consultada automaticamente pelo servidor, sem depender de abrir a página. A fila é executada a cada cinco minutos em lotes pequenos, incluindo vencimentos futuros; cada título em aberto é reagendado para quinze minutos e falhas têm espera progressiva. Em Boletos, selecione a loja Sicoob para ver a última consulta e falhas. O último estado confirmado é preservado após recusa HTTP 403, falha de conexão ou resposta incompleta. Situação bancária Liquidado não é baixa financeira: o recebimento ainda exige validar os campos efetivos de valor recebido e data do retorno real. Confira em Contas a receber; o sistema não assume a data de consulta nem usa valor nominal ou tarifa como prova de pagamento. Tarifas Sicoob seguem a configuração própria da fase355 e somente débitos com vínculo explícito a novas emissões do ERP são importados; lançamentos antigos e tarifas agrupadas sem referência não são atribuídos por estimativa.
+- O cartão Boletos liquidados acompanha a situação bancária confirmada. Quando o banco ainda não informou o valor efetivamente recebido, inclui o valor nominal do título e avisa essa composição; não apresenta recebido zero nem cria baixa financeira. Quando o valor recebido positivo é confirmado, ele é usado no total. Após instalar a fase358, a situação dos boletos Sicoob de produção emitidos pelo ERP é consultada automaticamente pelo servidor, sem depender de abrir a página. A fila é executada a cada cinco minutos em lotes pequenos, incluindo vencimentos futuros; cada título em aberto é reagendado para quinze minutos e falhas têm espera progressiva. Em Boletos, selecione a loja Sicoob para ver a última consulta dos títulos e falhas; esse horário não é o horário da última execução do agendamento. Títulos liquidados passam a ser conferidos a cada seis horas, enquanto os abertos seguem o intervalo de quinze minutos. O último estado confirmado é preservado após recusa HTTP 403, falha de conexão ou resposta incompleta. Situação bancária Liquidado não é baixa financeira: o recebimento ainda exige validar os campos efetivos de valor recebido e data do retorno real. Confira em Contas a receber; o sistema não assume a data de consulta nem usa valor nominal ou tarifa como prova de pagamento. Tarifas Sicoob seguem a configuração própria da fase355 e somente débitos com vínculo explícito a novas emissões do ERP são importados; lançamentos antigos e tarifas agrupadas sem referência não são atribuídos por estimativa.
 - HTTP 401/403 indica recusa de autorização: recopie Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica limite ou instabilidade. Sucesso da conexão não homologa produção.
 
 ## Agenda, metas, comissões e relatórios
@@ -577,6 +577,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.48.1 · 2026-11-12 · Corrige total de boletos liquidados sem valor recebido informado
+
+Motivo da atualização: O Sicoob confirmou Liquidado sem informar valor efetivo; o zero padrão escondia o título do total do cartão.
+
+- O cartão inclui o valor nominal do título liquidado enquanto o recebido não está informado, com aviso explícito dessa composição.
+- Valor recebido positivo confirmado continua sendo utilizado. A linha deixa de apresentar recebido zero quando essa informação está ausente.
+- A mudança acompanha a situação bancária sem criar baixa financeira nem alterar valores persistidos.
+- O painel diferencia a última consulta dos títulos da execução do agendamento e explica os intervalos de quinze minutos para abertos e seis horas para liquidados.
 
 ### v1.48.0 · 2026-11-11 · Automatiza conferência bancária dos boletos Sicoob
 

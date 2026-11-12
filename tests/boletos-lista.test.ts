@@ -242,3 +242,28 @@ test("grupo cancelados reúne baixados e cancelados confirmados respeitando clie
     filtrarBoletos(dados, { status: "baixado", cliente: "a" }, () => "").map((b) => b.id),
   ).toEqual(["baixado"]);
 });
+
+test("cartão acompanha liquidação sem confundir zero padrão com recebimento real", async () => {
+  const { totalBoletosLiquidados, valorRecebidoBoleto } = await import("../src/lib/boletos-lista");
+  const b = { valor: 50, valor_liquidado: 0, vencimento: "2026-11-14" };
+  expect(totalBoletosLiquidados([{ ...b, status: "registrado" }])).toBe(0);
+  const liquidado = { ...b, status: "liquidado" };
+  expect(totalBoletosLiquidados([liquidado])).toBe(50);
+  expect(valorRecebidoBoleto(liquidado)).toBeNull();
+  expect(totalBoletosLiquidados([{ ...liquidado, valor_liquidado: 51.63 }])).toBe(51.63);
+  expect(valorRecebidoBoleto({ ...liquidado, valor_liquidado: "51.63" })).toBe(51.63);
+  for (const valor_liquidado of [undefined, null, 0, -1, "inválido"])
+    expect(totalBoletosLiquidados([{ ...liquidado, valor_liquidado }])).toBe(50);
+  expect(
+    totalBoletosLiquidados([
+      { ...b, status: "cancelado" },
+      { ...b, status: "baixado" },
+    ]),
+  ).toBe(0);
+  expect(
+    totalBoletosLiquidados([
+      { ...liquidado, valor: 0.1 },
+      { ...liquidado, valor: 0.2 },
+    ]),
+  ).toBe(0.3);
+});

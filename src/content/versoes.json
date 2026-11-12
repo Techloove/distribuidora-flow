@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.48.1",
+    "data": "2026-11-12",
+    "titulo": "Corrige total de boletos liquidados sem valor recebido informado",
+    "motivo": "O Sicoob confirmou Liquidado sem informar valor efetivo; o zero padrão escondia o título do total do cartão.",
+    "novidades": [
+      "O cartão inclui o valor nominal do título liquidado enquanto o recebido não está informado, com aviso explícito dessa composição.",
+      "Valor recebido positivo confirmado continua sendo utilizado. A linha deixa de apresentar recebido zero quando essa informação está ausente.",
+      "A mudança acompanha a situação bancária sem criar baixa financeira nem alterar valores persistidos.",
+      "O painel diferencia a última consulta dos títulos da execução do agendamento e explica os intervalos de quinze minutos para abertos e seis horas para liquidados."
+    ]
+  },
+  {
     "versao": "1.48.0",
     "data": "2026-11-11",
     "titulo": "Automatiza conferência bancária dos boletos Sicoob",

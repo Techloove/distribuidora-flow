@@ -48,6 +48,8 @@ import {
 import {
   alteracoesVencimentoConfirmadas,
   filtrarBoletos,
+  valorRecebidoBoleto,
+  totalBoletosLiquidados,
   filtrosIniciaisBoletos,
   boletoVencido,
   boletoCancelado,
@@ -354,9 +356,10 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   const vencido = boletosResumo
     .filter((b) => boletoVencido(b))
     .reduce((s, b) => s + Number(b["valor"] ?? 0), 0);
-  const liquidado = boletosResumo
-    .filter((b) => b["status"] === "liquidado")
-    .reduce((s, b) => s + Number(b["valor_liquidado"] ?? b["valor"] ?? 0), 0);
+  const liquidado = totalBoletosLiquidados(boletosResumo);
+  const liquidacaoSemValor = boletosResumo.some(
+    (b) => b["status"] === "liquidado" && valorRecebidoBoleto(b) === null,
+  );
 
   const cancelados = boletosResumo
     .filter(boletoCancelado)
@@ -589,6 +592,11 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           >
             <p className="text-sm text-muted-foreground">Boletos liquidados</p>
             <p className="mt-2 text-2xl font-semibold">{brl(liquidado)}</p>
+            {liquidacaoSemValor && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Inclui valor nominal quando o recebido não foi informado pelo banco.
+              </p>
+            )}
           </button>
           <button
             type="button"
@@ -807,7 +815,9 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                             <p>{brl(b["valor"])}</p>
                             {st === "liquidado" && (
                               <p className="text-xs text-muted-foreground">
-                                Recebido {brl(b["valor_liquidado"])}
+                                {valorRecebidoBoleto(b) === null
+                                  ? "Valor recebido não informado pelo banco"
+                                  : `Recebido ${brl(valorRecebidoBoleto(b))}`}
                               </p>
                             )}
                           </TableCell>

@@ -29,13 +29,14 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
     <div className="rounded-xl border bg-muted/20 p-3 text-xs text-muted-foreground">
       {q.isError ? (
         <p>
-          Consulta automática Sicoob indisponível. Confira a instalação da fase358 e a configuração
-          da loja.
+          Consulta automática Sicoob indisponível. Solicite ao administrador a verificação do
+          agendamento e da configuração da loja.
         </p>
       ) : q.data ? (
         <>
           <p>
-            Consulta automática Sicoob: {q.data.ativo ? "ativa" : "pausada"}. Última conferência:{" "}
+            Consulta automática Sicoob: {q.data.ativo ? "ativa" : "pausada"}. Última consulta dos
+            boletos:{" "}
             {q.data.ultimaConsulta
               ? dataHoraBr(q.data.ultimaConsulta)
               : "aguardando primeira consulta"}
@@ -48,9 +49,10 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
             </p>
           )}
           <p>
-            Consulta também boletos com vencimento futuro. Liquidação bancária ainda exige
-            conferência do valor e da data para baixa no financeiro. Tarifas seguem a configuração
-            de importação da loja.
+            Em aberto: consultas a cada quinze minutos, incluindo vencimentos futuros. Já
+            liquidados: nova conferência a cada seis horas. Falhas podem ampliar o intervalo entre
+            tentativas. Liquidação bancária ainda exige conferência do valor e da data para baixa no
+            financeiro. Tarifas seguem a configuração de importação da loja.
           </p>
         </>
       ) : (
