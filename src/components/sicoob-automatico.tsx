@@ -58,7 +58,8 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
           <p>
             Em aberto: consultas a cada quinze minutos, incluindo vencimentos futuros. Já
             liquidados: nova conferência a cada seis horas. Falhas podem ampliar o intervalo entre
-            tentativas. Tarifas seguem a configuração de importação do extrato da loja.
+            tentativas. Tarifas seguem a configuração da loja: liquidação individual pelo LIQUI e
+            outras tarifas pelo extrato com vínculo comprovado.
           </p>
           {q.data.baixarFinanceiro ? (
             <>

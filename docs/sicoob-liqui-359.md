@@ -1,5 +1,7 @@
 # Sicoob LIQUI — fase359
 
+Atualização: a fase361 contabiliza a tarifa individual LIQUI com a configuração355 e preserva o crédito recebido. Consulte [as regras e a instalação](sicoob-tarifa-liqui-361.md); esta ampliação substitui a limitação original de usar a tarifa LIQUI apenas para conferência.
+
 A fase358 consulta a situação individual. A fase359 adiciona o fluxo assíncrono de liquidação e recebimento financeiro, usando a mesma aplicação de Cobrança v3, certificado e conta da loja. Não emite, altera ou comanda baixa de boletos no banco. A única chamada POST bancária solicita um relatório de movimentações, tipoMovimento 5.
 
 ## Instalação e acompanhamento

@@ -1,5 +1,7 @@
 # Tarifas Sicoob de novas emissões do ERP — fase 355
 
+A fase361 amplia esta rotina com a tarifa individual de liquidação do LIQUI e proteção contra duplicidade com o extrato. Veja [instalação, regras atuais e limites](sicoob-tarifa-liqui-361.md). As descrições abaixo documentam a implantação original355.
+
 ## Escopo e configuração
 
 Versão 1.46.0. Em Lojas → Sicoob → Produção → Conta Corrente, escolha a categoria de despesa financeira, a data inicial e ative a contabilização. A conta financeira é a já vinculada ao Sicoob na cobrança da loja, sem escolha automática de outra conta. A conta do extrato deve coincidir com a da cobrança. A instalação não ativa configurações nem lança despesas.

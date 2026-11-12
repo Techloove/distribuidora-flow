@@ -79,8 +79,9 @@ export function SicoobTarifasConfiguracao({ centroId }: { centroId: string }) {
       <h4 className="font-semibold">Contabilização de tarifas dos novos boletos</h4>
       <p className="text-sm text-muted-foreground">
         Somente tarifas com referência comprovada a boletos de produção emitidos pelo sistema.
-        Boletos antigos feitos diretamente no banco ficam fora, mesmo que gerem uma tarifa agora.
-        Documento do extrato sem referência explícita ao nosso número não comprova vínculo.
+        Boletos antigos feitos diretamente no banco ficam fora, mesmo que gerem uma tarifa agora. A
+        tarifa individual de liquidação vem do LIQUI. Documento do extrato sem referência explícita
+        ao nosso número não comprova vínculo; totais agrupados não são rateados.
       </p>
       {q.isPending ? (
         <p>Carregando configuração…</p>
@@ -133,10 +134,11 @@ export function SicoobTarifasConfiguracao({ centroId }: { centroId: string }) {
             Ativar contabilização automática na conta Sicoob vinculada à loja
           </label>
           <p className="text-xs text-muted-foreground">
-            Consulta agendada a cada quinze minutos, alternando os meses desde a data inicial dentro
-            dos últimos três meses. Sem vínculo seguro, a tarifa não é importada. Valores alterados,
-            estornos e possíveis despesas manuais anteriores exigem conferência; não há relançamento
-            automático.
+            Após instalar a fase361, tarifas individuais LIQUI são contabilizadas a cada cinco
+            minutos, inclusive recebimentos anteriores. O extrato é consultado a cada quinze
+            minutos, alternando os meses desde a data inicial dentro dos últimos três meses. Sem
+            vínculo seguro, a tarifa não é importada. Valores alterados, estornos e possíveis
+            despesas manuais anteriores exigem conferência; não há relançamento automático.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -152,7 +154,7 @@ export function SicoobTarifasConfiguracao({ centroId }: { centroId: string }) {
               disabled={busy || dirty || !q.data.ativo}
               onClick={() => void executar("consultar")}
             >
-              Sincronizar tarifas agora
+              Sincronizar tarifas do extrato agora
             </Button>
           </div>
           <p className="text-sm">
@@ -161,6 +163,17 @@ export function SicoobTarifasConfiguracao({ centroId }: { centroId: string }) {
               ? ` · Última consulta: ${dataHoraBr(q.data.ultimaConsulta)}`
               : ""}
           </p>
+          <p className="text-xs text-muted-foreground">
+            Última contabilização LIQUI:{" "}
+            {q.data.ultimaLiqui ? dataHoraBr(q.data.ultimaLiqui) : "aguardando execução da fase361"}
+            .
+          </p>
+          {q.data.erroLiqui && (
+            <p role="alert" className="text-sm text-destructive">
+              Não foi possível contabilizar as tarifas LIQUI. Confira conta, categoria e permissões
+              da loja.
+            </p>
+          )}
           {q.data.erro && <p className="text-sm text-muted-foreground">{q.data.erro}</p>}
         </>
       )}

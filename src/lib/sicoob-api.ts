@@ -256,3 +256,24 @@ export function respostaSimuladaSicoob(raw: Record<string, unknown>) {
     raw["valor"] >= 0
   );
 }
+
+/** Só nomes fixos dos campos: permite diagnosticar sem expor dados do pagador ou credenciais. */
+export function camposDivergentesBoletoSicoob(
+  c: CondicoesSicoob,
+  b: Record<string, unknown>,
+  cfg: Pick<SicoobConfig, "numero_cliente" | "numero_conta">,
+  raw: Record<string, unknown>,
+): string[] {
+  const campos: string[] = [];
+  if (c.numeroCliente !== cfg.numero_cliente) campos.push("beneficiário (numeroCliente)");
+  if (c.codigoModalidade !== 1) campos.push("modalidade");
+  if (c.seuNumero !== String(b["seu_numero"])) campos.push("identificador do título (seuNumero)");
+  if (c.valor !== Number(b["valor"])) campos.push("valor nominal");
+  if (b["nosso_numero"] && c.nossoNumero !== String(b["nosso_numero"])) campos.push("nosso número");
+  if (
+    raw["numeroContaCorrente"] !== undefined &&
+    Number(raw["numeroContaCorrente"]) !== cfg.numero_conta
+  )
+    campos.push("conta corrente");
+  return campos;
+}

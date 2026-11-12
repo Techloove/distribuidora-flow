@@ -1,5 +1,19 @@
 [
   {
+    "versao": "1.50.0",
+    "data": "2026-11-12",
+    "titulo": "Contabiliza tarifa individual Sicoob LIQUI sem duplicar o extrato",
+    "motivo": "A tarifa de liquidação já retornava no LIQUI e era exibida, mas não gerava despesa quando o extrato vinha agrupado.",
+    "novidades": [
+      "Tarifa individual positiva de recebimentos ERP validados gera saída separada na conta Sicoob e categoria da loja, mantendo o crédito integral do cliente.",
+      "Reaproveita ativação e data inicial das tarifas; agendamento local a cada cinco minutos recupera recebimentos já salvos, inclusive o 3849.",
+      "Protege contra duplicidade nas duas ordens LIQUI/extrato, despesas manuais, divergências e estornos; totais agrupados e boletos antigos continuam excluídos.",
+      "Exibe contabilização e conferências na lista de boletos. Outras tarifas exigem identificação bancária e vínculo explícito ao boleto.",
+      "Diagnóstico de divergência na emissão/consulta identifica os campos que falharam sem expor valores, mantendo as validações e a proteção contra reenvio.",
+      "Requer aplicar fase361 após publicação. A instalação preserva configurações e o lançamento é verificado no ciclo agendado; não confirma despesa real sem diagnóstico."
+    ]
+  },
+  {
     "versao": "1.49.3",
     "data": "2026-11-12",
     "titulo": "Exibe tarifa individual Sicoob do LIQUI com contabilização pendente",

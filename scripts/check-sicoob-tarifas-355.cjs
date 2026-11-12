@@ -180,6 +180,17 @@ create function net.http_post(url text,headers jsonb,body jsonb,timeout_millisec
       ),
       false,
     );
+    if (process.argv.includes("--liqui"))
+      await require("./check-sicoob-tarifa-liqui-361.cjs")({
+        db,
+        q,
+        scalar,
+        id,
+        reservar,
+        finalizar,
+        fee,
+        hoje,
+      });
     await q("select sicoob_tarifas_salvar_355($1,$2,$3,current_date,false,1)", [
       id(1),
       id(10),

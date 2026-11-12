@@ -1,3 +1,4 @@
+import { resumoTarifasSicoob } from "@/lib/sicoob-tarifas";
 import { SicoobAutomatico } from "./sicoob-automatico";
 import { AcoesBoletoSicoob } from "./acoes-boleto-sicoob";
 import { sicoobConsultarBoleto } from "@/lib/sicoob.functions";
@@ -297,6 +298,37 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
         if (centro) query = query.eq("centro_id", centro);
         const { data, error } = await query.range(offset, offset + 499);
         if (error) throw new Error("Confira o acesso e a instalação financeira da fase282.");
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      const result = new Map<string, Row[]>();
+      for (const row of rows) {
+        const key = String(row["boleto_id"]);
+        result.set(key, [...(result.get(key) ?? []), row]);
+      }
+      return result;
+    },
+  });
+  const tarifasSicoob = useQuery({
+    queryKey: ["sicoob-tarifas-financeiro", session?.user.id, centro, getModalidade()],
+    enabled: !!client && !!session && canFinance && daLoja.some((b) => b["banco"] === "sicoob"),
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const rows: Row[] = [];
+      for (let offset = 0; ; offset += 500) {
+        let query = client!
+          .from("sicoob_tarifas_financeiro_355")
+          .select(
+            "boleto_id,transaction_id,fonte_361,natureza_361,motivo_361,valor,data_lancamento,estado,movimento_id,conta_id,categoria_id,movimento:movimentos_financeiros(status,tipo,valor,conta_id,categoria_id,data)",
+          )
+          .order("boleto_id")
+          .order("transaction_id");
+        if (centro) query = query.eq("centro_id", centro);
+        const { data, error } = await query.range(offset, offset + 499);
+        if (error)
+          throw new Error(
+            "Contabilização Sicoob indisponível. Confira o acesso e a instalação da fase361.",
+          );
         rows.push(...(data ?? []));
         if (!data || data.length < 500) break;
       }
@@ -730,6 +762,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                     const tarifa = tarifas.data?.get(id);
                     const tarifaApi = tarifasApi.data?.get(id);
                     const tarifaLiqui = tarifaLiquiBoleto(b);
+                    const despesasSicoob = tarifasSicoob.data?.get(id) ?? [];
+                    const resumoSicoob = resumoTarifasSicoob(despesasSicoob, tarifaLiqui);
                     const financeiro = financeiroTarifas.data?.get(id);
                     const tarifaStatus = (
                       tarifa?.["movimentos_financeiros"] as { status?: string } | null
@@ -826,6 +860,43 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                           <TableCell data-label="Tarifas / despesas" className="text-right text-xs">
                             {!canFinance ? (
                               "Acesso financeiro necessário"
+                            ) : b["banco"] === "sicoob" ? (
+                              <>
+                                {resumoSicoob.valor !== null ? (
+                                  <>
+                                    <strong className="whitespace-nowrap">
+                                      {brl(resumoSicoob.valor)}
+                                    </strong>
+                                    <span className="block text-muted-foreground">
+                                      API Sicoob · {resumoSicoob.origem}
+                                    </span>
+                                    <span className="block text-muted-foreground">
+                                      {tarifasSicoob.isError
+                                        ? "Contabilização indisponível: conferir acesso/fase361"
+                                        : resumoSicoob.valor === 0
+                                          ? "Tarifa de liquidação zerada no retorno"
+                                          : resumoSicoob.contabilizada
+                                            ? "Contabilizada no financeiro"
+                                            : resumoSicoob.conferir
+                                              ? "Conferir contabilização"
+                                              : "Informada pelo banco; contabilização pendente"}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    {tarifasSicoob.isError
+                                      ? "Contabilização indisponível: conferir acesso/fase361"
+                                      : tarifasSicoob.isPending
+                                        ? "Conferindo…"
+                                        : "Sem tarifa confirmada"}
+                                  </span>
+                                )}
+                                {resumoSicoob.contabilizada && resumoSicoob.conferir && (
+                                  <span className="block text-muted-foreground">
+                                    Outros débitos a conferir
+                                  </span>
+                                )}
+                              </>
                             ) : tarifaApi && tarifaApi.valor > 0 ? (
                               <>
                                 <strong className="whitespace-nowrap">
@@ -858,18 +929,6 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                     Há outros débitos a conferir
                                   </span>
                                 )}
-                              </>
-                            ) : tarifaLiqui !== null ? (
-                              <>
-                                <strong className="whitespace-nowrap">{brl(tarifaLiqui)}</strong>
-                                <span className="block text-muted-foreground">
-                                  API Sicoob · LIQUI
-                                </span>
-                                <span className="block text-muted-foreground">
-                                  {tarifa
-                                    ? "Conferir despesa vinculada no financeiro"
-                                    : "Informada pelo banco; contabilização pendente"}
-                                </span>
                               </>
                             ) : tarifas.isPending || tarifasApi.isPending ? (
                               "Conferindo…"
@@ -1014,6 +1073,27 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
                                 <span className="font-medium">Linha digitável:</span>{" "}
                                 {String(b["linha_digitavel"] ?? "Não disponível")}
                               </p>
+                              {canFinance &&
+                                b["banco"] === "sicoob" &&
+                                despesasSicoob.length > 0 && (
+                                  <div className="mb-3 space-y-1 text-xs">
+                                    <p className="font-medium">Tarifas Sicoob e contabilização</p>
+                                    {despesasSicoob.map((t) => (
+                                      <p key={String(t["transaction_id"])}>
+                                        {dataBr(t["data_lancamento"])} · {brl(t["valor"])} ·{" "}
+                                        {t["fonte_361"] === "liqui"
+                                          ? "Liquidação LIQUI"
+                                          : "Extrato"}{" "}
+                                        ·{" "}
+                                        {t["estado"] === "lancado" &&
+                                        (t["movimento"] as Row | null)?.["status"] === "ativo"
+                                          ? "Contabilizada"
+                                          : "Conferência necessária"}
+                                        {t["motivo_361"] ? ` · ${String(t["motivo_361"])}` : ""}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
                               {tarifaApi && (
                                 <div className="mb-3 space-y-1 text-xs">
                                   <p className="font-medium">

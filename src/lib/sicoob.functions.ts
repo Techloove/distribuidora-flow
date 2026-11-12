@@ -12,6 +12,7 @@ import {
 } from "./server-sicoob-http";
 import {
   condicoesSicoob,
+  camposDivergentesBoletoSicoob,
   linhaDigitavelSicoob,
   respostaSimuladaSicoob,
   dataSicoob,
@@ -244,16 +245,11 @@ async function contexto(d: Alvo, actor: string) {
   return { b, ...p };
 }
 function validaIdentidade(c: CondicoesSicoob, b: Row, cfg: SicoobConfig, raw: Row) {
-  if (
-    c.numeroCliente !== cfg.numero_cliente ||
-    c.codigoModalidade !== 1 ||
-    c.seuNumero !== String(b["seu_numero"]) ||
-    c.valor !== Number(b["valor"]) ||
-    (b["nosso_numero"] && c.nossoNumero !== String(b["nosso_numero"])) ||
-    (raw["numeroContaCorrente"] !== undefined &&
-      Number(raw["numeroContaCorrente"]) !== cfg.numero_conta)
-  )
-    throw Error("Retorno Sicoob não corresponde ao convênio, identificação e valor deste boleto.");
+  const campos = camposDivergentesBoletoSicoob(c, b, cfg, raw);
+  if (campos.length)
+    throw Error(
+      `Retorno Sicoob divergente em: ${campos.join(", ")}. Consulte a tentativa sem emitir novamente.`,
+    );
   const snap = obj(b["sicoob_snapshot_316"]);
   if (
     cfg.numero_contrato &&
@@ -798,6 +794,8 @@ export const sicoobConsultarExtrato = createServerFn({ method: "POST" })
   });
 
 export type ConfigTarifasSicoob = {
+  ultimaLiqui?: string | null;
+  erroLiqui?: string | null;
   ativo: boolean;
   inicio: string;
   categoriaId: string | null;

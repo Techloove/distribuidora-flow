@@ -67,3 +67,45 @@ export function movimentosTarifasSicoob(raw: Record<string, unknown>) {
     };
   });
 }
+
+type RowTarifa = Record<string, unknown>;
+/** Não soma ao LIQUI um débito genérico do extrato que pode representar a mesma tarifa. */
+export function resumoTarifasSicoob(rows: RowTarifa[], tarifaLiqui: number | null) {
+  const liqui = rows.filter((r) => r["fonte_361"] === "liqui");
+  const elegiveis = rows.filter(
+    (r) =>
+      r["fonte_361"] === "liqui" ||
+      r["natureza_361"] === "outra" ||
+      (liqui.length === 0 && tarifaLiqui === null),
+  );
+  const extrato = elegiveis.filter((r) => r["fonte_361"] !== "liqui");
+  const valorLiqui = tarifaLiqui ?? (liqui.length ? Number(liqui[0]!["valor"]) : null);
+  const total = extrato.reduce((v, r) => v + Math.round(Number(r["valor"]) * 100), 0);
+  const confereMovimento = (r: RowTarifa) => {
+    const m = r["movimento"] as RowTarifa | null;
+    return (
+      r["estado"] === "lancado" &&
+      !!r["movimento_id"] &&
+      m?.["status"] === "ativo" &&
+      m["tipo"] === "saida" &&
+      Number(m["valor"]) === Number(r["valor"]) &&
+      m["conta_id"] === r["conta_id"] &&
+      m["categoria_id"] === r["categoria_id"] &&
+      m["data"] === r["data_lancamento"]
+    );
+  };
+  const liquidacaoContabilizada =
+    valorLiqui === null ||
+    valorLiqui === 0 ||
+    liqui.some((r) => Number(r["valor"]) === valorLiqui && confereMovimento(r));
+  return {
+    valor:
+      valorLiqui === null && extrato.length === 0
+        ? null
+        : (Math.round((valorLiqui ?? 0) * 100) + total) / 100,
+    contabilizada:
+      liquidacaoContabilizada && extrato.every(confereMovimento) && elegiveis.length > 0,
+    conferir: rows.some((r) => !confereMovimento(r)),
+    origem: valorLiqui !== null ? (extrato.length ? "LIQUI + extrato" : "LIQUI") : "Extrato",
+  };
+}

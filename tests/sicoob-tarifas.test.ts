@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { movimentosTarifasSicoob, referenciaBoletoSicoob } from "../src/lib/sicoob-tarifas";
+import {
+  movimentosTarifasSicoob,
+  referenciaBoletoSicoob,
+  resumoTarifasSicoob,
+} from "../src/lib/sicoob-tarifas";
 import { atenderTarifasSicoob, executarTarifasSicoob } from "../src/lib/server-sicoob-tarifas";
 import { hojeSaoPaulo } from "../src/lib/painel-trabalho";
 test("referência explícita, sem transformar documento bancário em nosso número", () => {
@@ -103,4 +107,63 @@ test("worker finaliza lote completo sem valores do navegador e não lança após
   calls.length = 0;
   expect(await executarTarifasSicoob({}, rpc)).toMatchObject({ semConsulta: true });
   expect(calls).toHaveLength(0);
+});
+
+test("LIQUI contabilizado não soma outra vez o débito genérico ou agrupado", () => {
+  const base = {
+    fonte_361: "liqui",
+    natureza_361: "liquidacao",
+    valor: 1.44,
+    estado: "lancado",
+    movimento_id: "m1",
+    conta_id: "sicoob",
+    categoria_id: "tarifa",
+    data_lancamento: "2026-11-11",
+    movimento: {
+      status: "ativo",
+      tipo: "saida",
+      valor: 1.44,
+      conta_id: "sicoob",
+      categoria_id: "tarifa",
+      data: "2026-11-11",
+    },
+  };
+  expect(resumoTarifasSicoob([], 1.44)).toMatchObject({ valor: 1.44, contabilizada: false });
+  expect(resumoTarifasSicoob([base], 1.44)).toMatchObject({
+    valor: 1.44,
+    contabilizada: true,
+    conferir: false,
+  });
+  expect(
+    resumoTarifasSicoob(
+      [
+        base,
+        { fonte_361: "extrato", natureza_361: "incerta", estado: "conferir_liqui", valor: 2.88 },
+      ],
+      1.44,
+    ),
+  ).toMatchObject({ valor: 1.44, contabilizada: true, conferir: true });
+  const outra = {
+    ...base,
+    fonte_361: "extrato",
+    natureza_361: "outra",
+    valor: 0.96,
+    movimento: { ...base.movimento, valor: 0.96 },
+  };
+  expect(resumoTarifasSicoob([base, outra], 1.44)).toMatchObject({
+    valor: 2.4,
+    contabilizada: true,
+    origem: "LIQUI + extrato",
+  });
+  expect(
+    resumoTarifasSicoob([{ ...base, movimento: { ...base.movimento, status: "estornado" } }], 1.44),
+  ).toMatchObject({ contabilizada: false, conferir: true });
+  expect(
+    resumoTarifasSicoob([{ ...base, movimento: { ...base.movimento, conta_id: "sicredi" } }], 1.44),
+  ).toMatchObject({ contabilizada: false, conferir: true });
+  expect(resumoTarifasSicoob([{ ...base, estado: "retorno_divergente" }], 1.55)).toMatchObject({
+    valor: 1.55,
+    contabilizada: false,
+    conferir: true,
+  });
 });
