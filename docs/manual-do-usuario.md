@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.48.1 · 2026-11-12
+Versão 1.49.0 · 2026-11-12
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -450,7 +450,7 @@ Cuidados:
 
 - Token e senha não são exibidos novamente. Sandbox e produção usam configurações e credenciais separadas. Certificado A1 é exigido na produção; não é exigido para o token sandbox.
 - Testes ficam em registros separados e não criam contas a receber, recebimentos, estoque ou comissões. Baixa de boleto real não cancela venda nem quita o título. Desconto ou abatimento concedido não cria recebimento.
-- O cartão Boletos liquidados acompanha a situação bancária confirmada. Quando o banco ainda não informou o valor efetivamente recebido, inclui o valor nominal do título e avisa essa composição; não apresenta recebido zero nem cria baixa financeira. Quando o valor recebido positivo é confirmado, ele é usado no total. Após instalar a fase358, a situação dos boletos Sicoob de produção emitidos pelo ERP é consultada automaticamente pelo servidor, sem depender de abrir a página. A fila é executada a cada cinco minutos em lotes pequenos, incluindo vencimentos futuros; cada título em aberto é reagendado para quinze minutos e falhas têm espera progressiva. Em Boletos, selecione a loja Sicoob para ver a última consulta dos títulos e falhas; esse horário não é o horário da última execução do agendamento. Títulos liquidados passam a ser conferidos a cada seis horas, enquanto os abertos seguem o intervalo de quinze minutos. O último estado confirmado é preservado após recusa HTTP 403, falha de conexão ou resposta incompleta. Situação bancária Liquidado não é baixa financeira: o recebimento ainda exige validar os campos efetivos de valor recebido e data do retorno real. Confira em Contas a receber; o sistema não assume a data de consulta nem usa valor nominal ou tarifa como prova de pagamento. Tarifas Sicoob seguem a configuração própria da fase355 e somente débitos com vínculo explícito a novas emissões do ERP são importados; lançamentos antigos e tarifas agrupadas sem referência não são atribuídos por estimativa.
+- O cartão Boletos liquidados acompanha a situação bancária confirmada. Quando o banco ainda não informou o valor efetivamente recebido, inclui o valor nominal do título e avisa essa composição; não apresenta recebido zero nem cria baixa financeira. Quando o valor recebido positivo é confirmado, ele é usado no total. Após instalar a fase358, a situação dos boletos Sicoob de produção emitidos pelo ERP é consultada automaticamente pelo servidor, sem depender de abrir a página. A fila é executada a cada cinco minutos em lotes pequenos, incluindo vencimentos futuros; cada título em aberto é reagendado para quinze minutos e falhas têm espera progressiva. Em Boletos, selecione a loja Sicoob para ver a última consulta dos títulos e falhas; esse horário não é o horário da última execução do agendamento. Títulos liquidados passam a ser conferidos a cada seis horas, enquanto os abertos seguem o intervalo de quinze minutos. O último estado confirmado é preservado após recusa HTTP 403, falha de conexão ou resposta incompleta. A fase358 atualiza a situação bancária. Após instalar a fase359, a coleta independente de arquivos LIQUI solicita movimentações de liquidação em períodos de até dois dias, aguarda o processamento e baixa todos os arquivos. Ela não depende das seis horas da consulta individual. A coleta alterna o período recente e a recuperação histórica desde as emissões do ERP, sem filtrar o vencimento dos boletos. Antes de receber, exige o convênio, conta, nosso número, identificador original, código de barras, valor nominal, valor pago, encargos e data efetiva compatíveis. O recebimento entra na conta financeira Sicoob gravada na emissão; mora agregada é preservada como acréscimo, sem inventar divisão entre juros e multa. Repetições do arquivo não geram outra baixa. Valores divergentes, títulos já recebidos manualmente, pagamentos parciais e mudanças de conta exigem conferência, sem nova entrada automática. O painel mostra o último ciclo LIQUI e pendências. A coleta tem várias etapas e pode precisar de mais de um ciclo de cinco minutos. O valor de tarifa informado no LIQUI fica como conferência, sem segunda despesa: a contabilização continua pelo extrato da loja. O sistema não usa valor nominal, data de consulta ou tarifa como prova de pagamento. Tarifas Sicoob seguem a configuração própria da fase355 e somente débitos com vínculo explícito a novas emissões do ERP são importados; lançamentos antigos e tarifas agrupadas sem referência não são atribuídos por estimativa.
 - HTTP 401/403 indica recusa de autorização: recopie Client ID e Access token da mesma sessão no portal, salve e teste. HTTP 404/405 indica consulta indisponível; HTTP 429/5xx indica limite ou instabilidade. Sucesso da conexão não homologa produção.
 
 ## Agenda, metas, comissões e relatórios
@@ -577,6 +577,16 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.49.0 · 2026-11-12 · Integra arquivos LIQUI à baixa financeira Sicoob
+
+Motivo da atualização: A consulta individual confirma Liquidado, mas não fornece os campos efetivos necessários para receber o título no financeiro.
+
+- Novo coletor assíncrono solicita movimentações LIQUI, aguarda o processamento e valida ZIP, todos os arquivos, convênio, identificação, valor e data antes de registrar recebimentos.
+- A baixa usa a conta Sicoob gravada na emissão e o mecanismo financeiro existente; repetição não duplica entrada e títulos com recebimento anterior ou divergências ficam para conferência.
+- A coleta alterna períodos recentes e históricos de até dois dias, incluindo pagamentos antecipados, com agendamento independente das seis horas da consulta individual.
+- Tarifas LIQUI ficam separadas para conferência e não geram segunda despesa; a contabilização continua pelo extrato configurado na fase355.
+- Requer aplicar a fase359 no Supabase. Testes isolados aprovados; o primeiro arquivo real do convênio ainda precisa ser acompanhado após instalação.
 
 ### v1.48.1 · 2026-11-12 · Corrige total de boletos liquidados sem valor recebido informado
 

@@ -18,12 +18,19 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
     retry: false,
     queryFn: () => status({ data: { accessToken: session!.access_token, centroId } }),
   });
+  const ultimaConsulta = q.data?.ultimaConsulta;
+  const ultimaLiqui = q.data?.ultimaLiqui;
   useEffect(() => {
-    const atual = q.data?.ultimaConsulta ?? null;
+    const atual =
+      ultimaConsulta || ultimaLiqui ? JSON.stringify([ultimaConsulta, ultimaLiqui]) : null;
     if (anterior.current && atual && anterior.current !== atual)
-      void qc.invalidateQueries({ queryKey: ["boletos"] });
+      void Promise.all(
+        ["boletos", "contas_receber", "vw_titulos_receber", "movimentos_financeiros"].map((k) =>
+          qc.invalidateQueries({ queryKey: [k] }),
+        ),
+      );
     anterior.current = atual;
-  }, [q.data?.ultimaConsulta, qc]);
+  }, [ultimaConsulta, ultimaLiqui, qc]);
   if (!permissoes.pode("sicoob_operar")) return null;
   return (
     <div className="rounded-xl border bg-muted/20 p-3 text-xs text-muted-foreground">
@@ -51,9 +58,35 @@ export function SicoobAutomatico({ centroId }: { centroId: string }) {
           <p>
             Em aberto: consultas a cada quinze minutos, incluindo vencimentos futuros. Já
             liquidados: nova conferência a cada seis horas. Falhas podem ampliar o intervalo entre
-            tentativas. Liquidação bancária ainda exige conferência do valor e da data para baixa no
-            financeiro. Tarifas seguem a configuração de importação da loja.
+            tentativas. Tarifas seguem a configuração de importação do extrato da loja.
           </p>
+          {q.data.baixarFinanceiro ? (
+            <>
+              <p>
+                Baixa financeira por arquivos de liquidação: ativa. Último ciclo concluído:{" "}
+                {q.data.ultimaLiqui
+                  ? dataHoraBr(q.data.ultimaLiqui)
+                  : "aguardando primeiro retorno"}
+                .
+              </p>
+              {q.data.erroLiqui && (
+                <p className="text-amber-700">
+                  Coleta de liquidações aguardando nova tentativa: {q.data.erroLiqui}.
+                </p>
+              )}
+              {!!q.data.pendenciasLiqui && (
+                <p className="text-amber-700">
+                  {q.data.pendenciasLiqui} liquidação(ões) exige(m) conferência antes de registrar o
+                  recebimento.
+                </p>
+              )}
+            </>
+          ) : (
+            <p>
+              A baixa financeira automática por arquivos de liquidação ainda não está habilitada
+              nesta loja.
+            </p>
+          )}
         </>
       ) : (
         <p>Verificando consulta automática Sicoob…</p>

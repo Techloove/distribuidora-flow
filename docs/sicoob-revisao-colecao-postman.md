@@ -22,3 +22,19 @@ Ainda são necessários os layouts ou arquivos de exemplo LIQUI e BAIX: identifi
 Solicitação objetiva ao suporte: “Precisamos do layout JSON interno dos arquivos LIQUI e BAIX da API Cobrança Bancária v3, com os campos de valor recebido, data de liquidação/crédito, tarifas por movimentação e estornos; a coleção Postman disponibilizada contém apenas um arquivo ENTR.”
 
 A automação de recebimentos e tarifas Sicoob não foi ativada por esta revisão. A versão 1.44.0 continua com operações manuais de consulta/alteração e configuração das condições de novas emissões.
+
+## Pesquisa pública liberada em 12/11/2026
+
+O usuário autorizou pesquisa externa e a permissão de rede foi concedida para esta etapa. GitHub público funcionou; os domínios do portal Sicoob e documenter.getpostman.com permaneceram bloqueados pelo proxy (Tunnel connection failed: 403 Forbidden). Esse bloqueio de navegação não é o HTTP 403 da API bancária do usuário.
+
+Novas fontes comunitárias, lidas como referência e sem executar seus códigos:
+
+- https://github.com/SharpSistemas/SicoobAPI/blob/ea3858cb6daf6676c2bfdcc80e2f4432bd76c1b8/Sicoob.Cobranca/Models/Shared/Movimentacoes.cs
+- https://github.com/laddertech/sicoob-sdk/blob/6872d02e4821f1b0e3e92cde606508e951475ed8/tests/test_boleto_movimentacoes.py
+- https://github.com/open-fidias/sicoob-cobranca-bancaria-api/blob/master/docs/MovimentaoApi.md
+
+O modelo C# e a fixture Python identificada pelo autor como registro real LIQUI concordam em numeroCliente, numeroContrato, modalidade, numeroTitulo, seuNumero, codigoBarras, numeroContaCorrente, valorTitulo, valorTarifaMovimento, valorAbatimento, dataMovimentoLiquidacao, dataLiquidacao, dataPrevisaoCredito, valorDesconto, valorMora e valorLiquido. A fixture também inclui numeroContratoCobranca, mostrando que numeroContrato não deve ser presumido igual ao contrato de cobrança opcional configurado na API.
+
+A fixture tem valorTitulo 180, valorMora 22,96, valorLiquido 202,96 e tarifa separada 1,94. É evidência de que o nome valorLiquido não pode ser automaticamente interpretado como crédito após tarifa. Os exemplos comunitários ajudam a construir o leitor e os testes, mas não são documentação contratual oficial nem comprovam os campos do retorno do convênio desta loja. A obtenção do próprio LIQUI do 3849 permitirá validar os identificadores e os valores/datas sem usar valor nominal ou data da consulta como pagamento.
+
+A pesquisa não publicou código nem fez chamadas autenticadas ao Sicoob. A correção dos cartões 1.48.1 foi publicada após autorização explícita do usuário (commit 78b2180). A implementação LIQUI utiliza essas referências com validações de identidade, equação financeira e arquivo completo; diferenças no retorno real não são interpretadas por suposição.

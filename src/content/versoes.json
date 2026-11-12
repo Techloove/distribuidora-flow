@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.49.0",
+    "data": "2026-11-12",
+    "titulo": "Integra arquivos LIQUI à baixa financeira Sicoob",
+    "motivo": "A consulta individual confirma Liquidado, mas não fornece os campos efetivos necessários para receber o título no financeiro.",
+    "novidades": [
+      "Novo coletor assíncrono solicita movimentações LIQUI, aguarda o processamento e valida ZIP, todos os arquivos, convênio, identificação, valor e data antes de registrar recebimentos.",
+      "A baixa usa a conta Sicoob gravada na emissão e o mecanismo financeiro existente; repetição não duplica entrada e títulos com recebimento anterior ou divergências ficam para conferência.",
+      "A coleta alterna períodos recentes e históricos de até dois dias, incluindo pagamentos antecipados, com agendamento independente das seis horas da consulta individual.",
+      "Tarifas LIQUI ficam separadas para conferência e não geram segunda despesa; a contabilização continua pelo extrato configurado na fase355.",
+      "Requer aplicar a fase359 no Supabase. Testes isolados aprovados; o primeiro arquivo real do convênio ainda precisa ser acompanhado após instalação."
+    ]
+  },
+  {
     "versao": "1.48.1",
     "data": "2026-11-12",
     "titulo": "Corrige total de boletos liquidados sem valor recebido informado",

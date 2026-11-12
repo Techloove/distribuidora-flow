@@ -47,6 +47,10 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/api/sicoob/liquidacoes") {
+        const { atenderLiquidacoesSicoob } = await import("./lib/server-sicoob-liquidacoes");
+        return await atenderLiquidacoesSicoob(request);
+      }
       if (new URL(request.url).pathname === "/api/sicoob/sincronizar") {
         const { atenderSicoobAutomatico } = await import("./lib/server-sicoob-auto");
         return await atenderSicoobAutomatico(request);

@@ -869,5 +869,8 @@ export const sicoobStatusAutomatico = createServerFn({ method: "POST" })
       ultimaConsulta: string | null;
       falhas: number;
       baixarFinanceiro: boolean;
+      ultimaLiqui?: string | null;
+      erroLiqui?: string | null;
+      pendenciasLiqui?: number;
     }>("sicoob_auto_status_358", { _actor: actor.id, _centro: uuid(d.centroId) });
   });
