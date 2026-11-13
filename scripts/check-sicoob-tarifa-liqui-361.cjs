@@ -213,6 +213,47 @@ module.exports = async ({ db, q, scalar, id, finalizar, fee, hoje }) => {
     await db.exec("reset role");
   }
   await q("select set_config('test.actor','',false)");
+  if (process.argv.includes("--posterior")) {
+    await db.exec(`create table sicoob_liqui_jobs_359(id uuid,centro_id uuid,actor uuid,numero_cliente bigint,numero_conta bigint,contrato bigint,conta_id uuid,inicio date,fim date);
+      create function sicoob_liqui_validar_359(sicoob_liqui_jobs_359) returns void language plpgsql as $$begin return;end$$;
+      insert into sicoob_liqui_jobs_359 values('${id(900)}','${id(10)}','${id(1)}',12345,67890,null,'${id(70)}',current_date,current_date);`);
+    const migration = fs.readFileSync("db/fase366_sicoob_tarifa_posterior.sql", "utf8");
+    const start = migration.indexOf(
+      "create or replace function public.sicoob_atualizar_tarifa_366(",
+    );
+    await db.exec(migration.slice(start, migration.indexOf("end $$;", start) + 7));
+    const zero = await criar(320, { tarifa: 0 });
+    const antesPosterior = Number(await scalar("select count(*) from movimentos_financeiros"));
+    const receberAntes = await q("select to_jsonb(t) from contas_receber t order by id");
+    assert.equal((await processar()).lancados, 0);
+    assert.equal(
+      await scalar("select sicoob_atualizar_tarifa_366(j,$1) from sicoob_liqui_jobs_359 j", [
+        { ...zero, tarifa: 1.44 },
+      ]),
+      true,
+    );
+    assert.equal((await processar()).lancados, 1);
+    assert.equal(
+      Number(await scalar("select count(*) from movimentos_financeiros")),
+      antesPosterior + 1,
+    );
+    assert.equal((await processar()).lancados, 0);
+    assert.deepEqual(await q("select to_jsonb(t) from contas_receber t order by id"), receberAntes);
+    assert.equal(await estado(320), "lancado");
+    const ausente = await criar(321, { tarifa: null });
+    assert.equal((await processar()).lancados, 0);
+    assert.equal(
+      await scalar("select sicoob_atualizar_tarifa_366(j,$1) from sicoob_liqui_jobs_359 j", [
+        { ...ausente, tarifa: 1.44 },
+      ]),
+      true,
+    );
+    assert.equal((await processar()).lancados, 1);
+    assert.equal((await processar()).lancados, 0);
+    console.log(
+      "OK366/361: tarifa posterior gera uma única saída com o lançador real e conserva os recebimentos.",
+    );
+  }
   console.log(
     "OK361: LIQUI individual, recuperação, conta/categoria/data, idempotência, extrato nas duas ordens, agrupados excluídos, outras operações preservadas, manual/estorno/divergência/pausa/legado/Sicredi protegidos.",
   );

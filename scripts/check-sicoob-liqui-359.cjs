@@ -283,6 +283,15 @@ insert into sicoob_operacoes_316(boleto_id,tipo,estado) values('${id(4)}','emiss
       /CONFIG_ALTERADA/,
     );
     assert.equal((await db.query("select * from movimentos_financeiros")).rows.length, 2);
+    if (process.argv.includes("--tarifa-posterior"))
+      await require("./check-sicoob-tarifa-posterior-366.cjs")({
+        db,
+        id,
+        reserve,
+        step,
+        apply,
+        seguinte,
+      });
     console.log(
       "LIQUI359: ciclo assíncrono, janelas de dois dias, lease, privilégios, múltiplos arquivos, baixa real pelo receber_titulo, repetição e baixa manual protegidas.",
     );

@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.53.3",
+    "data": "2026-11-13",
+    "titulo": "Revisa tarifas Sicoob recebidas após a liquidação",
+    "motivo": "A coleta LIQUI deixava de solicitar arquivos quando todos os boletos já tinham recebimento, impedindo conferir tarifas informadas posteriormente pelo Sicoob.",
+    "novidades": [
+      "Com fase366, revisa tarifas zero ou ausentes de liquidações dos últimos 30 dias, com configuração ativa e intervalo mínimo de seis horas por boleto.",
+      "Complementa a tarifa apenas quando identidade, valor, data e demais dados do recebimento permanecem iguais; não repete a baixa nem altera o valor recebido.",
+      "O processamento financeiro existente lança uma única despesa. Tarifas positivas divergentes exigem conferência; retornos antigos com zero não apagam tarifas positivas.",
+      "Preserva credenciais, pausas, backoffs, reservas e a consulta rápida dos pagamentos. Não importa boletos externos nem rateia extrato agrupado; outras operações continuam exigindo vínculo explícito.",
+      "Inclui diagnóstico de revisão. Requer fase366; testes reproduzem tarifa posterior com dados simulados, sem comprovar nova tarifa bancária nos boletos reais."
+    ]
+  },
+  {
     "versao": "1.53.2",
     "data": "2026-11-12",
     "titulo": "Corrige documento impresso nas novas emissões híbridas Sicredi",
