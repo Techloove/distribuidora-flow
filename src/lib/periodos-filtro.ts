@@ -8,6 +8,7 @@ export function intervaloMes(mes: string) {
 }
 export function atalhosPeriodo(hoje: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(hoje) || dataBr(hoje) === "—") throw Error("Data inválida");
+  const diaAnterior = deslocarDataISO(hoje, -1);
   const semana = new Date(`${hoje}T12:00:00Z`).getUTCDay();
   const segunda = deslocarDataISO(hoje, -((semana + 6) % 7));
   const mes = hoje.slice(0, 7),
@@ -15,6 +16,7 @@ export function atalhosPeriodo(hoje: string) {
   const anterior = new Date(Date.UTC(ano!, numero! - 2, 1)).toISOString().slice(0, 7);
   return [
     { id: "hoje", label: "Hoje", de: hoje, ate: hoje },
+    { id: "dia-anterior", label: "Dia Anterior", de: diaAnterior, ate: diaAnterior },
     { id: "semana", label: "Esta semana", de: segunda, ate: deslocarDataISO(segunda, 6) },
     { id: "mes", label: "Este mês", ...intervaloMes(mes) },
     { id: "mes-anterior", label: "Mês anterior", ...intervaloMes(anterior) },

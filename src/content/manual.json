@@ -82,7 +82,7 @@
       "/relatorios-financeiros"
     ],
     "passos": [
-      "Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período.",
+      "Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Dia Anterior, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período. Dia Anterior seleciona somente o dia anterior à data atual de Brasília, inclusive nas viradas de mês e ano.",
       "Esta semana considera segunda-feira a domingo no calendário de São Paulo. Últimos 7 dias inclui hoje e os seis dias anteriores; Últimos 30 dias inclui hoje e os 29 anteriores. Este mês usa o primeiro e último dia do mês; Mês anterior usa o mês de calendário anterior completo.",
       "Para consultar outros meses, digite MM/AAAA no campo Mês ou use as setas para navegar. A seleção preenche as datas inicial e final, inclusive fevereiro de anos bissextos. Os campos de data continuam aceitando intervalos personalizados.",
       "Esse padrão aparece também nas barras de filtros com pares de datas, como compras, contas, boletos, estoque, separação, comissões, devoluções e relatórios. Os atalhos aplicam-se ao campo indicado: data do pedido, vencimento, pagamento, emissão, liquidação ou aprovação.",

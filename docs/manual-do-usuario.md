@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.54.2 · 2026-11-13
+Versão 1.55.0 · 2026-11-13
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -62,7 +62,7 @@ Cuidados:
 
 Escolha dia, semana, mês ou um intervalo personalizado nas listagens.
 
-1. Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período.
+1. Em Pedidos de Vendas, Hoje continua sendo o filtro inicial. Os atalhos incluem Hoje, Dia Anterior, Esta semana, Este mês, Mês anterior, Últimos 7 dias, Últimos 30 dias e Todo o período. Dia Anterior seleciona somente o dia anterior à data atual de Brasília, inclusive nas viradas de mês e ano.
 2. Esta semana considera segunda-feira a domingo no calendário de São Paulo. Últimos 7 dias inclui hoje e os seis dias anteriores; Últimos 30 dias inclui hoje e os 29 anteriores. Este mês usa o primeiro e último dia do mês; Mês anterior usa o mês de calendário anterior completo.
 3. Para consultar outros meses, digite MM/AAAA no campo Mês ou use as setas para navegar. A seleção preenche as datas inicial e final, inclusive fevereiro de anos bissextos. Os campos de data continuam aceitando intervalos personalizados.
 4. Esse padrão aparece também nas barras de filtros com pares de datas, como compras, contas, boletos, estoque, separação, comissões, devoluções e relatórios. Os atalhos aplicam-se ao campo indicado: data do pedido, vencimento, pagamento, emissão, liquidação ou aprovação.
@@ -579,6 +579,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.55.0 · 2026-11-13 · Adiciona Dia Anterior aos atalhos de período do sistema
+
+Motivo da atualização: Facilita consultar o dia imediatamente anterior nas telas que compartilham os atalhos de período.
+
+- Inclui Dia Anterior logo após Hoje, preservando a ordem dos demais atalhos.
+- Seleciona início e fim no dia anterior à data de Brasília, respeitando viradas de mês, ano e ano bissexto.
+- Disponível no componente compartilhado de filtros: pedidos, compras, contas, boletos, estoque, separação, comissões, devoluções, relatórios e comparativos que utilizam esses atalhos.
+- Mantém o campo de data escolhido e os demais filtros da tela. Não requer SQL.
 
 ### v1.54.2 · 2026-11-13 · Prioriza segunda via para pedidos com boletos já emitidos
 

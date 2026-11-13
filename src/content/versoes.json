@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.55.0",
+    "data": "2026-11-13",
+    "titulo": "Adiciona Dia Anterior aos atalhos de período do sistema",
+    "motivo": "Facilita consultar o dia imediatamente anterior nas telas que compartilham os atalhos de período.",
+    "novidades": [
+      "Inclui Dia Anterior logo após Hoje, preservando a ordem dos demais atalhos.",
+      "Seleciona início e fim no dia anterior à data de Brasília, respeitando viradas de mês, ano e ano bissexto.",
+      "Disponível no componente compartilhado de filtros: pedidos, compras, contas, boletos, estoque, separação, comissões, devoluções, relatórios e comparativos que utilizam esses atalhos.",
+      "Mantém o campo de data escolhido e os demais filtros da tela. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.54.2",
     "data": "2026-11-13",
     "titulo": "Prioriza segunda via para pedidos com boletos já emitidos",
