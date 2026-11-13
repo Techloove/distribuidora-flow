@@ -16,7 +16,7 @@ create function usuario_ativo() returns boolean language sql security definer se
 create function can_finance(uuid) returns boolean language sql security definer set search_path=public as $$select exists(select 1 from user_roles where user_id=$1 and role in('admin','gestor','financeiro'))$$;
 create function usuario_pode_acessar_centro(uuid) returns boolean language sql security definer set search_path=public as $$select has_role(auth.uid(),'admin') or exists(select 1 from usuario_centros where user_id=auth.uid() and centro_id=$1)$$;
 create function ator_financeiro_pode_acessar_centro(uuid,uuid) returns boolean language sql security definer set search_path=public as $$select can_finance($1) and (has_role($1,'admin') or exists(select 1 from usuario_centros where user_id=$1 and centro_id=$2))$$;
-create function status_comissao_valido_302(text,text) returns boolean language sql as $$select $2='pedido' and $1 in('aprovado','conferido','faturado','entregue')$$;
+
 create function bloqueio_boleto(uuid) returns text language sql as $$select nullif(current_setting('test.bloqueio',true),'')$$;
 create table centros(id uuid primary key,nome text,ativo boolean default true);
 create table contas_financeiras(id uuid primary key,centro_id uuid,ativo boolean default true);
@@ -41,6 +41,12 @@ insert into role_menus values('admin','/boletos'),('financeiro','/boletos');
 insert into pedidos values('${id(30)}','${id(10)}','conferido','pedido');
 insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,parcela,valor,vencimento) values('${id(40)}','${id(10)}','${id(20)}','${id(30)}','aberto','PED-30',1,100,'2027-01-20');
 `);
+    // Usa o contrato real: (_tipo, _status). A fixture anterior invertia os argumentos e ocultava a falha.
+    const statusSql = fs.readFileSync("db/fase302_comissoes_aprovadas_data_retomada.sql", "utf8");
+    const startStatus = statusSql.indexOf(
+      "create or replace function public.status_comissao_valido_302(",
+    );
+    await db.exec(statusSql.slice(startStatus, statusSql.indexOf("$$;", startStatus) + 3));
     const q = async (s, a = []) => (await db.query(s, a)).rows,
       scalar = async (s, a = []) => Object.values((await q(s, a))[0])[0];
     const antesSicredi = await scalar(
@@ -133,6 +139,47 @@ insert into contas_receber(id,centro_id,cliente_id,pedido_id,status,documento,pa
     };
     const reservar = () =>
       scalar("select sicoob_reservar_emissao_316($1,$2,$3)", [id(1), id(40), payload]);
+    await assert.rejects(reservar, /Aprove/); // reproduz o erro até com pedido conferido.
+    assert.equal(Number(await scalar("select count(*) from boletos")), 0);
+    const approvalFix = fs.readFileSync("db/fase368_sicoob_validacao_pedido.sql", "utf8");
+    await db.exec(approvalFix);
+    await db.exec(approvalFix);
+    for (const status of [
+      "aprovado",
+      "confirmado",
+      "separacao",
+      "separado",
+      "conferido",
+      "faturado",
+      "nf_emitida",
+      "em_carga",
+      "em_rota",
+      "entregue",
+    ]) {
+      await db.exec("begin");
+      try {
+        await q("update pedidos set status=$1 where id=$2", [status, id(30)]);
+        const registro = await reservar();
+        assert.equal(registro.recuperar, false);
+      } finally {
+        await db.exec("rollback");
+      }
+    }
+    for (const status of [
+      "rascunho",
+      "digitacao",
+      "aguardando_aprovacao",
+      "recusado",
+      "cancelado",
+    ]) {
+      await q("update pedidos set status=$1 where id=$2", [status, id(30)]);
+      await assert.rejects(reservar, /Aprove/);
+    }
+    await q("update pedidos set status='aprovado',tipo_documento='orcamento' where id=$1", [
+      id(30),
+    ]);
+    await assert.rejects(reservar, /Aprove/);
+    await q("update pedidos set status='conferido',tipo_documento='pedido' where id=$1", [id(30)]);
     await db.exec("set test.bloqueio='Confira a separação'");
     await assert.rejects(reservar, /Confira a separação/);
     await db.exec("set test.bloqueio=''");

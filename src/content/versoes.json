@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.54.1",
+    "data": "2026-11-13",
+    "titulo": "Corrige validação de pedidos aprovados na emissão Sicoob",
+    "motivo": "A reserva de emissão Sicoob invertia tipo e status na validação do pedido, recusando pedidos já aprovados e separados.",
+    "novidades": [
+      "A fase368 corrige somente a ordem dos argumentos da validação, preservando as demais regras e permissões da emissão.",
+      "Reconhece os estados posteriores à aprovação, incluindo separação e conferência, sem alterar ou reaprovar pedidos.",
+      "Mantém bloqueados rascunhos, digitação, aprovação pendente, orçamento, cancelamento e as pendências de liberação existentes.",
+      "O teste de banco reproduz a falha com o helper real da fase302, verifica a correção reaplicável e as etapas válidas e inválidas. Requer fase368; não emite boletos durante a instalação."
+    ]
+  },
+  {
     "versao": "1.54.0",
     "data": "2026-11-13",
     "titulo": "Cadastro unificado: consulta pelo nome e histórico financeiro",
