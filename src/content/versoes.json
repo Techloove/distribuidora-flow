@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.54.0",
+    "data": "2026-11-13",
+    "titulo": "Cadastro unificado: consulta pelo nome e histórico financeiro",
+    "motivo": "Permite consultar os dados antes de editar e corrige a leitura de títulos quitados com desconto ou abatimento.",
+    "novidades": [
+      "Nome clicável abre o cadastro em consulta, com campos e ações de alteração bloqueados. Alterar dados permite editar na mesma seção, respeitando as permissões existentes.",
+      "Histórico continua navegável, inclusive abas e paginação, durante a consulta. Atalhos relacionados abrem consulta; o lápis mantém a edição direta.",
+      "Adiciona a data do pagamento ao histórico financeiro. Com fase367, títulos de R$25 quitados por R$20 e abatimento de R$5 aparecem como Pago; considera os encargos ao avaliar saldo e preserva cancelados e parciais reais.",
+      "A fase367 corrige somente as visões do histórico, incluindo a variante por modalidade, preservando RLS, filtros, ACLs e registros financeiros. Não cria nem altera recebimentos."
+    ]
+  },
+  {
     "versao": "1.53.3",
     "data": "2026-11-13",
     "titulo": "Revisa tarifas Sicoob recebidas após a liquidação",

@@ -370,6 +370,7 @@ function PessoasPage() {
           uppercase
           readOnly={representante}
           table="pessoas"
+          viewField="razao_social"
           initialEditId={pessoa ?? vinculo.data}
           fields={[
             ...camposComFormas,
@@ -486,7 +487,7 @@ function PessoasPage() {
               ],
               extra: true,
             },
-            { id: "historico", label: "Histórico", fields: [], extra: true },
+            { id: "historico", label: "Histórico", fields: [], extra: true, readOnlyExtra: true },
             { id: "observacoes", label: "Observações", fields: ["observacoes"] },
           ]}
           orderBy="razao_social"

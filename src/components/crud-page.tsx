@@ -234,12 +234,20 @@ export function CrudPage({
   readOnly = false,
   uppercase = false,
   initialEditId,
+  viewField,
   initialFilters,
   readAll = false,
   defaultValues,
   formSections,
 }: {
-  formSections?: { id: string; label: string; fields: string[]; extra?: boolean }[];
+  formSections?: {
+    id: string;
+    label: string;
+    fields: string[];
+    extra?: boolean;
+    /** Bloco extra de consulta: mantém abas/paginação habilitadas no modo visualizar. */
+    readOnlyExtra?: boolean;
+  }[];
   table: string;
   fields: CrudField[];
   orderBy: string;
@@ -282,6 +290,8 @@ export function CrudPage({
   readOnly?: boolean;
   /** Textos digitados e gravados em MAIÚSCULO (exceto e-mail). */
   uppercase?: boolean;
+  /** Coluna que abre consulta; vínculos iniciais também começam em consulta. */
+  viewField?: string;
   initialEditId?: string | undefined;
   initialFilters?: Record<string, string> | undefined;
   /** Pagina a leitura completa antes de aplicar os filtros locais. */
@@ -303,6 +313,8 @@ export function CrudPage({
     }
   }
   const [open, setOpen] = useState(false);
+  const [viewing, setViewing] = useState(false);
+  const formReadOnly = directWriteBlocked || viewing;
   const [formSection, setFormSection] = useState(0);
   const activeSection = formSections?.[formSection];
   const [editing, setEditing] = useState<Row | null>(null);
@@ -395,6 +407,7 @@ export function CrudPage({
   }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate, table]);
 
   function openCreate() {
+    setViewing(false);
     setEditing(null);
     const next: Record<string, string | boolean> = {};
     for (const f of fields) {
@@ -409,7 +422,8 @@ export function CrudPage({
   }
 
   const openEdit = useCallback(
-    (row: Row) => {
+    (row: Row, consulta = false) => {
+      setViewing(consulta);
       setEditing(row);
       const next: Record<string, string | boolean> = {};
       for (const f of fields) {
@@ -448,7 +462,7 @@ export function CrudPage({
     if (abertoInicial.current === initialEditId) return;
     if (registroInicial.data) {
       abertoInicial.current = initialEditId;
-      openEdit(registroInicial.data);
+      openEdit(registroInicial.data, !!viewField);
     } else if (registroInicial.isError) {
       abertoInicial.current = initialEditId;
       toast.error(registroInicial.error.message);
@@ -458,6 +472,7 @@ export function CrudPage({
     registroInicial.data,
     registroInicial.isError,
     registroInicial.error,
+    viewField,
     openEdit,
   ]);
 
@@ -486,6 +501,7 @@ export function CrudPage({
 
   const save = useMutation({
     mutationFn: async () => {
+      if (viewing) throw new Error("Clique em Alterar dados antes de salvar este cadastro.");
       assertDirectWriteAllowed();
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
@@ -817,7 +833,16 @@ export function CrudPage({
                 <TableRow key={String(row["id"])}>
                   {tableFields.map((f) => (
                     <TableCell key={f.name} data-label={f.label}>
-                      {f.renderValue ? (
+                      {f.name === viewField ? (
+                        <button
+                          type="button"
+                          className="text-left text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                          title="Consultar cadastro"
+                          onClick={() => openEdit(row, true)}
+                        >
+                          {String(row[f.name] ?? "—")}
+                        </button>
+                      ) : f.renderValue ? (
                         f.renderValue(row)
                       ) : f.name === "status" ? (
                         <StatusBadge value={row[f.name]} />
@@ -949,12 +974,16 @@ export function CrudPage({
           <DialogHeader>
             <DialogTitle>
               {editing
-                ? directWriteBlocked
-                  ? "Visualizar registro"
+                ? formReadOnly
+                  ? "Consultar cadastro"
                   : "Editar registro"
                 : "Novo registro"}
             </DialogTitle>
-            <DialogDescription>Preencha os campos e salve para gravar no banco.</DialogDescription>
+            <DialogDescription>
+              {formReadOnly
+                ? "Consulte os dados e navegue pelas seções do cadastro."
+                : "Preencha os campos e salve para gravar no banco."}
+            </DialogDescription>
           </DialogHeader>
           {formSections && (
             <nav
@@ -975,9 +1004,10 @@ export function CrudPage({
               ))}
             </nav>
           )}
-          <div
+          <fieldset
+            disabled={formReadOnly && !activeSection?.readOnlyExtra}
             className={
-              formSections ? "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden" : undefined
+              formSections ? "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden" : "min-w-0"
             }
           >
             {extraForm && extraFormTop && (!formSections || activeSection?.extra) ? (
@@ -986,12 +1016,15 @@ export function CrudPage({
                   sectionId: activeSection?.id,
                   form,
                   editing,
-                  patch: (values) => setForm((f) => ({ ...f, ...values })),
-                  openRow: (row) => openEdit(row),
+                  patch: (values) => {
+                    if (!formReadOnly) setForm((f) => ({ ...f, ...values }));
+                  },
+                  openRow: (row) => openEdit(row, formReadOnly),
                 })}
               </div>
             ) : null}
-            <div
+            <fieldset
+              disabled={formReadOnly}
               className={
                 formSections
                   ? "grid min-w-0 gap-3 sm:grid-cols-4 lg:grid-cols-6"
@@ -1150,21 +1183,25 @@ export function CrudPage({
                         {field.after({
                           form,
                           editing,
-                          patch: (values) => setForm((f) => ({ ...f, ...values })),
-                          openRow: (row) => openEdit(row),
+                          patch: (values) => {
+                            if (!formReadOnly) setForm((f) => ({ ...f, ...values }));
+                          },
+                          openRow: (row) => openEdit(row, formReadOnly),
                         })}
                       </div>
                     ) : null}
                   </Fragment>
                 ))}
-            </div>
+            </fieldset>
             {extraFormEnd ? (
               <div className="mt-4">
                 {extraFormEnd({
                   form,
                   editing,
-                  patch: (values) => setForm((f) => ({ ...f, ...values })),
-                  openRow: (row) => openEdit(row),
+                  patch: (values) => {
+                    if (!formReadOnly) setForm((f) => ({ ...f, ...values }));
+                  },
+                  openRow: (row) => openEdit(row, formReadOnly),
                 })}
               </div>
             ) : null}
@@ -1174,20 +1211,28 @@ export function CrudPage({
                   sectionId: activeSection?.id,
                   form,
                   editing,
-                  patch: (values) => setForm((f) => ({ ...f, ...values })),
-                  openRow: (row) => openEdit(row),
+                  patch: (values) => {
+                    if (!formReadOnly) setForm((f) => ({ ...f, ...values }));
+                  },
+                  openRow: (row) => openEdit(row, formReadOnly),
                 })}
               </div>
             ) : null}
-          </div>
+          </fieldset>
           <DialogFooter className={formSections ? "shrink-0 border-t pt-3" : undefined}>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
+              {formReadOnly ? "Fechar" : "Cancelar"}
             </Button>
-            <Button onClick={() => save.mutate()} disabled={directWriteBlocked || save.isPending}>
-              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Salvar
-            </Button>
+            {viewing && !directWriteBlocked ? (
+              <Button onClick={() => setViewing(false)}>
+                <Pencil className="size-4" /> Alterar dados
+              </Button>
+            ) : !formReadOnly ? (
+              <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Salvar
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>

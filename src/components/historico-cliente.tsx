@@ -133,6 +133,7 @@ export function HistoricoCliente({
                   <TableRow>
                     <TableHead>Pedido</TableHead>
                     <TableHead>Data</TableHead>
+                    <TableHead>Data do pagamento</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Itens</TableHead>
                     <TableHead className="text-right">Quantidade</TableHead>
@@ -193,6 +194,7 @@ export function HistoricoCliente({
                     <TableHead>Documento</TableHead>
                     <TableHead>Parcela</TableHead>
                     <TableHead>Vencimento</TableHead>
+                    <TableHead>Data do pagamento</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="text-right">Pago</TableHead>
@@ -214,6 +216,7 @@ export function HistoricoCliente({
                       </TableCell>
                       <TableCell>{String(t["parcela"] ?? "—")}</TableCell>
                       <TableCell>{fmtDate(t["vencimento"])}</TableCell>
+                      <TableCell>{fmtDate(t["data_pagamento"])}</TableCell>
                       <TableCell className="capitalize">
                         {String(t["status_efetivo"] ?? "").replace(/_/g, " ")}
                       </TableCell>
