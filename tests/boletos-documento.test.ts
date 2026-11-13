@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { PDFDocument } from "pdf-lib";
 import {
   boletoAtual,
+  operacaoBoletosDocumento,
   boletosParaAberturaAutomatica,
   boletoImprimivel,
   saldoTituloBoleto,
@@ -145,4 +146,38 @@ test("abertura após emissão reúne somente parcelas confirmadas e nunca o cicl
   const outro = { ...b("outro", "registrado", "2026-11-12"), conta_receber_id: "conta2" };
   expect(boletosParaAberturaAutomatica([registrado, outro], ["conta1"])).toEqual([registrado]);
   expect(boletosParaAberturaAutomatica([registrado, outro], ["conta1", "conta2"])).toHaveLength(2);
+});
+
+test("operação do documento distingue segunda via, emissão parcial e consulta em ambos os bancos", () => {
+  const t = (id: string) => ({
+    id,
+    parcela: 1,
+    vencimento: "2026-12-01",
+    valor: 50,
+    status: "aberto",
+  });
+  for (const banco of ["sicredi", "sicoob"]) {
+    const titulo = t("conta1");
+    const emitido = { ...b("ciclo", "registrado", "2026-11-13"), banco };
+    expect(operacaoBoletosDocumento([titulo], [emitido])).toBe("imprimir");
+    expect(operacaoBoletosDocumento([titulo], [{ ...emitido, status: "liquidado" }])).toBe(
+      "imprimir",
+    );
+    expect(operacaoBoletosDocumento([titulo, t("conta2")], [emitido])).toBe("emitir");
+    expect(operacaoBoletosDocumento([titulo], [])).toBe("emitir");
+    expect(operacaoBoletosDocumento([titulo], [{ ...emitido, status: "em_processamento" }])).toBe(
+      "consultar",
+    );
+    expect(operacaoBoletosDocumento([titulo], [{ ...emitido, status: "erro" }])).toBe("consultar");
+    expect(operacaoBoletosDocumento([titulo], [{ ...emitido, status: "cancelado" }])).toBe(
+      "emitir",
+    );
+    expect(
+      operacaoBoletosDocumento(
+        [titulo],
+        [emitido, { ...emitido, id: "novo", status: "pendente", created_at: "2026-11-14" }],
+      ),
+    ).toBe("consultar");
+  }
+  expect(operacaoBoletosDocumento([], [])).toBe("consultar");
 });

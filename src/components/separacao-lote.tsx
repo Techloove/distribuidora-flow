@@ -1,3 +1,4 @@
+import { useSituacaoBoletosPedidos } from "@/lib/use-situacao-boletos-pedidos";
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -203,6 +204,7 @@ export function AcoesAposSeparacao({
   onClose: () => void;
 }) {
   const [boletos, setBoletos] = useState(false);
+  const situacaoBoletos = useSituacaoBoletosPedidos(boletos ? pedidos.map((p) => p.id) : []);
   const { roles } = useSupabase();
   const financeiro = roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
   return (
@@ -236,7 +238,11 @@ export function AcoesAposSeparacao({
                 <p className="text-sm mb-2">
                   Pedido #{p.numero} · {p.cliente}
                 </p>
-                <EmitirBoletosPedido pedidoId={p.id} centroId={p.centroId} />
+                <EmitirBoletosPedido
+                  pedidoId={p.id}
+                  centroId={p.centroId}
+                  operacaoPedido={situacaoBoletos.data?.[p.id] ?? "consultar"}
+                />
               </div>
             ))}
           </div>

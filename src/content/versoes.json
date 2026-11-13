@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.54.2",
+    "data": "2026-11-13",
+    "titulo": "Prioriza segunda via para pedidos com boletos já emitidos",
+    "motivo": "A janela destacava emissão mesmo quando todas as parcelas já tinham boleto, e a ação na lista não distinguia emissão de segunda via.",
+    "novidades": [
+      "Pedidos totalmente emitidos abrem em Reimprimir emitidos, com Emitir pendentes desabilitado e sem retorno à emissão enquanto todas as parcelas continuarem emitidas.",
+      "A lista da Separação e a conclusão em lote mostram Emitir boletos, Segunda via boletos ou Consultar boletos conforme as parcelas e seus ciclos atuais.",
+      "Consulta de situação em lote pela sessão/RLS, sem chamadas bancárias, atualizada após emissão ou conferência.",
+      "Mantém emissão parcial, consulta de pendências, impressão dos PDFs originais e abertura automática apenas dos ciclos recém-confirmados. Aplica a mesma regra a Sicredi e Sicoob.",
+      "Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.54.1",
     "data": "2026-11-13",
     "titulo": "Corrige validação de pedidos aprovados na emissão Sicoob",

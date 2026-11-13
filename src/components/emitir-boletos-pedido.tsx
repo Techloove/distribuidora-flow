@@ -20,6 +20,8 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { sicrediEmitirBoleto } from "@/lib/sicredi.functions";
 import {
   boletoAtual,
+  operacaoBoletosDocumento,
+  type OperacaoBoletosDocumento,
   boletosParaAberturaAutomatica,
   centroEmissaoTitulos,
   saldoTituloBoleto,
@@ -38,6 +40,7 @@ const estados: Record<string, string> = {
   cancelado: "Boleto cancelado",
 };
 type Props = {
+  operacaoPedido?: OperacaoBoletosDocumento;
   pedidoId?: string;
   contaId?: string;
   centroId: string;
@@ -47,6 +50,7 @@ type Props = {
   falhaConsulta?: boolean;
 };
 export function EmitirBoletosPedido(props: {
+  operacaoPedido?: OperacaoBoletosDocumento;
   pedidoId: string;
   centroId: string;
   compact?: boolean;
@@ -70,6 +74,7 @@ function BoletosDocumento(props: Props) {
   return <JanelaBoletos key={props.pedidoId ?? props.contaId} {...props} />;
 }
 function JanelaBoletos({
+  operacaoPedido,
   pedidoId,
   contaId,
   compact = false,
@@ -139,6 +144,34 @@ function JanelaBoletos({
       return { titulos, boletos, pendentes: pendentes.map((p) => p.conta_receber_id) };
     },
   });
+  const operacao =
+    open && consulta.isSuccess
+      ? operacaoBoletosDocumento(consulta.data.titulos, consulta.data.boletos)
+      : (operacaoPedido ??
+        (consulta.isSuccess
+          ? operacaoBoletosDocumento(consulta.data.titulos, consulta.data.boletos)
+          : "consultar"));
+  const todosEmitidos = operacao === "imprimir";
+  useEffect(() => {
+    if (
+      open &&
+      !busy &&
+      consulta.isSuccess &&
+      !consulta.isFetching &&
+      todosEmitidos &&
+      !aguardandoImpressao.length
+    ) {
+      setModo("imprimir");
+      setSelected([]);
+    }
+  }, [
+    open,
+    busy,
+    consulta.isSuccess,
+    consulta.isFetching,
+    todosEmitidos,
+    aguardandoImpressao.length,
+  ]);
   useEffect(() => {
     if (!open || busy || modo !== "emitir" || !aguardandoImpressao.length || consulta.isFetching)
       return;
@@ -204,6 +237,7 @@ function JanelaBoletos({
   const atualizar = async () => {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["emissao-boletos"] }),
+      qc.invalidateQueries({ queryKey: ["situacao-boletos-pedidos"] }),
       qc.invalidateQueries({ queryKey: ["liberacao-boleto-255"] }),
       ...["boletos", "vw_boletos_pendentes", "contas_receber", "vw_titulos_receber"].map((k) =>
         qc.invalidateQueries({ queryKey: [k] }),
@@ -318,7 +352,7 @@ function JanelaBoletos({
           setErro(null);
           setAvisoConsulta(null);
           setModo(
-            contaId && ["registrado", "liquidado"].includes(statusBoleto ?? "")
+            todosEmitidos || (contaId && ["registrado", "liquidado"].includes(statusBoleto ?? ""))
               ? "imprimir"
               : "emitir",
           );
@@ -337,7 +371,11 @@ function JanelaBoletos({
                 : ["pendente", "em_processamento"].includes(statusBoleto ?? "")
                   ? "Consultar boleto"
                   : "Emitir boleto"
-              : "Boletos do pedido"}
+              : operacao === "imprimir"
+                ? "Segunda via boletos"
+                : operacao === "emitir"
+                  ? "Emitir boletos"
+                  : "Consultar boletos"}
       </Button>
       <Dialog
         open={open}
@@ -352,50 +390,58 @@ function JanelaBoletos({
           onClick={(e) => e.stopPropagation()}
         >
           <DialogHeader>
-            <DialogTitle>{contaId ? "Boletos da parcela" : "Boletos do pedido"}</DialogTitle>
+            <DialogTitle>
+              {contaId
+                ? "Boletos da parcela"
+                : operacao === "imprimir"
+                  ? "Segunda via boletos"
+                  : operacao === "emitir"
+                    ? "Emitir boletos"
+                    : "Consultar boletos"}
+            </DialogTitle>
             <DialogDescription>
               Emita parcelas disponíveis ou selecione boletos do pedido ou do cliente para
               reimpressão.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap gap-2" aria-label="Operação com boletos">
+            <Button
+              variant={modo === "emitir" ? "default" : "outline"}
+              disabled={busy || consulta.isPending || consulta.isFetching || todosEmitidos}
+              onClick={() => {
+                setModo("emitir");
+                setSelected([]);
+                setErro(null);
+                setAvisoConsulta(null);
+              }}
+            >
+              Emitir pendentes
+            </Button>
+            <Button
+              variant={modo === "imprimir" ? "default" : "outline"}
+              disabled={busy}
+              onClick={() => {
+                setAutoContas([]);
+                setAguardandoImpressao([]);
+                setModo("imprimir");
+                setSelected([]);
+                setErro(null);
+                setAvisoConsulta(null);
+              }}
+            >
+              Reimprimir emitidos
+            </Button>
+          </div>
           {modo === "imprimir" ? (
             <PainelImpressaoBoletos
               contaId={contaId}
               pedidoId={pedidoId}
               onBusy={setBusy}
               autoContas={autoContas}
-              onVoltar={() => setModo("emitir")}
+              {...(!todosEmitidos ? { onVoltar: () => setModo("emitir") } : {})}
             />
           ) : (
             <>
-              <div className="flex flex-wrap gap-2" aria-label="Operação com boletos">
-                <Button
-                  variant={modo === "emitir" ? "default" : "outline"}
-                  disabled={busy}
-                  onClick={() => {
-                    setModo("emitir");
-                    setSelected([]);
-                    setErro(null);
-                    setAvisoConsulta(null);
-                  }}
-                >
-                  Emitir pendentes
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => {
-                    setAutoContas([]);
-                    setAguardandoImpressao([]);
-                    setModo("imprimir");
-                    setSelected([]);
-                    setErro(null);
-                    setAvisoConsulta(null);
-                  }}
-                >
-                  Reimprimir emitidos
-                </Button>
-              </div>
               {modo === "emitir" && pedidoLiberacao && liberacao.isFetching && (
                 <p role="status" className="text-sm text-muted-foreground">
                   Conferindo a liberação do pedido…

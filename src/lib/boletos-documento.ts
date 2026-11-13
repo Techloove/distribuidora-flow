@@ -107,3 +107,25 @@ export function boletosParaAberturaAutomatica<T extends BoletoDocumento>(
   const lote = ids.map((id) => boletoAtual(rows, id));
   return lote.every((b) => boletoImprimivel(b)) ? (lote as T[]) : [];
 }
+
+export type OperacaoBoletosDocumento = "emitir" | "imprimir" | "consultar";
+/** Decide a ação sem autorizar emissão nem substituir a consulta de pendências no servidor. */
+export function operacaoBoletosDocumento(
+  titulos: TituloBoleto[],
+  boletos: BoletoDocumento[],
+): OperacaoBoletosDocumento {
+  if (!titulos.length) return "consultar";
+  const linhas = titulos.map((t) => ({ titulo: t, boleto: boletoAtual(boletos, t.id) }));
+  if (linhas.every((l) => l.boleto && ["registrado", "liquidado"].includes(l.boleto.status)))
+    return "imprimir";
+  if (
+    linhas.some(
+      (l) =>
+        ["aberto", "parcial"].includes(l.titulo.status) &&
+        saldoTituloBoleto(l.titulo) > 0 &&
+        (!l.boleto || ["baixado", "cancelado"].includes(l.boleto.status)),
+    )
+  )
+    return "emitir";
+  return "consultar";
+}

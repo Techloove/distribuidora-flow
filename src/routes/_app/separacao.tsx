@@ -1,3 +1,4 @@
+import { useSituacaoBoletosPedidos } from "@/lib/use-situacao-boletos-pedidos";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import {
@@ -275,6 +276,7 @@ function SeparacaoPage() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   })();
 
+  const situacaoBoletos = useSituacaoBoletosPedidos(pedidos.map(([id]) => id));
   return (
     <ErpLayout
       title="Separação"
@@ -654,7 +656,12 @@ function SeparacaoPage() {
                             className="no-print space-x-2 px-4 py-2.5 text-right"
                           >
                             <ImprimirPedidos pedidoIds={[id]} compact />
-                            <EmitirBoletosPedido pedidoId={id} centroId={p.centroId} compact />
+                            <EmitirBoletosPedido
+                              pedidoId={id}
+                              centroId={p.centroId}
+                              compact
+                              operacaoPedido={situacaoBoletos.data?.[id] ?? "consultar"}
+                            />
                             {p.status === "confirmado" ? (
                               <Button
                                 size="sm"
