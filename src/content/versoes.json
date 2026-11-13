@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.55.1",
+    "data": "2026-11-13",
+    "titulo": "Corrige Relatórios de Vendas nos filtros por modalidade",
+    "motivo": "A adaptação por modalidade confundia uma CTE materializada de devoluções com a tabela física, impedindo executar o relatório; a tela mostrava indevidamente uma instrução para reinstalar a fase230.",
+    "novidades": [
+      "A fase369 reconhece AS MATERIALIZED e AS NOT MATERIALIZED no adaptador SQL privado e recompõe somente o relatório por modalidade a partir do motor principal atual.",
+      "Preserva Todos, Estoque e Intermediação separados, regras de loja/carteira, permissões de rentabilidade e o lucro bruto corrigido. Não altera pedidos nem movimentos financeiros.",
+      "Mensagens distinguem função ausente de falha estrutural na consulta por modalidade. Não retorna dados de Todos para contornar o erro.",
+      "Teste reproduz a falha e executa o relatório real nos três modos, com verificações de valores, custos ocultos, acesso por loja, ACLs e reaplicação. Requer fase369 após publicação."
+    ]
+  },
+  {
     "versao": "1.55.0",
     "data": "2026-11-13",
     "titulo": "Adiciona Dia Anterior aos atalhos de período do sistema",

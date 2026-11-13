@@ -134,6 +134,7 @@ export function RelatoriosVendas() {
     ],
     enabled: !!client && permitido && valido && !cv.isLoading && !cv.error,
     queryFn: async () => {
+      const modalidade = getModalidade() !== "todos";
       const { data, error } = await client!.rpc("relatorio_vendas_230", {
         _inicio: filtros.inicio,
         _fim: filtros.fim,
@@ -149,12 +150,19 @@ export function RelatoriosVendas() {
         _pagina: pagina,
         _pagina_pedidos: paginaPedidos,
       });
-      if (error)
-        throw new Error(
-          /schema cache|does not exist|Could not find/.test(error.message)
-            ? "Aplique a fase230 no Supabase para carregar os relatórios unificados."
-            : error.message,
-        );
+      if (error) {
+        if (error.code === "PGRST202")
+          throw new Error(
+            modalidade
+              ? "Consulta do relatório por modalidade indisponível. Aplique a fase369 no Supabase."
+              : "Aplique a fase230 no Supabase para carregar os relatórios unificados.",
+          );
+        if (modalidade && ["42703", "42P01", "42883"].includes(error.code))
+          throw new Error(
+            `Estrutura do relatório por modalidade incompatível (código ${error.code}). Aplique a fase369 no Supabase.`,
+          );
+        throw new Error(error.message);
+      }
       return data as RelatorioVendas;
     },
   });

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.55.0 · 2026-11-13
+Versão 1.55.1 · 2026-11-13
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -463,15 +463,16 @@ Acompanhe clientes, atividades e resultados da carteira.
 2. Consulte metas e compare o período selecionado com os resultados apresentados.
 3. Em Comissões, confira a situação dos valores e os recebimentos/devoluções que influenciam sua apuração.
 4. Use Relatórios de Vendas para analisar os resultados com os filtros corretos.
-5. Lucro bruto é vendas líquidas menos o CMV, antes da comissão e de outras despesas. Lucro líquido estimado desconta do bruto a comissão, o custo de frete, os tributos estimados e as despesas variáveis registradas no pedido, uma única vez. Essa regra vale nos totais, pedidos, rankings, gráficos e exportações; não há alternância para chamar um resultado sem comissão de lucro líquido. A prévia de fechamento do pedido também desconta suas despesas. Despesas fixas e demais despesas gerais sem vínculo com o pedido são apuradas na DRE, sem rateio automático nas vendas.
-6. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
-7. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
-8. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
-9. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. Essa escolha mantém ou atualiza somente a data comercial; a comissão usa a data da aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
-10. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
-11. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
-12. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
-13. Dentro do pedido, Datas do pedido mostra a data original preservada, a data comercial atual e a aprovação do ciclo. A data comercial pode ser atualizada na retomada sem substituir a original. Os prazos da condição de pagamento começam na aprovação: aprovado em 02/11 com prazo de 30 dias vence em 02/12. Antes da aprovação, a prévia considera aprovação hoje e é identificada como simulação.
+5. Relatórios de Vendas respeita Todos, Vendas Estoque e Vendas Intermediação. Se Todos abre mas os recortes apresentam falha de estrutura, aplique a fase369 para corrigir a consulta por modalidade. A correção preserva permissões de loja/carteira e rentabilidade e o cálculo atual do relatório principal, sem alterar pedidos ou valores financeiros. A mensagem sobre a fase230 indica somente uma função principal ausente; erros internos da consulta por modalidade não devem ser tratados reinstalando essa fase antiga.
+6. Lucro bruto é vendas líquidas menos o CMV, antes da comissão e de outras despesas. Lucro líquido estimado desconta do bruto a comissão, o custo de frete, os tributos estimados e as despesas variáveis registradas no pedido, uma única vez. Essa regra vale nos totais, pedidos, rankings, gráficos e exportações; não há alternância para chamar um resultado sem comissão de lucro líquido. A prévia de fechamento do pedido também desconta suas despesas. Despesas fixas e demais despesas gerais sem vínculo com o pedido são apuradas na DRE, sem rateio automático nas vendas.
+7. Acompanhe Central de pendências e Notificações para identificar as próximas ações.
+8. Em Comissões, o seletor de loja também limita a apuração, o resumo de vendas/comissões e o histórico dos lotes. A meta do representante é consolidada: consulte em Todas as lojas, pois ela não é distribuída automaticamente entre lojas. Lotes de pagamento de várias lojas ou sem centro ficam em Todas, evitando atribuir seu total a uma loja só.
+9. Somente pedidos aprovados e nas etapas operacionais seguintes entram na apuração de comissão. Digitação, orçamento e aguardando aprovação ficam fora. A liberação continua obedecendo às regras da loja; o histórico cancelado permanece identificado.
+10. Ao reabrir um pedido em digitação de outro dia, escolha Manter a data original ou Atualizar para hoje. Essa escolha mantém ou atualiza somente a data comercial; a comissão usa a data da aprovação. Itens e preços gravados são preservados; pedidos aprovados e orçamentos não recebem esta pergunta.
+11. Para sócios ou vendedores sem comissão, abra Cadastro Unificado → Dados Representante e desmarque Recebe comissão. O padrão é habilitado para todos os cadastros. Somente administrador altera essa escolha. O percentual padrão pode permanecer preenchido; com a opção desabilitada não há comissão, mesmo se o produto tiver percentual ou valor fixo.
+12. Em Comissões, Agendamento por recebimentos é uma área opcional, recolhida por padrão. Abra somente para agendar o valor proporcional aos recebimentos do cliente. Disponível é o saldo de comissão coberto por recebimentos e créditos, descontados os agendamentos ativos. Agendar cria conta a pagar ao representante; não efetua o pagamento bancário nem representa uma cobrança adicional ao cliente.
+13. A competência da comissão é o mês da aprovação no horário de São Paulo, independentemente da data comercial, da entrega ou do recebimento. Exemplo: pedido de 31/10 aprovado em 02/11 entra em novembro. Os filtros Aprovação de/até, a coluna Aprovação e os resumos por mês seguem essa data, em todas as lojas e modalidades. Na reabertura, a aprovação do novo ciclo define a nova competência.
+14. Dentro do pedido, Datas do pedido mostra a data original preservada, a data comercial atual e a aprovação do ciclo. A data comercial pode ser atualizada na retomada sem substituir a original. Os prazos da condição de pagamento começam na aprovação: aprovado em 02/11 com prazo de 30 dias vence em 02/12. Antes da aprovação, a prévia considera aprovação hoje e é identificada como simulação.
 
 Cuidados:
 
@@ -579,6 +580,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.55.1 · 2026-11-13 · Corrige Relatórios de Vendas nos filtros por modalidade
+
+Motivo da atualização: A adaptação por modalidade confundia uma CTE materializada de devoluções com a tabela física, impedindo executar o relatório; a tela mostrava indevidamente uma instrução para reinstalar a fase230.
+
+- A fase369 reconhece AS MATERIALIZED e AS NOT MATERIALIZED no adaptador SQL privado e recompõe somente o relatório por modalidade a partir do motor principal atual.
+- Preserva Todos, Estoque e Intermediação separados, regras de loja/carteira, permissões de rentabilidade e o lucro bruto corrigido. Não altera pedidos nem movimentos financeiros.
+- Mensagens distinguem função ausente de falha estrutural na consulta por modalidade. Não retorna dados de Todos para contornar o erro.
+- Teste reproduz a falha e executa o relatório real nos três modos, com verificações de valores, custos ocultos, acesso por loja, ACLs e reaplicação. Requer fase369 após publicação.
 
 ### v1.55.0 · 2026-11-13 · Adiciona Dia Anterior aos atalhos de período do sistema
 

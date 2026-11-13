@@ -85,6 +85,8 @@ insert into carga_pedidos(id,carga_id,pedido_id,volumes) values('${id(61)}','${i
  insert into comissao_pagamentos(id,conta_pagar_id) values('${id(75)}','${id(70)}'),('${id(76)}','${id(72)}');
  insert into comissao_pagamento_itens(id,pagamento_id,comissao_id,valor) values('${id(77)}','${id(75)}','${id(90)}',5),('${id(78)}','${id(76)}','${id(90)}',5),('${id(79)}','${id(76)}','${id(91)}',10);
  insert into comissao_parcelas(id,comissao_id,conta_pagar_id,valor) values('${id(74)}','${id(91)}','${id(71)}',20);`);
+    if (process.argv.includes("--relatorio"))
+      await require("./check-relatorio-modalidade-369.cjs")({ db, id, scalar });
     const snapshot = await scalar("select jsonb_agg(to_jsonb(p) order by id) from pedidos p");
     const modo = async (m) =>
       db.query("select set_config('request.headers',$1,false)", [
