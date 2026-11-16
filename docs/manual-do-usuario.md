@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.56.2 · 2026-11-16
+Versão 1.56.3 · 2026-11-16
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -412,6 +412,7 @@ Entenda os cuidados com documentos bancários e fiscais.
 24. Alterar desconto existente mantém o tipo cadastrado no Sicredi: valor em reais ou percentual. Escolha o desconto e informe o novo valor. Alterar prazo do desconto muda somente a data daquele desconto; valor e data são solicitações separadas. Um boleto sem desconto cadastrado pode receber abatimento. Não há alteração direta do valor nominal nem mudança do tipo de desconto por este atalho.
 25. Após a confirmação de um abatimento, a listagem mostra uma marcação amarela com o valor e o atalho ver Opções. Dentro de Opções aparecem valor nominal, abatimento, valor após abatimento, data de confirmação e motivo, conforme a permissão do administrador para consultar o histórico. Um cancelamento de abatimento confirmado remove a marcação ativa, mantendo o histórico. Após solicitar, use Conferir no Sicredi. Envio aceito ou resposta indisponível permanece pendente até o banco devolver as condições solicitadas. Não reenvie uma instrução pendente. O histórico mostra as últimas 30 solicitações com motivo, condições anteriores, condições solicitadas e situação. Respostas inconclusivas ou recusas assíncronas exigem conferência com o banco e, quando necessário, suporte técnico.
 26. O valor após abatimento mostrado no diálogo não inclui desconto condicionado à data, juros ou multa. O financeiro preserva o valor nominal até a liquidação: desconto e abatimento efetivamente informados pelo Sicredi são contabilizados uma única vez no recebimento. A concessão não marca o título como pago nem reduz antecipadamente a exposição de crédito. Para alterar o principal para maior valor, regularize o boleto antigo e gere nova cobrança pelo fluxo existente.
+27. Na impressão e segunda via Sicredi do formulário A4 padrão, as instruções do recibo do pagador e da ficha de compensação são alinhadas à esquerda, com a mesma fonte e espaçamento usados no Sicoob. O texto vem do PDF do próprio Sicredi: preserva taxas, prazos, mensagens e condições de cada boleto. Mudanças na configuração da conta valem para novas emissões; a segunda via segue as condições bancárias do boleto consultado. Não altera a cobrança nem movimenta o financeiro. Código de barras, QR Code, campos e tamanho da folha são preservados. Modelos não reconhecidos ou sem espaço seguro para as mensagens apresentam orientação, sem sobrepor outros campos.
 
 Cuidados:
 
@@ -581,6 +582,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.56.3 · 2026-11-16 · Alinha as instruções impressas dos boletos Sicredi
+
+Motivo da atualização: As instruções do PDF Sicredi traziam espaços excessivos entre as frases e precisavam do mesmo alinhamento visual usado no Sicoob.
+
+- Alinha à esquerda as instruções do recibo do pagador e da ficha de compensação Sicredi, com fonte e espaçamento compartilhados com o Sicoob.
+- Mantém o texto bancário original, incluindo juros, multa, protesto e mensagens, reorganizando apenas espaços e quebras. Não usa taxas fixas nem condições de outra conta.
+- Novas emissões seguem a configuração vigente; segundas vias seguem o PDF atual do boleto no Sicredi. Não altera cobranças ou lançamentos financeiros e não requer SQL.
+- Teste com o PDF fornecido confirmou alterações somente nos campos de instruções. Testes adicionais verificam taxas diferentes, mensagens, fontes bancárias, QR à direita, limites de espaço e consultas de impressão sem reemissão.
 
 ### v1.56.2 · 2026-11-16 · Simplifica o texto de protesto na impressão Sicoob
 

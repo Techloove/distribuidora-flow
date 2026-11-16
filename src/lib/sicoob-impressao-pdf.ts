@@ -1,3 +1,4 @@
+import { estiloInstrucoesBoleto as estilo } from "./boleto-instrucoes-estilo";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { condicoesImpressaoSicoob } from "./sicoob-impressao-condicoes";
 
@@ -45,9 +46,14 @@ export async function incluirCondicoesPdfSicoob(
     throw Error("As instruções bancárias ultrapassam o espaço reservado no boleto.");
   const inicio = 255 - quantidade * 10;
   for (const [i, linha] of linhas.entries()) {
-    if (fonte.widthOfTextAtSize(linha, 7) > 300)
+    if (fonte.widthOfTextAtSize(linha, estilo.tamanho) > 300)
       throw Error("As condições bancárias ultrapassam o espaço reservado para impressão.");
-    pagina.drawText(linha, { x: 34, y: inicio - i * 8, size: 7, font: fonte });
+    pagina.drawText(linha, {
+      x: 34,
+      y: inicio - i * estilo.entrelinhas,
+      size: estilo.tamanho,
+      font: fonte,
+    });
   }
   return pdf.save();
 }

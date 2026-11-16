@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.56.3",
+    "data": "2026-11-16",
+    "titulo": "Alinha as instruções impressas dos boletos Sicredi",
+    "motivo": "As instruções do PDF Sicredi traziam espaços excessivos entre as frases e precisavam do mesmo alinhamento visual usado no Sicoob.",
+    "novidades": [
+      "Alinha à esquerda as instruções do recibo do pagador e da ficha de compensação Sicredi, com fonte e espaçamento compartilhados com o Sicoob.",
+      "Mantém o texto bancário original, incluindo juros, multa, protesto e mensagens, reorganizando apenas espaços e quebras. Não usa taxas fixas nem condições de outra conta.",
+      "Novas emissões seguem a configuração vigente; segundas vias seguem o PDF atual do boleto no Sicredi. Não altera cobranças ou lançamentos financeiros e não requer SQL.",
+      "Teste com o PDF fornecido confirmou alterações somente nos campos de instruções. Testes adicionais verificam taxas diferentes, mensagens, fontes bancárias, QR à direita, limites de espaço e consultas de impressão sem reemissão."
+    ]
+  },
+  {
     "versao": "1.56.2",
     "data": "2026-11-16",
     "titulo": "Simplifica o texto de protesto na impressão Sicoob",

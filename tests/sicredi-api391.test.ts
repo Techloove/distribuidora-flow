@@ -1,3 +1,4 @@
+import { pdfFixtureSicredi } from "./fixtures/sicredi-pdf";
 import { gerarBrCode } from "../src/lib/sicredi-cnab";
 const qrFixture = gerarBrCode("pix-qrcode.sicredi.com.br/qr/v2/cobv/fixture");
 import { afterAll, afterEach, beforeAll, expect, mock, test } from "bun:test";
@@ -216,7 +217,7 @@ function backend(o: Options = {}) {
           }),
           { status: o.pdfStatus ?? 422 },
         );
-      return new Response("%PDF-1.7\nfixture", {
+      return new Response(new Uint8Array(await pdfFixtureSicredi()), {
         headers: { "Content-Type": "application/octet-stream" },
       });
     } else if (u.hostname === "api-parceiro.sicredi.com.br" && p.endsWith("/boletos")) {

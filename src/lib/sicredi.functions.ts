@@ -1,3 +1,4 @@
+import { alinharInstrucoesPdfSicredi } from "./sicredi-impressao-pdf";
 import { validarModalidadeSicredi, pixSicredi } from "./sicredi-hibrido";
 import {
   condicoesSicredi,
@@ -853,9 +854,8 @@ export const sicrediPdfBoleto = createServerFn({ method: "POST" })
     const buf = new Uint8Array(await res.arrayBuffer());
     if (new TextDecoder().decode(buf.subarray(0, 5)) !== "%PDF-")
       throw new Error("Sicredi não retornou um arquivo PDF válido.");
-    let bin = "";
-    for (const b of buf) bin += String.fromCharCode(b);
-    return { base64: btoa(bin) };
+    const alinhado = await alinharInstrucoesPdfSicredi(buf);
+    return { base64: Buffer.from(alinhado).toString("base64") };
   });
 
 /** Confirma o número de registro recuperado consultando a linha digitável no banco. */
