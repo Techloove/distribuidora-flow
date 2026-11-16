@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { condicoesImpressaoSicoob } from "./sicoob-impressao-condicoes";
 
-/** Rodapé do formulário A4 padrão Sicoob. Não escala, move ou redesenha o boleto bancário. */
+/** Campo de instruções do formulário A4 padrão Sicoob. Preserva conteúdo e códigos bancários. */
 export async function incluirCondicoesPdfSicoob(
   original: Uint8Array,
   condicoes: Record<string, unknown>,
@@ -32,10 +32,22 @@ export async function incluirCondicoesPdfSicoob(
   if (!pagina) throw Error("PDF bancário sem página.");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const linhas = condicoesImpressaoSicoob(condicoes);
+  // O banco reserva até cinco mensagens (40 caracteres cada) na parte superior
+  // deste campo. Sem a lista, reserve todas as cinco linhas para não sobrepor
+  // instruções já existentes no PDF. O QR Code ocupa a coluna à direita.
+  const mensagens = condicoes["mensagensInstrucao"];
+  const quantidade = Array.isArray(mensagens) ? mensagens.length : 5;
+  if (
+    quantidade > 5 ||
+    (Array.isArray(mensagens) &&
+      mensagens.some((m) => typeof m !== "string" || m.length > 40 || /[\r\n]/.test(m)))
+  )
+    throw Error("As instruções bancárias ultrapassam o espaço reservado no boleto.");
+  const inicio = 255 - quantidade * 10;
   for (const [i, linha] of linhas.entries()) {
-    if (fonte.widthOfTextAtSize(linha, 8) > 529)
+    if (fonte.widthOfTextAtSize(linha, 7) > 300)
       throw Error("As condições bancárias ultrapassam o espaço reservado para impressão.");
-    pagina.drawText(linha, { x: 33, y: 44 - i * 11, size: 8, font: fonte });
+    pagina.drawText(linha, { x: 34, y: inicio - i * 8, size: 7, font: fonte });
   }
   return pdf.save();
 }

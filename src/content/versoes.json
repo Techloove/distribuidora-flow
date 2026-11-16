@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.56.1",
+    "data": "2026-11-16",
+    "titulo": "Condições Sicoob no campo de instruções do boleto",
+    "motivo": "As condições estavam no rodapé; devem aparecer no campo de instruções da ficha de compensação do boleto Sicoob.",
+    "novidades": [
+      "Move juros, multa e prazo de protesto para Instruções (texto de responsabilidade do beneficiário), na mesma folha A4 padrão, à esquerda do QR Code.",
+      "Reserva espaço para as mensagens bancárias existentes e preserva códigos, campos e conteúdo original. Não repete as condições no rodapé.",
+      "Também vale para as próximas segundas vias de boletos antigos; não altera a cobrança e não requer SQL.",
+      "Conferência visual com o PDF enviado confirmou alteração somente dentro do campo de instruções."
+    ]
+  },
+  {
     "versao": "1.56.0",
     "data": "2026-11-16",
     "titulo": "Condições bancárias na mesma folha dos boletos Sicoob",

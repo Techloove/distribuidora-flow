@@ -765,7 +765,10 @@ export const sicoobPdfBoleto = createServerFn({ method: "POST" })
     const formulario = validarEmissaoSicoob(snapshot["condicoes_emissao"]).formulario;
     const comCondicoes = await incluirCondicoesPdfSicoob(
       Buffer.from(pdf, "base64"),
-      condicoes,
+      {
+        ...condicoes,
+        mensagensInstrucao: condicoes["mensagensInstrucao"] ?? raw["mensagensInstrucao"],
+      },
       formulario,
     );
     return { base64: Buffer.from(comCondicoes).toString("base64") };

@@ -12,6 +12,7 @@ const banco = {
   dataMulta: "2026-11-15",
   numeroDiasProtesto: 30,
   codigoProtesto: 1,
+  mensagensInstrucao: [],
 };
 test("imprime taxas e datas bancárias com unidades corretas", () => {
   expect(condicoesImpressaoSicoob(banco)).toEqual([
@@ -53,7 +54,7 @@ async function original(largura = 595, altura = 842) {
   const page = doc.addPage([largura, altura]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   page.drawText("Instrucoes bancarias existentes", { x: 33, y: 260, font, size: 8 });
-  // Marca o limite inferior do código, sem deixar que o rodapé o desloque.
+  // Marca o limite inferior do código, sem deixar que as instruções o desloquem.
   page.drawRectangle({ x: 33, y: 73, width: 250, height: 38 });
   return doc.save();
 }
@@ -65,7 +66,7 @@ function conteudos(doc: PDFDocument) {
     return Buffer.from(decodePDFRawStream(stream).decode()).toString("latin1");
   });
 }
-test("mantém página, geometria e operadores originais; acrescenta só rodapé", async () => {
+test("mantém página, geometria e operadores originais; acrescenta no campo de instruções", async () => {
   const bytes = await original();
   const antes = await PDFDocument.load(bytes);
   const depois = await PDFDocument.load(await incluirCondicoesPdfSicoob(bytes, banco, 1));
@@ -73,6 +74,9 @@ test("mantém página, geometria e operadores originais; acrescenta só rodapé"
   expect(depois.getPages()[0].getSize()).toEqual(antes.getPages()[0].getSize());
   const streams = conteudos(depois);
   for (const stream of conteudos(antes)) expect(streams).toContain(stream);
+  const adicionados = streams.filter((stream) => !conteudos(antes).includes(stream)).join("\n");
+  expect(adicionados).toContain("1 0 0 1 34 255 Tm");
+  expect(adicionados).not.toContain("1 0 0 1 33 44 Tm");
   // Sem transformação de escala ou translação em torno do conteúdo original.
   expect(streams.join("\n")).not.toContain("0.9 0 0 0.9");
 });
@@ -81,4 +85,38 @@ test("recusa formulários e páginas fora do layout verificado", async () => {
   await expect(incluirCondicoesPdfSicoob(await original(612, 792), banco, 1)).rejects.toThrow(
     "A4 padrão",
   );
+});
+
+test("reserva as cinco mensagens existentes e mantém as condições à esquerda do Pix", async () => {
+  const fonteDoc = await PDFDocument.create();
+  const fonte = await fonteDoc.embedFont(StandardFonts.Helvetica);
+  const mensagens = Array.from({ length: 5 }, (_, i) => `Instrucao bancaria ${i + 1}`);
+  const doc = await PDFDocument.load(
+    await incluirCondicoesPdfSicoob(
+      await original(),
+      {
+        ...banco,
+        mensagensInstrucao: mensagens,
+      },
+      1,
+    ),
+  );
+  const streams = conteudos(doc).join("\n");
+  expect(streams).toContain("1 0 0 1 34 205 Tm");
+  expect(streams).toContain("1 0 0 1 34 189 Tm");
+  for (const linha of condicoesImpressaoSicoob(banco)) {
+    expect(34 + fonte.widthOfTextAtSize(linha, 7)).toBeLessThan(334);
+  }
+  const semLista = await PDFDocument.load(await incluirCondicoesPdfSicoob(await original(), {}, 1));
+  expect(conteudos(semLista).join("\n")).toContain("1 0 0 1 34 205 Tm");
+  await expect(
+    incluirCondicoesPdfSicoob(
+      await original(),
+      {
+        ...banco,
+        mensagensInstrucao: [...mensagens, "Sexta instrucao"],
+      },
+      1,
+    ),
+  ).rejects.toThrow("instruções bancárias");
 });
