@@ -24,17 +24,27 @@ export type BoletoDocumento = {
   created_at: string;
 };
 const ativos = new Set(["pendente", "em_processamento", "registrado", "liquidado"]);
+const compararCiclos = (a: BoletoDocumento, b: BoletoDocumento) =>
+  Number(ativos.has(b.status)) - Number(ativos.has(a.status)) ||
+  b.created_at.localeCompare(a.created_at) ||
+  b.id.localeCompare(a.id);
+/** Índice por parcela: preserva a prioridade do ciclo ativo e os desempates da ordenação original. */
+export function indexarBoletosAtuais<T extends BoletoDocumento>(boletos: readonly T[]) {
+  const indice = new Map<string, T>();
+  for (const boleto of boletos) {
+    const anterior = indice.get(boleto.conta_receber_id);
+    if (!anterior || compararCiclos(boleto, anterior) < 0)
+      indice.set(boleto.conta_receber_id, boleto);
+  }
+  return indice;
+}
 /** Nunca volta a um boleto antigo encerrado se existe um ciclo ativo mais recente. */
 export function boletoAtual(boletos: BoletoDocumento[], conta: string) {
-  const lista = boletos
-    .filter((b) => b.conta_receber_id === conta)
-    .sort(
-      (a, b) =>
-        Number(ativos.has(b.status)) - Number(ativos.has(a.status)) ||
-        b.created_at.localeCompare(a.created_at) ||
-        b.id.localeCompare(a.id),
-    );
-  return lista[0] ?? null;
+  let atual: BoletoDocumento | null = null;
+  for (const boleto of boletos)
+    if (boleto.conta_receber_id === conta && (!atual || compararCiclos(boleto, atual) < 0))
+      atual = boleto;
+  return atual;
 }
 export function boletoImprimivel(
   b: Pick<BoletoDocumento, "banco" | "canal" | "status" | "linha_digitavel"> | null,
@@ -79,11 +89,12 @@ export function boletosParaImpressao<T extends BoletoDocumento & { cliente_id?: 
   rows: T[],
   cliente: string,
 ) {
+  const atuais = indexarBoletosAtuais(rows);
   return rows.filter(
     (b) =>
       (!cliente || b.cliente_id === cliente) &&
       boletoImprimivel(b) &&
-      (!b.conta_receber_id || boletoAtual(rows, b.conta_receber_id)?.id === b.id),
+      (!b.conta_receber_id || atuais.get(b.conta_receber_id)?.id === b.id),
   );
 }
 
@@ -104,7 +115,8 @@ export function boletosParaAberturaAutomatica<T extends BoletoDocumento>(
 ): T[] {
   const ids = [...new Set(contas)];
   if (!ids.length) return [];
-  const lote = ids.map((id) => boletoAtual(rows, id));
+  const atuais = indexarBoletosAtuais(rows);
+  const lote = ids.map((id) => atuais.get(id) ?? null);
   return lote.every((b) => boletoImprimivel(b)) ? (lote as T[]) : [];
 }
 
@@ -115,7 +127,8 @@ export function operacaoBoletosDocumento(
   boletos: BoletoDocumento[],
 ): OperacaoBoletosDocumento {
   if (!titulos.length) return "consultar";
-  const linhas = titulos.map((t) => ({ titulo: t, boleto: boletoAtual(boletos, t.id) }));
+  const atuais = indexarBoletosAtuais(boletos);
+  const linhas = titulos.map((t) => ({ titulo: t, boleto: atuais.get(t.id) }));
   if (linhas.every((l) => l.boleto && ["registrado", "liquidado"].includes(l.boleto.status)))
     return "imprimir";
   if (

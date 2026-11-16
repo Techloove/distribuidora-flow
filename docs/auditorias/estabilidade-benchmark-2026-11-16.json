@@ -1,0 +1,38 @@
+{
+  "tipo": "CPU local com dados sintéticos; inclui construção dos índices",
+  "busca": {
+    "opcoes": 12000,
+    "termos": 10,
+    "antes": {
+      "ms": 1815.36,
+      "resultado": 84438
+    },
+    "depois": {
+      "ms": 109.09,
+      "resultado": 84438
+    }
+  },
+  "nomes": {
+    "clientes": 6000,
+    "titulos": 12000,
+    "antes": {
+      "ms": 299.67,
+      "resultado": 105780
+    },
+    "depois": {
+      "ms": 15.58,
+      "resultado": 105780
+    }
+  },
+  "ciclos": {
+    "boletos": 6000,
+    "antes": {
+      "ms": 270.97,
+      "resultado": 2000
+    },
+    "depois": {
+      "ms": 2.95,
+      "resultado": 2000
+    }
+  }
+}

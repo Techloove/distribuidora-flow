@@ -1,6 +1,11 @@
 import { tabelaLeituraCadastro } from "@/lib/produtos-acesso";
 import { dataBr as dataPadrao } from "@/lib/formatacao";
-import { correspondeBuscaSelecao } from "@/lib/busca-selecao";
+import {
+  correspondeBuscaPreparada,
+  prepararTextoBusca,
+  prepararTermoBusca,
+  type TextoBuscaPreparado,
+} from "@/lib/busca-selecao";
 import { SearchSelect } from "@/components/ui/search-select";
 import { getModalidade } from "@/lib/modalidade-store";
 import { brl } from "@/lib/formatacao";
@@ -369,9 +374,24 @@ export function CrudPage({
     [fields],
   );
 
+  const preparados = useMemo(() => {
+    const dados = query.data ?? [];
+    const list = decorate ? decorate(dados) : dados;
+    const indice = new WeakMap<Row, TextoBuscaPreparado[]>();
+    return {
+      list,
+      textos: (row: Row) => {
+        let textos = indice.get(row);
+        if (!textos) {
+          textos = searchColumns.map((col) => prepararTextoBusca(String(row[col] ?? "")));
+          indice.set(row, textos);
+        }
+        return textos;
+      },
+    };
+  }, [query.data, decorate, searchColumns]);
   const rows = useMemo(() => {
-    let list = query.data ?? [];
-    if (decorate) list = decorate(list);
+    let list = preparados.list;
     if (table !== "produtos" && centro && list.some((r) => "centro_id" in r)) {
       list = list.filter(
         (r) => r["centro_id"] === centro || (!r["centro_id"] && r["loja_pendente"] !== true),
@@ -401,10 +421,11 @@ export function CrudPage({
     }
     const term = search.trim().toLowerCase();
     if (!term) return list;
+    const busca = prepararTermoBusca(term);
     return list.filter((row) =>
-      searchColumns.some((col) => correspondeBuscaSelecao(String(row[col] ?? ""), term)),
+      preparados.textos(row).some((texto) => correspondeBuscaPreparada(texto, busca)),
     );
-  }, [query.data, search, searchColumns, centro, filterFields, filtros, decorate, table]);
+  }, [preparados, search, centro, filterFields, filtros, table]);
 
   function openCreate() {
     setViewing(false);

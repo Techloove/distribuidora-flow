@@ -181,3 +181,45 @@ test("operação do documento distingue segunda via, emissão parcial e consulta
   }
   expect(operacaoBoletosDocumento([], [])).toBe("consultar");
 });
+
+test("índice de ciclos mantém seleção e ordem dos boletos em lotes com ciclos repetidos", async () => {
+  const { indexarBoletosAtuais, boletosParaImpressao } =
+    await import("../src/lib/boletos-documento");
+  const statuses = [
+    "registrado",
+    "liquidado",
+    "erro",
+    "cancelado",
+    "baixado",
+    "em_processamento",
+    "pendente",
+  ];
+  const rows = Array.from({ length: 700 }, (_, i) => ({
+    ...b(
+      String(i),
+      statuses[i % statuses.length]!,
+      `2026-11-${String(1 + (i % 16)).padStart(2, "0")}`,
+    ),
+    conta_receber_id: `conta${i % 37}`,
+    cliente_id: i % 2 ? "A" : "B",
+  }));
+  const legado = (conta: string) =>
+    rows
+      .filter((r) => r.conta_receber_id === conta)
+      .sort(
+        (a, b) =>
+          Number(["pendente", "em_processamento", "registrado", "liquidado"].includes(b.status)) -
+            Number(
+              ["pendente", "em_processamento", "registrado", "liquidado"].includes(a.status),
+            ) ||
+          b.created_at.localeCompare(a.created_at) ||
+          b.id.localeCompare(a.id),
+      )[0];
+  const indice = indexarBoletosAtuais(rows);
+  for (let i = 0; i < 37; i++) expect(indice.get(`conta${i}`)).toBe(legado(`conta${i}`));
+  const esperados = rows.filter(
+    (r) => r.cliente_id === "A" && boletoImprimivel(r) && legado(r.conta_receber_id)?.id === r.id,
+  );
+  expect(boletosParaImpressao(rows, "A")).toEqual(esperados);
+  expect(rows[0]?.id).toBe("0");
+});

@@ -703,3 +703,31 @@ body {
     background: var(--muted);
   }
 }
+
+/* Controles de toque também em tablets; mantém a densidade de telas com mouse. */
+@media screen and (pointer: coarse) {
+  .erp-shell button:not([role="checkbox"]):not([role="switch"]),
+  :is([role="dialog"], [role="alertdialog"]) button,
+  [data-search-select-results] [role="option"],
+  [role="listbox"] [role="option"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [data-search-select-results] button {
+    min-height: 44px;
+  }
+  .erp-shell button[aria-label],
+  :is([role="dialog"], [role="alertdialog"]) button[aria-label],
+  [data-search-select] button {
+    min-width: 44px;
+  }
+  .erp-shell :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]),
+  :is([role="dialog"], [role="alertdialog"])
+    :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  [data-search-select] input {
+    padding-right: 3.5rem;
+  }
+}

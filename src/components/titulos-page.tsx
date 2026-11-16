@@ -1,3 +1,4 @@
+import { indexarPrimeiro } from "@/lib/indices-listas";
 import { EditarTituloDialog } from "./editar-titulo-dialog";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -232,6 +233,10 @@ export function TitulosPage({
     return String(b["status"] ?? "—");
   };
 
+  const parceirosPorId = useMemo(
+    () => indexarPrimeiro(partners.data ?? [], (p) => p["id"]),
+    [partners.data],
+  );
   const rows = useMemo(() => {
     let list = (titulos.data ?? []).filter(
       (r) => !referencia || correspondeReferencia(r, referencia),
@@ -281,7 +286,7 @@ export function TitulosPage({
     if (termo) {
       list = list.filter((r) => {
         const nome = String(
-          partners.data?.find((p) => p["id"] === r[config.partnerKey])?.["razao_social"] ?? "",
+          parceirosPorId.get(r[config.partnerKey])?.["razao_social"] ?? "",
         ).toLowerCase();
         return (
           String(r["documento"] ?? "")
@@ -296,7 +301,7 @@ export function TitulosPage({
     titulos.data,
     status,
     filtros,
-    partners.data,
+    parceirosPorId,
     config.partnerKey,
     isReceber,
     boletoPorConta,
@@ -410,8 +415,7 @@ export function TitulosPage({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const partnerName = (id: unknown) =>
-    String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
+  const partnerName = (id: unknown) => String(parceirosPorId.get(id)?.["razao_social"] ?? "—");
 
   return (
     <div className="space-y-4">

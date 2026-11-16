@@ -101,11 +101,13 @@ const { uid, center, rows, pedido, rpcs } = require("./fixtures/mobile-layout.cj
         .map((f) => f.replace(".tsx", ""));
   const results = [];
   for (const path of paths) {
-    await page.goto(baseURL + "/" + path, { waitUntil: "networkidle" });
-    await page.waitForTimeout(400);
+    await page.goto(baseURL + "/" + path, { waitUntil: "domcontentloaded" });
+    await page.locator(".erp-shell h1").first().waitFor({ state: "visible", timeout: 15000 });
+    await page.waitForTimeout(600);
     const r = await page.evaluate(() => ({
       url: location.pathname,
       title: document.querySelector("h1")?.textContent,
+      erp: !!document.querySelector(".erp-shell main"),
       width: innerWidth,
       scroll: document.documentElement.scrollWidth,
       overflows: [...document.querySelectorAll("main *")]
@@ -144,6 +146,7 @@ const { uid, center, rows, pedido, rpcs } = require("./fixtures/mobile-layout.cj
       r.scroll > Number(process.env.MOBILE_WIDTH ?? 390) + 1 ||
       r.width > Number(process.env.MOBILE_WIDTH ?? 390) + 1 ||
       r.overflows.length ||
+      !r.erp ||
       !r.title ||
       /Não foi possível/.test(r.title),
   );

@@ -1,0 +1,69 @@
+{
+  "versao": "1.56.6",
+  "dados": "Sessões e dados fictícios, requisições externas bloqueadas",
+  "verificacoes": [
+    {
+      "largura_px": 390,
+      "rotas": 53,
+      "falhas_layout": [],
+      "erros_javascript": []
+    },
+    {
+      "largura_px": 768,
+      "rotas": 53,
+      "falhas_layout": [],
+      "erros_javascript": []
+    },
+    {
+      "largura_px": 1024,
+      "rotas": 53,
+      "falhas_layout": [],
+      "erros_javascript": []
+    }
+  ],
+  "amostra_toque_tablet": {
+    "title": "Produtos",
+    "coarse": true,
+    "inputs": [
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      },
+      {
+        "h": 44,
+        "font": "16px"
+      }
+    ],
+    "opcoes": [
+      {
+        "h": 44,
+        "text": "Todas as lojas"
+      },
+      {
+        "h": 44,
+        "text": "Loja Matriz com nome extenso para teste de apresentação"
+      }
+    ],
+    "pequenos": []
+  }
+}

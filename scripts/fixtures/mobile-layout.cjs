@@ -270,3 +270,27 @@ if (process.env.MOBILE_ROLE === "representante") {
 }
 // Projeção de leitura usada no cadastro e nas opções de produtos.
 module.exports.rows.produtos_consulta_324 = module.exports.rows.produtos;
+
+// Mantém a sessão fictícia compatível com a verificação atual de mensalidade.
+module.exports.rpcs.saas_status_330 = {
+  proprietario: false,
+  master: false,
+  bloqueado: false,
+  controle_ativo: false,
+  estado: "nao_configurado",
+  vencimento: null,
+  limite_regularizacao: null,
+};
+module.exports.rpcs.dashboard_resumo_mes_307 = {
+  clientes: 1,
+  produtos: 1,
+  pedidosAbertos: 1,
+  vendasConfirmadas: 1234567.89,
+  receber: 1234567.89,
+  receberVencido: 500,
+  pagar: 12345,
+  pagarVencido: 10,
+  comissoes: 1000,
+  alertas: [],
+};
+module.exports.rpcs.dashboard_rankings_mes_307 = { rotas: [], representantes: [], produtos: [] };

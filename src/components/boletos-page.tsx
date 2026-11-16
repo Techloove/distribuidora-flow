@@ -1,3 +1,4 @@
+import { indexarPrimeiro } from "@/lib/indices-listas";
 import { apresentacaoBoleto } from "@/lib/boleto-apresentacao";
 import { HistoricoBoleto } from "./historico-boleto";
 import { resumoTarifasSicoob } from "@/lib/sicoob-tarifas";
@@ -180,9 +181,13 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     },
   });
 
-  const cliName = useCallback(
-    (id: unknown) => String(clientes.data?.find((c) => c["id"] === id)?.["razao_social"] ?? "—"),
+  const clientesPorId = useMemo(
+    () => indexarPrimeiro(clientes.data ?? [], (c) => c["id"]),
     [clientes.data],
+  );
+  const cliName = useCallback(
+    (id: unknown) => String(clientesPorId.get(id)?.["razao_social"] ?? "—"),
+    [clientesPorId],
   );
 
   const invalidate = () => {

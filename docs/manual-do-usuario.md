@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.56.5 · 2026-11-16
+Versão 1.56.6 · 2026-11-16
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -15,7 +15,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 5. Use Buscar módulo no menu para encontrar uma tela pelo nome. No celular, abra o menu pelo botão no topo.
 6. A Central de pendências tem contadores separados para Clientes sem loja, Clientes sem rota, Clientes sem representante e Clientes sem limite de crédito. Um cliente pode aparecer em mais de uma categoria. Clique no contador e use Revisar para abrir seu cadastro ou Ver clientes no Cadastro unificado para abrir a lista já filtrada.
 7. No telefone, as listas principais de cadastros, boletos, contas, separação, cargas e relatórios usam cartões com o nome de cada informação. Botões longos podem ocupar mais de uma linha. Demonstrativos que dependem de colunas alinhadas, como a DRE, permitem deslizar a tabela para os lados sem arrastar a página toda.
-8. Use Mostrar filtros para abrir os campos no telefone e Recolher filtros para voltar aos dados. Recolher não limpa os valores; use Limpar para remover os filtros. No tablet e computador, os filtros continuam visíveis. O resumo do pedido acompanha a rolagem normal no telefone para não cobrir os itens.
+8. Use Mostrar filtros para abrir os campos no telefone e Recolher filtros para voltar aos dados. Recolher não limpa os valores; use Limpar para remover os filtros. No tablet e computador, os filtros continuam visíveis. Em aparelhos usados por toque, inclusive tablets, campos, opções dos menus e botões têm áreas de toque ampliadas. O resumo do pedido acompanha a rolagem normal no telefone para não cobrir os itens.
 9. Nas listas, use Colunas para marcar quais informações deseja exibir. A escolha é salva na sua conta para aquela lista e acompanha seu acesso em outros computadores. Ações e caixas de seleção permanecem disponíveis. Use Restaurar colunas para mostrar todas novamente. É preciso conexão para carregar e salvar a preferência; se houver falha, use Tentar novamente.
 10. Produtos usa lista em linhas no computador, com cabeçalhos acima dos dados e nomes e marcas completos. Em Colunas, escolha as informações que quer comparar; suas preferências são mantidas. Muitas colunas podem exigir rolagem lateral para preservar a leitura dos valores. No telefone, a lista continua adaptada em cartões.
 11. Cadastro unificado também usa lista em linhas no computador, com espaço para o nome completo do cliente. Em Colunas, escolha os campos exibidos; as escolhas já salvas continuam valendo em outros computadores. Se marcar muitas colunas, a tabela pode exigir rolagem lateral para manter os dados legíveis. No celular, a lista permanece adaptada em cartões.
@@ -582,6 +582,16 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.56.6 · 2026-11-16 · Melhora desempenho das buscas e uso em celular e tablet
+
+Motivo da atualização: Reduzir processamento repetido nas buscas e listas, ampliar áreas de toque e fortalecer as verificações de estabilidade.
+
+- Buscas de seleções e cadastros reutilizam texto preparado apenas quando necessário, preservando nomes, acentos, documentos pontuados, ordem dos resultados e opções carregadas.
+- Índices locais reduzem varreduras repetidas de clientes, parceiros, parcelas e ciclos de boletos nas telas financeiras, impressão e acompanhamento de pedidos. Não alteram regras, permissões, consultas bancárias ou lançamentos.
+- Controles e opções de menus em aparelhos usados por toque, inclusive tablets, têm áreas mínimas de 44 px; campos usam texto de 16 px. A apresentação com mouse e a impressão são preservadas.
+- Testes visuais passam a exigir a tela autenticada do ERP e dados fictícios atualizados; validação do certificado usa resultado persistido pelo processo Node para evitar perda de saída no executor.
+- Verificações e medições sintéticas estão documentadas no relatório de estabilidade de 16/11/2026. Não requer SQL.
 
 ### v1.56.5 · 2026-11-16 · Completa instruções nas duas vias dos boletos
 

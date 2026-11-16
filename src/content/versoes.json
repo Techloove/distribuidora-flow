@@ -1,5 +1,18 @@
 [
   {
+    "versao": "1.56.6",
+    "data": "2026-11-16",
+    "titulo": "Melhora desempenho das buscas e uso em celular e tablet",
+    "motivo": "Reduzir processamento repetido nas buscas e listas, ampliar áreas de toque e fortalecer as verificações de estabilidade.",
+    "novidades": [
+      "Buscas de seleções e cadastros reutilizam texto preparado apenas quando necessário, preservando nomes, acentos, documentos pontuados, ordem dos resultados e opções carregadas.",
+      "Índices locais reduzem varreduras repetidas de clientes, parceiros, parcelas e ciclos de boletos nas telas financeiras, impressão e acompanhamento de pedidos. Não alteram regras, permissões, consultas bancárias ou lançamentos.",
+      "Controles e opções de menus em aparelhos usados por toque, inclusive tablets, têm áreas mínimas de 44 px; campos usam texto de 16 px. A apresentação com mouse e a impressão são preservadas.",
+      "Testes visuais passam a exigir a tela autenticada do ERP e dados fictícios atualizados; validação do certificado usa resultado persistido pelo processo Node para evitar perda de saída no executor.",
+      "Verificações e medições sintéticas estão documentadas no relatório de estabilidade de 16/11/2026. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.56.5",
     "data": "2026-11-16",
     "titulo": "Completa instruções nas duas vias dos boletos",

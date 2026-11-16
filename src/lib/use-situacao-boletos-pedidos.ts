@@ -1,3 +1,4 @@
+import { agruparPorChave } from "./indices-listas";
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "./supabase-provider";
 import { lerPaginas } from "./paginacao";
@@ -50,13 +51,12 @@ export function useSituacaoBoletosPedidos(pedidos: string[]) {
         titulos.push(...t);
         boletos.push(...b);
       }
+      const titulosPorPedido = agruparPorChave(titulos, (t) => t.pedido_id);
+      const boletosPorPedido = agruparPorChave(boletos, (b) => b.pedido_id);
       return Object.fromEntries(
         ids.map((id) => [
           id,
-          operacaoBoletosDocumento(
-            titulos.filter((t) => t.pedido_id === id),
-            boletos.filter((b) => b.pedido_id === id),
-          ),
+          operacaoBoletosDocumento(titulosPorPedido.get(id) ?? [], boletosPorPedido.get(id) ?? []),
         ]),
       );
     },

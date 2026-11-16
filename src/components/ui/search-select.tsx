@@ -3,9 +3,20 @@ import { Check, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverAnchor, PopoverContent } from "./popover";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
-import { correspondeBuscaSelecao } from "@/lib/busca-selecao";
+import {
+  correspondeBuscaPreparada,
+  prepararTextoBusca,
+  prepararTermoBusca,
+  type TextoBuscaPreparado,
+} from "@/lib/busca-selecao";
 
-type Opcao = { value: string; label: string; busca: string; disabled: boolean; detail: string };
+type Opcao = {
+  value: string;
+  label: string;
+  busca: string;
+  disabled: boolean;
+  detail: string;
+};
 type Props = Omit<React.ComponentProps<"select">, "multiple" | "size">;
 function texto(node: React.ReactNode): string {
   return React.Children.toArray(node)
@@ -73,13 +84,27 @@ export function SearchSelect({
   const [rotulo, setRotulo] = React.useState("");
   const ariaLabel = props["aria-label"],
     ariaLabelledby = props["aria-labelledby"];
-  const lista = React.useMemo(() => opcoes(children), [children]);
+  const { lista, indice } = React.useMemo(
+    () => ({
+      lista: opcoes(children),
+      indice: new WeakMap<Opcao, TextoBuscaPreparado>(),
+    }),
+    [children],
+  );
   const atual = lista.find((o) => o.value === selecionado),
     vazio = lista.find((o) => o.value === "");
-  const encontrados = React.useMemo(
-    () => lista.filter((o) => correspondeBuscaSelecao(o.busca, busca)),
-    [lista, busca],
-  );
+  const encontrados = React.useMemo(() => {
+    if (!busca.trim()) return lista;
+    const termo = prepararTermoBusca(busca);
+    return lista.filter((o) => {
+      let texto = indice.get(o);
+      if (!texto) {
+        texto = prepararTextoBusca(o.busca);
+        indice.set(o, texto);
+      }
+      return correspondeBuscaPreparada(texto, termo);
+    });
+  }, [lista, busca, indice]);
   const visiveis = encontrados.slice(0, limite);
   React.useEffect(() => {
     if (disabled) setOpen(false);
@@ -152,7 +177,7 @@ export function SearchSelect({
         {children}
       </select>
       <PopoverAnchor asChild>
-        <div ref={anchor} className="relative min-w-0 max-w-full">
+        <div ref={anchor} data-search-select className="relative min-w-0 max-w-full">
           <Input
             ref={input}
             id={inputId}
@@ -248,6 +273,7 @@ export function SearchSelect({
       </PopoverAnchor>
       <PopoverContent
         role="presentation"
+        data-search-select-results
         align="start"
         className="w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-1"
         onInteractOutside={(e) => {

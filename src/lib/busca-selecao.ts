@@ -6,11 +6,25 @@ export function normalizarBuscaSelecao(texto: string) {
     .toLocaleLowerCase("pt-BR")
     .trim();
 }
+export type TextoBuscaPreparado = { base: string; digitos: string };
+export type TermoBuscaPreparado = { palavras: string[]; digitos: string };
+export function prepararTextoBusca(texto: string): TextoBuscaPreparado {
+  const base = normalizarBuscaSelecao(texto);
+  return { base, digitos: base.replace(/\D/g, "") };
+}
+export function prepararTermoBusca(busca: string): TermoBuscaPreparado {
+  const termo = normalizarBuscaSelecao(busca);
+  return {
+    palavras: termo ? termo.split(/\s+/) : [],
+    digitos: /^[\d\s./-]+$/.test(termo) ? termo.replace(/\D/g, "") : "",
+  };
+}
+export function correspondeBuscaPreparada(texto: TextoBuscaPreparado, busca: TermoBuscaPreparado) {
+  return (
+    busca.palavras.every((p) => texto.base.includes(p)) ||
+    (!!busca.digitos && texto.digitos.includes(busca.digitos))
+  );
+}
 export function correspondeBuscaSelecao(texto: string, busca: string) {
-  const base = normalizarBuscaSelecao(texto),
-    termo = normalizarBuscaSelecao(busca);
-  if (!termo) return true;
-  if (termo.split(/\s+/).every((p) => base.includes(p))) return true;
-  const digitos = termo.replace(/\D/g, "");
-  return /^[\d\s./-]+$/.test(termo) && !!digitos && base.replace(/\D/g, "").includes(digitos);
+  return correspondeBuscaPreparada(prepararTextoBusca(texto), prepararTermoBusca(busca));
 }

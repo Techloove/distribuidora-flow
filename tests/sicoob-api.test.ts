@@ -226,15 +226,19 @@ test("produção exige A1 válido e obtém OAuth com escopos bancários, sem man
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
       }).outputText,
     );
-  const verificacao = execFileSync(
+  const verificacaoPath = join(temp, "validacao-certificado.json");
+  execFileSync(
     "node",
     [
       "-e",
-      `const {validarCertificadoSicoob}=require(${JSON.stringify(join(temp, "server-sicoob-http.js"))});const pfx=require('node:fs').readFileSync(${JSON.stringify(join(temp, "cert.pfx"))}).toString('base64');try{validarCertificadoSicoob({pfx,senha:'errada'});process.stdout.write('aceito');}catch{process.stdout.write('bloqueado');}`,
+      `const {validarCertificadoSicoob}=require(${JSON.stringify(join(temp, "server-sicoob-http.js"))});const pfx=require('node:fs').readFileSync(${JSON.stringify(join(temp, "cert.pfx"))}).toString('base64');const verificar=senha=>{try{validarCertificadoSicoob({pfx,senha});return 'aceito';}catch{return 'bloqueado';}};require('node:fs').writeFileSync(${JSON.stringify(verificacaoPath)},JSON.stringify({correto:verificar('teste'),incorreto:verificar('errada')}));`,
     ],
     { encoding: "utf8" },
   );
-  expect(verificacao).toBe("bloqueado");
+  expect(JSON.parse(readFileSync(verificacaoPath, "utf8"))).toEqual({
+    correto: "aceito",
+    incorreto: "bloqueado",
+  });
   expect(() => validarCertificadoSicoob({ pfx: "!base64-invalido", senha: "" })).toThrow();
   const calls: {
     url: string;
