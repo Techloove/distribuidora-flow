@@ -1,3 +1,4 @@
+import { incluirCondicoesPdfSicoob } from "./sicoob-impressao-pdf";
 import { confirmarRespostaEmissaoSicoob } from "./sicoob-confirmacao-emissao";
 import { consultarPagadorSicoob } from "./sicoob-consulta";
 import { erroOperacaoSicoob, consultaVaziaSicoob } from "./sicoob-erros";
@@ -751,7 +752,23 @@ export const sicoobPdfBoleto = createServerFn({ method: "POST" })
       !Buffer.from(pdf, "base64").subarray(0, 5).equals(Buffer.from("%PDF-"))
     )
       throw Error("PDF bancário inválido.");
-    return { base64: pdf };
+    // A segunda via pode omitir datas de juros/multa e prazo de protesto.
+    // Consulta somente de leitura, sem alterar instruções nem reenviar a cobrança.
+    const consulta = await p.api("/boletos?" + queryBanco(p.config, p.b));
+    if (consulta.status !== 200)
+      throw Error(
+        "Não foi possível consultar as condições do boleto no Sicoob. Tente imprimir novamente em instantes.",
+      );
+    const condicoes = obj(consulta.json["resultado"]);
+    validaIdentidade(condicoesSicoob(condicoes), p.b, p.config, condicoes);
+    const snapshot = obj(p.b["sicoob_snapshot_316"]);
+    const formulario = validarEmissaoSicoob(snapshot["condicoes_emissao"]).formulario;
+    const comCondicoes = await incluirCondicoesPdfSicoob(
+      Buffer.from(pdf, "base64"),
+      condicoes,
+      formulario,
+    );
+    return { base64: Buffer.from(comCondicoes).toString("base64") };
   });
 
 /** Conta Corrente é outro aplicativo e só oferece consulta nesta integração. */

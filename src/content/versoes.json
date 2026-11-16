@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.56.0",
+    "data": "2026-11-16",
+    "titulo": "Condições bancárias na mesma folha dos boletos Sicoob",
+    "motivo": "Apresentar no boleto impresso as condições bancárias de juros, multa e protesto, inclusive nas segundas vias de emissões anteriores.",
+    "novidades": [
+      "Acrescenta as condições consultadas no Sicoob ao rodapé da mesma folha A4 padrão (formulário 1), preservando o conteúdo, o código de barras e o QR Code originais.",
+      "Consulta e confere a identidade do boleto antes de imprimir. Não altera a cobrança nem usa os padrões atuais da loja para presumir condições antigas.",
+      "Campos ausentes são indicados como não informados. Formulários fora do layout A4 padrão são bloqueados para evitar sobreposição.",
+      "Validação com o PDF fornecido confirmou que não há diferença visual fora do rodapé. Não requer SQL; a confirmação em produção será feita na próxima segunda via."
+    ]
+  },
+  {
     "versao": "1.55.1",
     "data": "2026-11-13",
     "titulo": "Corrige Relatórios de Vendas nos filtros por modalidade",
