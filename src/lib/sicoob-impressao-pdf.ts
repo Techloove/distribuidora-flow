@@ -1,5 +1,5 @@
 import { estiloInstrucoesBoleto as estilo } from "./boleto-instrucoes-estilo";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { condicoesImpressaoSicoob } from "./sicoob-impressao-condicoes";
 
 /** Campo de instruções do formulário A4 padrão Sicoob. Preserva conteúdo e códigos bancários. */
@@ -34,14 +34,17 @@ export async function incluirCondicoesPdfSicoob(
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const linhas = condicoesImpressaoSicoob(condicoes);
   // O banco reserva até cinco mensagens (40 caracteres cada) na parte superior
-  // deste campo. Sem a lista, reserve todas as cinco linhas para não sobrepor
-  // instruções já existentes no PDF. O QR Code ocupa a coluna à direita.
+  // deste campo. A lista bancária é necessária para preservar as mensagens
+  // ao organizar o recibo superior. O QR Code ocupa a coluna inferior à direita.
   const mensagens = condicoes["mensagensInstrucao"];
-  const quantidade = Array.isArray(mensagens) ? mensagens.length : 5;
+  if (!Array.isArray(mensagens))
+    throw Error(
+      "Sicoob não informou as mensagens do boleto. Tente consultar a segunda via novamente.",
+    );
+  const quantidade = mensagens.length;
   if (
     quantidade > 5 ||
-    (Array.isArray(mensagens) &&
-      mensagens.some((m) => typeof m !== "string" || m.length > 40 || /[\r\n]/.test(m)))
+    mensagens.some((m) => typeof m !== "string" || m.length > 40 || /[\r\n]/.test(m))
   )
     throw Error("As instruções bancárias ultrapassam o espaço reservado no boleto.");
   const inicio = 255 - quantidade * 10;
@@ -52,6 +55,23 @@ export async function incluirCondicoesPdfSicoob(
       x: 34,
       y: inicio - i * estilo.entrelinhas,
       size: estilo.tamanho,
+      font: fonte,
+    });
+  }
+  // Recibo do pagador: área interna entre o rótulo e a borda inferior (y=653).
+  // Reorganiza as mensagens conhecidas do banco para acomodar as mesmas condições.
+  const superiores = [...(mensagens as string[]), ...linhas];
+  const passoSuperior = Math.min(estilo.entrelinhas, 42 / (superiores.length - 1));
+  const fonteSuperior = Math.min(estilo.tamanho, passoSuperior);
+  if (quantidade)
+    pagina.drawRectangle({ x: 30, y: 654, width: 341, height: 49, color: rgb(1, 1, 1) });
+  for (const [i, linha] of superiores.entries()) {
+    if (fonte.widthOfTextAtSize(linha, fonteSuperior) > 332)
+      throw Error("As instruções ultrapassam o campo superior do boleto.");
+    pagina.drawText(linha, {
+      x: 34,
+      y: 697 - i * passoSuperior,
+      size: fonteSuperior,
       font: fonte,
     });
   }

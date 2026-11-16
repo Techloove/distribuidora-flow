@@ -259,7 +259,7 @@ export async function alinharInstrucoesPdfSicredi(original: Uint8Array): Promise
     const fonte = await doc.embedFont(StandardFonts.Helvetica),
       removidos = new Set<Bloco>();
     const desenhos: { texto: string; x: number; y: number }[] = [];
-    for (const titulo of titulos) {
+    const campos = titulos.map((titulo) => {
       const pagador = trechos
         .filter(
           (t) =>
@@ -280,6 +280,11 @@ export async function alinharInstrucoesPdfSicredi(original: Uint8Array): Promise
         .join(" ")
         .replace(/\s+/g, " ")
         .trim();
+      return { titulo, pagador, escolhidos, texto };
+    });
+    for (const { titulo, pagador, escolhidos, texto: proprio } of campos) {
+      // Alguns PDFs trazem as condições em somente uma das vias do mesmo boleto.
+      const texto = proprio || campos.find((c) => c.texto)?.texto || "";
       if (!texto) continue;
       const frases = texto.split(/(?<=[.!?])\s+/),
         linhas: string[] = [];

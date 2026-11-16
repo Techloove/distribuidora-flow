@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.56.5",
+    "data": "2026-11-16",
+    "titulo": "Completa instruções nas duas vias dos boletos",
+    "motivo": "Completar os campos superiores de instruções sem deixar as condições apenas na ficha de compensação.",
+    "novidades": [
+      "Sicoob mostra as mesmas condições bancárias no recibo superior e na ficha inferior, preservando mensagens, limites do campo e códigos de pagamento.",
+      "Sicredi preenche um campo de instruções vazio com o texto da outra via do mesmo boleto; campos já preenchidos mantêm suas próprias mensagens bancárias.",
+      "Preserva taxas e prazos de cada boleto. Também vale para novas segundas vias de emissões anteriores, sem alterar cobranças ou movimentar o financeiro. Não requer SQL.",
+      "Conferência visual do Sicoob confirmou mudança somente no campo superior; testes cobrem campos vazios, mensagens e as duas vias."
+    ]
+  },
+  {
     "versao": "1.56.4",
     "data": "2026-11-16",
     "titulo": "Exclui boletos de homologação da listagem operacional",

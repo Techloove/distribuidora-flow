@@ -8,6 +8,7 @@ export const instrucoesFixtureSicredi = [
 export async function pdfFixtureSicredi(
   instrucoes = instrucoesFixtureSicredi,
   pix: "nenhum" | "direita" | "sobreposto" = "nenhum",
+  superiorVazio = false,
 ) {
   const doc = await PDFDocument.create(),
     page = doc.addPage([595, 842]);
@@ -17,7 +18,7 @@ export async function pdfFixtureSicredi(
     page.drawText("Instruções", { x: 22, y, font, size: 5 });
     page.drawText("Pagador", { x: 22, y: y - 96, font, size: 5 });
     page.drawText("(-) Desconto / Abatimento", { x: 411, y, font, size: 5 });
-    instrucoes.forEach((texto, i) =>
+    (superiorVazio && y > 500 ? [] : instrucoes).forEach((texto, i) =>
       page.drawText(texto, { x: 23, y: y - 12.86 - i * 8.15, font, size: 7 }),
     );
     page.drawLine({ start: { x: 20, y: y - 90 }, end: { x: 575, y: y - 90 } });

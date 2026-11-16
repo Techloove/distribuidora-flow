@@ -76,6 +76,8 @@ test("mantém página, geometria e operadores originais; acrescenta no campo de 
   for (const stream of conteudos(antes)) expect(streams).toContain(stream);
   const adicionados = streams.filter((stream) => !conteudos(antes).includes(stream)).join("\n");
   expect(adicionados).toContain("1 0 0 1 34 255 Tm");
+  expect(adicionados).toContain("1 0 0 1 34 697 Tm");
+  expect(adicionados).toContain("1 0 0 1 34 681 Tm");
   expect(adicionados).not.toContain("1 0 0 1 33 44 Tm");
   // Sem transformação de escala ou translação em torno do conteúdo original.
   expect(streams.join("\n")).not.toContain("0.9 0 0 0.9");
@@ -107,8 +109,10 @@ test("reserva as cinco mensagens existentes e mantém as condições à esquerda
   for (const linha of condicoesImpressaoSicoob(banco)) {
     expect(34 + fonte.widthOfTextAtSize(linha, 7)).toBeLessThan(334);
   }
-  const semLista = await PDFDocument.load(await incluirCondicoesPdfSicoob(await original(), {}, 1));
-  expect(conteudos(semLista).join("\n")).toContain("1 0 0 1 34 205 Tm");
+  expect(streams).toContain("1 0 0 1 34 655 Tm");
+  await expect(incluirCondicoesPdfSicoob(await original(), {}, 1)).rejects.toThrow(
+    "não informou as mensagens",
+  );
   await expect(
     incluirCondicoesPdfSicoob(
       await original(),

@@ -160,3 +160,13 @@ test("respeita o BBox de um QR Code vetorial, além de imagens raster", async ()
     "Nenhuma cobrança foi alterada",
   );
 });
+
+test("preenche instruções superiores vazias com as condições da outra via do mesmo boleto", async () => {
+  const original = await pdfFixtureSicredi(undefined, "direita", true);
+  const doc = await PDFDocument.load(await alinharInstrucoesPdfSicredi(original));
+  const instrucoes = textos(conteudos(doc).at(-1)!);
+  expect(instrucoes).toHaveLength(6);
+  expect(instrucoes.slice(0, 3)).toEqual(instrucoes.slice(3));
+  expect(instrucoes[0]).toContain("10 DIAS");
+  expect(conteudos(doc).at(-1)).toContain("1 0 0 1 23 557.5 Tm");
+});
