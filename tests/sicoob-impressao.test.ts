@@ -40,8 +40,8 @@ test("campos ausentes ou inválidos não viram isenção nem taxas presumidas", 
   expect(condicoesImpressaoSicoob({ ...banco, dataMulta: null })[1]).toContain(
     "início não informado",
   );
-  expect(condicoesImpressaoSicoob({ numeroDiasProtesto: 30 })[2]).toContain(
-    "contagem não informada",
+  expect(condicoesImpressaoSicoob({ numeroDiasProtesto: 30 })[2]).toBe(
+    "Protesto: prazo de 30 dias após o vencimento.",
   );
   expect(condicoesImpressaoSicoob({ tipoMulta: 0, tipoJurosMora: 3, codigoProtesto: 3 })).toEqual([
     "Juros: isento.",

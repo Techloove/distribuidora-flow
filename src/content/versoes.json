@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.56.2",
+    "data": "2026-11-16",
+    "titulo": "Simplifica o texto de protesto na impressão Sicoob",
+    "motivo": "Retirar a observação técnica sobre contagem de dias do texto de protesto impresso no boleto.",
+    "novidades": [
+      "Sem tipo de contagem no retorno, imprime apenas Protesto: prazo de N dias após o vencimento. Mantém dias corridos ou úteis quando informados pelo Sicoob.",
+      "Valores, taxas, datas e prazos continuam consultados no banco a cada impressão. Novas emissões seguem a configuração vigente; cobranças anteriores mantêm suas condições bancárias, inclusive alterações confirmadas.",
+      "Preserva o campo de instruções, QR Code e código de barras. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.56.1",
     "data": "2026-11-16",
     "titulo": "Condições Sicoob no campo de instruções do boleto",

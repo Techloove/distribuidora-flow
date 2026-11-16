@@ -45,7 +45,7 @@ export function condicoesImpressaoSicoob(b: Row) {
     p === 3
       ? "Protesto: não protestar."
       : dias !== null && dias > 0 && dias <= 99
-        ? `Protesto: prazo de ${dias} dias${p === 1 ? " corridos" : p === 2 ? " úteis" : " (contagem não informada pelo banco)"} após o vencimento.`
+        ? `Protesto: prazo de ${dias} dias${p === 1 ? " corridos" : p === 2 ? " úteis" : ""} após o vencimento.`
         : "Protesto: prazo não informado pelo banco.",
   ];
   return linhas;
