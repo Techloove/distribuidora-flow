@@ -132,7 +132,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
 
   const boletos = useQuery({
-    queryKey: [...["boletos", "lista", session?.user.id, centro], getModalidade()],
+    queryKey: [...["boletos", "lista-operacional", session?.user.id, centro], getModalidade()],
     enabled: !!client && !!session,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -142,6 +142,8 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           .select(
             "*,pedidos(status),alteracoes_vencimento:sicredi_boleto_alteracoes!sicredi_boleto_alteracoes_boleto_id_fkey(id,estado,vencimento_anterior,vencimento_novo,created_at,updated_at),historico_condicoes:sicredi_condicoes_historico_292!sicredi_condicoes_historico_292_boleto_id_fkey(id,tipo,estado,motivo,anterior,esperado,updated_at,created_at),operacoes_sicoob:sicoob_operacoes_316!sicoob_operacoes_316_boleto_id_fkey(id,tipo,estado,motivo,nota,anterior,esperado,created_at,updated_at)",
           )
+          // Homologação não pertence à carteira real. Preserva legados sem ambiente.
+          .or("ambiente.is.null,ambiente.neq.homologacao")
           .order("updated_at", { referencedTable: "historico_condicoes", ascending: false })
           .limit(30, { referencedTable: "historico_condicoes" })
           .order("created_at", { referencedTable: "operacoes_sicoob", ascending: false })

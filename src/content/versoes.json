@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.56.4",
+    "data": "2026-11-16",
+    "titulo": "Exclui boletos de homologação da listagem operacional",
+    "motivo": "Um boleto Sicredi de homologação aparecia junto da carteira real e era somado aos cartões da tela Boletos.",
+    "novidades": [
+      "A consulta operacional da tela Boletos exclui registros com ambiente de homologação antes da paginação, filtros, listagem e totais.",
+      "Preserva os registros de teste no banco de dados e seus títulos financeiros. Não cancela cobranças, não exclui dados e não movimenta o financeiro.",
+      "Mantém boletos de produção e legados sem ambiente informado, respeitando loja, modalidade e permissões existentes. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.56.3",
     "data": "2026-11-16",
     "titulo": "Alinha as instruções impressas dos boletos Sicredi",

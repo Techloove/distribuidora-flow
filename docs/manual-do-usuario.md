@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.56.3 · 2026-11-16
+Versão 1.56.4 · 2026-11-16
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -391,7 +391,7 @@ Entenda os cuidados com documentos bancários e fiscais.
 3. A Consulta automática Sicredi acompanha todos os boletos API de produção em aberto, independentemente do vencimento, inclusive pagamentos antecipados. Os lotes têm até 20 boletos a cada cinco minutos, mesmo com o sistema fechado. Após resposta pendente, o intervalo mínimo é de 15 minutos para qualquer vencimento; o tempo para completar a lista depende da fila e da resposta bancária. A rotação consulta primeiro os que aguardam há mais tempo, com prioridade para novos movimentos identificados no banco. Esses movimentos apenas antecipam a consulta; não comprovam pagamento. Ao abrir a tela, a solicitação de lote compartilha um intervalo global de cinco minutos. A listagem acompanha liquidação/baixa confirmada sem consultar cada boleto pelo navegador. Falhas mantêm espera de 30 minutos, e dados incompletos não geram recebimento.
 4. Use as ações de emissão, consulta e conciliação disponíveis no módulo e confira o resultado antes de repetir.
 5. Em Contas a receber, abra Opções: Emitir boleto aparece quando a parcela não tem boleto registrado; Reimprimir boleto abre a impressão dos boletos já registrados ou liquidados. Registros pendentes ou em processamento mostram Consultar boleto para evitar emissão duplicada.
-6. Na reimpressão disponível em Contas a receber, Boletos, Pedidos e Separação, escolha Esta parcela, Mesmo pedido ou Mesmo cliente. Marque os boletos individualmente ou use Selecionar todos do grupo. Abra PDF selecionados para reunir os PDFs originais em um arquivo, baixar no celular/tablet ou imprimir. A seleção é limpa ao trocar o grupo. São respeitados a loja selecionada e seus acessos; boletos de outro cliente não entram no grupo.
+6. A tela Boletos e seus cartões de totais não incluem registros do ambiente de homologação. Os testes permanecem preservados no banco de dados, e seus títulos financeiros não são excluídos nem baixados por essa separação. Na reimpressão disponível em Contas a receber, Boletos, Pedidos e Separação, escolha Esta parcela, Mesmo pedido ou Mesmo cliente. Marque os boletos individualmente ou use Selecionar todos do grupo. Abra PDF selecionados para reunir os PDFs originais em um arquivo, baixar no celular/tablet ou imprimir. A seleção é limpa ao trocar o grupo. São respeitados a loja selecionada e seus acessos; boletos de outro cliente não entram no grupo.
 7. Na impressão de muitos boletos, mantenha a janela aberta enquanto os PDFs são consultados. Lotes maiores aguardam automaticamente o limite de 20 consultas por minuto. Interromper impressão não emite nem cancela cobranças. Se o banco falhar, a lista mostra o erro; nenhum arquivo parcial é apresentado como completo.
 8. Na lista de Boletos, filtre pelo cliente e por períodos de emissão, vencimento ou liquidação. Os filtros podem ser combinados; um período de liquidação exclui boletos ainda sem data de pagamento.
 9. Ao entrar pelo menu Boletos ou limpar os filtros, a lista abre em Registrado (em aberto), incluindo os registrados vencidos. Use o cartão Liquidados ou o filtro Situação para consultar pagos e outras situações; Todos mostra todas. Atalhos para um boleto, título, pedido ou cliente preservam o contexto mesmo quando o boleto já está pago. Cada linha mostra emissão, vencimento, liquidação, valor emitido, valor recebido e tarifas confirmadas. Abra Opções para consultar o Sicredi, copiar a linha digitável e acessar as demais ações daquele boleto.
@@ -582,6 +582,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.56.4 · 2026-11-16 · Exclui boletos de homologação da listagem operacional
+
+Motivo da atualização: Um boleto Sicredi de homologação aparecia junto da carteira real e era somado aos cartões da tela Boletos.
+
+- A consulta operacional da tela Boletos exclui registros com ambiente de homologação antes da paginação, filtros, listagem e totais.
+- Preserva os registros de teste no banco de dados e seus títulos financeiros. Não cancela cobranças, não exclui dados e não movimenta o financeiro.
+- Mantém boletos de produção e legados sem ambiente informado, respeitando loja, modalidade e permissões existentes. Não requer SQL.
 
 ### v1.56.3 · 2026-11-16 · Alinha as instruções impressas dos boletos Sicredi
 
