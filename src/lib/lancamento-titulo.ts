@@ -73,3 +73,39 @@ export function previsaoTitulo(
     return null;
   }
 }
+
+/** Identificação visual; o documento base e a parcela continuam separados na gravação. */
+export function documentoParcelaTitulo(documento: unknown, parcela: unknown) {
+  const base = String(documento ?? "").trim();
+  if (!base) return "—";
+  const n = Number(parcela);
+  return Number.isSafeInteger(n) && n > 0 ? `${base}/${n}` : base;
+}
+/** Projeção paginada do mesmo cálculo do RPC, sem gerar listas enormes no navegador. */
+export function parcelasPrevistasTitulo(
+  previa: NonNullable<ReturnType<typeof previsaoTitulo>>,
+  documento: string,
+  intervalo: number,
+  inicio = 0,
+  limite = 12,
+) {
+  if (
+    !Number.isSafeInteger(inicio) ||
+    inicio < 0 ||
+    !Number.isSafeInteger(limite) ||
+    limite < 1 ||
+    limite > 100 ||
+    !Number.isSafeInteger(intervalo) ||
+    intervalo < 0
+  )
+    return [];
+  return Array.from({ length: Math.min(limite, Math.max(0, previa.parcelas - inicio)) }, (_, i) => {
+    const parcela = inicio + i + 1;
+    return {
+      parcela,
+      documento: documentoParcelaTitulo(documento, parcela),
+      vencimento: deslocarDataISO(previa.inicio, (parcela - 1) * intervalo),
+      valor: parcela === previa.parcelas ? previa.ultima : previa.primeira,
+    };
+  });
+}

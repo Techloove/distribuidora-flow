@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.57.0",
+    "data": "2026-11-17",
+    "titulo": "Exibe parcelas, vencimentos e documento por parcela no lançamento manual",
+    "motivo": "Permitir conferir cada parcela e vencimento antes de lançar e identificar claramente o documento de cada título.",
+    "novidades": [
+      "Lançamento manual mostra uma prévia com documento/parcela, vencimento e valor de cada título, atualizada ao mudar quantidade, intervalo, valor ou data inicial. Parcelamentos maiores têm navegação em grupos de 12.",
+      "Contas a receber e a pagar exibem e permitem buscar documento/parcela, como SN10/1 e SN10/2. O documento base continua separado do número da parcela, preservando a emissão bancária existente.",
+      "A confirmação exige que o servidor retorne a quantidade esperada de títulos; o formulário impede dois envios simultâneos. Resposta inconclusiva orienta conferir a lista antes de repetir.",
+      "Testes em banco descartável verificaram quatro parcelas semanais, soma, centavos, permissões e rollback integral em falha. Não requer SQL; não cria lançamentos reais durante a verificação."
+    ]
+  },
+  {
     "versao": "1.56.6",
     "data": "2026-11-16",
     "titulo": "Melhora desempenho das buscas e uso em celular e tablet",

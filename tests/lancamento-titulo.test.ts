@@ -59,3 +59,33 @@ test("subcategorias pertencem à categoria escolhida e mostram níveis sem loops
   ]);
   expect(subcategoriasTitulo(cats, "B")).toEqual([{ id: "B1", nome: "B1" }]);
 });
+
+test("prévia detalhada mostra documento, data e valor de cada parcela semanal", async () => {
+  const { parcelasPrevistasTitulo, documentoParcelaTitulo } =
+    await import("../src/lib/lancamento-titulo");
+  const previa = previsaoTitulo(5000, 4, "2026-11-18", 7)!;
+  expect(parcelasPrevistasTitulo(previa, "SN10", 7)).toEqual([
+    { parcela: 1, documento: "SN10/1", vencimento: "2026-11-18", valor: 1250 },
+    { parcela: 2, documento: "SN10/2", vencimento: "2026-11-25", valor: 1250 },
+    { parcela: 3, documento: "SN10/3", vencimento: "2026-12-02", valor: 1250 },
+    { parcela: 4, documento: "SN10/4", vencimento: "2026-12-09", valor: 1250 },
+  ]);
+  expect(documentoParcelaTitulo(" NF/2026 ", 2)).toBe("NF/2026/2");
+  expect(documentoParcelaTitulo("", 1)).toBe("—");
+  expect(documentoParcelaTitulo("SN10", null)).toBe("SN10");
+});
+test("todas as parcelas mantêm o total e o ajuste de centavos, inclusive em outra página", async () => {
+  const { parcelasPrevistasTitulo } = await import("../src/lib/lancamento-titulo");
+  const previa = previsaoTitulo(100, 6, "2026-12-31", 7)!;
+  const itens = parcelasPrevistasTitulo(previa, "AJUSTE", 7);
+  expect(itens.map((p) => Math.round(p.valor * 100))).toEqual([1667, 1667, 1667, 1667, 1667, 1665]);
+  expect(itens.reduce((s, p) => s + Math.round(p.valor * 100), 0)).toBe(10000);
+  expect(itens.at(-1)?.vencimento).toBe("2027-02-04");
+  const muitas = previsaoTitulo(250, 25, "2026-11-18", 7)!;
+  expect(parcelasPrevistasTitulo(muitas, "SN10", 7)).toHaveLength(12);
+  expect(parcelasPrevistasTitulo(muitas, "SN10", 7, 24)).toEqual([
+    { parcela: 25, documento: "SN10/25", vencimento: "2027-05-05", valor: 10 },
+  ]);
+  expect(parcelasPrevistasTitulo(muitas, "SN10", 7, 25)).toEqual([]);
+  expect(parcelasPrevistasTitulo(muitas, "SN10", 7, 0, 0)).toEqual([]);
+});

@@ -1,3 +1,4 @@
+import { documentoParcelaTitulo } from "@/lib/lancamento-titulo";
 import { indexarPrimeiro } from "@/lib/indices-listas";
 import { EditarTituloDialog } from "./editar-titulo-dialog";
 import { usePermissoesRotinas } from "@/lib/permissoes-rotinas";
@@ -289,9 +290,8 @@ export function TitulosPage({
           parceirosPorId.get(r[config.partnerKey])?.["razao_social"] ?? "",
         ).toLowerCase();
         return (
-          String(r["documento"] ?? "")
-            .toLowerCase()
-            .includes(termo) || nome.includes(termo)
+          documentoParcelaTitulo(r["documento"], r["parcela"]).toLowerCase().includes(termo) ||
+          nome.includes(termo)
         );
       });
     }
@@ -653,7 +653,7 @@ export function TitulosPage({
                   </TableCell>
                   <TableCell data-label="Documento" className="whitespace-nowrap font-medium">
                     <ReferenciaRegistro tipo="pedido" id={r["pedido_id"]}>
-                      {String(r["documento"] ?? "—")}
+                      {documentoParcelaTitulo(r["documento"], r["parcela"])}
                     </ReferenciaRegistro>
                   </TableCell>
                   <TableCell

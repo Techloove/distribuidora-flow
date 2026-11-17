@@ -1,5 +1,5 @@
 import { SearchSelect } from "@/components/ui/search-select";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building2, ChevronDown, FileText, Layers3, Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { brl, dataBr } from "@/lib/formatacao";
 import { lerPaginas } from "@/lib/paginacao";
 import {
   previsaoTitulo,
+  parcelasPrevistasTitulo,
   subcategoriasTitulo,
   valorTitulo,
   type CategoriaTitulo,
@@ -54,9 +55,12 @@ export function NovoTituloDialog({
     parcelas: "1",
     intervalo: "30",
   });
+  const enviando = useRef(false);
+  const [paginaPrevia, setPaginaPrevia] = useState(0);
   const [parcelar, setParcelar] = useState(false),
     [erro, setErro] = useState("");
   const set = (key: keyof typeof form, v: string) => {
+    setPaginaPrevia(0);
     setForm((s) => ({ ...s, [key]: v, ...(key === "categoria" ? { subcategoria: "" } : {}) }));
     setErro("");
   };
@@ -82,6 +86,9 @@ export function NovoTituloDialog({
     quantidade = parcelar ? Number(form.parcelas) : 1,
     intervalo = parcelar ? Number(form.intervalo) : 30;
   const previa = previsaoTitulo(valor, quantidade, form.vencimento, intervalo);
+  const parcelasVisiveis = previa
+    ? parcelasPrevistasTitulo(previa, form.documento, intervalo, paginaPrevia * 12)
+    : [];
   const salvar = useMutation({
     mutationFn: async () => {
       if (!form.loja || !lojas.some((l) => l.id === form.loja))
@@ -112,6 +119,13 @@ export function NovoTituloDialog({
         _conta_id: null,
       });
       if (r.error) throw Error(r.error.message);
+      if (r.data !== quantidade)
+        throw Error(
+          "O servidor não confirmou a quantidade de parcelas. Atualize a lista e confira o lançamento antes de tentar novamente.",
+        );
+    },
+    onSettled: () => {
+      enviando.current = false;
     },
     onSuccess: () => onCreated(form.loja, quantidade),
     onError: (e: Error) => {
@@ -145,6 +159,8 @@ export function NovoTituloDialog({
           className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           onSubmit={(e) => {
             e.preventDefault();
+            if (enviando.current) return;
+            enviando.current = true;
             salvar.mutate();
           }}
         >
@@ -229,10 +245,14 @@ export function NovoTituloDialog({
                       required
                       id="titulo-documento"
                       className="h-11 rounded-xl"
-                      placeholder="Ex.: NF 12345"
+                      placeholder="Ex.: SN10"
+                      aria-describedby="titulo-documento-ajuda"
                       value={form.documento}
                       onChange={(e) => set("documento", e.target.value)}
                     />
+                    <p id="titulo-documento-ajuda" className="text-xs text-muted-foreground">
+                      Digite SN10 para identificar as parcelas como SN10/1, SN10/2…
+                    </p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="titulo-valor">Valor total (R$) *</Label>
@@ -345,6 +365,7 @@ export function NovoTituloDialog({
                       type="checkbox"
                       checked={parcelar}
                       onChange={(e) => {
+                        setPaginaPrevia(0);
                         setParcelar(e.target.checked);
                         if (e.target.checked && Number(form.parcelas) < 2) set("parcelas", "2");
                         setErro("");
@@ -379,6 +400,57 @@ export function NovoTituloDialog({
                         />
                       </div>
                     </div>
+                  )}
+                  {parcelar && previa && (
+                    <section aria-label="Prévia das parcelas" className="space-y-3">
+                      <h3 className="text-sm font-medium">Parcelas e vencimentos</h3>
+                      <ol className="divide-y rounded-xl border bg-background">
+                        {parcelasVisiveis.map((p) => (
+                          <li
+                            key={p.parcela}
+                            className="flex min-w-0 flex-wrap items-center justify-between gap-2 p-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="break-all text-sm font-medium">{p.documento}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Parcela {p.parcela} de {previa.parcelas} · Vencimento:{" "}
+                                {dataBr(p.vencimento)}
+                              </p>
+                            </div>
+                            <strong className="text-sm tabular-nums">{brl(p.valor)}</strong>
+                          </li>
+                        ))}
+                      </ol>
+                      {previa.parcelas > 12 && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span>
+                            Parcelas {paginaPrevia * 12 + 1} a{" "}
+                            {Math.min((paginaPrevia + 1) * 12, previa.parcelas)} de{" "}
+                            {previa.parcelas}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={paginaPrevia === 0 || ocupado}
+                              onClick={() => setPaginaPrevia((p) => p - 1)}
+                            >
+                              Anteriores
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={(paginaPrevia + 1) * 12 >= previa.parcelas || ocupado}
+                              onClick={() => setPaginaPrevia((p) => p + 1)}
+                            >
+                              Próximas
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </section>
                   )}
                 </div>
               </details>
