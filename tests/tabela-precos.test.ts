@@ -39,9 +39,9 @@ test("preços por peso são projeções independentes sobre preço normal", () =
   for (const p of [null, -1, NaN, Infinity]) expect(precoPorFaixa(p, 5)).toBeNull();
   for (const d of [-1, 101, Infinity, NaN]) expect(precoPorFaixa(10, d)).toBeNull();
 });
-test("faixas novas não truncam impressão e identificam condição por categoria", () => {
-  expect(descricaoFaixaPreco(tabela.faixas[1]!)).toContain("peso da categoria Ferro");
-  expect(descricaoFaixaPreco(tabela.faixas[6]!)).toContain("ou mais");
+test("faixas novas não truncam impressão e usam cabeçalhos compactos", () => {
+  expect(descricaoFaixaPreco(tabela.faixas[1]!)).toBe("Condição 2 · 2%");
+  expect(descricaoFaixaPreco(tabela.faixas[6]!)).toBe("Condição 7 · 7%");
   const html = htmlTabelaPrecos(tabela, tabela.itens, tabela.faixas);
   expect(html.match(/<section/g)?.length).toBe(1);
   expect(html.match(/Preço normal/g)?.length).toBe(1);

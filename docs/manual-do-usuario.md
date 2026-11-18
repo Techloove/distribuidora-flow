@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.60.0 · 2026-11-18
+Versão 1.60.1 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -585,7 +585,7 @@ Cuidados:
 Consulte e imprima o preço normal e as condições por faixa de peso, separados por loja.
 
 1. Abra Comercial → Tabela de preços e escolha a loja no único seletor do topo. O administrador acessa todas as lojas; o representante vê somente as lojas permitidas no cadastro. Ao trocar a loja, a busca e a paginação são reiniciadas e a prévia anterior é fechada. O relatório não mostra custos nem permite alterar preços.
-2. A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com percentual, intervalo de peso e preço já descontado. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.
+2. A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com nome e percentual no cabeçalho e preço já descontado. Os cabeçalhos mostram somente o nome cadastrado da faixa e o percentual, sem repetir peso ou categoria, tanto na tela quanto no PDF. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.
 3. Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.
 4. Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.
 5. Na prévia de impressão/PDF, escolha Paisagem ou Retrato em Orientação da impressão. A prévia é atualizada antes de liberar a impressão. O preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte e margens ajustadas ao formato e à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.
@@ -599,6 +599,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.60.1 · 2026-11-18 · Simplifica os cabeçalhos das faixas na tabela de preços
+
+Motivo da atualização: Reduzir os títulos das colunas de desconto e evitar a repetição de peso e categoria.
+
+- Cabeçalhos das faixas mostram apenas o nome cadastrado e o percentual, por exemplo: Desconto 1 - 1.000 a 2.000 Kg · 3%.
+- O mesmo texto é usado na tela, nos cartões e na impressão/PDF em paisagem ou retrato. Cálculos e faixas cadastradas permanecem iguais. Não requer SQL.
 
 ### v1.60.0 · 2026-11-18 · Permite imprimir a tabela de preços em paisagem ou retrato
 

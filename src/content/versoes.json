@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.60.1",
+    "data": "2026-11-18",
+    "titulo": "Simplifica os cabeçalhos das faixas na tabela de preços",
+    "motivo": "Reduzir os títulos das colunas de desconto e evitar a repetição de peso e categoria.",
+    "novidades": [
+      "Cabeçalhos das faixas mostram apenas o nome cadastrado e o percentual, por exemplo: Desconto 1 - 1.000 a 2.000 Kg · 3%.",
+      "O mesmo texto é usado na tela, nos cartões e na impressão/PDF em paisagem ou retrato. Cálculos e faixas cadastradas permanecem iguais. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.60.0",
     "data": "2026-11-18",
     "titulo": "Permite imprimir a tabela de preços em paisagem ou retrato",

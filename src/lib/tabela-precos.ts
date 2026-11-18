@@ -17,7 +17,7 @@ export type TabelaPrecos = {
 };
 const numero = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 export function descricaoFaixaPreco(f: FaixaPeso) {
-  return `${f.nome} · ${numero.format(Number(f.percentual))}% · ${numero.format(Number(f.peso_min))} kg${f.peso_max === null ? " ou mais" : ` a ${numero.format(Number(f.peso_max))} kg`}${f.categoria ? ` · peso da categoria ${f.categoria}` : " · peso total do pedido"}`;
+  return `${f.nome} · ${numero.format(Number(f.percentual))}%`;
 }
 /** Projeção unitária sobre preço normal; o pedido arredonda o desconto no total. */
 export function precoPorFaixa(preco: number | null, percentual: number): number | null {
