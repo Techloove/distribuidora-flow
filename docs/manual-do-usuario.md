@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.59.1 · 2026-11-18
+Versão 1.59.2 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -31,7 +31,7 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 21. O seletor de loja do topo controla o planejamento de compras, indicadores, produtos e listagens operacionais. Escolha Cimento, Ferragem ou Todas as lojas, conforme seu acesso. Cadastros realmente compartilhados continuam disponíveis nas lojas permitidas; documentos sem loja não são atribuídos a uma loja específica pelo filtro. Históricos e documentos já abertos mantêm sua loja de origem.
 22. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
 23. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
-24. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
+24. Ao abrir uma janela de cadastro, o foco fica no título e os campos de seleção mostram os nomes já salvos, sem abrir uma busca automaticamente. Clique no campo desejado ou navegue com Tab para pesquisar. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
 25. O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.
 26. Datas são exibidas em DD/MM/AAAA; competências e períodos mensais, em MM/AAAA. Exemplo: 05/10/2026 e 10/2026. Campos mensais aceitam digitação de mês/ano; os filtros, cálculos e integrações preservam os valores técnicos de armazenamento.
 
@@ -599,6 +599,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.59.2 · 2026-11-18 · Mantém buscas de seleção fechadas ao abrir a edição de cadastros
+
+Motivo da atualização: Evitar que a busca da loja abra sozinha ao editar uma faixa de desconto ou outro cadastro.
+
+- Janelas de cadastro abrem com foco no título, mantendo visível o nome da loja e as demais seleções salvas. A busca abre quando o usuário interage com o campo.
+- Navegação por Tab, busca por clique e gravação permanecem disponíveis. Correção de interface, sem novo SQL.
 
 ### v1.59.1 · 2026-11-18 · Exibe preço normal e todas as faixas automaticamente na tabela de preços
 

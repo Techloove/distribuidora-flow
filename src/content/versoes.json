@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.59.2",
+    "data": "2026-11-18",
+    "titulo": "Mantém buscas de seleção fechadas ao abrir a edição de cadastros",
+    "motivo": "Evitar que a busca da loja abra sozinha ao editar uma faixa de desconto ou outro cadastro.",
+    "novidades": [
+      "Janelas de cadastro abrem com foco no título, mantendo visível o nome da loja e as demais seleções salvas. A busca abre quando o usuário interage com o campo.",
+      "Navegação por Tab, busca por clique e gravação permanecem disponíveis. Correção de interface, sem novo SQL."
+    ]
+  },
+  {
     "versao": "1.59.1",
     "data": "2026-11-18",
     "titulo": "Exibe preço normal e todas as faixas automaticamente na tabela de preços",

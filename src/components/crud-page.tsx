@@ -305,6 +305,7 @@ export function CrudPage({
 }) {
   const isUpperField = (f: CrudField) => !f.type || f.type === "text";
   const { client, user, canManage, roles } = useSupabase();
+  const tituloFormulario = useRef<HTMLHeadingElement>(null);
   const { centro } = useCentro();
   const queryClient = useQueryClient();
   const effectiveReadOnly = readOnly === true;
@@ -986,6 +987,10 @@ export function CrudPage({
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            tituloFormulario.current?.focus({ preventScroll: true });
+          }}
           className={
             formSections
               ? "flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[1440px] flex-col overflow-hidden sm:max-w-[1440px]"
@@ -993,7 +998,7 @@ export function CrudPage({
           }
         >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle ref={tituloFormulario} tabIndex={-1} className="outline-none">
               {editing
                 ? formReadOnly
                   ? "Consultar cadastro"
