@@ -119,10 +119,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       await main.getByRole("combobox", { name: "Loja da tabela de preços" }).click();
       await page.getByRole("option", { name: "Ferragem teste", exact: true }).click();
       await page.getByText("Página 1 de 2", { exact: false }).waitFor();
-      await main.getByRole("combobox", { name: "Formato da tabela de preços" }).click();
-      await page
-        .getByRole("option", { name: "Preço normal e faixas por peso", exact: true })
-        .click();
+      assert.equal(
+        await main.getByRole("combobox", { name: "Formato da tabela de preços" }).count(),
+        0,
+      );
       await main
         .locator("th:visible, article p:visible")
         .filter({ hasText: /Faixa 7 ·/ })
@@ -140,11 +140,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         .getByRole("heading", { name: "Tabela de preços · Ferragem teste" })
         .first()
         .waitFor();
-      assert.equal(await iframe.locator("section").count(), 3);
+      assert.equal(await iframe.locator("section").count(), 1);
       assert.equal(
         await iframe.locator("tbody tr").count(),
-        105,
-        "Impressão inclui os 35 produtos nos três blocos",
+        35,
+        "Impressão inclui os 35 produtos com todas as faixas na mesma linha",
       );
       await page.getByRole("dialog").getByRole("button", { name: "Fechar", exact: true }).click();
       await main.getByPlaceholder("Código, descrição ou categoria").fill("item 35");

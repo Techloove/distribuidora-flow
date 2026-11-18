@@ -696,10 +696,10 @@
     ],
     "passos": [
       "Abra Comercial → Tabela de preços e selecione a loja permitida. Administradores e representantes podem consultar; o relatório não mostra custos nem permite alterar preços.",
-      "Para cimento, escolha Preço normal. Para ferragem, escolha Preço normal e faixas por peso. As faixas ativas cadastradas em Descontos por peso são carregadas automaticamente ao consultar ou atualizar o relatório; não há número fixo de condições.",
+      "A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com percentual, intervalo de peso e preço já descontado. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.",
       "Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.",
       "Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.",
-      "Na impressão, as condições aparecem em blocos de até três faixas para manter a leitura. Cada bloco repete produtos e preço normal; novas faixas entram nos próximos blocos sem cortar colunas. No celular, os produtos aparecem em cartões.",
+      "Na impressão em PDF, o preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte ajustada à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.",
       "Use Atualizar para obter os preços e faixas atuais antes de imprimir. Produtos inativos, indisponíveis ou fora do catálogo da loja não entram. A implantação requer a fase371 no Supabase; instalar não altera preços, descontos ou pedidos existentes."
     ],
     "cuidados": [

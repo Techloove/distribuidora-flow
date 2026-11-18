@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.59.1",
+    "data": "2026-11-18",
+    "titulo": "Exibe preço normal e todas as faixas automaticamente na tabela de preços",
+    "motivo": "Exibir todos os preços por faixa diretamente ao lado do preço normal, sem exigir escolher formato.",
+    "novidades": [
+      "Tabela de preços mostra automaticamente uma coluna por faixa ativa, com peso, percentual e preço descontado na mesma linha do produto. O filtro de formato foi removido.",
+      "A impressão/PDF mantém todas as condições lado a lado em uma única tabela, com fonte ajustada à quantidade de faixas. Novas faixas continuam entrando ao atualizar a consulta.",
+      "Não requer novo SQL. Mantém a fase371 e as permissões existentes."
+    ]
+  },
+  {
     "versao": "1.59.0",
     "data": "2026-11-18",
     "titulo": "Tabela de preços por loja com faixas de desconto por peso",

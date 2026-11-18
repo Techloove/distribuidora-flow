@@ -34,13 +34,6 @@ export function precoPorFaixa(preco: number | null, percentual: number): number 
     Math.round((Number(preco) * (1 - Number(percentual) / 100) + Number.EPSILON) * 10000) / 10000
   );
 }
-export function blocosFaixasPreco(faixas: FaixaPeso[], tamanho = 3): FaixaPeso[][] {
-  if (!Number.isInteger(tamanho) || tamanho < 1) throw Error("Tamanho de bloco inválido");
-  if (!faixas.length) return [[]];
-  return Array.from({ length: Math.ceil(faixas.length / tamanho) }, (_, i) =>
-    faixas.slice(i * tamanho, (i + 1) * tamanho),
-  );
-}
 const escapar = (v: unknown) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -54,6 +47,11 @@ export function htmlTabelaPrecos(
   faixas: FaixaPeso[],
 ) {
   const preco = (v: number | null) => (v === null ? "Não informado" : brl(v));
-  const blocos = blocosFaixasPreco(faixas);
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Tabela de preços — ${escapar(tabela.loja.nome)}</title><style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:11px Arial,sans-serif;color:#142a38;margin:0}h1{font-size:20px;margin:0 0 8px}p{line-height:1.5}.bloco+.bloco{break-before:page}table{width:100%;border-collapse:collapse;margin:12px 0;table-layout:fixed}thead{display:table-header-group}th,td{padding:7px 6px;border:1px solid #cbd5e1;overflow-wrap:anywhere}th{background:#e8f1f5;text-align:left}tr{break-inside:avoid}td.valor{text-align:right;white-space:nowrap}th.produto{width:30%}th.codigo{width:9%}th.unidade{width:6%}small{display:block;font-weight:normal;line-height:1.5}.rodape{font-size:10px;color:#415366}</style></head><body>${blocos.map((bloco, i) => `<section class="bloco"><h1>Tabela de preços · ${escapar(tabela.loja.nome)}</h1><p>Consulta: ${escapar(dataHoraBr(tabela.consultado_em))} · ${itens.length} produto(s)${blocos.length > 1 ? ` · Condições ${i + 1} de ${blocos.length}` : ""}</p><table><thead><tr><th class="codigo">Código</th><th class="produto">Produto</th><th class="unidade">Un.</th><th>Preço normal</th>${bloco.map((f) => `<th>${escapar(descricaoFaixaPreco(f))}</th>`).join("")}</tr></thead><tbody>${itens.map((p) => `<tr><td>${escapar(p.codigo)}</td><td>${escapar(p.descricao)}</td><td>${escapar(p.unidade)}</td><td class="valor">${escapar(preco(p.preco_normal))}</td>${bloco.map((f) => `<td class="valor">${escapar(preco(precoPorFaixa(p.preco_normal, f.percentual)))}</td>`).join("")}</tr>`).join("")}</tbody></table><p class="rodape">${escapar(observacaoTabelaPrecos)}</p></section>`).join("")}</body></html>`;
+  const fonte = faixas.length > 5 ? 8 : faixas.length > 3 ? 9 : 11;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Tabela de preços — ${escapar(tabela.loja.nome)}</title>
+<style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:${fonte}px Arial,sans-serif;color:#142a38;margin:0}h1{font-size:20px;margin:0 0 8px}p{line-height:1.5}table{width:100%;border-collapse:collapse;margin:12px 0;table-layout:fixed}thead{display:table-header-group}th,td{padding:7px 5px;border:1px solid #cbd5e1;overflow-wrap:anywhere}th{background:#e8f1f5;text-align:left}tr{break-inside:avoid}td.valor{text-align:right;white-space:nowrap}th.produto{width:25%}th.codigo{width:7%}th.unidade{width:4%}th.normal{width:11%}.rodape{font-size:10px;color:#415366}</style></head><body>
+<section><h1>Tabela de preços · ${escapar(tabela.loja.nome)}</h1><p>Consulta: ${escapar(dataHoraBr(tabela.consultado_em))} · ${itens.length} produto(s)</p>
+<table><thead><tr><th class="codigo">Código</th><th class="produto">Produto</th><th class="unidade">Un.</th><th class="normal">Preço normal</th>${faixas.map((f) => `<th>${escapar(descricaoFaixaPreco(f))}</th>`).join("")}</tr></thead>
+<tbody>${itens.map((p) => `<tr><td>${escapar(p.codigo)}</td><td>${escapar(p.descricao)}</td><td>${escapar(p.unidade)}</td><td class="valor">${escapar(preco(p.preco_normal))}</td>${faixas.map((f) => `<td class="valor">${escapar(preco(precoPorFaixa(p.preco_normal, f.percentual)))}</td>`).join("")}</tr>`).join("")}</tbody></table>
+<p class="rodape">${escapar(observacaoTabelaPrecos)}</p></section></body></html>`;
 }

@@ -38,7 +38,6 @@ function TabelaPrecosPage() {
   const { client, user } = useSupabase();
   const cv = useCentroValido();
   const [busca, setBusca] = useState("");
-  const [formato, setFormato] = useState("normal");
   const [pagina, setPagina] = useState(0);
   const [impressao, setImpressao] = useState("");
   const [pronto, setPronto] = useState(false);
@@ -77,10 +76,7 @@ function TabelaPrecosPage() {
     const termo = prepararTermoBusca(busca);
     return preparados.filter((p) => correspondeBuscaPreparada(p.texto, termo)).map((p) => p.item);
   }, [preparados, busca]);
-  const faixas = useMemo(
-    () => (formato === "peso" ? (q.data?.faixas ?? []).filter((f) => f.ativo) : []),
-    [q.data, formato],
-  );
+  const faixas = useMemo(() => (q.data?.faixas ?? []).filter((f) => f.ativo), [q.data]);
   const paginas = Math.max(1, Math.ceil(itens.length / 30));
   const atual = Math.min(pagina, paginas - 1);
   const visiveis = itens.slice(atual * 30, atual * 30 + 30);
@@ -91,7 +87,7 @@ function TabelaPrecosPage() {
       description="Consulte e imprima os preços de cada loja, com as condições por faixa de peso."
     >
       <div className="space-y-4">
-        <div className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2">
           <label className="space-y-2 text-sm">
             Loja
             <SearchSelect
@@ -112,21 +108,6 @@ function TabelaPrecosPage() {
                   {c.nome}
                 </option>
               ))}
-            </SearchSelect>
-          </label>
-          <label className="space-y-2 text-sm">
-            Formato
-            <SearchSelect
-              aria-label="Formato da tabela de preços"
-              value={formato}
-              onChange={(e) => {
-                setFormato(e.target.value);
-                setPagina(0);
-              }}
-              className="h-10 w-full rounded-md border px-3"
-            >
-              <option value="normal">Preço normal</option>
-              <option value="peso">Preço normal e faixas por peso</option>
             </SearchSelect>
           </label>
           <label className="space-y-2 text-sm">
@@ -177,7 +158,7 @@ function TabelaPrecosPage() {
           <p>Carregando preços…</p>
         ) : (
           <>
-            {formato === "peso" && !faixas.length && (
+            {!faixas.length && (
               <p className="rounded-xl border p-3 text-sm">
                 Esta loja não tem faixas de desconto por peso ativas. O relatório apresenta o preço
                 normal.

@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test";
 import {
-  blocosFaixasPreco,
   descricaoFaixaPreco,
   htmlTabelaPrecos,
   precoPorFaixa,
@@ -41,14 +40,15 @@ test("preços por peso são projeções independentes sobre preço normal", () =
   for (const d of [-1, 101, Infinity, NaN]) expect(precoPorFaixa(10, d)).toBeNull();
 });
 test("faixas novas não truncam impressão e identificam condição por categoria", () => {
-  expect(blocosFaixasPreco(tabela.faixas).map((b) => b.length)).toEqual([3, 3, 1]);
-  expect(blocosFaixasPreco([])).toEqual([[]]);
   expect(descricaoFaixaPreco(tabela.faixas[1]!)).toContain("peso da categoria Ferro");
   expect(descricaoFaixaPreco(tabela.faixas[6]!)).toContain("ou mais");
   const html = htmlTabelaPrecos(tabela, tabela.itens, tabela.faixas);
-  expect(html.match(/<section/g)?.length).toBe(3);
-  expect(html.match(/Preço normal/g)?.length).toBe(3);
+  expect(html.match(/<section/g)?.length).toBe(1);
+  expect(html.match(/Preço normal/g)?.length).toBe(1);
   for (const f of tabela.faixas) expect(html).toContain(f.nome);
+  expect(html.match(/<td class="valor">/g)?.length).toBe(8);
+  expect(html).toContain("99,00");
+  expect(html).toContain("93,00");
   expect(html).toContain("&lt;script&gt;");
   expect(html).not.toContain("<script>");
   expect(html).toContain("Ferragem &lt;teste&gt;");
