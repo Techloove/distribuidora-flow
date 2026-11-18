@@ -1,4 +1,5 @@
 // Navegador local, autenticação e dados fictícios; nenhuma chamada ao banco real.
+const { PDFDocument } = require("pdf-lib");
 const { chromium } = require("playwright"),
   assert = require("node:assert/strict"),
   fs = require("node:fs");
@@ -161,6 +162,42 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         .first()
         .waitFor();
       assert.equal(await iframe.locator("section").count(), 1);
+      assert.ok((await iframe.locator("style").textContent()).includes("size:A4 landscape"));
+      const conferirPdf = async (retrato) => {
+        if (width !== 1366) return;
+        const folha = await context.newPage();
+        await folha.setContent(await iframe.locator("html").evaluate((el) => el.outerHTML));
+        const bytes = await folha.pdf({ preferCSSPageSize: true, printBackground: true });
+        const pdf = await PDFDocument.load(bytes);
+        assert.ok(pdf.getPageCount() > 0);
+        for (const pagina of pdf.getPages()) {
+          const { width: w, height: h } = pagina.getSize();
+          assert.equal(w < h, retrato, "Orientação real das páginas do PDF");
+        }
+        await folha.close();
+      };
+      await conferirPdf(false);
+      await page
+        .getByRole("combobox", { name: "Orientação da impressão" })
+        .selectOption("portrait");
+      await page.waitForFunction(() =>
+        document
+          .querySelector('iframe[title="Prévia da tabela de preços"]')
+          ?.contentDocument?.querySelector("style")
+          ?.textContent.includes("size:A4 portrait"),
+      );
+      await conferirPdf(true);
+      assert.equal(await iframe.locator("thead th").count(), 11);
+      assert.equal(await iframe.locator("tbody tr").first().locator("td").count(), 11);
+      await page
+        .getByRole("combobox", { name: "Orientação da impressão" })
+        .selectOption("landscape");
+      await page.waitForFunction(() =>
+        document
+          .querySelector('iframe[title="Prévia da tabela de preços"]')
+          ?.contentDocument?.querySelector("style")
+          ?.textContent.includes("size:A4 landscape"),
+      );
       assert.equal(
         await iframe.locator("tbody tr").count(),
         35,

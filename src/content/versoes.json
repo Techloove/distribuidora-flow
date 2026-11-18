@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.60.0",
+    "data": "2026-11-18",
+    "titulo": "Permite imprimir a tabela de preços em paisagem ou retrato",
+    "motivo": "Permitir escolher a orientação da folha ao imprimir ou salvar a tabela de preços em PDF.",
+    "novidades": [
+      "Prévia da tabela de preços oferece Paisagem e Retrato em Orientação da impressão. A troca atualiza a prévia antes de liberar a impressão.",
+      "As duas orientações mantêm todos os produtos da busca, o preço normal e as faixas na mesma linha, com margens e fonte adaptadas. A seleção de loja e as permissões permanecem.",
+      "Não requer SQL; impressão usa o recurso de imprimir/salvar PDF do navegador."
+    ]
+  },
+  {
     "versao": "1.59.3",
     "data": "2026-11-18",
     "titulo": "Usa um único seletor de loja na tabela de preços",

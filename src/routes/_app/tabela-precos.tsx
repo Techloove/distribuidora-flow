@@ -26,6 +26,7 @@ import {
   observacaoTabelaPrecos,
   precoPorFaixa,
   type TabelaPrecos,
+  type OrientacaoTabelaPrecos,
 } from "@/lib/tabela-precos";
 export const Route = createFileRoute("/_app/tabela-precos")({
   head: () => ({ meta: [{ title: "Tabela de preços por loja — Caparaó System" }] }),
@@ -37,13 +38,25 @@ function TabelaPrecosPage() {
   const cv = useCentroValido();
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(0);
-  const [impressao, setImpressao] = useState("");
+  const [impressao, setImpressao] = useState<{
+    tabela: TabelaPrecos;
+    itens: TabelaPrecos["itens"];
+    faixas: TabelaPrecos["faixas"];
+  } | null>(null);
+  const [orientacao, setOrientacao] = useState<OrientacaoTabelaPrecos>("landscape");
+  const htmlImpressao = useMemo(
+    () =>
+      impressao
+        ? htmlTabelaPrecos(impressao.tabela, impressao.itens, impressao.faixas, orientacao)
+        : "",
+    [impressao, orientacao],
+  );
   const [pronto, setPronto] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
     setBusca("");
     setPagina(0);
-    setImpressao("");
+    setImpressao(null);
   }, [cv.centro]);
   const q = useQuery({
     queryKey: ["tabela_precos_loja_371", user?.id, cv.centro],
@@ -121,7 +134,7 @@ function TabelaPrecosPage() {
               disabled={!q.data || q.isFetching || !itens.length || !!q.error}
               onClick={() => {
                 setPronto(false);
-                setImpressao(htmlTabelaPrecos(q.data!, itens, faixas));
+                setImpressao({ tabela: q.data!, itens, faixas });
               }}
             >
               <Printer className="size-4" />
@@ -239,7 +252,7 @@ function TabelaPrecosPage() {
       <Dialog
         open={!!impressao}
         onOpenChange={(v) => {
-          if (!v) setImpressao("");
+          if (!v) setImpressao(null);
         }}
       >
         <DialogContent className="flex h-[90dvh] max-w-6xl flex-col">
@@ -249,6 +262,21 @@ function TabelaPrecosPage() {
               Confira a loja, os produtos e as condições antes de imprimir ou salvar em PDF.
             </DialogDescription>
           </DialogHeader>
+          <label className="space-y-1 text-sm sm:max-w-xs">
+            Orientação da impressão
+            <select
+              aria-label="Orientação da impressão"
+              value={orientacao}
+              className="h-10 w-full rounded-md border border-input bg-background px-3"
+              onChange={(e) => {
+                setPronto(false);
+                setOrientacao(e.target.value === "portrait" ? "portrait" : "landscape");
+              }}
+            >
+              <option value="landscape">Paisagem</option>
+              <option value="portrait">Retrato</option>
+            </select>
+          </label>
           <Button
             className="self-start"
             disabled={!pronto}
@@ -263,7 +291,7 @@ function TabelaPrecosPage() {
           <iframe
             ref={frame}
             title="Prévia da tabela de preços"
-            srcDoc={impressao}
+            srcDoc={htmlImpressao}
             sandbox="allow-modals allow-same-origin"
             className="min-h-0 w-full flex-1 rounded-lg border bg-white"
             onLoad={() => setPronto(true)}

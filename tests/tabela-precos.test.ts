@@ -62,3 +62,16 @@ test("formato normal não imprime condições, busca vazia não inventa produtos
   expect(vazio).toContain("0 produto(s)");
   expect(vazio).not.toContain("A1");
 });
+
+test("paisagem e retrato preservam todas as colunas e preços", () => {
+  const paisagem = htmlTabelaPrecos(tabela, tabela.itens, tabela.faixas, "landscape");
+  const retrato = htmlTabelaPrecos(tabela, tabela.itens, tabela.faixas, "portrait");
+  expect(paisagem).toContain("size:A4 landscape");
+  expect(retrato).toContain("size:A4 portrait");
+  for (const html of [paisagem, retrato]) {
+    expect(html.match(/<td class="valor">/g)?.length).toBe(8);
+    expect(html).toContain("100,00");
+    expect(html).toContain("99,00");
+    expect(html).toContain("93,00");
+  }
+});

@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.59.3 · 2026-11-18
+Versão 1.60.0 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -588,7 +588,7 @@ Consulte e imprima o preço normal e as condições por faixa de peso, separados
 2. A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com percentual, intervalo de peso e preço já descontado. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.
 3. Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.
 4. Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.
-5. Na impressão em PDF, o preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte ajustada à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.
+5. Na prévia de impressão/PDF, escolha Paisagem ou Retrato em Orientação da impressão. A prévia é atualizada antes de liberar a impressão. O preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte e margens ajustadas ao formato e à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.
 6. Use Atualizar para obter os preços e faixas atuais antes de imprimir. Produtos inativos, indisponíveis ou fora do catálogo da loja não entram. A implantação requer a fase371 no Supabase; instalar não altera preços, descontos ou pedidos existentes.
 
 Cuidados:
@@ -599,6 +599,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.60.0 · 2026-11-18 · Permite imprimir a tabela de preços em paisagem ou retrato
+
+Motivo da atualização: Permitir escolher a orientação da folha ao imprimir ou salvar a tabela de preços em PDF.
+
+- Prévia da tabela de preços oferece Paisagem e Retrato em Orientação da impressão. A troca atualiza a prévia antes de liberar a impressão.
+- As duas orientações mantêm todos os produtos da busca, o preço normal e as faixas na mesma linha, com margens e fonte adaptadas. A seleção de loja e as permissões permanecem.
+- Não requer SQL; impressão usa o recurso de imprimir/salvar PDF do navegador.
 
 ### v1.59.3 · 2026-11-18 · Usa um único seletor de loja na tabela de preços
 
