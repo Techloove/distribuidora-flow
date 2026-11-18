@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.60.2",
+    "data": "2026-11-18",
+    "titulo": "Define retrato como padrão ao abrir a impressão da tabela de preços",
+    "motivo": "Abrir a impressão da tabela de preços sempre em retrato, conforme preferência de uso.",
+    "novidades": [
+      "Retrato é a primeira opção e vem selecionado em toda abertura da prévia, inclusive depois de uma impressão em paisagem.",
+      "Paisagem continua disponível para escolha manual. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.60.1",
     "data": "2026-11-18",
     "titulo": "Simplifica os cabeçalhos das faixas na tabela de preços",

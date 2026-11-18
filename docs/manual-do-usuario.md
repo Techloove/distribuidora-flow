@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.60.1 · 2026-11-18
+Versão 1.60.2 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -588,7 +588,7 @@ Consulte e imprima o preço normal e as condições por faixa de peso, separados
 2. A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com nome e percentual no cabeçalho e preço já descontado. Os cabeçalhos mostram somente o nome cadastrado da faixa e o percentual, sem repetir peso ou categoria, tanto na tela quanto no PDF. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.
 3. Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.
 4. Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.
-5. Na prévia de impressão/PDF, escolha Paisagem ou Retrato em Orientação da impressão. A prévia é atualizada antes de liberar a impressão. O preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte e margens ajustadas ao formato e à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.
+5. Na prévia de impressão/PDF, Retrato vem selecionado sempre que a prévia é aberta. Se desejar, escolha Paisagem em Orientação da impressão. A prévia é atualizada antes de liberar a impressão. O preço normal e todas as condições ficam lado a lado na mesma linha do produto, com fonte e margens ajustadas ao formato e à quantidade de faixas. No celular, os produtos aparecem em cartões, com o preço normal e cada preço por faixa identificado.
 6. Use Atualizar para obter os preços e faixas atuais antes de imprimir. Produtos inativos, indisponíveis ou fora do catálogo da loja não entram. A implantação requer a fase371 no Supabase; instalar não altera preços, descontos ou pedidos existentes.
 
 Cuidados:
@@ -599,6 +599,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.60.2 · 2026-11-18 · Define retrato como padrão ao abrir a impressão da tabela de preços
+
+Motivo da atualização: Abrir a impressão da tabela de preços sempre em retrato, conforme preferência de uso.
+
+- Retrato é a primeira opção e vem selecionado em toda abertura da prévia, inclusive depois de uma impressão em paisagem.
+- Paisagem continua disponível para escolha manual. Não requer SQL.
 
 ### v1.60.1 · 2026-11-18 · Simplifica os cabeçalhos das faixas na tabela de preços
 

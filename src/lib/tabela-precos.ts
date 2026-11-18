@@ -46,7 +46,7 @@ export function htmlTabelaPrecos(
   tabela: TabelaPrecos,
   itens: ItemTabelaPreco[],
   faixas: FaixaPeso[],
-  orientacao: OrientacaoTabelaPrecos = "landscape",
+  orientacao: OrientacaoTabelaPrecos = "portrait",
 ) {
   const preco = (v: number | null) => (v === null ? "Não informado" : brl(v));
   const retrato = orientacao === "portrait";

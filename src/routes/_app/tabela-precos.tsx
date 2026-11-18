@@ -43,7 +43,7 @@ function TabelaPrecosPage() {
     itens: TabelaPrecos["itens"];
     faixas: TabelaPrecos["faixas"];
   } | null>(null);
-  const [orientacao, setOrientacao] = useState<OrientacaoTabelaPrecos>("landscape");
+  const [orientacao, setOrientacao] = useState<OrientacaoTabelaPrecos>("portrait");
   const htmlImpressao = useMemo(
     () =>
       impressao
@@ -134,6 +134,7 @@ function TabelaPrecosPage() {
               disabled={!q.data || q.isFetching || !itens.length || !!q.error}
               onClick={() => {
                 setPronto(false);
+                setOrientacao("portrait");
                 setImpressao({ tabela: q.data!, itens, faixas });
               }}
             >
@@ -273,8 +274,8 @@ function TabelaPrecosPage() {
                 setOrientacao(e.target.value === "portrait" ? "portrait" : "landscape");
               }}
             >
-              <option value="landscape">Paisagem</option>
               <option value="portrait">Retrato</option>
+              <option value="landscape">Paisagem</option>
             </select>
           </label>
           <Button

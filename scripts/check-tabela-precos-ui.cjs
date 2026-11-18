@@ -162,7 +162,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         .first()
         .waitFor();
       assert.equal(await iframe.locator("section").count(), 1);
-      assert.ok((await iframe.locator("style").textContent()).includes("size:A4 landscape"));
+      assert.ok((await iframe.locator("style").textContent()).includes("size:A4 portrait"));
+      assert.equal(
+        await page.getByRole("combobox", { name: "Orientação da impressão" }).inputValue(),
+        "portrait",
+      );
       const conferirPdf = async (retrato) => {
         if (width !== 1366) return;
         const folha = await context.newPage();
@@ -176,19 +180,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         }
         await folha.close();
       };
-      await conferirPdf(false);
-      await page
-        .getByRole("combobox", { name: "Orientação da impressão" })
-        .selectOption("portrait");
-      await page.waitForFunction(() =>
-        document
-          .querySelector('iframe[title="Prévia da tabela de preços"]')
-          ?.contentDocument?.querySelector("style")
-          ?.textContent.includes("size:A4 portrait"),
-      );
       await conferirPdf(true);
-      assert.equal(await iframe.locator("thead th").count(), 11);
-      assert.equal(await iframe.locator("tbody tr").first().locator("td").count(), 11);
       await page
         .getByRole("combobox", { name: "Orientação da impressão" })
         .selectOption("landscape");
@@ -198,10 +190,26 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
           ?.contentDocument?.querySelector("style")
           ?.textContent.includes("size:A4 landscape"),
       );
+      await conferirPdf(false);
+      assert.equal(await iframe.locator("thead th").count(), 11);
+      assert.equal(await iframe.locator("tbody tr").first().locator("td").count(), 11);
       assert.equal(
         await iframe.locator("tbody tr").count(),
         35,
         "Impressão inclui os 35 produtos com todas as faixas na mesma linha",
+      );
+      await page.getByRole("dialog").getByRole("button", { name: "Fechar", exact: true }).click();
+      await main.getByRole("button", { name: "Imprimir / salvar PDF", exact: true }).click();
+      assert.equal(
+        await page.getByRole("combobox", { name: "Orientação da impressão" }).inputValue(),
+        "portrait",
+        "Reabrir sempre volta para retrato",
+      );
+      await page.waitForFunction(() =>
+        document
+          .querySelector('iframe[title="Prévia da tabela de preços"]')
+          ?.contentDocument?.querySelector("style")
+          ?.textContent.includes("size:A4 portrait"),
       );
       await page.getByRole("dialog").getByRole("button", { name: "Fechar", exact: true }).click();
       await main.getByPlaceholder("Código, descrição ou categoria").fill("item 35");

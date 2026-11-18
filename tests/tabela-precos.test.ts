@@ -57,6 +57,7 @@ test("formato normal não imprime condições, busca vazia não inventa produtos
   const normal = htmlTabelaPrecos(tabela, tabela.itens, []);
   expect(normal).not.toContain("Condição 1");
   expect(normal).toContain("100,00");
+  expect(normal).toContain("size:A4 portrait");
   expect(normal.match(/<section/g)?.length).toBe(1);
   const vazio = htmlTabelaPrecos(tabela, [], []);
   expect(vazio).toContain("0 produto(s)");
