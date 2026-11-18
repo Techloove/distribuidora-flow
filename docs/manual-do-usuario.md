@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.58.0 · 2026-11-18
+Versão 1.59.0 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -580,9 +580,34 @@ Cuidados:
 - Os avisos são exibidos dentro do sistema; não há envio automático de e-mail ou WhatsApp nesta versão.
 - Todos os serviços participam do saldo e da tolerância/bloqueio quando o controle estiver ativo. Cobranças vencidas ou com histórico financeiro não podem ser removidas, reprecificadas ou ter vencimento alterado pela configuração. Ajustes devem preservar esses registros. Os responsáveis selecionados somente consultam faturas e recebem avisos; apenas o proprietário confirma pagamentos e configura o contrato. As faturas são demonstrativos dos serviços, com confirmação manual; não registram boletos ou Pix em banco. O fim do contrato encerra a geração prevista, sem renovar automaticamente a contratação.
 
+## Tabela de preços por loja
+
+Consulte e imprima o preço normal e as condições por faixa de peso, separados por loja.
+
+1. Abra Comercial → Tabela de preços e selecione a loja permitida. Administradores e representantes podem consultar; o relatório não mostra custos nem permite alterar preços.
+2. Para cimento, escolha Preço normal. Para ferragem, escolha Preço normal e faixas por peso. As faixas ativas cadastradas em Descontos por peso são carregadas automaticamente ao consultar ou atualizar o relatório; não há número fixo de condições.
+3. Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.
+4. Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.
+5. Na impressão, as condições aparecem em blocos de até três faixas para manter a leitura. Cada bloco repete produtos e preço normal; novas faixas entram nos próximos blocos sem cortar colunas. No celular, os produtos aparecem em cartões.
+6. Use Atualizar para obter os preços e faixas atuais antes de imprimir. Produtos inativos, indisponíveis ou fora do catálogo da loja não entram. A implantação requer a fase371 no Supabase; instalar não altera preços, descontos ou pedidos existentes.
+
+Cuidados:
+
+- Os preços por peso são uma referência unitária. A elegibilidade e o arredondamento final são calculados no pedido.
+- O acesso respeita as lojas permitidas; alterar faixas ou preços continua dependendo das permissões de cadastro.
+
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.59.0 · 2026-11-18 · Tabela de preços por loja com faixas de desconto por peso
+
+Motivo da atualização: Oferecer uma tabela comercial para consulta e impressão por loja, incluindo as condições de peso cadastradas.
+
+- Novo menu Comercial → Tabela de preços, liberado inicialmente aos papéis cadastrados, incluindo administrador e representante, respeitando as lojas permitidas. Consulta sem custos ou margens.
+- Formatos de preço normal e preço normal com faixas de peso, calculados sobre o preço normal atual. Novas condições entram dinamicamente; descontos não são cumulativos e a confirmação final continua no pedido.
+- Busca por código, descrição ou categoria; paginação e cartões no celular. Impressão/PDF inclui todos os produtos da busca em A4 deitado e divide as faixas em blocos de três, repetindo o preço normal.
+- Requer db/fase371_relatorio_tabela_precos.sql no Supabase. Testes em banco descartável e navegador com respostas fictícias; a instalação não altera preços ou pedidos existentes.
 
 ### v1.58.0 · 2026-11-18 · Administrador pode alterar vendedor ou representante de pedidos sem comissão paga
 

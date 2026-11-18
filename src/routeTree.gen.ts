@@ -65,6 +65,7 @@ import { Route as AppRepresentantesRouteImport } from './routes/_app/representan
 import { Route as AppRotaDespesasRouteImport } from './routes/_app/rota-despesas'
 import { Route as AppRotasRouteImport } from './routes/_app/rotas'
 import { Route as AppSeparacaoRouteImport } from './routes/_app/separacao'
+import { Route as AppTabelaPrecosRouteImport } from './routes/_app/tabela-precos'
 import { Route as AppTabelasPrecoRouteImport } from './routes/_app/tabelas-preco'
 import { Route as AppTransportadorasRouteImport } from './routes/_app/transportadoras'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
@@ -350,6 +351,11 @@ const AppSeparacaoRoute = AppSeparacaoRouteImport.update({
   path: '/separacao',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppTabelaPrecosRoute = AppTabelaPrecosRouteImport.update({
+  id: '/tabela-precos',
+  path: '/tabela-precos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppTabelasPrecoRoute = AppTabelasPrecoRouteImport.update({
   id: '/tabelas-preco',
   path: '/tabelas-preco',
@@ -422,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/rota-despesas': typeof AppRotaDespesasRoute
   '/rotas': typeof AppRotasRoute
   '/separacao': typeof AppSeparacaoRoute
+  '/tabela-precos': typeof AppTabelaPrecosRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/rota-despesas': typeof AppRotaDespesasRoute
   '/rotas': typeof AppRotasRoute
   '/separacao': typeof AppSeparacaoRoute
+  '/tabela-precos': typeof AppTabelaPrecosRoute
   '/tabelas-preco': typeof AppTabelasPrecoRoute
   '/transportadoras': typeof AppTransportadorasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/_app/rota-despesas': typeof AppRotaDespesasRoute
   '/_app/rotas': typeof AppRotasRoute
   '/_app/separacao': typeof AppSeparacaoRoute
+  '/_app/tabela-precos': typeof AppTabelaPrecosRoute
   '/_app/tabelas-preco': typeof AppTabelasPrecoRoute
   '/_app/transportadoras': typeof AppTransportadorasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/rota-despesas'
     | '/rotas'
     | '/separacao'
+    | '/tabela-precos'
     | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
@@ -666,6 +676,7 @@ export interface FileRouteTypes {
     | '/rota-despesas'
     | '/rotas'
     | '/separacao'
+    | '/tabela-precos'
     | '/tabelas-preco'
     | '/transportadoras'
     | '/usuarios'
@@ -727,6 +738,7 @@ export interface FileRouteTypes {
     | '/_app/rota-despesas'
     | '/_app/rotas'
     | '/_app/separacao'
+    | '/_app/tabela-precos'
     | '/_app/tabelas-preco'
     | '/_app/transportadoras'
     | '/_app/usuarios'
@@ -1135,6 +1147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSeparacaoRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/tabela-precos': {
+      id: '/_app/tabela-precos'
+      path: '/tabela-precos'
+      fullPath: '/tabela-precos'
+      preLoaderRoute: typeof AppTabelaPrecosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/tabelas-preco': {
       id: '/_app/tabelas-preco'
       path: '/tabelas-preco'
@@ -1210,6 +1229,7 @@ interface AppRouteRouteChildren {
   AppRotaDespesasRoute: typeof AppRotaDespesasRoute
   AppRotasRoute: typeof AppRotasRoute
   AppSeparacaoRoute: typeof AppSeparacaoRoute
+  AppTabelaPrecosRoute: typeof AppTabelaPrecosRoute
   AppTabelasPrecoRoute: typeof AppTabelasPrecoRoute
   AppTransportadorasRoute: typeof AppTransportadorasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
@@ -1266,6 +1286,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppRotaDespesasRoute: AppRotaDespesasRoute,
   AppRotasRoute: AppRotasRoute,
   AppSeparacaoRoute: AppSeparacaoRoute,
+  AppTabelaPrecosRoute: AppTabelaPrecosRoute,
   AppTabelasPrecoRoute: AppTabelasPrecoRoute,
   AppTransportadorasRoute: AppTransportadorasRoute,
   AppUsuariosRoute: AppUsuariosRoute,

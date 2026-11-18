@@ -25,6 +25,7 @@ export const MODULOS: { path: string; label: string; grupo: string }[] = [
   { path: "/formas-pagamento", label: "Formas de pagamento", grupo: "Cadastros" },
   { path: "/cadastros-padrao", label: "Categorias, marcas e cidades", grupo: "Cadastros" },
   { path: "/descontos-peso", label: "Descontos por peso (kg)", grupo: "Cadastros" },
+  { path: "/tabela-precos", label: "Tabela de preços", grupo: "Comercial" },
   { path: "/pedidos", label: "Pedidos", grupo: "Comercial" },
   { path: "/representantes", label: "Vendedores", grupo: "Comercial" },
   { path: "/agenda-comercial", label: "Agenda comercial", grupo: "Comercial" },
@@ -68,6 +69,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   gestor: MODULOS.map((m) => m.path),
   financeiro: [
     "/dashboard",
+    "/tabela-precos",
     "/pendencias",
     "/financeiro",
     "/contas",
@@ -90,6 +92,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   ],
   comercial: [
     "/dashboard",
+    "/tabela-precos",
     "/pendencias",
     "/pessoas",
     "/produtos",
@@ -108,6 +111,7 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
   ],
   representante: [
     "/dashboard",
+    "/tabela-precos",
     "/pendencias",
     "/pessoas",
     "/produtos",
@@ -117,8 +121,24 @@ export const MENUS_PADRAO: Record<AppRole, string[]> = {
     "/metas",
     "/comissoes",
   ],
-  estoque: ["/dashboard", "/pendencias", "/produtos", "/estoque", "/separacao", "/compras"],
-  expedicao: ["/dashboard", "/pendencias", "/separacao", "/cargas", "/entregas", "/rotas"],
+  estoque: [
+    "/tabela-precos",
+    "/dashboard",
+    "/pendencias",
+    "/produtos",
+    "/estoque",
+    "/separacao",
+    "/compras",
+  ],
+  expedicao: [
+    "/tabela-precos",
+    "/dashboard",
+    "/pendencias",
+    "/separacao",
+    "/cargas",
+    "/entregas",
+    "/rotas",
+  ],
 };
 
 export type Acesso = {

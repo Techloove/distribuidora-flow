@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.59.0",
+    "data": "2026-11-18",
+    "titulo": "Tabela de preços por loja com faixas de desconto por peso",
+    "motivo": "Oferecer uma tabela comercial para consulta e impressão por loja, incluindo as condições de peso cadastradas.",
+    "novidades": [
+      "Novo menu Comercial → Tabela de preços, liberado inicialmente aos papéis cadastrados, incluindo administrador e representante, respeitando as lojas permitidas. Consulta sem custos ou margens.",
+      "Formatos de preço normal e preço normal com faixas de peso, calculados sobre o preço normal atual. Novas condições entram dinamicamente; descontos não são cumulativos e a confirmação final continua no pedido.",
+      "Busca por código, descrição ou categoria; paginação e cartões no celular. Impressão/PDF inclui todos os produtos da busca em A4 deitado e divide as faixas em blocos de três, repetindo o preço normal.",
+      "Requer db/fase371_relatorio_tabela_precos.sql no Supabase. Testes em banco descartável e navegador com respostas fictícias; a instalação não altera preços ou pedidos existentes."
+    ]
+  },
+  {
     "versao": "1.58.0",
     "data": "2026-11-18",
     "titulo": "Administrador pode alterar vendedor ou representante de pedidos sem comissão paga",

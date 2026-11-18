@@ -80,6 +80,7 @@ const nav = [
   {
     group: "Comercial",
     items: [
+      { to: "/tabela-precos", label: "Tabela de preços", icon: Tags },
       { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
       { to: "/agenda-comercial", label: "Agenda Comercial", icon: CalendarClock },
       { to: "/metas", label: "Metas", icon: Target },
