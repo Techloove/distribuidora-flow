@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Printer, RefreshCw } from "lucide-react";
 import { ErpLayout } from "@/components/erp-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SearchSelect } from "@/components/ui/search-select";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useCentroValido } from "@/lib/centros-acesso";
-import { setCentro } from "@/lib/centro-store";
 import { brl, dataHoraBr } from "@/lib/formatacao";
 import {
   correspondeBuscaPreparada,
@@ -42,6 +40,11 @@ function TabelaPrecosPage() {
   const [impressao, setImpressao] = useState("");
   const [pronto, setPronto] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    setBusca("");
+    setPagina(0);
+    setImpressao("");
+  }, [cv.centro]);
   const q = useQuery({
     queryKey: ["tabela_precos_loja_371", user?.id, cv.centro],
     enabled: !!client && !!user && !!cv.centro && !cv.isLoading && !cv.error,
@@ -87,29 +90,7 @@ function TabelaPrecosPage() {
       description="Consulte e imprima os preços de cada loja, com as condições por faixa de peso."
     >
       <div className="space-y-4">
-        <div className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2">
-          <label className="space-y-2 text-sm">
-            Loja
-            <SearchSelect
-              aria-label="Loja da tabela de preços"
-              value={cv.centro}
-              onChange={(e) => {
-                setCentro(e.target.value);
-                setPagina(0);
-                setBusca("");
-                setImpressao("");
-              }}
-              disabled={cv.isLoading || !!cv.error}
-              className="h-10 w-full rounded-md border px-3"
-            >
-              <option value="">Selecione a loja</option>
-              {cv.lista.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </SearchSelect>
-          </label>
+        <div className="rounded-xl border bg-card p-4">
           <label className="space-y-2 text-sm">
             Buscar produto
             <Input
@@ -153,7 +134,7 @@ function TabelaPrecosPage() {
             {(cv.error ?? q.error)?.message}
           </p>
         ) : !cv.centro ? (
-          <p>Selecione uma loja para consultar.</p>
+          <p>Selecione uma loja no topo da tela para consultar.</p>
         ) : carregando ? (
           <p>Carregando preços…</p>
         ) : (

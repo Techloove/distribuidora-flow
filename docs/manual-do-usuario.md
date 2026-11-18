@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.59.2 · 2026-11-18
+Versão 1.59.3 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -584,7 +584,7 @@ Cuidados:
 
 Consulte e imprima o preço normal e as condições por faixa de peso, separados por loja.
 
-1. Abra Comercial → Tabela de preços e selecione a loja permitida. Administradores e representantes podem consultar; o relatório não mostra custos nem permite alterar preços.
+1. Abra Comercial → Tabela de preços e escolha a loja no único seletor do topo. O administrador acessa todas as lojas; o representante vê somente as lojas permitidas no cadastro. Ao trocar a loja, a busca e a paginação são reiniciadas e a prévia anterior é fechada. O relatório não mostra custos nem permite alterar preços.
 2. A tabela sempre mostra o preço normal e, na mesma linha, uma coluna para cada faixa ativa da loja, com percentual, intervalo de peso e preço já descontado. Não há filtro de formato. Lojas sem faixas apresentam somente o preço normal; novas condições cadastradas em Descontos por peso entram automaticamente ao atualizar.
 3. Busque por código, descrição ou categoria. A tela tem navegação em páginas; Imprimir / salvar PDF inclui todos os produtos da busca, com identificação da loja e data/hora da consulta.
 4. Os preços por faixa são referências unitárias sobre o preço normal do produto. Os descontos não são cumulativos. Se a faixa depende de uma categoria, confira o peso exigido daquela categoria. Promoções, frete, condições por cliente e arredondamento do desconto sobre o total são conferidos no pedido.
@@ -599,6 +599,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.59.3 · 2026-11-18 · Usa um único seletor de loja na tabela de preços
+
+Motivo da atualização: Eliminar a seleção duplicada de loja na tabela de preços, preservando o acesso por cadastro.
+
+- Tabela de preços usa apenas o seletor de loja do topo. O campo duplicado nos filtros foi removido.
+- Administrador mantém acesso a todas as lojas; representantes continuam limitados à lista autorizada pelo servidor. A troca de loja limpa a busca, reinicia a paginação e fecha a prévia anterior.
+- Não requer novo SQL; mantém a proteção de loja da fase371.
 
 ### v1.59.2 · 2026-11-18 · Mantém buscas de seleção fechadas ao abrir a edição de cadastros
 

@@ -162,7 +162,7 @@ function CentroFiltro() {
       value={centro || (todos ? "todos" : "")}
       onValueChange={(v) => setCentro(v === "todos" ? "" : v)}
     >
-      <SelectTrigger className="w-full bg-background sm:w-[13rem]">
+      <SelectTrigger aria-label="Loja" className="w-full bg-background sm:w-[13rem]">
         <SelectValue
           placeholder={
             error

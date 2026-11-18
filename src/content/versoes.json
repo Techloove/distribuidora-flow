@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.59.3",
+    "data": "2026-11-18",
+    "titulo": "Usa um único seletor de loja na tabela de preços",
+    "motivo": "Eliminar a seleção duplicada de loja na tabela de preços, preservando o acesso por cadastro.",
+    "novidades": [
+      "Tabela de preços usa apenas o seletor de loja do topo. O campo duplicado nos filtros foi removido.",
+      "Administrador mantém acesso a todas as lojas; representantes continuam limitados à lista autorizada pelo servidor. A troca de loja limpa a busca, reinicia a paginação e fecha a prévia anterior.",
+      "Não requer novo SQL; mantém a proteção de loja da fase371."
+    ]
+  },
+  {
     "versao": "1.59.2",
     "data": "2026-11-18",
     "titulo": "Mantém buscas de seleção fechadas ao abrir a edição de cadastros",

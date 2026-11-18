@@ -47,6 +47,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       );
       await context.addInitScript((center) => localStorage.setItem("erp.centro", center), center);
       const outro = id(991);
+      const restrita = id(992);
       let chamadas = 0;
       await context.route("**/*", async (route) => {
         const req = route.request(),
@@ -58,7 +59,13 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         if (u.pathname.includes("/rpc/"))
           body =
             rpcs[nome] ??
-            (nome === "meus_centros" ? [center, outro] : nome.startsWith("pode_") ? true : []);
+            (nome === "meus_centros"
+              ? role === "admin"
+                ? [center, outro, restrita]
+                : [center, outro]
+              : nome.startsWith("pode_")
+                ? true
+                : []);
         if (nome === "user_roles") body = [{ role }];
         if (nome === "role_menus")
           body = [
@@ -69,6 +76,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
           body = [
             { id: center, nome: "Ferragem teste" },
             { id: outro, nome: "Cimento teste" },
+            { id: restrita, nome: "Loja restrita" },
           ];
         if (nome === "tabela_precos_loja_371") {
           chamadas++;
@@ -116,7 +124,19 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       await page.goto(base + "/tabela-precos", { waitUntil: "domcontentloaded" });
       await page.getByRole("heading", { name: "Tabela de preços", exact: true }).waitFor();
       const main = page.getByRole("main");
-      await main.getByRole("combobox", { name: "Loja da tabela de preços" }).click();
+      assert.equal(
+        await main.getByRole("combobox", { name: "Loja da tabela de preços" }).count(),
+        0,
+        "Sem seletor duplicado no relatório",
+      );
+      const seletorLoja = page.getByRole("combobox", { name: "Loja", exact: true });
+      assert.equal(await seletorLoja.count(), 1, "Um único seletor de loja");
+      await seletorLoja.click();
+      assert.equal(
+        await page.getByRole("option", { name: "Loja restrita", exact: true }).count(),
+        role === "admin" ? 1 : 0,
+        "Administrador vê todas; representante somente as permitidas",
+      );
       await page.getByRole("option", { name: "Ferragem teste", exact: true }).click();
       await page.getByText("Página 1 de 2", { exact: false }).waitFor();
       assert.equal(
@@ -151,7 +171,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       await main.getByText("Página 1 de 1", { exact: false }).waitFor();
       fs.mkdirSync("/tmp/tabela-precos-ui", { recursive: true });
       await page.screenshot({ path: `/tmp/tabela-precos-ui/${width}.png`, fullPage: true });
-      await main.getByRole("combobox", { name: "Loja da tabela de preços" }).click();
+      await seletorLoja.click();
       await page.getByRole("option", { name: "Cimento teste", exact: true }).click();
       await main
         .locator("td:visible, article p:visible")
