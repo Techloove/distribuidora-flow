@@ -90,7 +90,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
               ? []
               : Array.from({ length: 7 }, (_, i) => ({
                   id: id(600 + i),
-                  nome: "Faixa " + (i + 1),
+                  nome: "Faixa " + (i + 1) + " - " + i * 1000 + " kg ou mais",
                   percentual: i + 1,
                   peso_min: i * 1000,
                   peso_max: null,
@@ -146,7 +146,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       );
       await main
         .locator("th:visible, article p:visible")
-        .filter({ hasText: /Faixa 7 ·/ })
+        .filter({ hasText: /Faixa 7/ })
         .first()
         .waitFor();
       assert.ok(
@@ -162,6 +162,21 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         .first()
         .waitFor();
       assert.equal(await iframe.locator("section").count(), 1);
+      assert.equal(await iframe.locator("thead th strong").first().innerText(), "Faixa 1");
+      assert.equal(
+        await iframe.locator("thead th .condicao").first().innerText(),
+        "0 kg ou mais · 1%",
+      );
+      assert.ok(
+        await iframe
+          .locator("thead th .condicao")
+          .first()
+          .evaluate(
+            (el) =>
+              el.getBoundingClientRect().top >
+              el.previousElementSibling.getBoundingClientRect().top,
+          ),
+      );
       assert.ok((await iframe.locator("style").textContent()).includes("size:A4 portrait"));
       assert.equal(
         await page.getByRole("combobox", { name: "Orientação da impressão" }).inputValue(),

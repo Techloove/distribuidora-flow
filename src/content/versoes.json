@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.60.3",
+    "data": "2026-11-18",
+    "titulo": "Organiza cabeçalhos das faixas de desconto em duas linhas",
+    "motivo": "Organizar os títulos de desconto para aproveitar melhor a largura das colunas.",
+    "novidades": [
+      "Cabeçalhos mostram o título da faixa em cima e o intervalo com o percentual abaixo, por exemplo: Desconto 1 / 1.000 a 2.000 Kg · 3%.",
+      "O mesmo padrão vale na tela e no PDF, em retrato ou paisagem. Colunas da tela mais compactas permitem visualizar mais condições. Não requer SQL."
+    ]
+  },
+  {
     "versao": "1.60.2",
     "data": "2026-11-18",
     "titulo": "Define retrato como padrão ao abrir a impressão da tabela de preços",

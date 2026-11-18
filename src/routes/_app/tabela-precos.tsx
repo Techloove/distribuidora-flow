@@ -21,6 +21,7 @@ import {
   prepararTermoBusca,
 } from "@/lib/busca-selecao";
 import {
+  linhasFaixaPreco,
   descricaoFaixaPreco,
   htmlTabelaPrecos,
   observacaoTabelaPrecos,
@@ -33,6 +34,15 @@ export const Route = createFileRoute("/_app/tabela-precos")({
   component: TabelaPrecosPage,
 });
 const valor = (v: number | null) => (v === null ? "Não informado" : brl(v));
+function CabecalhoFaixa({ faixa }: { faixa: TabelaPrecos["faixas"][number] }) {
+  const linhas = linhasFaixaPreco(faixa);
+  return (
+    <>
+      <span className="block font-semibold">{linhas.titulo}</span>
+      <span className="block font-normal">{linhas.condicao}</span>
+    </>
+  );
+}
 function TabelaPrecosPage() {
   const { client, user } = useSupabase();
   const cv = useCentroValido();
@@ -167,7 +177,7 @@ function TabelaPrecosPage() {
             ) : (
               <>
                 <div className="hidden overflow-x-auto rounded-xl border sm:block">
-                  <table className="w-full text-sm" style={{ minWidth: 560 + faixas.length * 200 }}>
+                  <table className="w-full text-sm" style={{ minWidth: 560 + faixas.length * 160 }}>
                     <thead className="bg-muted">
                       <tr>
                         <th className="min-w-24 whitespace-nowrap p-3 text-left">Código</th>
@@ -175,8 +185,12 @@ function TabelaPrecosPage() {
                         <th className="min-w-16 whitespace-nowrap p-3">Un.</th>
                         <th className="min-w-28 p-3 text-right">Preço normal</th>
                         {faixas.map((f) => (
-                          <th key={f.id} className="min-w-48 max-w-64 p-3 text-left">
-                            {descricaoFaixaPreco(f)}
+                          <th
+                            key={f.id}
+                            aria-label={descricaoFaixaPreco(f)}
+                            className="min-w-40 max-w-52 p-3 text-left"
+                          >
+                            <CabecalhoFaixa faixa={f} />
                           </th>
                         ))}
                       </tr>
@@ -215,7 +229,9 @@ function TabelaPrecosPage() {
                       </div>
                       {faixas.map((f) => (
                         <div key={f.id} className="space-y-1 rounded-lg bg-muted/50 p-3">
-                          <p className="text-xs">{descricaoFaixaPreco(f)}</p>
+                          <p className="text-xs">
+                            <CabecalhoFaixa faixa={f} />
+                          </p>
                           <p className="font-semibold">
                             {valor(precoPorFaixa(p.preco_normal, f.percentual))}
                           </p>

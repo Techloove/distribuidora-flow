@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test";
 import {
   descricaoFaixaPreco,
+  linhasFaixaPreco,
   htmlTabelaPrecos,
   precoPorFaixa,
   type TabelaPrecos,
@@ -41,6 +42,14 @@ test("preços por peso são projeções independentes sobre preço normal", () =
 });
 test("faixas novas não truncam impressão e usam cabeçalhos compactos", () => {
   expect(descricaoFaixaPreco(tabela.faixas[1]!)).toBe("Condição 2 · 2%");
+  expect(
+    linhasFaixaPreco({
+      ...tabela.faixas[1]!,
+      nome: "Desconto 1 - 1.000 a 2.000 Kg",
+      percentual: 3,
+    }),
+  ).toEqual({ titulo: "Desconto 1", condicao: "1.000 a 2.000 Kg · 3%" });
+  expect(linhasFaixaPreco(tabela.faixas[1]!)).toEqual({ titulo: "Condição 2", condicao: "2%" });
   expect(descricaoFaixaPreco(tabela.faixas[6]!)).toBe("Condição 7 · 7%");
   const html = htmlTabelaPrecos(tabela, tabela.itens, tabela.faixas);
   expect(html.match(/<section/g)?.length).toBe(1);
