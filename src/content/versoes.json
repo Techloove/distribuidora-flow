@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.58.0",
+    "data": "2026-11-18",
+    "titulo": "Administrador pode alterar vendedor ou representante de pedidos sem comissão paga",
+    "motivo": "Permitir corrigir o responsável comercial de pedidos sem transferir comissões já pagas.",
+    "novidades": [
+      "Administrador pode trocar vendedor/representante no detalhe de Pedidos, com conferência de loja, cadastro ativo e atualização das comissões vinculadas. Valores e regras contratadas são preservados.",
+      "Servidor bloqueia comissão paga integral ou parcialmente e exige estornar agendamentos ainda não pagos. A alteração registra usuário e vínculos anterior e novo na auditoria. Proteções fiscais existentes permanecem.",
+      "Requer aplicar db/fase370_alterar_representante_pedido.sql no Supabase. Verificado em banco descartável; não altera pedidos existentes ao instalar."
+    ]
+  },
+  {
     "versao": "1.57.0",
     "data": "2026-11-17",
     "titulo": "Exibe parcelas, vencimentos e documento por parcela no lançamento manual",

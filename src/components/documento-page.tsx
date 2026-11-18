@@ -1,3 +1,4 @@
+import { AlterarRepresentantePedido } from "@/components/alterar-representante-pedido";
 import { conferirRotaRascunhoCliente } from "@/lib/rota-rascunho-cliente";
 import { avisoEstoquePedido, type AlertaEstoquePedido } from "@/lib/aviso-estoque-pedido";
 import { FiltroPeriodo } from "@/components/filtro-periodo";
@@ -274,7 +275,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const { data, error } = await client!
         .from("representantes")
-        .select("id, nome, profile_id, ativo")
+        .select("id, nome, profile_id, ativo, centro_id")
         .order("nome");
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
@@ -2117,6 +2118,14 @@ export function DocumentoPage({
                       ? ` · Representante: ${representanteNome(doc["representante_id"])}`
                       : ""}
                   </p>
+                  {config.table === "pedidos" && (
+                    <AlterarRepresentantePedido
+                      key={String(doc["id"])}
+                      doc={doc}
+                      representantes={representantes.data ?? []}
+                      onChange={atualizarDocumento}
+                    />
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Itens {brl(doc["total_itens"])}</p>

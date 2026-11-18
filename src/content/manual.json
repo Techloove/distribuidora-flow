@@ -193,6 +193,7 @@
     "passos": [
       "Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.",
       "Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.",
+      "O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.",
       "Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.",
       "Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.",
       "Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.",

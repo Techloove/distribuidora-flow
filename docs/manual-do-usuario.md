@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.57.0 · 2026-11-17
+Versão 1.58.0 · 2026-11-18
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -158,22 +158,23 @@ Da escolha do cliente à confirmação da venda.
 
 1. Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.
 2. Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.
-3. Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.
-4. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.
-5. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
-6. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
-7. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
-8. Na lista de Pedidos, use Imprimir pedido na coluna Ações, ao lado do Total, para abrir a prévia sem abrir o pedido. O atalho também aparece no cartão do celular e usa o mesmo modelo de impressão do pedido.
-9. Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.
-10. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
-11. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
-12. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
-13. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
-14. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
-15. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
-16. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
-17. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
-18. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
+3. O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.
+4. Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.
+5. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.
+6. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
+7. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
+8. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
+9. Na lista de Pedidos, use Imprimir pedido na coluna Ações, ao lado do Total, para abrir a prévia sem abrir o pedido. O atalho também aparece no cartão do celular e usa o mesmo modelo de impressão do pedido.
+10. Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.
+11. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
+12. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
+13. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
+14. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
+15. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
+16. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
+17. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
+18. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
+19. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
 
 Cuidados:
 
@@ -582,6 +583,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.58.0 · 2026-11-18 · Administrador pode alterar vendedor ou representante de pedidos sem comissão paga
+
+Motivo da atualização: Permitir corrigir o responsável comercial de pedidos sem transferir comissões já pagas.
+
+- Administrador pode trocar vendedor/representante no detalhe de Pedidos, com conferência de loja, cadastro ativo e atualização das comissões vinculadas. Valores e regras contratadas são preservados.
+- Servidor bloqueia comissão paga integral ou parcialmente e exige estornar agendamentos ainda não pagos. A alteração registra usuário e vínculos anterior e novo na auditoria. Proteções fiscais existentes permanecem.
+- Requer aplicar db/fase370_alterar_representante_pedido.sql no Supabase. Verificado em banco descartável; não altera pedidos existentes ao instalar.
 
 ### v1.57.0 · 2026-11-17 · Exibe parcelas, vencimentos e documento por parcela no lançamento manual
 
