@@ -1,3 +1,5 @@
+import { FiltroStatusDocumento } from "@/components/filtro-status-documento";
+import { alternarStatusSelecionado, statusSelecionados } from "@/lib/filtro-status-documento";
 import { AlterarRepresentantePedido } from "@/components/alterar-representante-pedido";
 import { conferirRotaRascunhoCliente } from "@/lib/rota-rascunho-cliente";
 import { avisoEstoquePedido, type AlertaEstoquePedido } from "@/lib/aviso-estoque-pedido";
@@ -343,7 +345,7 @@ export function DocumentoPage({
     !roles.includes("admin") &&
     !roles.includes("gestor");
 
-  const docsFiltrados = useMemo(() => {
+  const docsSemFiltroStatus = useMemo(() => {
     let list = docs.data ?? [];
     const f = filtros;
     if (soMeusPedidos)
@@ -351,13 +353,6 @@ export function DocumentoPage({
     if (centro) list = list.filter((d) => d["centro_id"] === centro);
 
     if (f["tipo"]) list = list.filter((d) => String(d["tipo_documento"] ?? "pedido") === f["tipo"]);
-    if (f["status"])
-      list = list.filter(
-        (d) =>
-          (config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"])) ===
-          f["status"],
-      );
-
     if (f["rota"]) list = list.filter((d) => String(d["rota_id"] ?? "") === f["rota"]);
     if (f["representante"])
       list = list.filter((d) => String(d["representante_id"] ?? "") === f["representante"]);
@@ -386,16 +381,28 @@ export function DocumentoPage({
     return list;
   }, [
     docs.data,
-    hoje,
     filtros,
     centro,
     partners.data,
     config.partnerKey,
     config.dateField,
-    config.table,
     soMeusPedidos,
     meuRepresentante,
   ]);
+
+  const filtroStatus = filtros["status"] ?? "";
+  const statusMarcados = useMemo(() => statusSelecionados(filtroStatus), [filtroStatus]);
+  const docsFiltrados = useMemo(
+    () =>
+      statusMarcados.size === 0
+        ? docsSemFiltroStatus
+        : docsSemFiltroStatus.filter((d) =>
+            statusMarcados.has(
+              config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"]),
+            ),
+          ),
+    [docsSemFiltroStatus, statusMarcados, config.table, hoje],
+  );
 
   const statusOptions = useMemo(() => {
     const set = new Set(
@@ -1367,7 +1374,7 @@ export function DocumentoPage({
   ).length;
   const statusResumo = (() => {
     const m = new Map<string, number>();
-    for (const d of docsFiltrados) {
+    for (const d of config.table === "pedidos" ? docsSemFiltroStatus : docsFiltrados) {
       const k = config.table === "pedidos" ? statusVisivelPedido(d, hoje) : String(d["status"]);
       m.set(k, (m.get(k) ?? 0) + 1);
     }
@@ -1692,12 +1699,20 @@ export function DocumentoPage({
               ]}
             />
           )}
-          <FilterSelect
-            label="Status"
-            value={filtros["status"] ?? ""}
-            onChange={(v) => setF("status", v)}
-            options={statusOptions}
-          />
+          {config.table === "pedidos" ? (
+            <FiltroStatusDocumento
+              valor={filtros["status"] ?? ""}
+              onChange={(valor) => setF("status", valor)}
+              opcoes={statusOptions}
+            />
+          ) : (
+            <FilterSelect
+              label="Status"
+              value={filtros["status"] ?? ""}
+              onChange={(v) => setF("status", v)}
+              options={statusOptions}
+            />
+          )}
           <FilterSelect
             label={config.partnerLabel}
             value={filtros["parceiro"] ?? ""}
@@ -1772,7 +1787,10 @@ export function DocumentoPage({
         <div className="grid gap-2 sm:grid-cols-3 sm:max-w-xl">
           {[
             { label: "Documentos", value: String(docsFiltrados.length) },
-            { label: "Total", value: brl(totalFiltrado) },
+            {
+              label: config.table === "pedidos" ? "Total dos documentos" : "Total",
+              value: brl(totalFiltrado),
+            },
             { label: "Ticket médio", value: brl(ticket) },
           ].map((k) => (
             <div key={k.label} className="rounded-lg border border-border bg-card px-3 py-2">
@@ -1792,14 +1810,25 @@ export function DocumentoPage({
                   : "bg-muted text-muted-foreground hover:bg-accent"
               }`}
             >
-              Todos ({docsFiltrados.length})
+              Todos (
+              {config.table === "pedidos" ? docsSemFiltroStatus.length : docsFiltrados.length})
             </button>
             {statusResumo.map(([s, n]) => (
               <button
                 key={s}
-                onClick={() => setF("status", filtros["status"] === s ? "" : s)}
+                onClick={() =>
+                  setF(
+                    "status",
+                    config.table === "pedidos"
+                      ? alternarStatusSelecionado(filtros["status"] ?? "", s)
+                      : filtros["status"] === s
+                        ? ""
+                        : s,
+                  )
+                }
+                aria-pressed={statusMarcados.has(s)}
                 className={`rounded-full px-2.5 py-1 text-[11px] capitalize transition-colors ${
-                  filtros["status"] === s
+                  statusMarcados.has(s)
                     ? "bg-primary text-primary-foreground"
                     : `${statusTone(s)} hover:opacity-80`
                 }`}

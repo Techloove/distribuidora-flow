@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.61.0",
+    "data": "2026-11-24",
+    "titulo": "Permite selecionar vários status no filtro de Pedidos",
+    "motivo": "Permitir escolher várias situações em Pedidos e esclarecer o total dos documentos filtrados.",
+    "novidades": [
+      "Filtro Status de Pedidos permite marcar várias situações; as etiquetas de status também podem ser combinadas. Todos os status ou Todos limpa a seleção.",
+      "Totais, ticket médio, lista e impressão acompanham a combinação selecionada e os demais filtros da loja/carteira. O cartão foi identificado como Total dos documentos para distinguir de vendas efetivadas e base de comissão.",
+      "Não requer SQL; não altera documentos, regras de comissão ou pagamentos."
+    ]
+  },
+  {
     "versao": "1.60.4",
     "data": "2026-11-24",
     "titulo": "Otimiza as consultas da tela de comissões e corrige mensagens de timeout",
