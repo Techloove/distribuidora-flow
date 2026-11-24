@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.61.1",
+    "data": "2026-11-24",
+    "titulo": "Corrige a comissão após reabertura e nova aprovação de pedidos",
+    "motivo": "Evitar que a nova confirmação de um pedido reaberto reutilize a base e o valor da comissão do ciclo anterior.",
+    "novidades": [
+      "Após aplicar a fase373, a comissão cancelada na reabertura passa a usar os valores aprovados do novo ciclo. Reapurações seguintes preservam esse valor contratado, sem buscar novas taxas no catálogo.",
+      "Comissões pagas ou agendadas mantêm o bloqueio e exigem acerto específico. Atualizações do novo ciclo ficam registradas na auditoria.",
+      "Requer executar o SQL da fase373 no Supabase. A regularização de pedidos anteriores exige conferência individual; a instalação da rotina não altera comissões históricas em lote."
+    ]
+  },
+  {
     "versao": "1.61.0",
     "data": "2026-11-24",
     "titulo": "Permite selecionar vários status no filtro de Pedidos",

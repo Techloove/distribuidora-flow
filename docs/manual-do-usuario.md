@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.61.0 · 2026-11-24
+Versão 1.61.1 · 2026-11-24
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -172,7 +172,7 @@ Da escolha do cliente à confirmação da venda.
 14. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
 15. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
 16. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
-17. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
+17. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Após instalar a fase373, a nova aprovação também atualiza a base e o valor da comissão do ciclo reaberto, conforme os valores aprovados no pedido. Comissões pagas ou agendadas exigem acerto específico; a reapuração normal preserva o valor contratado do ciclo atual. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
 18. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
 19. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
 20. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
@@ -602,6 +602,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.61.1 · 2026-11-24 · Corrige a comissão após reabertura e nova aprovação de pedidos
+
+Motivo da atualização: Evitar que a nova confirmação de um pedido reaberto reutilize a base e o valor da comissão do ciclo anterior.
+
+- Após aplicar a fase373, a comissão cancelada na reabertura passa a usar os valores aprovados do novo ciclo. Reapurações seguintes preservam esse valor contratado, sem buscar novas taxas no catálogo.
+- Comissões pagas ou agendadas mantêm o bloqueio e exigem acerto específico. Atualizações do novo ciclo ficam registradas na auditoria.
+- Requer executar o SQL da fase373 no Supabase. A regularização de pedidos anteriores exige conferência individual; a instalação da rotina não altera comissões históricas em lote.
 
 ### v1.61.0 · 2026-11-24 · Permite selecionar vários status no filtro de Pedidos
 
