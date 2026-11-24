@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.60.3 · 2026-11-18
+Versão 1.60.4 · 2026-11-24
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -494,10 +494,12 @@ Cuidados:
 Consulte a apuração e configure regras e faixas conforme o acesso concedido.
 
 1. Em Gestão de comissões, consulte as abas Apuração por pedido, Metas e atingimento e Pagamentos gerados. Confira loja, representante e período antes de selecionar valores.
-2. A apuração considera pedidos aprovados e etapas seguintes. A competência usa a aprovação do ciclo, não a entrega nem a data comercial. O cadastro Recebe comissão pode desabilitar a comissão do representante.
-3. Em Regras de comissão, informe nome, representante e cliente quando específicos, UF, percentual, prioridade e vigência. Confira a marcação Ativa. Campos de representante e cliente vazios ampliam a abrangência da regra.
-4. Em Comissão escalonada, configure representante, período de apuração, base de cálculo, limites De/Até e percentual. Até vazio representa ausência de limite superior; Progressiva identifica faixas por trechos de volume.
-5. Antes de gerar pagamento, confira os pedidos selecionados e os dados pedidos pelo diálogo Pagar comissões. A geração de conta a pagar não comprova a transferência ao representante; a baixa ocorre no financeiro.
+2. A apuração carrega em páginas de consulta e a busca por representante, cliente ou pedido filtra os dados já carregados. As abas de metas e pagamentos consultam quando são abertas. Abra Agendamento por recebimentos ou Conferência de comissões e devoluções para carregar esses painéis.
+3. Se a consulta exceder o tempo limite, use Tentar novamente ou reduza o período e os filtros. Durante erro ou carregamento, os totais aparecem como traço, sem indicar saldo zero. Timeout não significa falta de comissão cadastrada nem exige reinstalar rotinas antigas. A otimização do banco requer a fase372; ela preserva comissões, pagamentos e competência pela aprovação do ciclo.
+4. A apuração considera pedidos aprovados e etapas seguintes. A competência usa a aprovação do ciclo, não a entrega nem a data comercial. O cadastro Recebe comissão pode desabilitar a comissão do representante.
+5. Em Regras de comissão, informe nome, representante e cliente quando específicos, UF, percentual, prioridade e vigência. Confira a marcação Ativa. Campos de representante e cliente vazios ampliam a abrangência da regra.
+6. Em Comissão escalonada, configure representante, período de apuração, base de cálculo, limites De/Até e percentual. Até vazio representa ausência de limite superior; Progressiva identifica faixas por trechos de volume.
+7. Antes de gerar pagamento, confira os pedidos selecionados e os dados pedidos pelo diálogo Pagar comissões. A geração de conta a pagar não comprova a transferência ao representante; a baixa ocorre no financeiro.
 
 Cuidados:
 
@@ -599,6 +601,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.60.4 · 2026-11-24 · Otimiza as consultas da tela de comissões e corrige mensagens de timeout
+
+Motivo da atualização: Reduzir o trabalho repetido na apuração de comissões e corrigir a orientação incorreta após um timeout.
+
+- Fase372 substitui consultas escalares repetidas de competência por JOINs indexados nas visões e resumos, preservando aprovação do ciclo, valores, pagamentos, modalidade e RLS. Requer aplicar db/fase372_comissoes_consulta_rapida.sql no Supabase.
+- Metas e pagamentos carregam ao abrir a aba; agendamento proporcional e conferência de ajustes consultam somente quando expandidos. Busca textual reaproveita a apuração carregada, sem reenviar a consulta a cada tecla.
+- Apuração lê páginas ordenadas, cancela consultas substituídas e evita repetir automaticamente timeouts. Erro oferece Tentar novamente; totais ficam como traço durante erro ou carregamento. A recomendação genérica de reinstalar a fase45 foi removida.
+- Verificado em banco descartável e navegador com respostas fictícias. A migração não recalcula comissões nem cria pagamentos; o resultado em produção depende da aplicação da fase372.
 
 ### v1.60.3 · 2026-11-18 · Organiza cabeçalhos das faixas de desconto em duas linhas
 

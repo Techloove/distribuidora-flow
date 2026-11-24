@@ -297,9 +297,10 @@ export function ComissaoProporcional() {
     [chaves, setChaves] = useState<Record<string, string>>({}),
     [vencimento, setVencimento] = useState(hojeSaoPaulo()),
     [motivos, setMotivos] = useState<Record<string, string>>({});
+  const [aberto, setAberto] = useState(false);
   const q = useQuery({
     queryKey: [...["comissao_proporcional", user?.id], getModalidade()],
-    enabled: !!client && perm.pode("comissao_ajustes_ver"),
+    enabled: aberto && !!client && perm.pode("comissao_ajustes_ver"),
     queryFn: async () => {
       const { data, error, count } = await client!
         .from("vw_comissao_proporcional_217")
@@ -312,7 +313,7 @@ export function ComissaoProporcional() {
   });
   const pagamentos = useQuery({
     queryKey: [...["comissao_parcelas", user?.id], getModalidade()],
-    enabled: !!client && perm.pode("comissao_ajustes_ver"),
+    enabled: aberto && !!client && perm.pode("comissao_ajustes_ver"),
     queryFn: async () => {
       const { data, error } = await client!
         .from("comissao_parcelas")
@@ -325,7 +326,10 @@ export function ComissaoProporcional() {
   });
   if (!perm.pode("comissao_ajustes_ver")) return null;
   return (
-    <details className="rounded-xl border bg-card p-4">
+    <details
+      className="rounded-xl border bg-card p-4"
+      onToggle={(event) => setAberto(event.currentTarget.open)}
+    >
       <summary className="cursor-pointer font-semibold">
         Agendamento por recebimentos{" "}
         <span className="ml-2 text-xs font-normal text-muted-foreground">

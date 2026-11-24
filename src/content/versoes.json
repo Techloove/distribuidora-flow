@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.60.4",
+    "data": "2026-11-24",
+    "titulo": "Otimiza as consultas da tela de comissões e corrige mensagens de timeout",
+    "motivo": "Reduzir o trabalho repetido na apuração de comissões e corrigir a orientação incorreta após um timeout.",
+    "novidades": [
+      "Fase372 substitui consultas escalares repetidas de competência por JOINs indexados nas visões e resumos, preservando aprovação do ciclo, valores, pagamentos, modalidade e RLS. Requer aplicar db/fase372_comissoes_consulta_rapida.sql no Supabase.",
+      "Metas e pagamentos carregam ao abrir a aba; agendamento proporcional e conferência de ajustes consultam somente quando expandidos. Busca textual reaproveita a apuração carregada, sem reenviar a consulta a cada tecla.",
+      "Apuração lê páginas ordenadas, cancela consultas substituídas e evita repetir automaticamente timeouts. Erro oferece Tentar novamente; totais ficam como traço durante erro ou carregamento. A recomendação genérica de reinstalar a fase45 foi removida.",
+      "Verificado em banco descartável e navegador com respostas fictícias. A migração não recalcula comissões nem cria pagamentos; o resultado em produção depende da aplicação da fase372."
+    ]
+  },
+  {
     "versao": "1.60.3",
     "data": "2026-11-18",
     "titulo": "Organiza cabeçalhos das faixas de desconto em duas linhas",

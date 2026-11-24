@@ -588,6 +588,8 @@
     "modulos": ["/comissoes"],
     "passos": [
       "Em Gestão de comissões, consulte as abas Apuração por pedido, Metas e atingimento e Pagamentos gerados. Confira loja, representante e período antes de selecionar valores.",
+      "A apuração carrega em páginas de consulta e a busca por representante, cliente ou pedido filtra os dados já carregados. As abas de metas e pagamentos consultam quando são abertas. Abra Agendamento por recebimentos ou Conferência de comissões e devoluções para carregar esses painéis.",
+      "Se a consulta exceder o tempo limite, use Tentar novamente ou reduza o período e os filtros. Durante erro ou carregamento, os totais aparecem como traço, sem indicar saldo zero. Timeout não significa falta de comissão cadastrada nem exige reinstalar rotinas antigas. A otimização do banco requer a fase372; ela preserva comissões, pagamentos e competência pela aprovação do ciclo.",
       "A apuração considera pedidos aprovados e etapas seguintes. A competência usa a aprovação do ciclo, não a entrega nem a data comercial. O cadastro Recebe comissão pode desabilitar a comissão do representante.",
       "Em Regras de comissão, informe nome, representante e cliente quando específicos, UF, percentual, prioridade e vigência. Confira a marcação Ativa. Campos de representante e cliente vazios ampliam a abrangência da regra.",
       "Em Comissão escalonada, configure representante, período de apuração, base de cálculo, limites De/Até e percentual. Até vazio representa ausência de limite superior; Progressiva identifica faixas por trechos de volume.",

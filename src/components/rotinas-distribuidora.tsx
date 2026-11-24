@@ -583,9 +583,11 @@ export function AjustesComissao() {
     roles.some((r) => ["admin", "gestor", "financeiro"].includes(r));
   const [resolucoes, setResolucoes] = useState<Record<string, string>>({});
   const rpc = useRotinaRpc(["comissao_ajustes"]);
+  const [aberto, setAberto] = useState(false);
   const regra = useQuery({
     queryKey: [...["loja-parametros", "comissao", user?.id, cv.centro], getModalidade()],
     enabled:
+      aberto &&
       !!client &&
       !!cv.centro &&
       !cv.isLoading &&
@@ -601,7 +603,8 @@ export function AjustesComissao() {
   });
   const q = useQuery({
     queryKey: [...["comissao_ajustes", user?.id, cv.centro], getModalidade()],
-    enabled: !!client && permissoes.pode("comissao_ajustes_ver") && !cv.isLoading && !cv.error,
+    enabled:
+      aberto && !!client && permissoes.pode("comissao_ajustes_ver") && !cv.isLoading && !cv.error,
     queryFn: async () => {
       let r = client!
         .from("comissao_ajustes")
@@ -615,8 +618,13 @@ export function AjustesComissao() {
   });
   if (!permissoes.pode("comissao_ajustes_ver")) return null;
   return (
-    <section className="rounded border bg-card p-4 space-y-3">
-      <h2 className="text-sm font-semibold">Conferência de comissões e devoluções</h2>
+    <details
+      className="rounded border bg-card p-4 space-y-3"
+      onToggle={(event) => setAberto(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer text-sm font-semibold">
+        Conferência de comissões e devoluções
+      </summary>
       <p className="text-xs text-muted-foreground">
         Regra de liberação:{" "}
         {!cv.centro
@@ -672,6 +680,6 @@ export function AjustesComissao() {
         <p className="text-sm text-muted-foreground">Sem ajustes pendentes.</p>
       )}
       {(q.data?.count ?? 0) > 100 && <p>Exibindo 100 de {q.data?.count} ajustes.</p>}
-    </section>
+    </details>
   );
 }

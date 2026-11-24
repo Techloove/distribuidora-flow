@@ -1,4 +1,6 @@
-import { mesBr as mesPadrao, dataBr as dataPadrao } from "@/lib/formatacao";
+import { mensagemErroComissoes } from "@/lib/comissoes-consulta";
+import { lerPaginas } from "@/lib/paginacao";
+import { brl, mesBr as mesPadrao, dataBr as dataPadrao } from "@/lib/formatacao";
 import { getModalidade } from "@/lib/modalidade-store";
 import { ReferenciaRegistro } from "@/components/referencia-registro";
 import { ComissaoProporcional } from "@/components/financeiro-novas-rotinas";
@@ -9,7 +11,6 @@ import { Loader2, Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { brl } from "@/components/documento-page";
 import { ErpLayout } from "@/components/erp-layout";
 import { FilterBar, FilterSelect, FilterText } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,7 @@ function ComissoesPage() {
     vencimento: hoje.toISOString().slice(0, 10),
   });
 
+  const [aba, setAba] = useState("apuracao");
   const centroFiltro = centro;
   useEffect(() => {
     setSelecionadas(new Set());
@@ -123,19 +125,39 @@ function ComissoesPage() {
   });
 
   const comissoes = useQuery({
-    queryKey: [...["vw_comissoes_detalhe", filtros, centroFiltro], getModalidade()],
+    queryKey: [
+      "vw_comissoes_detalhe",
+      filtros["de"],
+      filtros["ate"],
+      filtros["mes"],
+      filtros["representante"],
+      filtros["status"],
+      centroFiltro,
+      getModalidade(),
+    ],
     enabled: !!client,
-    queryFn: async () => {
-      let q = client!.from("vw_comissoes_detalhe").select("*");
-      if (filtros["de"]) q = q.gte("data_competencia", filtros["de"]);
-      if (filtros["ate"]) q = q.lte("data_competencia", filtros["ate"]);
-      if (filtros["mes"]) q = q.eq("mes", filtros["mes"]);
-      if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
-      if (filtros["status"]) q = q.eq("status", filtros["status"]);
-      if (centroFiltro) q = q.eq("centro_id", centroFiltro);
-      const { data, error } = await q.order("data_competencia", { ascending: false }).limit(5000);
-      if (error) throw new Error(error.message);
-      return (data ?? []) as Row[];
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async ({ signal }) => {
+      try {
+        return await lerPaginas<Row>((inicio, fim) => {
+          let q = client!.from("vw_comissoes_detalhe").select("*");
+          if (filtros["de"]) q = q.gte("data_competencia", filtros["de"]);
+          if (filtros["ate"]) q = q.lte("data_competencia", filtros["ate"]);
+          if (filtros["mes"]) q = q.eq("mes", filtros["mes"]);
+          if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
+          if (filtros["status"]) q = q.eq("status", filtros["status"]);
+          if (centroFiltro) q = q.eq("centro_id", centroFiltro);
+          return q
+            .order("data_competencia", { ascending: false })
+            .order("comissao_id")
+            .order("pagamento_id")
+            .range(inicio, fim)
+            .abortSignal(signal);
+        });
+      } catch (error) {
+        throw new Error(mensagemErroComissoes(error as Error));
+      }
     },
   });
 
@@ -144,13 +166,15 @@ function ComissoesPage() {
       ...["vw_comissoes_resumo", filtros["representante"] ?? "", centroFiltro],
       getModalidade(),
     ],
-    enabled: !!client,
+    enabled: !!client && aba === "metas",
+    retry: false,
+    staleTime: 30_000,
     queryFn: async () => {
       if (centroFiltro) {
         const { data, error } = await client!.rpc("resumo_comissoes_loja_295", {
           _centro: centroFiltro,
         });
-        if (error) throw new Error(error.message);
+        if (error) throw new Error(mensagemErroComissoes(error));
         return ((data ?? []) as Row[]).filter(
           (r) => !filtros["representante"] || r["representante_id"] === filtros["representante"],
         );
@@ -160,7 +184,7 @@ function ComissoesPage() {
       const { data, error } = await q
         .order("ano", { ascending: false })
         .order("mes_numero", { ascending: false });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(mensagemErroComissoes(error));
       return (data ?? []) as Row[];
     },
   });
@@ -170,13 +194,15 @@ function ComissoesPage() {
       ...["comissao_pagamentos", filtros["representante"] ?? "", centroFiltro],
       getModalidade(),
     ],
-    enabled: !!client,
+    enabled: !!client && aba === "pagamentos",
+    retry: false,
+    staleTime: 30_000,
     queryFn: async () => {
       let q = client!.from("comissao_pagamentos").select("*");
       if (centroFiltro) q = q.eq("centro_id", centroFiltro);
       if (filtros["representante"]) q = q.eq("representante_id", filtros["representante"]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(500);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(mensagemErroComissoes(error));
       return (data ?? []) as Row[];
     },
   });
@@ -380,14 +406,30 @@ function ComissoesPage() {
         </FilterBar>
 
         <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
-          <Card label="Base de cálculo" value={brl(totais.base)} />
-          <Card label="Previstas" value={brl(totais.prevista)} />
-          <Card label="Liberadas" value={brl(totais.liberada)} />
-          <Card label="Pagas" value={brl(totais.paga)} />
-          <Card label="Total do filtro" value={brl(totais.total)} destaque />
+          <Card
+            label="Base de cálculo"
+            value={comissoes.isError || comissoes.isLoading ? "—" : brl(totais.base)}
+          />
+          <Card
+            label="Previstas"
+            value={comissoes.isError || comissoes.isLoading ? "—" : brl(totais.prevista)}
+          />
+          <Card
+            label="Liberadas"
+            value={comissoes.isError || comissoes.isLoading ? "—" : brl(totais.liberada)}
+          />
+          <Card
+            label="Pagas"
+            value={comissoes.isError || comissoes.isLoading ? "—" : brl(totais.paga)}
+          />
+          <Card
+            label="Total do filtro"
+            value={comissoes.isError || comissoes.isLoading ? "—" : brl(totais.total)}
+            destaque
+          />
         </div>
 
-        <Tabs defaultValue="apuracao">
+        <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
             <TabsTrigger value="apuracao">Apuração por pedido</TabsTrigger>
             <TabsTrigger value="metas">Metas e atingimento</TabsTrigger>
@@ -436,9 +478,14 @@ function ComissoesPage() {
               ) : comissoes.isError ? (
                 <div className="p-6 text-sm text-destructive">
                   {(comissoes.error as Error).message}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Rode <code>db/fase45_comissoes_relatorio_vendas.sql</code> no banco.
-                  </p>
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void comissoes.refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
                 </div>
               ) : linhas.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
