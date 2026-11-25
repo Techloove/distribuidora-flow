@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.64.0",
+    "data": "2026-11-25",
+    "titulo": "Integra custo médio, markup e preço de venda ao recebimento de compras",
+    "motivo": "Permitir revisar custo médio e planejar a venda na entrada da nota sem abrir o cadastro de produtos.",
+    "novidades": [
+      "Compras em rascunho ou compradas exibem custo médio atual, novo custo médio previsto, venda atual informativa e sugestão pelo markup cadastrado, agrupados por produto.",
+      "Escolha markup ou preço de venda e salve o plano. No recebimento, o markup usa o custo real e o preço digitado é aplicado ao cadastro, na mesma transação de estoque e financeiro. Alterações não salvas bloqueiam o recebimento.",
+      "Preserva as permissões de custo, loja e alteração de preço, audita planejamento e aplicação e impede reaplicar no recebimento repetido. Sem plano, mantém a regra vigente do produto.",
+      "Requer aplicar a fase376 após a fase375 no Supabase. O SQL de instalação não modifica preços existentes por conta própria."
+    ]
+  },
+  {
     "versao": "1.63.0",
     "data": "2026-11-25",
     "titulo": "Inclui IPI por item e conferência de frete nas compras",

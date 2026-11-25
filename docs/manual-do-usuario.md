@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.63.0 · 2026-11-25
+Versão 1.64.0 · 2026-11-25
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -277,7 +277,7 @@ Planeje a reposição e acompanhe a entrada das mercadorias.
 1. Consulte o planejamento de reposição da loja e confira estoque, pendências de venda e compras em trânsito.
 2. Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.
 3. Na entrada manual, preencha na mesma linha Produto, Itens (quantidade), Compra por item, IPI (%) e Frete por item. A tela calcula Custo final por item e Total do item. Cada produto pode ter um frete unitário diferente; não há margem de venda na compra. Lote e validade ficam em uma seção opcional.
-4. O IPI informado incide sobre o preço de compra, antes do frete. O custo final unitário é compra + IPI + frete por item; o total multiplica esse custo pela quantidade. O rodapé mostra Total de frete dos itens (quantidade × frete por item) somente para conferência, pois ele já integra o total da compra. Após instalar a fase375, o IPI pode ser informado e alterado em itens de compras em rascunho. Compras já recebidas permanecem preservadas. Não informe novamente um imposto já embutido no preço de compra. O frete geral adicional só deve conter cobranças extras, sem repetir o frete dos itens. Ao receber, o estoque incorpora o frete de cada produto e os ajustes gerais; os títulos a pagar usam o total da compra. Compras antigas mantêm frete unitário zero e não são reprocessadas.
+4. O IPI informado incide sobre o preço de compra, antes do frete. O custo final unitário é compra + IPI + frete por item; o total multiplica esse custo pela quantidade. O rodapé mostra Total de frete dos itens (quantidade × frete por item) somente para conferência, pois ele já integra o total da compra. Após instalar a fase375, o IPI pode ser informado e alterado em itens de compras em rascunho. Compras já recebidas permanecem preservadas. Não informe novamente um imposto já embutido no preço de compra. Após instalar a fase376, confira Custo médio e preço de venda: a prévia por produto considera o estoque atual, todos os itens iguais da nota, IPI, frete e ajustes gerais. O preço de venda atual é informativo. Escolha Markup (%) ou Preço de venda (R$), informe o valor e clique Salvar preço. A escolha fica planejada na compra e só é gravada no produto ao receber a nota, junto da atualização do custo médio. O markup usa o custo real do recebimento; o preço digitado é preservado como valor fixo. Alterações ainda não salvas bloqueiam Receber compra. Usar regra atual remove o plano daquele produto; a regra vigente do cadastro volta a valer. A precificação exige acesso aos custos e permissão para alterar preços. O frete geral adicional só deve conter cobranças extras, sem repetir o frete dos itens. Ao receber, o estoque incorpora o frete de cada produto e os ajustes gerais; os títulos a pagar usam o total da compra. Compras antigas mantêm frete unitário zero e não são reprocessadas.
 5. Confira os dados antes de confirmar o documento e siga a ação indicada pela tela.
 6. Após a operação, confira o histórico de estoque e os títulos financeiros gerados pelo fluxo.
 7. Em Compras → Planejamento e reposição, acompanhe itens para comprar, faltas, investimento estimado e produtos em trânsito. A lista mostra Estoque, Comprado (em trânsito), Mínimo, Média mês, 30d, 60d, 90d e 120d nessa ordem, seguidos da sugestão e dos indicadores. Use Colunas para personalizar e Cálculo para ver de onde veio cada quantidade.
@@ -602,6 +602,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.64.0 · 2026-11-25 · Integra custo médio, markup e preço de venda ao recebimento de compras
+
+Motivo da atualização: Permitir revisar custo médio e planejar a venda na entrada da nota sem abrir o cadastro de produtos.
+
+- Compras em rascunho ou compradas exibem custo médio atual, novo custo médio previsto, venda atual informativa e sugestão pelo markup cadastrado, agrupados por produto.
+- Escolha markup ou preço de venda e salve o plano. No recebimento, o markup usa o custo real e o preço digitado é aplicado ao cadastro, na mesma transação de estoque e financeiro. Alterações não salvas bloqueiam o recebimento.
+- Preserva as permissões de custo, loja e alteração de preço, audita planejamento e aplicação e impede reaplicar no recebimento repetido. Sem plano, mantém a regra vigente do produto.
+- Requer aplicar a fase376 após a fase375 no Supabase. O SQL de instalação não modifica preços existentes por conta própria.
 
 ### v1.63.0 · 2026-11-25 · Inclui IPI por item e conferência de frete nas compras
 

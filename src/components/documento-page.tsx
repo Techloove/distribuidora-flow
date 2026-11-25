@@ -1,3 +1,4 @@
+import { PrecificacaoCompra } from "@/components/precificacao-compra";
 import { FiltroStatusDocumento } from "@/components/filtro-status-documento";
 import { alternarStatusSelecionado, statusSelecionados } from "@/lib/filtro-status-documento";
 import { AlterarRepresentantePedido } from "@/components/alterar-representante-pedido";
@@ -150,6 +151,7 @@ export function DocumentoPage({
   const permissoes = usePermissoesRotinas();
   /** Permissão por papel para alterar o preço unitário dos itens. */
   const podeAlterarPreco = usePodeAlterarPreco();
+  const [precificacaoPendente, setPrecificacaoPendente] = useState(false);
 
   const docs = useQuery({
     queryKey: [...[config.table, user?.id, roles.slice().sort().join(",")], getModalidade()],
@@ -977,6 +979,9 @@ export function DocumentoPage({
 
   const efetivar = useMutation({
     mutationFn: async (): Promise<string | null> => {
+      if (config.table === "compras" && precificacaoPendente)
+        throw new Error("Salve os preços planejados antes de receber a compra");
+
       if (config.table === "pedidos" && doc) {
         if (ehOrcamento)
           throw new Error(
@@ -1522,6 +1527,7 @@ export function DocumentoPage({
             disabled={
               !["rascunho", "digitacao", "aprovado", "comprado"].includes(String(doc["status"])) ||
               efetivar.isPending ||
+              (config.table === "compras" && precificacaoPendente) ||
               (config.table === "pedidos" &&
                 (edicaoPendente ||
                   itens.isPending ||
@@ -2815,6 +2821,17 @@ export function DocumentoPage({
                 )}
               </>
             )}
+            {config.table === "compras" &&
+              itens.isSuccess &&
+              ["rascunho", "comprado"].includes(String(doc["status"])) && (
+                <PrecificacaoCompra
+                  key={String(doc["id"])}
+                  compra={String(doc["id"])}
+                  revisao={JSON.stringify([itens.data, doc["total_itens"], doc["total_liquido"]])}
+                  editavel={["rascunho", "comprado"].includes(String(doc["status"]))}
+                  onPendencia={setPrecificacaoPendente}
+                />
+              )}
             {config.table === "pedidos" && !inter && (
               <ProgressoDescontoPeso
                 loja={lojaDocumento}
