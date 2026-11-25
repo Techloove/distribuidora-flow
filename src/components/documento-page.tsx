@@ -2603,7 +2603,9 @@ export function DocumentoPage({
                       }
                       onPendencia={setPrecificacaoPendente}
                     >
-                      <Table className="mobile-cards">
+                      <Table
+                        className={`mobile-cards ${config.table === "compras" ? "compras-itens" : ""}`}
+                      >
                         <TableHeader>
                           <TableRow>
                             {config.table === "pedidos" && <TableHead>Código</TableHead>}
@@ -2800,8 +2802,12 @@ export function DocumentoPage({
                                     className="bg-primary/[0.03]"
                                     data-precificacao-item={String(it["id"])}
                                   >
-                                    <TableCell colSpan={9} className="whitespace-normal px-3 py-3">
-                                      <LinhaPrecificacaoCompra produto={String(it["produto_id"])} />
+                                    <TableCell colSpan={9} className="whitespace-normal px-2 py-2">
+                                      <div className="@container w-full min-w-0">
+                                        <LinhaPrecificacaoCompra
+                                          produto={String(it["produto_id"])}
+                                        />
+                                      </div>
                                     </TableCell>
                                   </TableRow>
                                 )}

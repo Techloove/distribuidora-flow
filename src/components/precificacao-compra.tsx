@@ -1,3 +1,4 @@
+import { RotateCcw } from "lucide-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -119,7 +120,7 @@ export function PrecificacaoCompra({
     return (
       <div
         aria-label={`Precificação de ${l.descricao}`}
-        className="grid grid-cols-2 items-end gap-2 text-xs sm:grid-cols-4 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(105px,1fr)_minmax(90px,.8fr)_minmax(90px,.8fr)_auto]"
+        className="precificacao-linha grid min-w-0 grid-cols-2 items-end gap-2 text-[11px] @min-[600px]:grid-cols-4 @min-[900px]:grid-cols-[repeat(4,minmax(0,1fr))_minmax(95px,1fr)_minmax(80px,.8fr)_minmax(80px,.8fr)_auto]"
       >
         <div className="contents">
           <div>
@@ -143,7 +144,7 @@ export function PrecificacaoCompra({
         </div>
         {editavel && podePreco && (
           <div className="contents">
-            <label className="min-w-0 space-y-1 text-xs">
+            <label className="flex min-w-0 flex-col gap-1 text-[11px]">
               <span>Definir por</span>
               <select
                 aria-label={`Definir preço de ${l.descricao}`}
@@ -164,11 +165,11 @@ export function PrecificacaoCompra({
                 <option value="preco">Preço de venda (R$)</option>
               </select>
             </label>
-            <label className="min-w-0 space-y-1 text-xs">
+            <label className="flex min-w-0 flex-col gap-1 text-[11px]">
               <span>{escolha.modo === "markup" ? "Markup (%)" : "Preço de venda (R$)"}</span>
               <Input
                 aria-label={`Valor de venda de ${l.descricao}`}
-                className="h-9 min-w-0 text-right text-xs"
+                className="h-9 min-w-0 px-1 text-right text-xs"
                 type="number"
                 currency={escolha.modo === "preco"}
                 min="0"
@@ -188,7 +189,7 @@ export function PrecificacaoCompra({
                   : "—"}
               </p>
             </div>
-            <div className="flex flex-wrap items-end gap-2">
+            <div className="flex min-w-0 items-end gap-1">
               <Button
                 type="button"
                 size="sm"
@@ -203,11 +204,13 @@ export function PrecificacaoCompra({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-6 px-1 text-xs"
+                  className="h-9 px-1 text-xs"
+                  aria-label={`Usar regra atual de ${l.descricao}`}
+                  title="Usar regra atual"
                   disabled={salvar.isPending}
                   onClick={() => salvar.mutate({ produto: l.produto_id, escolha: null })}
                 >
-                  Regra atual
+                  <RotateCcw className="size-3.5" />
                 </Button>
               )}
             </div>

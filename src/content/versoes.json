@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.64.2",
+    "data": "2026-11-25",
+    "titulo": "Ajusta larguras dos itens e da precificação de compras sem rolagem horizontal",
+    "motivo": "Conter a largura da tabela e dos controles de preço na área visível da compra.",
+    "novidades": [
+      "Tabela de itens de compra com larguras proporcionais e campos compactos, evitando expansão pela precificação e rolagem horizontal interna no computador.",
+      "Precificação com campos em coluna dentro da linha, respeitando a largura disponível com menu aberto ou recolhido. Em tablet e celular, os itens se reorganizam para leitura sem rolagem lateral.",
+      "Preserva cálculos, gravação dos preços e permissões. Não requer novo SQL."
+    ]
+  },
+  {
     "versao": "1.64.1",
     "data": "2026-11-25",
     "titulo": "Compacta a precificação abaixo de cada item da compra",

@@ -731,3 +731,105 @@ body {
     padding-right: 3.5rem;
   }
 }
+
+/* Compras: o detalhe precisa caber na área disponível, inclusive com a linha de precificação. */
+@media screen and (min-width: 1024px) {
+  table[data-readable-table].compras-itens {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 12px;
+  }
+  table[data-readable-table].compras-itens :is(th, td) {
+    padding: 8px 6px;
+    white-space: normal;
+    min-width: 0;
+  }
+  table[data-readable-table].compras-itens th:first-child {
+    width: 25%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(2) {
+    width: 8%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(3) {
+    width: 11%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(4) {
+    width: 7%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(5) {
+    width: 11%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(6) {
+    width: 11%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(7) {
+    width: 7%;
+  }
+  table[data-readable-table].compras-itens th:nth-child(8) {
+    width: 14%;
+  }
+  table[data-readable-table].compras-itens th:last-child {
+    width: 6%;
+  }
+  table[data-readable-table].compras-itens td[data-column-kind="name"] {
+    min-width: 0;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+  table[data-readable-table].compras-itens td input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 12px;
+  }
+  table[data-readable-table].compras-itens td[colspan] {
+    padding: 10px 8px;
+  }
+  .precificacao-linha > .contents > div {
+    min-width: 0;
+  }
+}
+@media screen and (min-width: 640px) and (max-width: 1023px) {
+  table[data-readable-table].compras-itens,
+  table[data-readable-table].compras-itens tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  table[data-readable-table].compras-itens thead {
+    display: none;
+  }
+  table[data-readable-table].compras-itens tbody tr {
+    display: block;
+    margin: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+  }
+  table[data-readable-table].compras-itens tbody td {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 8px;
+    padding: 6px;
+    min-width: 0;
+    white-space: normal;
+  }
+  table[data-readable-table].compras-itens tbody td::before {
+    content: attr(data-label);
+    color: var(--muted-foreground);
+    font-size: 11px;
+  }
+  table[data-readable-table].compras-itens tbody td[data-column-kind="name"] {
+    min-width: 0;
+    max-width: none;
+  }
+  table[data-readable-table].compras-itens tbody td[colspan],
+  table[data-readable-table].compras-itens tbody td:not([data-label]) {
+    display: block;
+  }
+  table[data-readable-table].compras-itens tbody td[colspan]::before {
+    display: none;
+  }
+}

@@ -10,7 +10,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
     args: ["--no-sandbox"],
   });
   try {
-    for (const width of [1366, 390, 768]) {
+    for (const width of [1366, 1024, 390, 768]) {
       const c = await browser.newContext({ viewport: { width, height: 900 } });
 
       const writes = [];
@@ -153,6 +153,23 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
         "rascunho não salvo bloqueia recebimento",
       );
       assert.equal(recebimentos, 0);
+      const semRolagem = async () => {
+        assert.ok(
+          await page
+            .locator("table.compras-itens")
+            .evaluate((t) => t.parentElement.scrollWidth <= t.parentElement.clientWidth + 1),
+          "tabela e precificação sem rolagem horizontal interna",
+        );
+      };
+      await semRolagem();
+      if (width === 1366) {
+        await page.getByRole("button", { name: "Deixar menu mínimo", exact: true }).click();
+        await page.waitForTimeout(300);
+        await semRolagem();
+        await page.getByRole("button", { name: "Expandir menu", exact: true }).click();
+        await page.waitForTimeout(300);
+        await semRolagem();
+      }
       if (width === 1366) {
         const entrada = await page
           .getByLabel("Valor de venda de PREGO", { exact: true })
