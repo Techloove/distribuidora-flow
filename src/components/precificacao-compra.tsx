@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/lib/supabase-provider";
 import { usePodeAlterarPreco } from "@/lib/papeis";
@@ -19,16 +19,22 @@ type Linha = {
   valor: number | null;
 };
 type Escolha = { modo: "markup" | "preco"; valor: string };
+const PrecificacaoContext = createContext<(produto: string) => ReactNode>(() => null);
+export function LinhaPrecificacaoCompra({ produto }: { produto: string }) {
+  return useContext(PrecificacaoContext)(produto);
+}
 export function PrecificacaoCompra({
   compra,
   revisao,
   editavel,
   onPendencia,
+  children,
 }: {
   compra: string;
   revisao: string;
   editavel: boolean;
   onPendencia: (v: boolean) => void;
+  children: ReactNode;
 }) {
   const { client, roles } = useSupabase();
   const podePreco = usePodeAlterarPreco();
@@ -37,7 +43,7 @@ export function PrecificacaoCompra({
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["precificacao_compra_376", compra, revisao],
-    enabled: !!client && custosVisiveis,
+    enabled: !!client && custosVisiveis && editavel,
     queryFn: async () => {
       const { data, error } = await client!.rpc("previa_precificacao_compra_376", {
         _compra: compra,
@@ -84,148 +90,140 @@ export function PrecificacaoCompra({
     onPendencia(pendente || salvar.isPending);
   }, [pendente, salvar.isPending, onPendencia]);
   useEffect(() => () => onPendencia(false), [onPendencia]);
-  if (!custosVisiveis) return null;
-  return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
-      <div>
-        <h3 className="font-semibold">Custo médio e preço de venda</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Prévia por produto com estoque atual, IPI, frete e ajustes gerais da compra. Os preços
-          planejados serão gravados nos produtos ao receber a compra. A prévia pode mudar até o
-          recebimento.
-        </p>
-      </div>
-      {q.isPending ? (
-        <p className="text-sm">Calculando custos...</p>
-      ) : q.isError ? (
-        <div role="alert" className="text-sm">
-          <p>Não foi possível consultar a precificação. Confira a instalação da fase376.</p>
-          <Button type="button" variant="outline" onClick={() => void q.refetch()}>
+  const renderProduto = (produto: string) => {
+    if (!custosVisiveis || !editavel) return null;
+    if (q.isPending) return <p className="text-xs text-muted-foreground">Calculando custos...</p>;
+    if (q.isError)
+      return (
+        <div role="alert" className="flex items-center gap-2 text-xs">
+          <span>Não foi possível consultar a precificação. Confira a fase376.</span>
+          <Button type="button" size="sm" variant="outline" onClick={() => void q.refetch()}>
             Tentar novamente
           </Button>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {q.data?.map((l) => {
-            const escolha =
-              rascunhos[l.produto_id] ??
-              ({
-                modo: l.modo === "preco" ? "preco" : "markup",
-                valor: String(l.valor ?? l.markup_atual ?? 0),
-              } as Escolha);
-            const custo = Number(l.custo_novo);
-            const venda =
-              escolha.modo === "preco"
-                ? Number(escolha.valor)
-                : custo * (1 + Number(escolha.valor) / 100);
-            const markup = custo > 0 ? (venda / custo - 1) * 100 : null;
-            const alterar = (campo: Partial<Escolha>) =>
-              setRascunhos((s) => ({ ...s, [l.produto_id]: { ...escolha, ...campo } }));
-            return (
-              <div key={l.produto_id} className="space-y-3 rounded-lg border p-3">
-                <p className="font-medium">{l.descricao}</p>
-                <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Custo médio atual</p>
-                    <strong>{brl(l.custo_atual)}</strong>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Novo custo médio previsto</p>
-                    <strong>{brl(l.custo_novo)}</strong>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Venda atual (informativo)</p>
-                    <strong>{brl(l.preco_atual)}</strong>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Sugestão pelo markup atual (
-                      {Number(l.markup_atual ?? 0).toLocaleString("pt-BR")}%)
-                    </p>
-                    <strong>{brl(l.preco_sugerido)}</strong>
-                  </div>
-                </div>
-                {editavel && podePreco && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <label className="space-y-1 text-sm">
-                      <span>Definir por</span>
-                      <select
-                        aria-label={`Definir preço de ${l.descricao}`}
-                        className="h-10 w-full rounded-md border bg-background px-2"
-                        value={escolha.modo}
-                        disabled={salvar.isPending}
-                        onChange={(e) =>
-                          alterar({
-                            modo: e.target.value as Escolha["modo"],
-                            valor:
-                              e.target.value === "preco"
-                                ? String(Math.round(venda * 10000) / 10000)
-                                : String(Math.round((markup ?? 0) * 100) / 100),
-                          })
-                        }
-                      >
-                        <option value="markup">Markup (%)</option>
-                        <option value="preco">Preço de venda (R$)</option>
-                      </select>
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span>
-                        {escolha.modo === "markup" ? "Markup (%)" : "Preço de venda (R$)"}
-                      </span>
-                      <Input
-                        aria-label={`Valor de venda de ${l.descricao}`}
-                        type="number"
-                        currency={escolha.modo === "preco"}
-                        min="0"
-                        step={escolha.modo === "markup" ? "0.01" : "0.0001"}
-                        value={escolha.valor}
-                        disabled={salvar.isPending}
-                        onChange={(e) => alterar({ valor: e.target.value })}
-                      />
-                    </label>
-                    <div className="text-sm">
-                      <p className="text-xs text-muted-foreground">Venda planejada</p>
-                      <strong>{Number.isFinite(venda) ? brl(venda) : "—"}</strong>
-                      <p className="text-xs text-muted-foreground">
-                        Markup:{" "}
-                        {markup !== null && Number.isFinite(markup)
-                          ? `${markup.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`
-                          : "—"}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-2">
-                      <Button
-                        type="button"
-                        disabled={salvar.isPending}
-                        onClick={() => salvar.mutate({ produto: l.produto_id, escolha })}
-                      >
-                        Salvar preço
-                      </Button>
-                      {l.modo && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={salvar.isPending}
-                          onClick={() => salvar.mutate({ produto: l.produto_id, escolha: null })}
-                        >
-                          Usar regra atual
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {rascunhos[l.produto_id]
-                    ? "Alteração pendente: salve o preço antes de receber a compra."
-                    : l.modo
-                      ? "Preço planejado salvo. Aplicação no recebimento."
-                      : "Sem alteração planejada: mantém a regra atual do produto no recebimento."}
-                </p>
-              </div>
-            );
-          })}
+      );
+    const l = q.data?.find((l) => l.produto_id === produto);
+    if (!l) return null;
+    const escolha =
+      rascunhos[l.produto_id] ??
+      ({
+        modo: l.modo === "preco" ? "preco" : "markup",
+        valor: String(l.valor ?? l.markup_atual ?? 0),
+      } as Escolha);
+    const custo = Number(l.custo_novo);
+    const venda =
+      escolha.modo === "preco" ? Number(escolha.valor) : custo * (1 + Number(escolha.valor) / 100);
+    const markup = custo > 0 ? (venda / custo - 1) * 100 : null;
+    const alterar = (campo: Partial<Escolha>) =>
+      setRascunhos((s) => ({ ...s, [l.produto_id]: { ...escolha, ...campo } }));
+    return (
+      <div
+        aria-label={`Precificação de ${l.descricao}`}
+        className="grid grid-cols-2 items-end gap-2 text-xs sm:grid-cols-4 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(105px,1fr)_minmax(90px,.8fr)_minmax(90px,.8fr)_auto]"
+      >
+        <div className="contents">
+          <div>
+            <p className="text-xs text-muted-foreground">Custo atual</p>
+            <strong>{brl(l.custo_atual)}</strong>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Novo custo médio</p>
+            <strong>{brl(l.custo_novo)}</strong>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Venda atual</p>
+            <strong>{brl(l.preco_atual)}</strong>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">
+              Sugestão ({Number(l.markup_atual ?? 0).toLocaleString("pt-BR")}%)
+            </p>
+            <strong>{brl(l.preco_sugerido)}</strong>
+          </div>
         </div>
-      )}
-    </section>
+        {editavel && podePreco && (
+          <div className="contents">
+            <label className="min-w-0 space-y-1 text-xs">
+              <span>Definir por</span>
+              <select
+                aria-label={`Definir preço de ${l.descricao}`}
+                className="h-9 w-full rounded-md border bg-background px-1 text-xs"
+                value={escolha.modo}
+                disabled={salvar.isPending}
+                onChange={(e) =>
+                  alterar({
+                    modo: e.target.value as Escolha["modo"],
+                    valor:
+                      e.target.value === "preco"
+                        ? String(Math.round(venda * 10000) / 10000)
+                        : String(Math.round((markup ?? 0) * 100) / 100),
+                  })
+                }
+              >
+                <option value="markup">Markup (%)</option>
+                <option value="preco">Preço de venda (R$)</option>
+              </select>
+            </label>
+            <label className="min-w-0 space-y-1 text-xs">
+              <span>{escolha.modo === "markup" ? "Markup (%)" : "Preço de venda (R$)"}</span>
+              <Input
+                aria-label={`Valor de venda de ${l.descricao}`}
+                className="h-9 min-w-0 text-right text-xs"
+                type="number"
+                currency={escolha.modo === "preco"}
+                min="0"
+                step={escolha.modo === "markup" ? "0.01" : "0.0001"}
+                value={escolha.valor}
+                disabled={salvar.isPending}
+                onChange={(e) => alterar({ valor: e.target.value })}
+              />
+            </label>
+            <div className="min-w-0 text-xs">
+              <p className="text-xs text-muted-foreground">Venda planejada</p>
+              <strong>{Number.isFinite(venda) ? brl(venda) : "—"}</strong>
+              <p className="text-xs text-muted-foreground">
+                Markup:{" "}
+                {markup !== null && Number.isFinite(markup)
+                  ? `${markup.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`
+                  : "—"}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="h-9 px-2 text-xs"
+                disabled={salvar.isPending}
+                onClick={() => salvar.mutate({ produto: l.produto_id, escolha })}
+              >
+                Salvar preço
+              </Button>
+              {l.modo && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1 text-xs"
+                  disabled={salvar.isPending}
+                  onClick={() => salvar.mutate({ produto: l.produto_id, escolha: null })}
+                >
+                  Regra atual
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        <p className="col-span-full text-[11px] text-muted-foreground">
+          {rascunhos[l.produto_id]
+            ? "Alteração pendente: salve o preço antes de receber a compra."
+            : l.modo
+              ? "Preço planejado salvo. Aplicação no recebimento."
+              : "Sem alteração planejada: mantém a regra atual do produto no recebimento."}
+        </p>
+      </div>
+    );
+  };
+  return (
+    <PrecificacaoContext.Provider value={renderProduto}>{children}</PrecificacaoContext.Provider>
   );
 }

@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.64.1",
+    "data": "2026-11-25",
+    "titulo": "Compacta a precificação abaixo de cada item da compra",
+    "motivo": "Deixar a conferência e o planejamento de venda próximos do item lançado na nota.",
+    "novidades": [
+      "A linha de custo médio, sugestão, markup ou preço e salvamento aparece imediatamente abaixo do item da compra, sem painel separado.",
+      "No computador, os campos ficam compactados em uma linha; em celular e tablet, reorganizam-se mantendo a edição e as ações acessíveis.",
+      "A consulta e o planejamento continuam compartilhados por compra e produto, preservando preços pendentes e o bloqueio de recebimento até salvar. Não requer novo SQL além da fase376."
+    ]
+  },
+  {
     "versao": "1.64.0",
     "data": "2026-11-25",
     "titulo": "Integra custo médio, markup e preço de venda ao recebimento de compras",

@@ -1,4 +1,4 @@
-import { PrecificacaoCompra } from "@/components/precificacao-compra";
+import { PrecificacaoCompra, LinhaPrecificacaoCompra } from "@/components/precificacao-compra";
 import { FiltroStatusDocumento } from "@/components/filtro-status-documento";
 import { alternarStatusSelecionado, statusSelecionados } from "@/lib/filtro-status-documento";
 import { AlterarRepresentantePedido } from "@/components/alterar-representante-pedido";
@@ -37,7 +37,7 @@ import { ProgressoDescontoPeso } from "@/components/progresso-desconto-peso";
 import { EmitirBoletosPedido } from "@/components/emitir-boletos-pedido";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -2589,217 +2589,251 @@ export function DocumentoPage({
                         : "Nenhum item lançado."}
                     </p>
                   ) : (
-                    <Table className="mobile-cards">
-                      <TableHeader>
-                        <TableRow>
-                          {config.table === "pedidos" && <TableHead>Código</TableHead>}
-                          <TableHead>Produto</TableHead>
-                          <TableHead className="text-right">
-                            {config.table === "compras" ? "Itens" : "Qtd"}
-                          </TableHead>
-                          <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
-                          {config.table === "compras" && (
-                            <>
-                              <TableHead className="text-right">IPI (%)</TableHead>
-                              <TableHead className="text-right">Frete / item</TableHead>
-                              <TableHead className="text-right">Custo final / item</TableHead>
-                            </>
-                          )}
-                          <TableHead className="text-right">Peso</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                          <TableHead className="w-12" />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {itens.data!.map((it) => (
-                          <TableRow key={String(it["id"])}>
-                            {config.table === "pedidos" && (
-                              <TableCell data-label="Código" className="font-mono">
-                                {produtoCodigo(it["produto_id"])}
-                              </TableCell>
-                            )}
-                            <TableCell data-label="Produto">
-                              {produtoName(it["produto_id"])}
-                              {config.table === "pedidos" &&
-                                (() => {
-                                  const aviso = avisoEstoquePedido(
-                                    alertasEstoque.data?.find((a) => a.item_id === it["id"]),
-                                    doc["status"],
-                                  );
-                                  return aviso ? (
-                                    <p
-                                      role="status"
-                                      className="mt-2 max-w-sm whitespace-normal rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-800 dark:text-amber-300"
-                                    >
-                                      {aviso}
-                                    </p>
-                                  ) : null;
-                                })()}
-                            </TableCell>
-                            <TableCell
-                              data-label={config.table === "compras" ? "Itens" : "Quantidade"}
-                              className="text-right"
-                            >
-                              {["rascunho", "digitacao"].includes(String(doc["status"])) &&
-                              propostaEditavel ? (
-                                <Input
-                                  aria-label={`Quantidade de ${produtoName(it["produto_id"])}`}
-                                  type="number"
-                                  step="0.001"
-                                  min="0"
-                                  className="ml-auto h-8 w-24 text-right"
-                                  defaultValue={String(it["quantidade"] ?? 0)}
-                                  onBlur={(e) => {
-                                    const qtd = Number(e.target.value || 0);
-                                    if (qtd > 0 && qtd !== Number(it["quantidade"])) {
-                                      updateItem.mutate({
-                                        id: String(it["id"]),
-                                        values: { quantidade: qtd },
-                                      });
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                String(it["quantidade"])
-                              )}
-                            </TableCell>
-                            <TableCell
-                              data-label={config.table === "compras" ? "Compra / item" : "Preço"}
-                              className="text-right"
-                            >
-                              {["rascunho", "digitacao"].includes(String(doc["status"])) &&
-                              propostaEditavel &&
-                              podeAlterarPreco ? (
-                                <Input
-                                  aria-label={`Preço de ${produtoName(it["produto_id"])}`}
-                                  currency
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  className="ml-auto h-8 w-28 text-right"
-                                  defaultValue={String(it[config.itemPriceField] ?? 0)}
-                                  onBlur={(e) => {
-                                    const preco = Number(e.target.value || 0);
-                                    if (preco !== Number(it[config.itemPriceField])) {
-                                      updateItem.mutate({
-                                        id: String(it["id"]),
-                                        values: { [config.itemPriceField]: preco },
-                                      });
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                brl(it[config.itemPriceField])
-                              )}
-                            </TableCell>
+                    <PrecificacaoCompra
+                      key={String(doc["id"])}
+                      compra={String(doc["id"])}
+                      revisao={JSON.stringify([
+                        itens.data,
+                        doc["total_itens"],
+                        doc["total_liquido"],
+                      ])}
+                      editavel={
+                        config.table === "compras" &&
+                        ["rascunho", "comprado"].includes(String(doc["status"]))
+                      }
+                      onPendencia={setPrecificacaoPendente}
+                    >
+                      <Table className="mobile-cards">
+                        <TableHeader>
+                          <TableRow>
+                            {config.table === "pedidos" && <TableHead>Código</TableHead>}
+                            <TableHead>Produto</TableHead>
+                            <TableHead className="text-right">
+                              {config.table === "compras" ? "Itens" : "Qtd"}
+                            </TableHead>
+                            <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
                             {config.table === "compras" && (
                               <>
-                                <TableCell data-label="IPI (%)" className="text-right">
-                                  {doc["status"] === "rascunho" && propostaEditavel ? (
-                                    <Input
-                                      aria-label={`IPI de ${produtoName(it["produto_id"])}`}
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      step="0.0001"
-                                      className="ml-auto h-8 w-24 text-right"
-                                      defaultValue={String(it["ipi_percentual"] ?? 0)}
-                                      onBlur={(e) => {
-                                        const ipi = Number(e.target.value || 0);
-                                        if (ipi !== Number(it["ipi_percentual"] ?? 0))
-                                          updateItem.mutate({
-                                            id: String(it["id"]),
-                                            values: { ipi_percentual: ipi },
-                                          });
-                                      }}
-                                    />
-                                  ) : (
-                                    Number(it["ipi_percentual"] ?? 0).toLocaleString("pt-BR")
-                                  )}
-                                </TableCell>
-                                <TableCell data-label="Frete / item" className="text-right">
-                                  {doc["status"] === "rascunho" && propostaEditavel ? (
-                                    <Input
-                                      aria-label={`Frete por item de ${produtoName(it["produto_id"])}`}
-                                      currency
-                                      type="number"
-                                      min="0"
-                                      step="0.0001"
-                                      className="ml-auto h-8 w-28 text-right"
-                                      defaultValue={String(it["frete_unitario"] ?? 0)}
-                                      onBlur={(e) => {
-                                        const frete = Number(e.target.value || 0);
-                                        if (frete !== Number(it["frete_unitario"] ?? 0))
-                                          updateItem.mutate({
-                                            id: String(it["id"]),
-                                            values: { frete_unitario: frete },
-                                          });
-                                      }}
-                                    />
-                                  ) : (
-                                    brl(it["frete_unitario"] ?? 0)
-                                  )}
-                                </TableCell>
-                                <TableCell data-label="Custo final / item" className="text-right">
-                                  {brl(
-                                    calcularItemCompra(
-                                      String(it["quantidade"]),
-                                      String(it["custo_unitario"] ?? 0),
-                                      String(it["frete_unitario"] ?? 0),
-                                      String(it["ipi_percentual"] ?? 0),
-                                    )?.unitario ?? 0,
-                                  )}
-                                </TableCell>
+                                <TableHead className="text-right">IPI (%)</TableHead>
+                                <TableHead className="text-right">Frete / item</TableHead>
+                                <TableHead className="text-right">Custo final / item</TableHead>
                               </>
                             )}
-                            <TableCell
-                              data-label="Peso"
-                              className="text-right text-muted-foreground"
-                            >
-                              {kg(pesoItem(it))}
-                            </TableCell>
-                            <TableCell data-label="Total" className="text-right">
-                              {brl(it["total"])}
-                            </TableCell>
-                            <TableCell data-label="Ações" className="text-right">
-                              <Button
-                                aria-label={`Remover ${produtoName(it["produto_id"])}`}
-                                variant="ghost"
-                                size="icon"
-                                disabled={doc["status"] !== "rascunho" || !propostaEditavel}
-                                onClick={() => removeItem.mutate(String(it["id"]))}
-                              >
-                                <Trash2 className="size-4 text-destructive" />
-                              </Button>
-                            </TableCell>
+                            <TableHead className="text-right">Peso</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="w-12" />
                           </TableRow>
-                        ))}
-                        <TableRow>
-                          <TableCell
-                            colSpan={config.table === "pedidos" ? 2 : 1}
-                            className="font-semibold"
-                          >
-                            Peso total dos itens
-                          </TableCell>
-                          <TableCell />
-                          <TableCell />
-                          {config.table === "compras" && (
-                            <>
-                              <TableCell />
-                              <TableCell />
-                              <TableCell />
-                            </>
-                          )}
-                          <TableCell className="text-right font-semibold">
-                            {kg(pesoTotal)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {brl(doc["total_itens"])}
-                          </TableCell>
-                          <TableCell />
-                        </TableRow>
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {itens.data!.map((it) => (
+                            <Fragment key={String(it["id"])}>
+                              <TableRow>
+                                {config.table === "pedidos" && (
+                                  <TableCell data-label="Código" className="font-mono">
+                                    {produtoCodigo(it["produto_id"])}
+                                  </TableCell>
+                                )}
+                                <TableCell data-label="Produto">
+                                  {produtoName(it["produto_id"])}
+                                  {config.table === "pedidos" &&
+                                    (() => {
+                                      const aviso = avisoEstoquePedido(
+                                        alertasEstoque.data?.find((a) => a.item_id === it["id"]),
+                                        doc["status"],
+                                      );
+                                      return aviso ? (
+                                        <p
+                                          role="status"
+                                          className="mt-2 max-w-sm whitespace-normal rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-800 dark:text-amber-300"
+                                        >
+                                          {aviso}
+                                        </p>
+                                      ) : null;
+                                    })()}
+                                </TableCell>
+                                <TableCell
+                                  data-label={config.table === "compras" ? "Itens" : "Quantidade"}
+                                  className="text-right"
+                                >
+                                  {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                                  propostaEditavel ? (
+                                    <Input
+                                      aria-label={`Quantidade de ${produtoName(it["produto_id"])}`}
+                                      type="number"
+                                      step="0.001"
+                                      min="0"
+                                      className="ml-auto h-8 w-24 text-right"
+                                      defaultValue={String(it["quantidade"] ?? 0)}
+                                      onBlur={(e) => {
+                                        const qtd = Number(e.target.value || 0);
+                                        if (qtd > 0 && qtd !== Number(it["quantidade"])) {
+                                          updateItem.mutate({
+                                            id: String(it["id"]),
+                                            values: { quantidade: qtd },
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    String(it["quantidade"])
+                                  )}
+                                </TableCell>
+                                <TableCell
+                                  data-label={
+                                    config.table === "compras" ? "Compra / item" : "Preço"
+                                  }
+                                  className="text-right"
+                                >
+                                  {["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                                  propostaEditavel &&
+                                  podeAlterarPreco ? (
+                                    <Input
+                                      aria-label={`Preço de ${produtoName(it["produto_id"])}`}
+                                      currency
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      className="ml-auto h-8 w-28 text-right"
+                                      defaultValue={String(it[config.itemPriceField] ?? 0)}
+                                      onBlur={(e) => {
+                                        const preco = Number(e.target.value || 0);
+                                        if (preco !== Number(it[config.itemPriceField])) {
+                                          updateItem.mutate({
+                                            id: String(it["id"]),
+                                            values: { [config.itemPriceField]: preco },
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    brl(it[config.itemPriceField])
+                                  )}
+                                </TableCell>
+                                {config.table === "compras" && (
+                                  <>
+                                    <TableCell data-label="IPI (%)" className="text-right">
+                                      {doc["status"] === "rascunho" && propostaEditavel ? (
+                                        <Input
+                                          aria-label={`IPI de ${produtoName(it["produto_id"])}`}
+                                          type="number"
+                                          min="0"
+                                          max="100"
+                                          step="0.0001"
+                                          className="ml-auto h-8 w-24 text-right"
+                                          defaultValue={String(it["ipi_percentual"] ?? 0)}
+                                          onBlur={(e) => {
+                                            const ipi = Number(e.target.value || 0);
+                                            if (ipi !== Number(it["ipi_percentual"] ?? 0))
+                                              updateItem.mutate({
+                                                id: String(it["id"]),
+                                                values: { ipi_percentual: ipi },
+                                              });
+                                          }}
+                                        />
+                                      ) : (
+                                        Number(it["ipi_percentual"] ?? 0).toLocaleString("pt-BR")
+                                      )}
+                                    </TableCell>
+                                    <TableCell data-label="Frete / item" className="text-right">
+                                      {doc["status"] === "rascunho" && propostaEditavel ? (
+                                        <Input
+                                          aria-label={`Frete por item de ${produtoName(it["produto_id"])}`}
+                                          currency
+                                          type="number"
+                                          min="0"
+                                          step="0.0001"
+                                          className="ml-auto h-8 w-28 text-right"
+                                          defaultValue={String(it["frete_unitario"] ?? 0)}
+                                          onBlur={(e) => {
+                                            const frete = Number(e.target.value || 0);
+                                            if (frete !== Number(it["frete_unitario"] ?? 0))
+                                              updateItem.mutate({
+                                                id: String(it["id"]),
+                                                values: { frete_unitario: frete },
+                                              });
+                                          }}
+                                        />
+                                      ) : (
+                                        brl(it["frete_unitario"] ?? 0)
+                                      )}
+                                    </TableCell>
+                                    <TableCell
+                                      data-label="Custo final / item"
+                                      className="text-right"
+                                    >
+                                      {brl(
+                                        calcularItemCompra(
+                                          String(it["quantidade"]),
+                                          String(it["custo_unitario"] ?? 0),
+                                          String(it["frete_unitario"] ?? 0),
+                                          String(it["ipi_percentual"] ?? 0),
+                                        )?.unitario ?? 0,
+                                      )}
+                                    </TableCell>
+                                  </>
+                                )}
+                                <TableCell
+                                  data-label="Peso"
+                                  className="text-right text-muted-foreground"
+                                >
+                                  {kg(pesoItem(it))}
+                                </TableCell>
+                                <TableCell data-label="Total" className="text-right">
+                                  {brl(it["total"])}
+                                </TableCell>
+                                <TableCell data-label="Ações" className="text-right">
+                                  <Button
+                                    aria-label={`Remover ${produtoName(it["produto_id"])}`}
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={doc["status"] !== "rascunho" || !propostaEditavel}
+                                    onClick={() => removeItem.mutate(String(it["id"]))}
+                                  >
+                                    <Trash2 className="size-4 text-destructive" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                              {config.table === "compras" &&
+                                ["rascunho", "comprado"].includes(String(doc["status"])) &&
+                                (!roles.includes("representante") || roles.includes("admin")) && (
+                                  <TableRow
+                                    className="bg-primary/[0.03]"
+                                    data-precificacao-item={String(it["id"])}
+                                  >
+                                    <TableCell colSpan={9} className="whitespace-normal px-3 py-3">
+                                      <LinhaPrecificacaoCompra produto={String(it["produto_id"])} />
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                            </Fragment>
+                          ))}
+                          <TableRow>
+                            <TableCell
+                              colSpan={config.table === "pedidos" ? 2 : 1}
+                              className="font-semibold"
+                            >
+                              Peso total dos itens
+                            </TableCell>
+                            <TableCell />
+                            <TableCell />
+                            {config.table === "compras" && (
+                              <>
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                              </>
+                            )}
+                            <TableCell className="text-right font-semibold">
+                              {kg(pesoTotal)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {brl(doc["total_itens"])}
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </PrecificacaoCompra>
                   )}
                 </div>
                 {config.table === "compras" && itens.isSuccess && (
@@ -2821,17 +2855,6 @@ export function DocumentoPage({
                 )}
               </>
             )}
-            {config.table === "compras" &&
-              itens.isSuccess &&
-              ["rascunho", "comprado"].includes(String(doc["status"])) && (
-                <PrecificacaoCompra
-                  key={String(doc["id"])}
-                  compra={String(doc["id"])}
-                  revisao={JSON.stringify([itens.data, doc["total_itens"], doc["total_liquido"]])}
-                  editavel={["rascunho", "comprado"].includes(String(doc["status"]))}
-                  onPendencia={setPrecificacaoPendente}
-                />
-              )}
             {config.table === "pedidos" && !inter && (
               <ProgressoDescontoPeso
                 loja={lojaDocumento}

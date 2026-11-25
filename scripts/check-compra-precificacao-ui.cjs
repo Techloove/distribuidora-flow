@@ -133,15 +133,36 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
       await page.getByRole("combobox", { name: "Loja", exact: true }).click();
       await page.getByRole("option", { name: "Ferragens", exact: true }).click();
       await page.locator("tr").filter({ hasText: "Fornecedor teste" }).first().click();
-      await page
-        .getByRole("heading", { name: "Custo médio e preço de venda", exact: true })
-        .waitFor();
+      const linha = page.locator("[data-precificacao-item]");
+      await linha.waitFor();
+      assert.match(
+        await linha.evaluate((el) => el.previousElementSibling.textContent),
+        /PREGO/,
+        "precificação imediatamente abaixo do item",
+      );
+      assert.equal(
+        await page
+          .getByRole("heading", { name: "Custo médio e preço de venda", exact: true })
+          .count(),
+        0,
+        "sem painel separado",
+      );
       await page.getByLabel("Valor de venda de PREGO", { exact: true }).fill("50");
       assert.ok(
         await page.getByRole("button", { name: "Receber compra", exact: true }).isDisabled(),
         "rascunho não salvo bloqueia recebimento",
       );
       assert.equal(recebimentos, 0);
+      if (width === 1366) {
+        const entrada = await page
+          .getByLabel("Valor de venda de PREGO", { exact: true })
+          .boundingBox();
+        const botao = await page
+          .getByRole("button", { name: "Salvar preço", exact: true })
+          .boundingBox();
+        assert.ok(Math.abs(entrada.y - botao.y) < 3, "campos e ação na mesma linha");
+      }
+
       await page.getByRole("button", { name: "Salvar preço", exact: true }).click();
       await page
         .getByText("Preço planejado salvo. Aplicação no recebimento.", { exact: true })
