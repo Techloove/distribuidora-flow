@@ -96,6 +96,7 @@ const emptyItem = {
   preco: "0",
   desconto: "0",
   frete: "0",
+  ipi: "0",
   lote: "",
   validade: "",
 };
@@ -850,7 +851,9 @@ export function DocumentoPage({
   })();
 
   const previaCompra =
-    config.table === "compras" ? calcularItemCompra(item.quantidade, item.preco, item.frete) : null;
+    config.table === "compras"
+      ? calcularItemCompra(item.quantidade, item.preco, item.frete, item.ipi)
+      : null;
 
   const addItem = useMutation({
     mutationFn: async () => {
@@ -879,12 +882,13 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.rpc("adicionar_item_compra_313", {
+        const { error } = await client!.rpc("adicionar_item_compra_375", {
           _compra_id: selected,
           _produto_id: String(payload["produto_id"]),
           _quantidade: Number(payload["quantidade"]),
           _custo_unitario: Number(payload["custo_unitario"]),
           _frete_unitario: Number(item.frete || 0),
+          _ipi_percentual: Number(item.ipi || 0),
           _lote: payload["lote"] ? String(payload["lote"]) : null,
           _validade: payload["validade"] ? String(payload["validade"]) : null,
         });
@@ -919,11 +923,12 @@ export function DocumentoPage({
         });
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await client!.rpc("atualizar_item_compra_313", {
+        const { error } = await client!.rpc("atualizar_item_compra_375", {
           _item_id: patch.id,
           _quantidade: patch.values["quantidade"] ?? null,
           _custo_unitario: patch.values["custo_unitario"] ?? null,
           _frete_unitario: patch.values["frete_unitario"] ?? null,
+          _ipi_percentual: patch.values["ipi_percentual"] ?? null,
         });
         if (error) throw new Error(error.message);
       }
@@ -2293,7 +2298,7 @@ export function DocumentoPage({
                       aria-label="Inclusão de item da compra"
                       className="@container space-y-3 rounded-lg border bg-muted/30 p-3"
                     >
-                      <div className="grid grid-cols-2 items-end gap-2 @min-[600px]:grid-cols-4 @min-[900px]:grid-cols-[minmax(220px,2.5fr)_minmax(72px,.7fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(110px,1fr)_minmax(120px,1.1fr)_minmax(112px,1fr)]">
+                      <div className="grid grid-cols-2 items-end gap-2 @min-[600px]:grid-cols-4 @min-[900px]:grid-cols-[minmax(180px,2fr)_minmax(72px,.7fr)_minmax(100px,1fr)_minmax(72px,.7fr)_minmax(100px,1fr)_minmax(110px,1fr)_minmax(120px,1.1fr)_minmax(112px,1fr)]">
                         <div className="col-span-2 min-w-0 space-y-1 @min-[900px]:col-span-1">
                           <Label htmlFor="compra-produto" className="text-xs">
                             Produto
@@ -2338,6 +2343,22 @@ export function DocumentoPage({
                             value={item.preco}
                             readOnly={!podeAlterarPreco}
                             onChange={(e) => setItem((s) => ({ ...s, preco: e.target.value }))}
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <Label htmlFor="compra-ipi" className="text-xs">
+                            IPI (%)
+                          </Label>
+                          <Input
+                            id="compra-ipi"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.0001"
+                            inputMode="decimal"
+                            className="h-11 min-w-0 text-right"
+                            value={item.ipi}
+                            onChange={(e) => setItem((s) => ({ ...s, ipi: e.target.value }))}
                           />
                         </div>
                         <div className="min-w-0 space-y-1">
@@ -2392,8 +2413,8 @@ export function DocumentoPage({
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Custo final = compra + frete por item. O frete geral da compra é um
-                        adicional; não repita nele o frete já informado nos itens.
+                        Custo final = compra + IPI sobre a compra + frete por item. O frete geral da
+                        compra é um adicional; não repita nele o frete já informado nos itens.
                       </p>
                       <details className="border-t pt-2 text-sm">
                         <summary className="cursor-pointer text-muted-foreground">
@@ -2573,6 +2594,7 @@ export function DocumentoPage({
                           <TableHead className="text-right">{config.itemPriceLabel}</TableHead>
                           {config.table === "compras" && (
                             <>
+                              <TableHead className="text-right">IPI (%)</TableHead>
                               <TableHead className="text-right">Frete / item</TableHead>
                               <TableHead className="text-right">Custo final / item</TableHead>
                             </>
@@ -2666,6 +2688,29 @@ export function DocumentoPage({
                             </TableCell>
                             {config.table === "compras" && (
                               <>
+                                <TableCell data-label="IPI (%)" className="text-right">
+                                  {doc["status"] === "rascunho" && propostaEditavel ? (
+                                    <Input
+                                      aria-label={`IPI de ${produtoName(it["produto_id"])}`}
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.0001"
+                                      className="ml-auto h-8 w-24 text-right"
+                                      defaultValue={String(it["ipi_percentual"] ?? 0)}
+                                      onBlur={(e) => {
+                                        const ipi = Number(e.target.value || 0);
+                                        if (ipi !== Number(it["ipi_percentual"] ?? 0))
+                                          updateItem.mutate({
+                                            id: String(it["id"]),
+                                            values: { ipi_percentual: ipi },
+                                          });
+                                      }}
+                                    />
+                                  ) : (
+                                    Number(it["ipi_percentual"] ?? 0).toLocaleString("pt-BR")
+                                  )}
+                                </TableCell>
                                 <TableCell data-label="Frete / item" className="text-right">
                                   {doc["status"] === "rascunho" && propostaEditavel ? (
                                     <Input
@@ -2691,8 +2736,12 @@ export function DocumentoPage({
                                 </TableCell>
                                 <TableCell data-label="Custo final / item" className="text-right">
                                   {brl(
-                                    Number(it["custo_unitario"] ?? 0) +
-                                      Number(it["frete_unitario"] ?? 0),
+                                    calcularItemCompra(
+                                      String(it["quantidade"]),
+                                      String(it["custo_unitario"] ?? 0),
+                                      String(it["frete_unitario"] ?? 0),
+                                      String(it["ipi_percentual"] ?? 0),
+                                    )?.unitario ?? 0,
                                   )}
                                 </TableCell>
                               </>
@@ -2732,6 +2781,7 @@ export function DocumentoPage({
                             <>
                               <TableCell />
                               <TableCell />
+                              <TableCell />
                             </>
                           )}
                           <TableCell className="text-right font-semibold">
@@ -2746,6 +2796,23 @@ export function DocumentoPage({
                     </Table>
                   )}
                 </div>
+                {config.table === "compras" && itens.isSuccess && (
+                  <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                    <span>Total de frete dos itens: </span>
+                    <strong>
+                      {brl(
+                        (itens.data ?? []).reduce(
+                          (s, it) =>
+                            s + Number(it["quantidade"] ?? 0) * Number(it["frete_unitario"] ?? 0),
+                          0,
+                        ),
+                      )}
+                    </strong>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Somente conferência; esse frete já está incluído no total dos itens.
+                    </p>
+                  </div>
+                )}
               </>
             )}
             {config.table === "pedidos" && !inter && (

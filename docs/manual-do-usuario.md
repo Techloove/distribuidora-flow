@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.62.0 · 2026-11-25
+Versão 1.63.0 · 2026-11-25
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -276,8 +276,8 @@ Planeje a reposição e acompanhe a entrada das mercadorias.
 
 1. Consulte o planejamento de reposição da loja e confira estoque, pendências de venda e compras em trânsito.
 2. Registre a compra com fornecedor, loja, produtos, quantidades e condições de pagamento.
-3. Na entrada manual, preencha na mesma linha Produto, Itens (quantidade), Compra por item e Frete por item. A tela calcula Custo final por item e Total do item. Cada produto pode ter um frete unitário diferente; não há margem de venda na compra. Lote e validade ficam em uma seção opcional.
-4. O total de cada item é a quantidade multiplicada pela soma do custo de compra e do frete unitário. O frete geral adicional só deve conter cobranças extras, sem repetir o frete dos itens. Ao receber, o estoque incorpora o frete de cada produto e os ajustes gerais; os títulos a pagar usam o total da compra. Compras antigas mantêm frete unitário zero e não são reprocessadas.
+3. Na entrada manual, preencha na mesma linha Produto, Itens (quantidade), Compra por item, IPI (%) e Frete por item. A tela calcula Custo final por item e Total do item. Cada produto pode ter um frete unitário diferente; não há margem de venda na compra. Lote e validade ficam em uma seção opcional.
+4. O IPI informado incide sobre o preço de compra, antes do frete. O custo final unitário é compra + IPI + frete por item; o total multiplica esse custo pela quantidade. O rodapé mostra Total de frete dos itens (quantidade × frete por item) somente para conferência, pois ele já integra o total da compra. Após instalar a fase375, o IPI pode ser informado e alterado em itens de compras em rascunho. Compras já recebidas permanecem preservadas. Não informe novamente um imposto já embutido no preço de compra. O frete geral adicional só deve conter cobranças extras, sem repetir o frete dos itens. Ao receber, o estoque incorpora o frete de cada produto e os ajustes gerais; os títulos a pagar usam o total da compra. Compras antigas mantêm frete unitário zero e não são reprocessadas.
 5. Confira os dados antes de confirmar o documento e siga a ação indicada pela tela.
 6. Após a operação, confira o histórico de estoque e os títulos financeiros gerados pelo fluxo.
 7. Em Compras → Planejamento e reposição, acompanhe itens para comprar, faltas, investimento estimado e produtos em trânsito. A lista mostra Estoque, Comprado (em trânsito), Mínimo, Média mês, 30d, 60d, 90d e 120d nessa ordem, seguidos da sugestão e dos indicadores. Use Colunas para personalizar e Cálculo para ver de onde veio cada quantidade.
@@ -602,6 +602,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.63.0 · 2026-11-25 · Inclui IPI por item e conferência de frete nas compras
+
+Motivo da atualização: Registrar IPI por item de compra e facilitar a conferência do frete já incluído no total.
+
+- Campo IPI (%) após o preço de compra, com edição em itens de rascunhos. Custo final inclui compra + IPI sobre o preço + frete por item.
+- Total de frete dos itens no rodapé, calculado por quantidade × frete unitário, somente para conferência, sem nova cobrança.
+- Após aplicar a fase375, o recebimento usa o custo com IPI e frete nas entradas e nos totais das parcelas. Compras antigas e recebidas não são recalculadas; IPI novo inicia em zero.
 
 ### v1.62.0 · 2026-11-25 · Simplifica entrada, saída e ajuste pelo saldo final do estoque
 

@@ -20,3 +20,9 @@ test("compra não sugere total com quantidade, custo ou frete inválidos", () =>
   ])
     expect(calcularItemCompra(...(campos as [string, string, string]))).toBeNull();
 });
+
+test("IPI incide somente no custo, antes do frete", () => {
+  expect(calcularItemCompra("10", "100", "5", "10")).toEqual({ unitario: 115, total: 1150 });
+  expect(calcularItemCompra("2", "100", "5", "0")).toEqual({ unitario: 105, total: 210 });
+  expect(calcularItemCompra("2", "100", "5", "101")).toBeNull();
+});

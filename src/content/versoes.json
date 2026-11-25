@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.63.0",
+    "data": "2026-11-25",
+    "titulo": "Inclui IPI por item e conferência de frete nas compras",
+    "motivo": "Registrar IPI por item de compra e facilitar a conferência do frete já incluído no total.",
+    "novidades": [
+      "Campo IPI (%) após o preço de compra, com edição em itens de rascunhos. Custo final inclui compra + IPI sobre o preço + frete por item.",
+      "Total de frete dos itens no rodapé, calculado por quantidade × frete unitário, somente para conferência, sem nova cobrança.",
+      "Após aplicar a fase375, o recebimento usa o custo com IPI e frete nas entradas e nos totais das parcelas. Compras antigas e recebidas não são recalculadas; IPI novo inicia em zero."
+    ]
+  },
+  {
     "versao": "1.62.0",
     "data": "2026-11-25",
     "titulo": "Simplifica entrada, saída e ajuste pelo saldo final do estoque",
