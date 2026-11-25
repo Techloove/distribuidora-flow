@@ -284,9 +284,9 @@
     "passos": [
       "Escolha a loja no topo da tela e abra Estoque → Movimentar.",
       "Selecione Entrada, Saída ou Ajuste e busque o produto pelo nome ou código.",
-      "Confira saldo físico, reservado e disponível. Informe a quantidade positiva.",
-      "No ajuste, escolha Acrescentar ou Retirar. Informe a diferença a corrigir, não o saldo final desejado.",
-      "Se necessário, abra os campos opcionais para informar custo da entrada e observação.",
+      "Confira saldo físico, reservado e disponível. Em Entrada, a quantidade será somada ao saldo; em Saída, será retirada. O saldo previsto aparece antes de registrar.",
+      "No Ajuste, informe o saldo físico final desejado, inclusive zero. Após instalar a fase374, o sistema calcula a diferença no banco e confere se o saldo mudou durante o preenchimento. Se mudar, atualize a tela e confira novamente.",
+      "A loja é herdada da seleção no topo, sem outro campo para escolhê-la. Informe somente produto, quantidade e, se necessário, observação. O lançamento manual mantém o custo atual; compras com custo devem seguir a rotina de Compras.",
       "Registre a movimentação e aguarde a confirmação. Consulte o resultado em Consultar saldos ou Histórico."
     ],
     "cuidados": [

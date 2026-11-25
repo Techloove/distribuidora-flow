@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.61.1 · 2026-11-24
+Versão 1.62.0 · 2026-11-25
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -240,9 +240,9 @@ Movimente somente o depósito da loja escolhida.
 
 1. Escolha a loja no topo da tela e abra Estoque → Movimentar.
 2. Selecione Entrada, Saída ou Ajuste e busque o produto pelo nome ou código.
-3. Confira saldo físico, reservado e disponível. Informe a quantidade positiva.
-4. No ajuste, escolha Acrescentar ou Retirar. Informe a diferença a corrigir, não o saldo final desejado.
-5. Se necessário, abra os campos opcionais para informar custo da entrada e observação.
+3. Confira saldo físico, reservado e disponível. Em Entrada, a quantidade será somada ao saldo; em Saída, será retirada. O saldo previsto aparece antes de registrar.
+4. No Ajuste, informe o saldo físico final desejado, inclusive zero. Após instalar a fase374, o sistema calcula a diferença no banco e confere se o saldo mudou durante o preenchimento. Se mudar, atualize a tela e confira novamente.
+5. A loja é herdada da seleção no topo, sem outro campo para escolhê-la. Informe somente produto, quantidade e, se necessário, observação. O lançamento manual mantém o custo atual; compras com custo devem seguir a rotina de Compras.
 6. Registre a movimentação e aguarde a confirmação. Consulte o resultado em Consultar saldos ou Histórico.
 
 Cuidados:
@@ -602,6 +602,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.62.0 · 2026-11-25 · Simplifica entrada, saída e ajuste pelo saldo final do estoque
+
+Motivo da atualização: Simplificar movimentações da loja selecionada e permitir informar o saldo físico final no ajuste.
+
+- Entrada soma a quantidade ao estoque e Saída subtrai. O formulário usa a loja do topo, sem repetir a escolha, e mantém somente produto, quantidade e observação.
+- Ajuste recebe o saldo físico final desejado, inclusive zero, e calcula a diferença no banco. Saldo alterado durante o preenchimento exige nova conferência; reservas e permissões continuam protegidas.
+- Prévia do saldo após a operação, consulta de histórico somente ao abrir a aba e atualização das consultas de estoque após registrar.
+- Requer aplicar db/fase374_ajuste_saldo_final_estoque.sql no Supabase para usar o novo Ajuste. Entradas e saídas continuam no motor existente; a instalação não altera saldos por conta própria.
 
 ### v1.61.1 · 2026-11-24 · Corrige a comissão após reabertura e nova aprovação de pedidos
 

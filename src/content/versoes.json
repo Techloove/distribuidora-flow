@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.62.0",
+    "data": "2026-11-25",
+    "titulo": "Simplifica entrada, saída e ajuste pelo saldo final do estoque",
+    "motivo": "Simplificar movimentações da loja selecionada e permitir informar o saldo físico final no ajuste.",
+    "novidades": [
+      "Entrada soma a quantidade ao estoque e Saída subtrai. O formulário usa a loja do topo, sem repetir a escolha, e mantém somente produto, quantidade e observação.",
+      "Ajuste recebe o saldo físico final desejado, inclusive zero, e calcula a diferença no banco. Saldo alterado durante o preenchimento exige nova conferência; reservas e permissões continuam protegidas.",
+      "Prévia do saldo após a operação, consulta de histórico somente ao abrir a aba e atualização das consultas de estoque após registrar.",
+      "Requer aplicar db/fase374_ajuste_saldo_final_estoque.sql no Supabase para usar o novo Ajuste. Entradas e saídas continuam no motor existente; a instalação não altera saldos por conta própria."
+    ]
+  },
+  {
     "versao": "1.61.1",
     "data": "2026-11-24",
     "titulo": "Corrige a comissão após reabertura e nova aprovação de pedidos",

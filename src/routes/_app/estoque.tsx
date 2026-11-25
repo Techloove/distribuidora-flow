@@ -1,8 +1,6 @@
-import { SearchSelect } from "@/components/ui/search-select";
 import { SeletorProdutoEstoque } from "@/components/seletor-produto-estoque";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { setCentro } from "@/lib/centro-store";
 import { lerPaginas } from "@/lib/paginacao";
 import { DepositosInventario } from "@/components/depositos-inventario";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +54,6 @@ function EstoquePage() {
     error: centrosErro,
   } = useCentroValido();
   const [aba, setAba] = useState("movimentar");
-  const [sentidoAjuste, setSentidoAjuste] = useState("acrescentar");
   const queryClient = useQueryClient();
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
@@ -64,7 +61,6 @@ function EstoquePage() {
     produto_id: "",
     tipo: "entrada",
     quantidade: "1",
-    custo: "",
     observacao: "",
   });
 
@@ -81,7 +77,7 @@ function EstoquePage() {
       return await lerPaginas<Row>((inicio, fim) =>
         client!
           .from("produtos_consulta_324")
-          .select("id,codigo,descricao,unidade,estoque_atual,estoque_minimo,custo_medio")
+          .select("id,codigo,descricao,unidade,estoque_minimo")
           .order("id")
           .range(inicio, fim),
       );
@@ -104,15 +100,20 @@ function EstoquePage() {
     return (produtos.data ?? []).filter((p) => ids.has(String(p["id"])));
   }, [produtos.data, disponibilidade.data]);
   useEffect(() => {
-    setForm((f) => ({ ...f, produto_id: "", quantidade: "1", custo: "", observacao: "" }));
+    setForm((f) => ({ ...f, produto_id: "", quantidade: "1", observacao: "" }));
   }, [centro]);
-  const reservadoProduto = (produto: unknown) =>
-    disponibilidade.data
-      ?.filter((r) => r["produto_id"] === produto)
-      .reduce((s, r) => s + Number(r["reservado"]), 0);
+  const reservasPorProduto = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const r of disponibilidade.data ?? []) {
+      const id = String(r["produto_id"]);
+      mapa.set(id, (mapa.get(id) ?? 0) + Number(r["reservado"] ?? 0));
+    }
+    return mapa;
+  }, [disponibilidade.data]);
+  const reservadoProduto = (produto: unknown) => reservasPorProduto.get(String(produto));
   const movimentos = useQuery({
     queryKey: ["estoque_movimentos", centro],
-    enabled: !!client,
+    enabled: !!client && !!centro && aba === "historico",
     queryFn: async () => {
       let q = client!
         .from("estoque_movimentos")
@@ -130,32 +131,46 @@ function EstoquePage() {
     mutationFn: async () => {
       if (!form.produto_id || !produtosDaLoja.some((p) => p["id"] === form.produto_id))
         throw new Error("Selecione um produto da loja atual");
-      const qtd = Number(form.quantidade || 0);
-      if (!Number.isFinite(qtd) || qtd <= 0)
-        throw new Error("Informe uma quantidade maior que zero");
+      const qtd = Number(form.quantidade);
       if (
-        form.tipo === "entrada" &&
-        form.custo !== "" &&
-        (!Number.isFinite(Number(form.custo)) || Number(form.custo) < 0)
+        form.quantidade === "" ||
+        !Number.isFinite(qtd) ||
+        (form.tipo === "ajuste" ? qtd < 0 : qtd <= 0)
       )
-        throw new Error("Informe um custo válido");
-      if (!centro) throw new Error("Selecione um centro para movimentar o estoque");
-      const { error } = await client!.rpc("lancar_movimento_estoque", {
-        _produto_id: form.produto_id,
-        _centro_id: centro,
-        _tipo: form.tipo,
-        _quantidade: form.tipo === "ajuste" && sentidoAjuste === "retirar" ? -qtd : qtd,
-        _custo_unitario: form.tipo !== "entrada" || form.custo === "" ? null : Number(form.custo),
-        _origem: "manual",
-        _documento_id: null,
-        _observacao: form.observacao || null,
-      });
+        throw new Error(
+          form.tipo === "ajuste"
+            ? "Informe o saldo final, zero ou maior"
+            : "Informe uma quantidade maior que zero",
+        );
+      if (!centro) throw new Error("Selecione uma loja para movimentar o estoque");
+      if (!disponibilidade.data || disponibilidade.isError || disponibilidade.isFetching)
+        throw new Error("Aguarde a consulta atualizada do saldo da loja");
+      const { error } =
+        form.tipo === "ajuste"
+          ? await client!.rpc("ajustar_saldo_estoque_374", {
+              _produto_id: form.produto_id,
+              _centro_id: centro,
+              _saldo_final: qtd,
+              _saldo_esperado: saldoProduto(form.produto_id),
+              _observacao: form.observacao || null,
+            })
+          : await client!.rpc("lancar_movimento_estoque", {
+              _produto_id: form.produto_id,
+              _centro_id: centro,
+              _tipo: form.tipo,
+              _quantidade: qtd,
+              _custo_unitario: null,
+              _origem: "manual",
+              _documento_id: null,
+              _observacao: form.observacao || null,
+            });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Movimento lançado");
-      setForm((f) => ({ ...f, quantidade: "", custo: "", observacao: "" }));
-      queryClient.invalidateQueries();
+      setForm((f) => ({ ...f, quantidade: "", observacao: "" }));
+      for (const key of ["estoque_disponivel", "estoque_movimentos", "produtos", "deposito_saldos"])
+        void queryClient.invalidateQueries({ queryKey: [key] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -261,10 +276,11 @@ function EstoquePage() {
               <div>
                 <h2 className="text-lg font-semibold">Movimentar estoque</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Escolha a operação, o produto e a quantidade.
+                  {lojas.find((l) => l.id === centro)?.nome ?? "Selecione a loja no topo"} · Escolha
+                  o produto e a quantidade.
                 </p>
               </div>
-              <fieldset disabled={!canStock || lancar.isPending} className="space-y-5">
+              <fieldset disabled={!canStock || !centro || lancar.isPending} className="space-y-5">
                 <div className="space-y-2">
                   <Label>O que deseja fazer?</Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -278,7 +294,7 @@ function EstoquePage() {
                         type="button"
                         variant={form.tipo === t.tipo ? "default" : "outline"}
                         aria-pressed={form.tipo === t.tipo}
-                        onClick={() => setForm((f) => ({ ...f, tipo: t.tipo }))}
+                        onClick={() => setForm((f) => ({ ...f, tipo: t.tipo, quantidade: "" }))}
                       >
                         {t.nome}
                       </Button>
@@ -289,7 +305,7 @@ function EstoquePage() {
                       ? "Acrescenta produtos ao saldo físico."
                       : form.tipo === "saida"
                         ? "Retira produtos do saldo físico. Pedidos confirmados já baixam estoque; não lance a mesma saída novamente."
-                        : "Corrige uma diferença no saldo. Para conferir uma contagem completa, use Depósitos e inventário."}
+                        : "Define o saldo físico final. Informe a quantidade total que deve ficar no estoque, inclusive zero."}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -341,86 +357,57 @@ function EstoquePage() {
                         ? "a adicionar"
                         : form.tipo === "saida"
                           ? "a retirar"
-                          : "da diferença"}
+                          : "final em estoque"}
                     </Label>
                     <Input
                       id="estoque-quantidade"
                       type="number"
-                      min="0.001"
+                      min={form.tipo === "ajuste" ? "0" : "0.001"}
                       step="0.001"
                       required
                       value={form.quantidade}
                       onChange={(e) => setForm((f) => ({ ...f, quantidade: e.target.value }))}
                     />
                   </div>
-                  {form.tipo === "ajuste" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="estoque-sentido">Como corrigir?</Label>
-                      <select
-                        id="estoque-sentido"
-                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        value={sentidoAjuste}
-                        onChange={(e) => setSentidoAjuste(e.target.value)}
-                      >
-                        <option value="acrescentar">Acrescentar ao saldo</option>
-                        <option value="retirar">Retirar do saldo</option>
-                      </select>
+                </div>
+                {form.produto_id &&
+                  form.quantidade !== "" &&
+                  Number.isFinite(Number(form.quantidade)) && (
+                    <div
+                      role="status"
+                      className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm"
+                    >
+                      <p className="text-muted-foreground">
+                        Saldo físico após{" "}
+                        {form.tipo === "ajuste"
+                          ? "o ajuste"
+                          : form.tipo === "entrada"
+                            ? "a entrada"
+                            : "a saída"}
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {(form.tipo === "ajuste"
+                          ? Number(form.quantidade)
+                          : saldoProduto(form.produto_id) +
+                            (form.tipo === "saida" ? -1 : 1) * Number(form.quantidade)
+                        ).toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{" "}
+                        {String(
+                          produtos.data?.find((p) => p["id"] === form.produto_id)?.["unidade"] ??
+                            "",
+                        )}
+                      </p>
                     </div>
                   )}
-                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="estoque-loja">Loja do lançamento</Label>
-                  <SearchSelect
-                    id="estoque-loja"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    value={centro}
-                    onChange={(e) => setCentro(e.target.value)}
-                    required
-                    disabled={centrosCarregando}
-                  >
-                    <option value="">Selecione a loja</option>
-                    {lojas.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nome}
-                      </option>
-                    ))}
-                  </SearchSelect>
-                  <p className="text-xs text-muted-foreground">
-                    Entradas e saídas usam somente o depósito desta loja.
-                  </p>
+                  <Label htmlFor="estoque-observacao">Observação (opcional)</Label>
+                  <Textarea
+                    id="estoque-observacao"
+                    value={form.observacao}
+                    onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+                    placeholder="Ex.: reposição recebida, avaria ou contagem do estoque"
+                    rows={2}
+                  />
                 </div>
-                <details className="rounded-lg border p-3">
-                  <summary className="cursor-pointer text-sm font-medium">
-                    {form.tipo === "entrada"
-                      ? "Custo e observação (opcional)"
-                      : "Adicionar observação (opcional)"}
-                  </summary>
-                  <div className="mt-3 space-y-3">
-                    {form.tipo === "entrada" && (
-                      <div className="space-y-1">
-                        <Label htmlFor="estoque-custo">Custo por unidade (R$)</Label>
-                        <Input
-                          id="estoque-custo"
-                          currency
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={form.custo}
-                          onChange={(e) => setForm((f) => ({ ...f, custo: e.target.value }))}
-                        />
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label htmlFor="estoque-observacao">Observação</Label>
-                      <Textarea
-                        id="estoque-observacao"
-                        value={form.observacao}
-                        onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
-                        placeholder="Ex.: reposição recebida, avaria ou correção de saldo"
-                      />
-                    </div>
-                  </div>
-                </details>
                 <Button
                   className="w-full sm:w-auto"
                   type="submit"
@@ -429,7 +416,11 @@ function EstoquePage() {
                     !centro ||
                     !form.produto_id ||
                     !Number.isFinite(Number(form.quantidade)) ||
-                    Number(form.quantidade) <= 0 ||
+                    form.quantidade === "" ||
+                    (form.tipo === "ajuste"
+                      ? Number(form.quantidade) < 0
+                      : Number(form.quantidade) <= 0) ||
+                    disponibilidade.isFetching ||
                     lancar.isPending ||
                     centrosCarregando ||
                     disponibilidade.isError ||
@@ -445,11 +436,17 @@ function EstoquePage() {
                         ? "Registrar saída"
                         : "Registrar ajuste"}
                 </Button>
-                {(!Number.isFinite(Number(form.quantidade)) || Number(form.quantidade) <= 0) && (
-                  <p role="status" className="text-xs text-destructive">
-                    Informe uma quantidade maior que zero para registrar.
-                  </p>
-                )}
+                {form.quantidade !== "" &&
+                  (!Number.isFinite(Number(form.quantidade)) ||
+                    (form.tipo === "ajuste"
+                      ? Number(form.quantidade) < 0
+                      : Number(form.quantidade) <= 0)) && (
+                    <p role="status" className="text-xs text-destructive">
+                      {form.tipo === "ajuste"
+                        ? "Informe o saldo final, zero ou maior."
+                        : "Informe uma quantidade maior que zero."}
+                    </p>
+                  )}
                 {!form.produto_id && (
                   <p className="text-xs text-muted-foreground">
                     Selecione um produto para continuar.
