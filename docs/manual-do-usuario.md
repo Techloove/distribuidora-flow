@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.65.2 · 2026-11-26
+Versão 1.66.0 · 2026-11-26
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -517,7 +517,7 @@ Administre os acessos e acompanhe as cópias de segurança.
 2. Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.
 3. Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.
 4. Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila. Novas tabelas entram automaticamente na próxima cópia completa. A recuperação alcança os dados da última cópia concluída; lançamentos posteriores exigem outra cópia ou recuperação contínua do provedor.
-5. O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.
+5. Em uma cópia concluída com download disponível, use Restaurar para conferência e confirme. O executor consulta a fila a cada hora, importa o pacote completo em banco separado, compara registros e descarta o ambiente. Veja o resultado em Ver conferências. A rotina exige a fase378 aplicada. Não substitui a produção nem valida login, chaves do provedor e integrações externas; a entrada em uso depende do responsável técnico.
 6. Consulte o número da versão no menu e informe-o ao pedir suporte.
 7. Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas.
 
@@ -603,6 +603,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.66.0 · 2026-11-26 · Adiciona recuperação de backup para conferência em ambiente separado
+
+Motivo da atualização: Permitir comprovar a recuperação dos dados pela administração sem substituir a produção.
+
+- Nova opção Restaurar para conferência nas cópias concluídas: importa o pacote armazenado em banco isolado e compara tabelas, registros e arquivos.
+- Fila restrita a administradores ativos, processamento horário, integridade conferida e resultado agregado no sistema. Requer aplicar db/fase378_backup_restauracao_isolada.sql.
+- O ambiente de conferência é descartado. A promoção para produção e a recuperação de chaves, login e integrações continuam sob responsabilidade técnica.
+- Corrige o diretório de recuperação da cópia externa pelo ID do artefato. O ensaio real isolado da cópia de 26/11/2026 foi concluído com sucesso.
 
 ### v1.65.2 · 2026-11-26 · Corrige a identificação da cópia externa de backup
 

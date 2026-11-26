@@ -1,0 +1,46 @@
+name: Recuperar backup para conferência administrativa
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+permissions:
+  contents: read
+concurrency:
+  group: restauracao-administrativa-isolada
+  cancel-in-progress: false
+jobs:
+  restauracao:
+    if: vars.BACKUP_ATIVO == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      RESTORE_TEST_ROOT: /tmp/caparao-restore-${{ github.run_id }}-${{ github.run_attempt }}
+      RESTORE_CONTAINER: caparao-restore-${{ github.run_id }}-${{ github.run_attempt }}
+      RESTORE_SOURCE_RUN: fila-${{ github.run_id }}
+      RESTORE_IMAGE: supabase/postgres:17.6.1.136
+      ERP_BACKUP_KEY: ${{ secrets.ERP_BACKUP_KEY }}
+      EXT_SUPABASE_URL: ${{ vars.BACKUP_SUPABASE_URL || 'https://zviwittrjdwyczhutvjf.supabase.co' }}
+      EXT_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Consultar fila administrativa
+        id: fila
+        run: node scripts/executor-restauracao-backup.mjs assumir
+      - name: Preparar PostgreSQL isolado
+        if: steps.fila.outputs.ativo == 'true'
+        run: docker pull "$RESTORE_IMAGE"
+      - name: Importar, recuperar e comparar sem rede
+        id: recuperar
+        if: steps.fila.outputs.ativo == 'true'
+        run: node scripts/executor-restauracao-backup.mjs restaurar
+      - name: Registrar conferência incompleta
+        if: always() && steps.fila.outputs.ativo == 'true' && steps.recuperar.outcome != 'success'
+        run: node scripts/executor-restauracao-backup.mjs falhar
+      - name: Descartar banco de conferência e arquivos extraídos
+        if: always()
+        run: node scripts/validar-restauracao-backup.mjs limpar

@@ -2,7 +2,7 @@
 
 Para o botão administrativo, fila, histórico e agendamento diário, veja [Implantação da fase268](backup-implantacao-268.md).
 
-Os scripts fazem leitura do PostgreSQL e do Supabase Storage. A implantação do executor GitHub está registrada em `backup-github.md`. O sucesso do agendamento com fila vazia não comprova uma cópia: confira as etapas de geração, armazenamento externo, recuperação e conclusão. A importação técnica está descrita abaixo; ainda não há importação/restauração pela interface administrativa.
+Os scripts fazem leitura do PostgreSQL e do Supabase Storage. A implantação do executor GitHub está registrada em `backup-github.md`. O sucesso do agendamento com fila vazia não comprova uma cópia: confira as etapas de geração, armazenamento externo, recuperação e conclusão. A importação técnica está descrita abaixo; a conferência administrativa de recuperação pela interface exige a fase378 descrita abaixo.
 
 ## Configuração da infraestrutura
 
@@ -54,3 +54,15 @@ Para recuperar, extraia o `.tar` em pasta privada, configure `ERP_BACKUP_KEY` co
 As execuções 45449863782 e 45661042448 geraram e enviaram os arquivos externos, mas não concluíram a recuperação independente. A execução 45661042448 registrou `Artifact not found for name`, apesar de o artefato existir no catálogo. O workflow passa a recuperar pelo ID exato devolvido pelo upload, eliminando a descoberta pelo nome nesta etapa. Continua obrigatório ler e verificar a cópia externa antes de anunciar sucesso. Isso não dispensa executar e confirmar uma nova cópia real e um ensaio de restauração.
 
 A recuperação periódica alcança a última fotografia concluída, não os lançamentos posteriores. Recuperação até instantes antes da falha exige retenção de WAL/PITR no provedor e verificação própria dessa infraestrutura. A importação de um pacote não pode depender exclusivamente de o aplicativo de produção estar disponível.
+
+## Conferência de recuperação pela administração (fase378)
+
+Aplique `db/fase378_backup_restauracao_isolada.sql` depois das fases268/283. Em Manutenção → Backup dos dados, escolha uma cópia concluída e disponível e clique **Restaurar para conferência**. Confirme a importação em ambiente separado. O workflow `restauracao-fila.yml` consulta a fila a cada hora, usando os segredos já configurados no executor; pode ser iniciado manualmente pelo responsável técnico para antecipar a consulta. Não requer credenciais de acesso direto ao PostgreSQL de produção.
+
+O executor lê o `.tar` criptografado já armazenado pelo sistema, compara tamanho e SHA-256, recusa links/caminhos/arquivos inesperados, autentica a criptografia e importa o dump em PostgreSQL descartável sem rede. O relatório compara conteúdo e quantidade de registros, código e anexos extraídos. A tela mostra os resultados agregados. O ambiente e os dados extraídos são descartados ao final; nenhum dado de produção é substituído. A fila só permite uma recuperação ativa, usa lease com expiração e restringe solicitações a administradores ativos. Uma falha não produz sucesso falso.
+
+Esta opção importa cópias concluídas armazenadas pelo sistema; não recebe arquivos locais pelo navegador. A cópia salva no computador continua importável pelo procedimento técnico deste documento, com a chave guardada separadamente. Se o sistema estiver indisponível, o workflow independente `restauracao-teste.yml` e o procedimento técnico continuam sendo os caminhos de recuperação. Colocar um ambiente recuperado em uso exige preparar o projeto Supabase, segredos, autenticação e integrações e validar os processos; o botão não faz essa promoção automaticamente.
+
+O ensaio real `45827712308`, executado em 26/11/2026 com a cópia externa `45827073218`, terminou com sucesso em todas as etapas de importação, restauração, comparação e descarte. Foram comparadas 197 tabelas e 69.016 registros, com 1.141 arquivos de código e índices válidos. A origem não tinha objetos de Storage; a recuperação de anexos reais não foi exercitada nessa cópia. Isso comprova o ensaio lógico daquela cópia, não uma troca de produção. A nova fila fase378 requer aplicação do SQL e teste integrado após instalação.
+
+Ao recuperar pelo ID do artefato no workflow de backup, `merge-multiple: true` mantém os arquivos diretamente no diretório esperado pelo verificador, sem subpasta adicional do nome do artefato.

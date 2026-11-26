@@ -24,9 +24,11 @@ async function rpc(
     throw new Error("Redirecionamento inesperado no serviço de backup.");
   if (!r.ok)
     throw new Error(
-      nome === "obter_download_backup_283"
-        ? "Backup para download indisponível. Confira a fase283 e se o executor disponibilizou uma cópia concluída."
-        : "Backup indisponível. Confira a fase268, a permissão de administrador e o intervalo de cinco minutos entre solicitações.",
+      nome.endsWith("_378")
+        ? "Recuperação indisponível. Confira a instalação da fase378, a permissão de administrador e o intervalo entre solicitações."
+        : nome === "obter_download_backup_283"
+          ? "Backup para download indisponível. Confira a fase283 e se o executor disponibilizou uma cópia concluída."
+          : "Backup indisponível. Confira a fase268, a permissão de administrador e o intervalo de cinco minutos entre solicitações.",
     );
   return r.json();
 }
@@ -97,3 +99,33 @@ export const baixarBackup = createServerFn({ method: "POST" })
     url.searchParams.set("download", arquivo.nome);
     return { url: url.href, nome: arquivo.nome, sha256: arquivo.sha256, bytes: arquivo.bytes };
   });
+
+export const solicitarRestauracaoBackup = createServerFn({ method: "POST" })
+  .validator((d: unknown) => downloadEntrada.parse(d))
+  .handler(async ({ data }) => ({
+    id: z
+      .string()
+      .uuid()
+      .parse(await rpc(data, "solicitar_restauracao_backup_378", { _backup: data.id })),
+  }));
+const restauracao = z.object({
+  id: z.string().uuid(),
+  backup_id: z.string().uuid(),
+  estado: z.enum(["pendente", "executando", "sucesso", "falha"]),
+  solicitado_em: z.string(),
+  finalizado_em: z.string().nullable(),
+  mensagem: z.string().nullable(),
+  relatorio: z
+    .object({
+      tabelas_comparadas: z.number().int().nonnegative(),
+      registros_comparados: z.number().int().nonnegative(),
+      objetos_storage_extraidos: z.number().int().nonnegative(),
+      arquivos_codigo: z.number().int().nonnegative(),
+    })
+    .nullable(),
+});
+export const listarRestauracoesBackup = createServerFn({ method: "POST" })
+  .validator((d: unknown) => entrada.parse(d))
+  .handler(async ({ data }) =>
+    z.array(restauracao).parse(await rpc(data, "listar_restauracoes_backup_378")),
+  );

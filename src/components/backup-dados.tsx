@@ -6,7 +6,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase-provider";
-import { listarBackups, solicitarBackup, baixarBackup } from "@/lib/backup.functions";
+import {
+  listarBackups,
+  solicitarBackup,
+  baixarBackup,
+  solicitarRestauracaoBackup,
+  listarRestauracoesBackup,
+} from "@/lib/backup.functions";
 const estados = {
   pendente: "Aguardando executor",
   executando: "Em execução",
@@ -18,7 +24,9 @@ export function BackupDados() {
     qc = useQueryClient(),
     listar = useServerFn(listarBackups),
     solicitar = useServerFn(solicitarBackup),
-    baixar = useServerFn(baixarBackup);
+    baixar = useServerFn(baixarBackup),
+    recuperar = useServerFn(solicitarRestauracaoBackup),
+    listarRecuperacoes = useServerFn(listarRestauracoesBackup);
   const [baixando, setBaixando] = useState<string | null>(null);
   const salvar = async (id: string) => {
     if (!session || baixando) return;
@@ -52,6 +60,27 @@ export function BackupDados() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const [mostrarRecuperacoes, setMostrarRecuperacoes] = useState(false);
+  const recuperacoes = useQuery({
+    queryKey: ["restauracoes-backup", session?.user.id],
+    enabled: !!session && mostrarRecuperacoes,
+    retry: false,
+    refetchInterval: mostrarRecuperacoes ? 30_000 : false,
+    queryFn: () => listarRecuperacoes({ data: { accessToken: session!.access_token } }),
+  });
+  const restaurar = useMutation({
+    mutationFn: (id: string) => recuperar({ data: { id, accessToken: session!.access_token } }),
+    onSuccess: () => {
+      setMostrarRecuperacoes(true);
+      void qc.invalidateQueries({ queryKey: ["restauracoes-backup", session?.user.id] });
+      toast.success("Conferência solicitada. O executor importará a cópia em banco isolado.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const [confirmarRecuperacao, setConfirmarRecuperacao] = useState<string | null>(null);
+  const recuperacaoAtiva = recuperacoes.data?.some(
+    (r) => r.estado === "pendente" || r.estado === "executando",
+  );
   const ativo = q.data?.some((b) => b.estado === "pendente" || b.estado === "executando");
   const data = (v: string) =>
     new Date(v).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -128,6 +157,47 @@ export function BackupDados() {
                         {baixando === b.id ? "Salvando…" : "Salvar no computador"}
                       </Button>
                     )}
+                    {b.estado === "sucesso" && b.download_disponivel && (
+                      <div className="my-2 space-y-2">
+                        {confirmarRecuperacao === b.id ? (
+                          <div className="rounded border p-3">
+                            <p className="text-sm">
+                              Importar esta cópia em um banco separado, comparar o conteúdo e
+                              descartar o ambiente de teste? Os dados atuais serão preservados.
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Button
+                                disabled={restaurar.isPending || recuperacaoAtiva}
+                                onClick={() =>
+                                  restaurar.mutate(b.id, {
+                                    onSuccess: () => setConfirmarRecuperacao(null),
+                                  })
+                                }
+                              >
+                                Confirmar conferência
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => setConfirmarRecuperacao(null)}
+                              >
+                                Voltar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            disabled={restaurar.isPending || recuperacaoAtiva}
+                            onClick={() => {
+                              setConfirmarRecuperacao(b.id);
+                              setMostrarRecuperacoes(true);
+                            }}
+                          >
+                            Restaurar para conferência
+                          </Button>
+                        )}
+                      </div>
+                    )}
                     {b.estado === "sucesso" && !b.download_disponivel && (
                       <p className="text-xs text-muted-foreground">
                         Download não disponibilizado pelo executor para esta cópia.
@@ -144,6 +214,46 @@ export function BackupDados() {
           </Table>
         </div>
       )}
+      <div className="space-y-3 rounded border p-3">
+        <h3 className="font-medium">Recuperação em ambiente separado</h3>
+        <p className="text-sm text-muted-foreground">
+          Use Restaurar para conferência em uma cópia concluída. A fila é consultada a cada hora; o
+          resultado compara tabelas e registros sem substituir a produção. Após a comparação, o
+          banco de teste é descartado. A entrada em uso exige recuperação técnica das configurações
+          do provedor e validação de login e integrações.
+        </p>
+        <Button variant="outline" onClick={() => setMostrarRecuperacoes((v) => !v)}>
+          {mostrarRecuperacoes ? "Ocultar conferências" : "Ver conferências"}
+        </Button>
+        {mostrarRecuperacoes && recuperacoes.isPending && !recuperacoes.error && (
+          <p className="text-sm">Carregando conferências...</p>
+        )}
+        {mostrarRecuperacoes && recuperacoes.error && (
+          <p role="alert" className="text-sm text-destructive">
+            {recuperacoes.error.message}
+          </p>
+        )}
+        {mostrarRecuperacoes && recuperacoes.data?.length === 0 && (
+          <p className="text-sm">Nenhuma conferência solicitada.</p>
+        )}
+        {mostrarRecuperacoes &&
+          recuperacoes.data?.map((r) => (
+            <div key={r.id} className="rounded border p-3 text-sm">
+              <p>
+                {data(r.solicitado_em)} ·{" "}
+                {r.estado === "sucesso" ? "Recuperação conferida" : estados[r.estado]}
+              </p>
+              <p>{r.mensagem}</p>
+              {r.relatorio && (
+                <p>
+                  {r.relatorio.tabelas_comparadas} tabelas · {r.relatorio.registros_comparados}{" "}
+                  registros · {r.relatorio.objetos_storage_extraidos} anexos ·{" "}
+                  {r.relatorio.arquivos_codigo} arquivos de código
+                </p>
+              )}
+            </div>
+          ))}
+      </div>
       <p className="text-xs text-muted-foreground">
         A recuperação deve ser testada em ambiente separado pelo responsável técnico. Os arquivos
         são disponibilizados apenas a administradores, por link temporário. Chaves, configurações do

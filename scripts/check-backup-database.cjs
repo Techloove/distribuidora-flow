@@ -24,6 +24,9 @@ const assert = require("node:assert/strict");
   const downloadSql = readFileSync("db/fase283_backup_download_privado.sql", "utf8");
   await db.exec(downloadSql);
   await db.exec(downloadSql);
+  const restoreSql = readFileSync("db/fase378_backup_restauracao_isolada.sql", "utf8");
+  await db.exec(restoreSql);
+  await db.exec(restoreSql);
   const user = () => db.exec("reset role;set teste.role='authenticated';set role authenticated"),
     service = () => db.exec("reset role;set teste.role='service_role';set role service_role"),
     owner = () => db.exec("reset role");
@@ -100,6 +103,52 @@ const assert = require("node:assert/strict");
   const info = (await db.query("select obter_download_backup_283($1) info", [job.id])).rows[0].info;
   assert.equal(info.objeto, objeto);
   assert.equal(info.bytes, 1024);
+  const restoreId = (await db.query("select solicitar_restauracao_backup_378($1) id", [job.id]))
+    .rows[0].id;
+  assert.equal(
+    (await db.query("select solicitar_restauracao_backup_378($1) id", [job.id])).rows[0].id,
+    restoreId,
+  );
+  await assert.rejects(db.query("select assumir_restauracao_backup_378()"), /permission denied/);
+  await db.exec("set teste.admin='false'");
+  await assert.rejects(db.query("select listar_restauracoes_backup_378()"), /administrador ativo/);
+  await db.exec("set teste.admin='true'");
+  await service();
+  const restoreJob = (await db.query("select assumir_restauracao_backup_378() j")).rows[0].j;
+  assert.equal(restoreJob.id, restoreId);
+  assert.equal((await db.query("select assumir_restauracao_backup_378() j")).rows[0].j, null);
+  await assert.rejects(
+    db.query("select finalizar_restauracao_backup_378($1,$2,true,null)", [
+      restoreId,
+      restoreJob.lease,
+    ]),
+    /Relatório obrigatório/,
+  );
+  await db.query("select finalizar_restauracao_backup_378($1,$2,true,$3)", [
+    restoreId,
+    restoreJob.lease,
+    JSON.stringify({
+      resultado: "restauracao_logica_verificada",
+      isolamento_rede: "none 0",
+      indices_invalidos: 0,
+      tabelas_comparadas: 200,
+      registros_comparados: 10000,
+      objetos_storage_extraidos: 2,
+      arquivos_codigo: 900,
+    }),
+  ]);
+  await assert.rejects(
+    db.query("select finalizar_restauracao_backup_378($1,$2,false,null)", [
+      restoreId,
+      restoreJob.lease,
+    ]),
+    /expirada ou divergente/,
+  );
+  await user();
+  const restored = (await db.query("select listar_restauracoes_backup_378() j")).rows[0].j;
+  assert.equal(restored[0].estado, "sucesso");
+  assert.equal(JSON.stringify(restored).includes("lease"), false);
+
   assert.equal(
     (await db.query("select * from storage.objects where bucket_id='erp-backups'")).rows.length,
     1,

@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.66.0",
+    "data": "2026-11-26",
+    "titulo": "Adiciona recuperação de backup para conferência em ambiente separado",
+    "motivo": "Permitir comprovar a recuperação dos dados pela administração sem substituir a produção.",
+    "novidades": [
+      "Nova opção Restaurar para conferência nas cópias concluídas: importa o pacote armazenado em banco isolado e compara tabelas, registros e arquivos.",
+      "Fila restrita a administradores ativos, processamento horário, integridade conferida e resultado agregado no sistema. Requer aplicar db/fase378_backup_restauracao_isolada.sql.",
+      "O ambiente de conferência é descartado. A promoção para produção e a recuperação de chaves, login e integrações continuam sob responsabilidade técnica.",
+      "Corrige o diretório de recuperação da cópia externa pelo ID do artefato. O ensaio real isolado da cópia de 26/11/2026 foi concluído com sucesso."
+    ]
+  },
+  {
     "versao": "1.65.2",
     "data": "2026-11-26",
     "titulo": "Corrige a identificação da cópia externa de backup",

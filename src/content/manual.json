@@ -614,7 +614,7 @@
       "Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.",
       "Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.",
       "Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila. Novas tabelas entram automaticamente na próxima cópia completa. A recuperação alcança os dados da última cópia concluída; lançamentos posteriores exigem outra cópia ou recuperação contínua do provedor.",
-      "O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.",
+      "Em uma cópia concluída com download disponível, use Restaurar para conferência e confirme. O executor consulta a fila a cada hora, importa o pacote completo em banco separado, compara registros e descarta o ambiente. Veja o resultado em Ver conferências. A rotina exige a fase378 aplicada. Não substitui a produção nem valida login, chaves do provedor e integrações externas; a entrada em uso depende do responsável técnico.",
       "Consulte o número da versão no menu e informe-o ao pedir suporte.",
       "Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas."
     ],
