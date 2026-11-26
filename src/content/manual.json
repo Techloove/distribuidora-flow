@@ -613,7 +613,7 @@
       "Em Usuários e papéis, o administrador atribui perfis, módulos, lojas e rotinas conforme a responsabilidade de cada pessoa.",
       "Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.",
       "Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.",
-      "Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila.",
+      "Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila. Novas tabelas entram automaticamente na próxima cópia completa. A recuperação alcança os dados da última cópia concluída; lançamentos posteriores exigem outra cópia ou recuperação contínua do provedor.",
       "O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.",
       "Consulte o número da versão no menu e informe-o ao pedir suporte.",
       "Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas."

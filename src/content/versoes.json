@@ -1,5 +1,15 @@
 [
   {
+    "versao": "1.65.2",
+    "data": "2026-11-26",
+    "titulo": "Corrige a identificação da cópia externa de backup",
+    "motivo": "Evitar falha ao localizar uma cópia já enviada e esclarecer o ponto de recuperação dos dados.",
+    "novidades": [
+      "O executor recupera a cópia externa pelo ID retornado no upload, preservando a conferência independente antes de marcar o backup como concluído.",
+      "O manual esclarece a inclusão automática de novas tabelas e a recuperação até a última cópia concluída. A restauração pela interface ainda não está disponível."
+    ]
+  },
+  {
     "versao": "1.65.1",
     "data": "2026-11-26",
     "titulo": "Reduz consultas repetidas e reforça estabilidade das leituras",

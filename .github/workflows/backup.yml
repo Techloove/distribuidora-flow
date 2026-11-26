@@ -82,7 +82,7 @@ jobs:
         if: steps.fila.outputs.ativo == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: caparao-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact-ids: ${{ steps.externo.outputs.artifact-id }}
           path: ${{ env.BACKUP_RUN_ROOT }}/externo/${{ steps.gerar.outputs.backup }}
       - name: Conferir cópia externa e disponibilizar download no sistema
         id: concluir

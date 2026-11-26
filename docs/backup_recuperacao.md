@@ -2,7 +2,7 @@
 
 Para o botão administrativo, fila, histórico e agendamento diário, veja [Implantação da fase268](backup-implantacao-268.md).
 
-Os scripts fazem leitura do PostgreSQL e do Supabase Storage. Não há backup de produção ativo por esta entrega: faltam conexão, credenciais seguras, cliente PostgreSQL e destino externo configurados. O teste automatizado utiliza conteúdo sintético.
+Os scripts fazem leitura do PostgreSQL e do Supabase Storage. A implantação do executor GitHub está registrada em `backup-github.md`. O sucesso do agendamento com fila vazia não comprova uma cópia: confira as etapas de geração, armazenamento externo, recuperação e conclusão. A importação técnica está descrita abaixo; ainda não há importação/restauração pela interface administrativa.
 
 ## Configuração da infraestrutura
 
@@ -48,3 +48,9 @@ O executor gera e verifica as cópias local e externa, empacota somente arquivos
 No sistema, o administrador solicita **Fazer backup manual**, aguarda a conclusão e usa **Salvar no computador**. Chromium em contexto HTTPS permite escolher nome e pasta. Navegadores sem File System Access API usam sua própria configuração de downloads. O aplicativo não consegue impor uma pasta nesses navegadores nem confirmar que o download nativo terminou. No seletor suportado, o fluxo aborta se o tamanho recebido divergir do registrado. Links são autenticados na emissão e expiram em dois minutos; não os compartilhe.
 
 Para recuperar, extraia o `.tar` em pasta privada, configure `ERP_BACKUP_KEY` com a chave guardada separadamente e execute o verificador atual com `--extrair`; ele produz `banco.dump`, `aplicacao.tar` e `storage/`. O download no computador complementa, não substitui, a cópia externa independente. Faça um ensaio de restauração isolado: não há garantia de recuperação completa da plataforma sem suas configurações e segredos externos guardados separadamente.
+
+## Conferência de 26/11/2026
+
+As execuções 45449863782 e 45661042448 geraram e enviaram os arquivos externos, mas não concluíram a recuperação independente. A execução 45661042448 registrou `Artifact not found for name`, apesar de o artefato existir no catálogo. O workflow passa a recuperar pelo ID exato devolvido pelo upload, eliminando a descoberta pelo nome nesta etapa. Continua obrigatório ler e verificar a cópia externa antes de anunciar sucesso. Isso não dispensa executar e confirmar uma nova cópia real e um ensaio de restauração.
+
+A recuperação periódica alcança a última fotografia concluída, não os lançamentos posteriores. Recuperação até instantes antes da falha exige retenção de WAL/PITR no provedor e verificação própria dessa infraestrutura. A importação de um pacote não pode depender exclusivamente de o aplicativo de produção estar disponível.

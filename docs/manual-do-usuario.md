@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.65.1 · 2026-11-26
+Versão 1.65.2 · 2026-11-26
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -516,7 +516,7 @@ Administre os acessos e acompanhe as cópias de segurança.
 1. Em Usuários e papéis, o administrador atribui perfis, módulos, lojas e rotinas conforme a responsabilidade de cada pessoa.
 2. Use Auditoria para conferir operações e alterações registradas, respeitando o acesso concedido.
 3. Em Manutenção do sistema → Backup dos dados, o administrador pode solicitar uma cópia e acompanhar o histórico.
-4. Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila.
+4. Aguarde o resultado Cópia externa verificada. Aguardando executor indica apenas uma solicitação na fila. Novas tabelas entram automaticamente na próxima cópia completa. A recuperação alcança os dados da última cópia concluída; lançamentos posteriores exigem outra cópia ou recuperação contínua do provedor.
 5. O responsável técnico pode executar o ensaio isolado de restauração de um backup. O relatório confere o conteúdo recuperado sem alterar a produção; login e integrações externas precisam de validação separada.
 6. Consulte o número da versão no menu e informe-o ao pedir suporte.
 7. Em Manutenção do sistema, consulte Diagnóstico de integridade para conferir estoque por loja, reservas, preços e vínculos financeiros. O diagnóstico respeita as lojas autorizadas.
@@ -603,6 +603,13 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.65.2 · 2026-11-26 · Corrige a identificação da cópia externa de backup
+
+Motivo da atualização: Evitar falha ao localizar uma cópia já enviada e esclarecer o ponto de recuperação dos dados.
+
+- O executor recupera a cópia externa pelo ID retornado no upload, preservando a conferência independente antes de marcar o backup como concluído.
+- O manual esclarece a inclusão automática de novas tabelas e a recuperação até a última cópia concluída. A restauração pela interface ainda não está disponível.
 
 ### v1.65.1 · 2026-11-26 · Reduz consultas repetidas e reforça estabilidade das leituras
 
