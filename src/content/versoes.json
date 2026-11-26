@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.65.0",
+    "data": "2026-11-26",
+    "titulo": "Permite orçamento de cliente pendente e conversão para análise administrativa",
+    "motivo": "Permitir negociar com clientes recém-cadastrados sem antecipar sua liberação de crédito e rota.",
+    "novidades": [
+      "Após instalar a fase377, o orçamento aceita rota ainda não definida quando o cadastro/crédito do cliente está pendente, preservando os acessos da loja e da carteira.",
+      "O aceite converte a proposta pendente em pedido Aguardando aprovação, com motivo administrativo e sem reserva de estoque, parcelas ou comissão. Aprovação e confirmação continuam bloqueadas até a revisão do cadastro e da rota.",
+      "Orientações na criação e no orçamento esclarecem o fluxo. Clientes já liberados conservam as regras comerciais de aprovação vigentes.",
+      "Requer executar db/fase377_orcamento_cliente_pendente.sql no Supabase, após as fases334 e336. A instalação não libera clientes nem confirma documentos existentes."
+    ]
+  },
+  {
     "versao": "1.64.2",
     "data": "2026-11-25",
     "titulo": "Ajusta larguras dos itens e da precificação de compras sem rolagem horizontal",

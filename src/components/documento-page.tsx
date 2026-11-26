@@ -1598,15 +1598,17 @@ export function DocumentoPage({
         )}
       </div>
 
-      {aguardandoCadastro && !ehOrcamento && (
+      {aguardandoCadastro && (
         <p
           role="status"
           className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
         >
-          Aguardando aprovação de cadastro. Você pode preencher, imprimir e enviar este pedido para
-          análise. Um administrador deve revisar a rota, definir o limite e liberar o cliente em
-          Cadastro Unificado antes da aprovação do pedido. A liberação do cadastro não confirma a
-          venda automaticamente.
+          {ehOrcamento
+            ? "Cadastro do cliente em análise. Você pode preparar e imprimir o orçamento. Ao aceitar, ele será convertido em pedido aguardando aprovação. "
+            : "Aguardando aprovação de cadastro. Você pode preencher, imprimir e enviar este pedido para análise. "}{" "}
+          Um administrador deve revisar a rota, definir o limite e liberar o cliente em Cadastro
+          Unificado antes da aprovação do pedido. A liberação do cadastro não confirma a venda
+          automaticamente.
         </p>
       )}
       {config.table === "pedidos" && cadastrosPendentes.isError && (
@@ -3256,7 +3258,9 @@ export function DocumentoPage({
                 {clienteCadastroPendente(header["partner"]) && !header["rota"] ? (
                   <p className="self-center rounded-xl border bg-muted/30 p-3 text-sm">
                     A rota será definida pelo administrador na aprovação do cadastro. Você pode
-                    preparar este pedido e enviá-lo para análise.
+                    {header["natureza"] === "orcamento"
+                      ? "preparar o orçamento; ao aceitar, ele seguirá como pedido aguardando aprovação."
+                      : "preparar este pedido e enviá-lo para análise."}
                   </p>
                 ) : (
                   <div className="space-y-1.5">

@@ -101,7 +101,8 @@ export function OrcamentoPedido({
       <p className="text-sm text-muted-foreground">
         Enquanto for orçamento, não há reserva ou baixa de estoque, contas a receber ou comissão a
         pagar. O aceite converte este documento em pedido e verifica automaticamente as regras de
-        aprovação.
+        aprovação. Se o cadastro, a rota ou o crédito do cliente estiverem pendentes, o pedido
+        seguirá para análise administrativa.
       </p>
       {doc["observacoes"] ? (
         <p className="whitespace-pre-wrap break-words text-sm">{String(doc["observacoes"])}</p>

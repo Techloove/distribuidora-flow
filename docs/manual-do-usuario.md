@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.64.2 · 2026-11-25
+Versão 1.65.0 · 2026-11-26
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -161,7 +161,7 @@ Da escolha do cliente à confirmação da venda.
 3. Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.
 4. O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.
 5. Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.
-6. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido.
+6. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido. Após instalar a fase377, o representante pode criar o orçamento para um cliente da própria carteira com cadastro/crédito pendente, mesmo sem rota liberada. Ao aceitar esse orçamento com cadastro ou rota ainda pendentes, o documento vira pedido Aguardando aprovação, sem reserva de estoque, parcelas ou comissão. O administrador precisa revisar a rota, definir o limite e liberar o cadastro antes de aprovar ou confirmar a venda. O aceite e a liberação do cadastro não confirmam a venda automaticamente. Clientes já liberados continuam seguindo as regras comerciais de aprovação vigentes.
 7. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
 8. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
 9. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
@@ -602,6 +602,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.65.0 · 2026-11-26 · Permite orçamento de cliente pendente e conversão para análise administrativa
+
+Motivo da atualização: Permitir negociar com clientes recém-cadastrados sem antecipar sua liberação de crédito e rota.
+
+- Após instalar a fase377, o orçamento aceita rota ainda não definida quando o cadastro/crédito do cliente está pendente, preservando os acessos da loja e da carteira.
+- O aceite converte a proposta pendente em pedido Aguardando aprovação, com motivo administrativo e sem reserva de estoque, parcelas ou comissão. Aprovação e confirmação continuam bloqueadas até a revisão do cadastro e da rota.
+- Orientações na criação e no orçamento esclarecem o fluxo. Clientes já liberados conservam as regras comerciais de aprovação vigentes.
+- Requer executar db/fase377_orcamento_cliente_pendente.sql no Supabase, após as fases334 e336. A instalação não libera clientes nem confirma documentos existentes.
 
 ### v1.64.2 · 2026-11-25 · Ajusta larguras dos itens e da precificação de compras sem rolagem horizontal
 
