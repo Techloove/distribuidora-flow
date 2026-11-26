@@ -58,7 +58,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
         numero: 800 + i,
         status,
         tipo_documento: "pedido",
-        data_pedido: "2026-11-24",
+        data_pedido: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
+          new Date(),
+        ),
         centro_id: center,
         representante_id: id(40),
         total_itens: valor,

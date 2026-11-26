@@ -17,13 +17,14 @@ export function ImportarCompraXml() {
     { centro } = useCentroValido(),
     perm = usePermissoesRotinas(),
     rpc = useRotinaRpc(["compras"]);
+  const [aberto, setAberto] = useState(false);
   const [xml, setXml] = useState<XmlCompra | null>(null),
     [fornecedor, setFornecedor] = useState(""),
     [mapa, setMapa] = useState<Record<number, { produto: string; fator: string }>>({}),
     [conferido, setConferido] = useState(false);
   const q = useQuery({
     queryKey: ["xml-opcoes", user?.id],
-    enabled: !!client && perm.pode("compra_xml_importar"),
+    enabled: !!client && aberto && perm.pode("compra_xml_importar"),
     queryFn: async () => {
       const [produtos, fornecedores] = await Promise.all([
         lerPaginas<Registro>((inicio, fim) =>
@@ -85,7 +86,10 @@ export function ImportarCompraXml() {
   };
   if (!perm.pode("compra_xml_importar")) return null;
   return (
-    <details className="mb-4 rounded border bg-card p-4 space-y-3">
+    <details
+      onToggle={(e) => setAberto(e.currentTarget.open)}
+      className="mb-4 rounded border bg-card p-4 space-y-3"
+    >
       <summary className="cursor-pointer font-semibold">Importar XML de compra</summary>
       <p className="text-xs text-muted-foreground">
         Não emite NF-e. O XML preenche um rascunho; estoque e financeiro só mudam ao receber a

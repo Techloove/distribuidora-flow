@@ -56,6 +56,7 @@ export function PrecificacaoCompra({
   });
   const pendente = Object.keys(rascunhos).length > 0;
   const salvar = useMutation({
+    onMutate: () => onPendencia(true),
     mutationFn: async ({ produto, escolha }: { produto: string; escolha: Escolha | null }) => {
       const valor = escolha ? Number(escolha.valor) : null;
       if (escolha && (escolha.valor.trim() === "" || !Number.isFinite(valor) || valor! < 0))
@@ -115,8 +116,10 @@ export function PrecificacaoCompra({
     const venda =
       escolha.modo === "preco" ? Number(escolha.valor) : custo * (1 + Number(escolha.valor) / 100);
     const markup = custo > 0 ? (venda / custo - 1) * 100 : null;
-    const alterar = (campo: Partial<Escolha>) =>
+    const alterar = (campo: Partial<Escolha>) => {
+      onPendencia(true);
       setRascunhos((s) => ({ ...s, [l.produto_id]: { ...escolha, ...campo } }));
+    };
     return (
       <div
         aria-label={`Precificação de ${l.descricao}`}

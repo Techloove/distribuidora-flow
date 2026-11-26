@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.65.0 · 2026-11-26
+Versão 1.65.1 · 2026-11-26
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -25,15 +25,16 @@ Entenda o menu, o perfil de acesso e a loja selecionada.
 15. Nas listas de pedidos, boletos, contas, históricos e relatórios, clique nos nomes de clientes e nas referências sublinhadas para abrir o cadastro, pedido ou título relacionado. Os atalhos aparecem conforme seu acesso ao módulo.
 16. No pedido, use Contas a receber deste pedido e Boletos deste pedido. Nas listas abertas por um vínculo, use Ver todos para sair dessa seleção. A loja selecionada e as permissões continuam valendo.
 17. Abra Manual do usuário para tirar dúvidas. O número da versão aparece no menu e no início deste manual.
-18. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
-19. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
-20. Os valores monetários das telas, relatórios e impressões seguem o padrão brasileiro: R$ 2,90, sempre com duas casas decimais. Em Produtos, Custo Compra, Custo Médio e preços seguem esse padrão; os campos editáveis de preço são identificados por R$. Quantidades, pesos, códigos e percentuais mantêm seus formatos próprios. Essa apresentação não altera os valores nem a precisão dos cálculos gravados no sistema.
-21. O seletor de loja do topo controla o planejamento de compras, indicadores, produtos e listagens operacionais. Escolha Cimento, Ferragem ou Todas as lojas, conforme seu acesso. Cadastros realmente compartilhados continuam disponíveis nas lojas permitidas; documentos sem loja não são atribuídos a uma loja específica pelo filtro. Históricos e documentos já abertos mantêm sua loja de origem.
-22. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
-23. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
-24. Ao abrir uma janela de cadastro, o foco fica no título e os campos de seleção mostram os nomes já salvos, sem abrir uma busca automaticamente. Clique no campo desejado ou navegue com Tab para pesquisar. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
-25. O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.
-26. Datas são exibidas em DD/MM/AAAA; competências e períodos mensais, em MM/AAAA. Exemplo: 05/10/2026 e 10/2026. Campos mensais aceitam digitação de mês/ano; os filtros, cálculos e integrações preservam os valores técnicos de armazenamento.
+18. As listas de pedidos e compras consultam a loja e o período selecionados antes de trazer os documentos. Todo o período continua disponível. O catálogo e os itens são carregados ao abrir o documento; as opções de importação XML são consultadas ao abrir essa seção. Aguarde o carregamento antes de conferir os itens e seus produtos. A atualização de acessos continua automática, em uma consulta compartilhada por ciclo, inclusive para reconhecer liberação ou revogação de módulos.
+19. Quando aparecer Nova versão disponível, salve o que estiver preenchendo e clique Atualizar agora. Confirme o recarregamento para carregar a versão publicada.
+20. Ao entrar no sistema, a versão é conferida antes de abrir as telas de trabalho. Se houver uma versão mais nova, a página é atualizada automaticamente. Se você já estiver trabalhando, aparece o aviso para atualizar quando estiver pronto.
+21. Os valores monetários das telas, relatórios e impressões seguem o padrão brasileiro: R$ 2,90, sempre com duas casas decimais. Em Produtos, Custo Compra, Custo Médio e preços seguem esse padrão; os campos editáveis de preço são identificados por R$. Quantidades, pesos, códigos e percentuais mantêm seus formatos próprios. Essa apresentação não altera os valores nem a precisão dos cálculos gravados no sistema.
+22. O seletor de loja do topo controla o planejamento de compras, indicadores, produtos e listagens operacionais. Escolha Cimento, Ferragem ou Todas as lojas, conforme seu acesso. Cadastros realmente compartilhados continuam disponíveis nas lojas permitidas; documentos sem loja não são atribuídos a uma loja específica pelo filtro. Históricos e documentos já abertos mantêm sua loja de origem.
+23. Títulos vinculados a vendas ainda não aprovadas não entram nos indicadores de aberto, atraso, crédito ou previsão de recebimento. O histórico é preservado e mostra Venda não aprovada; dívidas válidas de outras vendas do cliente continuam sendo consideradas.
+24. Campos monetários usam vírgula e pelo menos duas casas decimais, inclusive zero: 0,00, 0,50 e 1,30. Ao terminar a digitação e sair do campo, o formato é aplicado automaticamente. Você pode digitar vírgula ou ponto decimal; os cálculos e o envio ao banco continuam numéricos. Custos e preços com maior precisão preservam as casas adicionais. Campos opcionais vazios continuam vazios; quantidades e percentuais mantêm o formato próprio.
+25. Ao abrir uma janela de cadastro, o foco fica no título e os campos de seleção mostram os nomes já salvos, sem abrir uma busca automaticamente. Clique no campo desejado ou navegue com Tab para pesquisar. As seleções de cadastros e os filtros permitem buscar digitando no próprio campo. Clique e digite parte do nome ou código; clientes e fornecedores nas telas de pedidos e financeiro também podem ser localizados por nome fantasia e CPF/CNPJ, quando cadastrados. A busca ignora acentos e diferenças entre maiúsculas e minúsculas. Selecione um resultado por clique ou pelas setas e Enter. Digitar apenas filtra a lista: não altera nem grava o cadastro selecionado. Escape ou sair do campo restaura a seleção anterior; o botão Limpar remove a seleção quando o campo permite. Em listas grandes, refine a busca ou use Mostrar mais.
+26. O sistema compartilha o padrão visual do lançamento financeiro: campos com fundo suave, bordas arredondadas, botões azuis, cabeçalhos claros e janelas com título e ações destacados. Cadastros, pedidos, compras e financeiro usam os mesmos componentes. Os controles continuam acessíveis por teclado e as listas se adaptam ao celular.
+27. Datas são exibidas em DD/MM/AAAA; competências e períodos mensais, em MM/AAAA. Exemplo: 05/10/2026 e 10/2026. Campos mensais aceitam digitação de mês/ano; os filtros, cálculos e integrações preservam os valores técnicos de armazenamento.
 
 Cuidados:
 
@@ -602,6 +603,17 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.65.1 · 2026-11-26 · Reduz consultas repetidas e reforça estabilidade das leituras
+
+Motivo da atualização: Reduzir leituras repetidas e proteger a conferência de dados incompletos, preservando permissões e resultados.
+
+- Pedidos e compras aplicam loja e período na consulta ao servidor e cancelam leituras substituídas. Catálogo e opções de XML são carregados somente quando necessários.
+- Itens e compras pendentes passam a ser paginados. A quantidade comprada respeita a loja do documento. Índices em memória evitam buscas repetidas por cliente e produto ao filtrar e renderizar.
+- Atualização periódica de menus e permissões compartilhada na área autenticada, preservando revogação e recuperação dos acessos sem multiplicar consultas por componente.
+- Lojas somente Sicoob deixam de consultar tarifas e CNAB do Sicredi. Resposta incompleta das datas do pedido mostra falha de consulta, sem derrubar a tela ou criar vencimentos fictícios.
+- A edição e o início do salvamento de preços planejados sinalizam a pendência imediatamente, preservando o bloqueio de recebimento da compra.
+- Varredura com testes de rede, regras de negócio, tipos e segurança. Não requer SQL e não altera saldos, pagamentos ou regras comerciais.
 
 ### v1.65.0 · 2026-11-26 · Permite orçamento de cliente pendente e conversão para análise administrativa
 

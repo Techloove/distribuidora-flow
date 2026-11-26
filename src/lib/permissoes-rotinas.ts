@@ -83,7 +83,7 @@ export function usePermissoesRotinas() {
   const q = useQuery({
     queryKey: ["minhas_permissoes", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && !!user && !loading && !error,
-    refetchInterval: 30_000,
+    // Atualização periódica compartilhada pelo AppLayout.
     queryFn: async () => {
       const { data, error } = await client!.rpc("minhas_permissoes");
       if (error) throw new Error("Não foi possível verificar as permissões das rotinas.");

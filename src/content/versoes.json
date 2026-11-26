@@ -1,5 +1,19 @@
 [
   {
+    "versao": "1.65.1",
+    "data": "2026-11-26",
+    "titulo": "Reduz consultas repetidas e reforça estabilidade das leituras",
+    "motivo": "Reduzir leituras repetidas e proteger a conferência de dados incompletos, preservando permissões e resultados.",
+    "novidades": [
+      "Pedidos e compras aplicam loja e período na consulta ao servidor e cancelam leituras substituídas. Catálogo e opções de XML são carregados somente quando necessários.",
+      "Itens e compras pendentes passam a ser paginados. A quantidade comprada respeita a loja do documento. Índices em memória evitam buscas repetidas por cliente e produto ao filtrar e renderizar.",
+      "Atualização periódica de menus e permissões compartilhada na área autenticada, preservando revogação e recuperação dos acessos sem multiplicar consultas por componente.",
+      "Lojas somente Sicoob deixam de consultar tarifas e CNAB do Sicredi. Resposta incompleta das datas do pedido mostra falha de consulta, sem derrubar a tela ou criar vencimentos fictícios.",
+      "A edição e o início do salvamento de preços planejados sinalizam a pendência imediatamente, preservando o bloqueio de recebimento da compra.",
+      "Varredura com testes de rede, regras de negócio, tipos e segurança. Não requer SQL e não altera saldos, pagamentos ou regras comerciais."
+    ]
+  },
+  {
     "versao": "1.65.0",
     "data": "2026-11-26",
     "titulo": "Permite orçamento de cliente pendente e conversão para análise administrativa",

@@ -1,3 +1,5 @@
+import { lerDatasPedido } from "@/lib/datas-pedido-consulta";
+import { indexarPrimeiro } from "@/lib/indices-listas";
 import { PrecificacaoCompra, LinhaPrecificacaoCompra } from "@/components/precificacao-compra";
 import { FiltroStatusDocumento } from "@/components/filtro-status-documento";
 import { alternarStatusSelecionado, statusSelecionados } from "@/lib/filtro-status-documento";
@@ -153,19 +155,39 @@ export function DocumentoPage({
   const podeAlterarPreco = usePodeAlterarPreco();
   const [precificacaoPendente, setPrecificacaoPendente] = useState(false);
 
+  /** Dia comercial de São Paulo, independentemente do fuso do navegador. */
+  const hoje = hojeSaoPaulo();
+  /** Filtros da listagem de documentos: pedidos abrem já no dia atual. */
+  const [filtros, setFiltros] = useState<Record<string, string>>(() =>
+    config.table === "pedidos" ? { de: hoje, ate: hoje } : {},
+  );
+  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
+
+  /** Presets rápidos de período. */
+  const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
+
   const docs = useQuery({
-    queryKey: [...[config.table, user?.id, roles.slice().sort().join(",")], getModalidade()],
+    queryKey: [
+      ...[config.table, user?.id, roles.slice().sort().join(",")],
+      getModalidade(),
+      centro,
+      filtros["de"] ?? "",
+      filtros["ate"] ?? "",
+    ],
     refetchInterval: config.table === "pedidos" ? 30_000 : false,
     enabled: !!client,
-    queryFn: async () => {
-      return lerPaginas<Row>((inicio, fim) =>
-        client!
+    queryFn: async ({ signal }) => {
+      return lerPaginas<Row>((inicio, fim) => {
+        let q = client!
           .from(config.table)
           .select("*")
           .order("numero", { ascending: false })
-          .order("id")
-          .range(inicio, fim),
-      );
+          .order("id");
+        if (centro) q = q.eq("centro_id", centro);
+        if (filtros["de"]) q = q.gte(config.dateField, filtros["de"]);
+        if (filtros["ate"]) q = q.lte(config.dateField, filtros["ate"]);
+        return q.range(inicio, fim).abortSignal(signal);
+      });
     },
   });
 
@@ -192,6 +214,10 @@ export function DocumentoPage({
     },
   });
 
+  const parceirosPorId = useMemo(
+    () => indexarPrimeiro(partners.data ?? [], (p) => p["id"]),
+    [partners.data],
+  );
   const cadastrosPendentes = useQuery({
     queryKey: ["pessoas", "cadastros-pendentes-pedido", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && config.partnerTable === "clientes",
@@ -208,13 +234,13 @@ export function DocumentoPage({
       ),
   });
   const clienteCadastroPendente = (id: unknown) => {
-    const pessoa = partners.data?.find((p) => p["id"] === id)?.["pessoa_id"];
+    const pessoa = parceirosPorId.get(id)?.["pessoa_id"];
     return !!pessoa && !!cadastrosPendentes.data?.some((p) => p["id"] === pessoa);
   };
 
   const produtos = useQuery({
     queryKey: [...["produtos", "options", "documentos"], getModalidade()],
-    enabled: !!client,
+    enabled: !!client && !!selected,
     queryFn: async () => {
       return lerPaginas<Row>((inicio, fim) =>
         client!
@@ -229,23 +255,10 @@ export function DocumentoPage({
     },
   });
 
-  /** Quantidades já compradas (NF de entrada pendente de recebimento). */
-  const comprados = useQuery({
-    queryKey: [...["vw_produto_comprado"], getModalidade()],
-    enabled: !!client,
-    queryFn: async () => {
-      const { data, error } = await client!
-        .from("vw_produto_comprado")
-        .select("produto_id, quantidade_comprada");
-      if (error) throw new Error(error.message);
-      const mapa = new Map<string, number>();
-      for (const r of (data ?? []) as Row[]) {
-        mapa.set(String(r["produto_id"]), Number(r["quantidade_comprada"] ?? 0));
-      }
-      return mapa;
-    },
-  });
-
+  const produtosPorId = useMemo(
+    () => indexarPrimeiro(produtos.data ?? [], (p) => p["id"]),
+    [produtos.data],
+  );
   const centros = useQuery({
     queryKey: [...["centros", "options", "documentos"], getModalidade()],
     enabled: !!client,
@@ -314,32 +327,23 @@ export function DocumentoPage({
   const itens = useQuery({
     queryKey: [config.itemsTable, user?.id, roles.slice().sort().join(","), selected],
     enabled: !!client && !!selected,
-    queryFn: async () => {
-      const { data, error } = await client!
-        .from(config.itemsTable)
-        .select(
-          (config.table === "pedidos"
-            ? "*, produto_peso:produtos(peso_kg,categoria)"
-            : "*") as string,
-        )
-        .eq(config.parentKey, selected!)
-        .order("created_at");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as Row[];
-    },
+    queryFn: async ({ signal }) =>
+      lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from(config.itemsTable)
+          .select(
+            (config.table === "pedidos"
+              ? "*, produto_peso:produtos(peso_kg,categoria)"
+              : "*") as string,
+          )
+          .eq(config.parentKey, selected!)
+          .order("created_at")
+          .order("id")
+          .range(inicio, fim)
+          .abortSignal(signal)
+          .returns<Row[]>(),
+      ),
   });
-
-  /** Dia comercial de São Paulo, independentemente do fuso do navegador. */
-  const hoje = hojeSaoPaulo();
-
-  /** Filtros da listagem de documentos: pedidos abrem já no dia atual. */
-  const [filtros, setFiltros] = useState<Record<string, string>>(() =>
-    config.table === "pedidos" ? { de: hoje, ate: hoje } : {},
-  );
-  const setF = (k: string, v: string) => setFiltros((s) => ({ ...s, [k]: v }));
-
-  /** Presets rápidos de período. */
-  const setPeriodo = (de: string, ate: string) => setFiltros((s) => ({ ...s, de, ate }));
 
   /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
   const soMeusPedidos =
@@ -370,7 +374,7 @@ export function DocumentoPage({
     if (termo) {
       list = list.filter((d) => {
         const parceiro = String(
-          partners.data?.find((p) => p["id"] === d[config.partnerKey])?.["razao_social"] ?? "",
+          parceirosPorId.get(d[config.partnerKey])?.["razao_social"] ?? "",
         ).toLowerCase();
         return (
           String(d["numero"] ?? "").includes(termo) ||
@@ -386,7 +390,7 @@ export function DocumentoPage({
     docs.data,
     filtros,
     centro,
-    partners.data,
+    parceirosPorId,
     config.partnerKey,
     config.dateField,
     soMeusPedidos,
@@ -467,6 +471,27 @@ export function DocumentoPage({
 
   const inter = config.table === "pedidos" && doc?.["modalidade_venda"] === "intermediacao";
   const lojaDocumento = String(doc?.["centro_id"] ?? "");
+  /** Quantidades já compradas (NF de entrada pendente de recebimento). */
+  const comprados = useQuery({
+    queryKey: ["vw_produto_comprado", user?.id, lojaDocumento, getModalidade()],
+    enabled: !!client && !!selected && !!lojaDocumento,
+    queryFn: async () => {
+      const data = await lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("vw_produto_comprado")
+          .select("produto_id, quantidade_comprada")
+          .eq("centro_id", lojaDocumento)
+          .order("produto_id")
+          .range(inicio, fim),
+      );
+      const mapa = new Map<string, number>();
+      for (const r of (data ?? []) as Row[]) {
+        mapa.set(String(r["produto_id"]), Number(r["quantidade_comprada"] ?? 0));
+      }
+      return mapa;
+    },
+  });
+
   useEffect(() => {
     consultaPreco.current++;
     setItem({ ...emptyItem });
@@ -539,12 +564,7 @@ export function DocumentoPage({
     queryFn: async () => {
       const r = await client!.rpc("datas_pedido_306", { _pedido: selected });
       if (r.error) throw Error(r.error.message);
-      return r.data as {
-        data_original: string;
-        data_comercial: string;
-        data_aprovacao: string | null;
-        data_base_previa: string;
-      } | null;
+      return lerDatasPedido(r.data);
     },
   });
   const reabertoSomenteAdmin =
@@ -641,7 +661,7 @@ export function DocumentoPage({
       if (config.table === "pedidos") {
         await conferirRotaRascunhoCliente(
           payload["rota_id"],
-          partners.data?.find((p) => p["id"] === payload["cliente_id"])?.["pessoa_id"],
+          parceirosPorId.get(payload["cliente_id"])?.["pessoa_id"],
           async () => {
             const resultado = await cadastrosPendentes.refetch();
             if (resultado.error || !resultado.data)
@@ -1199,7 +1219,7 @@ export function DocumentoPage({
 
   /** Ao escolher o cliente, traz rota, centro de custo e forma de pagamento do cadastro dele. */
   function pickPartner(id: string) {
-    const p = partners.data?.find((x) => x["id"] === id);
+    const p = parceirosPorId.get(id);
     const condicao = String(p?.["condicao_pagamento"] ?? "")
       .trim()
       .toLowerCase();
@@ -1295,14 +1315,11 @@ export function DocumentoPage({
     );
   })();
 
-  const partnerName = (id: unknown) =>
-    String(partners.data?.find((p) => p["id"] === id)?.["razao_social"] ?? "—");
+  const partnerName = (id: unknown) => String(parceirosPorId.get(id)?.["razao_social"] ?? "—");
   const produtoCodigo = (id: unknown) =>
-    String(produtos.data?.find((p) => p["id"] === id)?.["codigo"] ?? "").trim() || "—";
-  const produtoName = (id: unknown) =>
-    String(produtos.data?.find((p) => p["id"] === id)?.["descricao"] ?? "—");
-  const produtoPeso = (id: unknown) =>
-    Number(produtos.data?.find((p) => p["id"] === id)?.["peso_kg"] ?? 0);
+    String(produtosPorId.get(id)?.["codigo"] ?? "").trim() || "—";
+  const produtoName = (id: unknown) => String(produtosPorId.get(id)?.["descricao"] ?? "—");
+  const produtoPeso = (id: unknown) => Number(produtosPorId.get(id)?.["peso_kg"] ?? 0);
   const pesoItem = (it: Row) =>
     Number(
       (it["produto_peso"] as { peso_kg?: number } | null)?.peso_kg ?? produtoPeso(it["produto_id"]),
@@ -2571,16 +2588,20 @@ export function DocumentoPage({
                   </div>
                 )}
                 <div className="overflow-x-auto rounded-lg border border-border bg-card">
-                  {itens.isLoading ? (
+                  {itens.isLoading || produtos.isLoading ? (
                     <div className="py-10 text-center text-sm text-muted-foreground">
                       Carregando...
                     </div>
-                  ) : itens.isError ? (
+                  ) : itens.isError || produtos.isError ? (
                     <div role="alert" className="space-y-3 p-5 text-sm">
                       <p>
-                        Não foi possível carregar os itens. Isso não significa que foram removidos.
+                        Não foi possível carregar os itens ou seus produtos. Isso não significa que
+                        foram removidos.
                       </p>
-                      <Button variant="outline" onClick={() => void itens.refetch()}>
+                      <Button
+                        variant="outline"
+                        onClick={() => void Promise.all([itens.refetch(), produtos.refetch()])}
+                      >
                         Tentar carregar itens novamente
                       </Button>
                     </div>

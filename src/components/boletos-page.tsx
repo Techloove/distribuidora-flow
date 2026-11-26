@@ -113,6 +113,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
       return data as Row | null;
     },
   });
+  const bancoSicrediConfirmado = bancoLoja.isSuccess && bancoLoja.data?.["banco"] === "sicredi";
   const baixarFn = useServerFn(sicrediBaixarBoleto);
 
   const config = useQuery({
@@ -226,9 +227,11 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
     [boletosResumo, filtros, cliName],
   );
   const periodoInvalido = periodoBoletosInvalido(filtros);
+  // Consulta as origens de tarifa apenas quando há boletos do banco no escopo atual.
+  const temSicredi = boletos.isSuccess && daLoja.some((b) => b["banco"] === "sicredi");
   const tarifas = useQuery({
     queryKey: [...["sicredi-tarifa", "lista", session?.user.id, centro], getModalidade()],
-    enabled: !!client && !!session && canFinance,
+    enabled: !!client && !!session && canFinance && temSicredi,
     queryFn: async () => {
       const rows: Row[] = [];
       for (let offset = 0; ; offset += 500) {
@@ -251,7 +254,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
 
   const tarifasApi = useQuery({
     queryKey: [...["sicredi-tarifas-api", session?.user.id, centro], getModalidade()],
-    enabled: !!client && !!session && canFinance,
+    enabled: !!client && !!session && canFinance && temSicredi,
     refetchInterval: 60_000,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -275,7 +278,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
   });
   const statusTarifas = useQuery({
     queryKey: [...["sicredi-tarifas-status", session?.user.id, centro], getModalidade()],
-    enabled: !!client && !!session && canFinance,
+    enabled: !!client && !!session && canFinance && (temSicredi || bancoSicrediConfirmado),
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await client!.rpc("sicredi_tarifas_status_280", {
@@ -292,7 +295,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
 
   const financeiroTarifas = useQuery({
     queryKey: [...["sicredi-tarifa-financeiro-lista", session?.user.id, centro], getModalidade()],
-    enabled: !!client && !!session && canFinance,
+    enabled: !!client && !!session && canFinance && temSicredi,
     refetchInterval: 60_000,
     queryFn: async () => {
       const rows: Row[] = [];
@@ -482,7 +485,7 @@ export function BoletosPage({ referencia }: { referencia?: BuscaReferencias }) {
           </Link>
           . Configure banco e regras em Lojas.
         </p>
-        {bancoLoja.data?.["banco"] !== "sicoob" && <SicrediCnabPanel />}
+        {(bancoSicrediConfirmado || temSicredi) && <SicrediCnabPanel />}
         {bancoLoja.data?.["banco"] === "sicoob" ? (
           <p className="rounded-lg border p-3 text-sm">
             Sicoob · produção {bancoLoja.data["ativo"] === true ? "habilitada" : "desativada"}.

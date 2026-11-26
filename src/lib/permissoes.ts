@@ -158,7 +158,7 @@ export function useAcesso(): Acesso {
   const q = useQuery({
     queryKey: ["role_menus", user?.id, roles.slice().sort().join(",")],
     enabled: !!client && roles.length > 0 && !total && !needsCadastro,
-    refetchInterval: 30_000,
+    // Atualização periódica compartilhada pelo AppLayout.
     queryFn: async () => {
       const { data, error } = await client!
         .from("role_menus")

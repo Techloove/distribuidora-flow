@@ -1,3 +1,4 @@
+import { useSincronizacaoPermissoes } from "@/lib/use-sincronizacao-permissoes";
 import { rotaForaDoErp } from "@/lib/avisos-saas";
 import { PainelSaas } from "@/components/painel-saas";
 import { AvisoAtualizacao } from "@/components/aviso-atualizacao";
@@ -12,6 +13,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 export const Route = createFileRoute("/_app")({ ssr: false, component: AppLayout });
 function AppLayout() {
+  useSincronizacaoPermissoes();
   const { session, loading, error, signOut, needsCadastro, passwordRecovery, saas } = useSupabase();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
