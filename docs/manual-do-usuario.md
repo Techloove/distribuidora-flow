@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.67.2 · 2026-11-27
+Versão 1.67.3 · 2026-11-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -159,25 +159,26 @@ Cuidados:
 Da escolha do cliente à confirmação da venda.
 
 1. Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.
-2. No filtro Status, marque uma ou mais situações para combinar os pedidos que deseja consultar. As etiquetas de situação abaixo dos totais também podem ser ligadas e desligadas em conjunto; Todos os status ou Todos limpa a seleção de situações. O total e a impressão acompanham os registros filtrados. Total dos documentos inclui os tipos e situações selecionados, não apenas vendas efetivadas.
-3. Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.
-4. O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.
-5. Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.
-6. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido. Após instalar a fase377, o representante pode criar o orçamento para um cliente da própria carteira com cadastro/crédito pendente, mesmo sem rota liberada. Ao aceitar esse orçamento com cadastro ou rota ainda pendentes, o documento vira pedido Aguardando aprovação, sem reserva de estoque, parcelas ou comissão. O administrador precisa revisar a rota, definir o limite e liberar o cadastro antes de aprovar ou confirmar a venda. O aceite e a liberação do cadastro não confirmam a venda automaticamente. Clientes já liberados continuam seguindo as regras comerciais de aprovação vigentes.
-7. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
-8. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
-9. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
-10. Na lista de Pedidos, use Imprimir pedido na coluna Ações, ao lado do Total, para abrir a prévia sem abrir o pedido. O atalho também aparece no cartão do celular e usa o mesmo modelo de impressão do pedido.
-11. Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.
-12. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
-13. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
-14. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
-15. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
-16. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
-17. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Após instalar a fase373, a nova aprovação também atualiza a base e o valor da comissão do ciclo reaberto, conforme os valores aprovados no pedido. Comissões pagas ou agendadas exigem acerto específico; a reapuração normal preserva o valor contratado do ciclo atual. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
-18. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
-19. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
-20. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
+2. Na impressão, os dados comerciais de cada produto são consultados pelos pedidos autorizados. A fase380 permite identificar os itens históricos do pedido sem depender da leitura geral do catálogo e sem expor custos. Se algum produto não puder ser identificado, a impressão é interrompida para evitar um documento incompleto.
+3. No filtro Status, marque uma ou mais situações para combinar os pedidos que deseja consultar. As etiquetas de situação abaixo dos totais também podem ser ligadas e desligadas em conjunto; Todos os status ou Todos limpa a seleção de situações. O total e a impressão acompanham os registros filtrados. Total dos documentos inclui os tipos e situações selecionados, não apenas vendas efetivadas.
+4. Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.
+5. O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.
+6. Inclua os produtos da loja e informe as quantidades. Confira preço, descontos, frete e total.
+7. Se estiver preparando um orçamento, use as ações da proposta e registre o aceite antes de convertê-la em pedido. Após instalar a fase377, o representante pode criar o orçamento para um cliente da própria carteira com cadastro/crédito pendente, mesmo sem rota liberada. Ao aceitar esse orçamento com cadastro ou rota ainda pendentes, o documento vira pedido Aguardando aprovação, sem reserva de estoque, parcelas ou comissão. O administrador precisa revisar a rota, definir o limite e liberar o cadastro antes de aprovar ou confirmar a venda. O aceite e a liberação do cadastro não confirmam a venda automaticamente. Clientes já liberados continuam seguindo as regras comerciais de aprovação vigentes.
+8. Envie para aprovação quando necessário e use Confirmar pedido para concluir a venda comercial.
+9. Acompanhe os próximos passos nos menus Separação, Cargas de entrega e Entregas.
+10. A impressão de pedidos, separação e expedição usa o mesmo modelo e mostra Representante e Rota conforme os vínculos do pedido. Um vínculo não informado ou indisponível aparece como traço.
+11. Na lista de Pedidos, use Imprimir pedido na coluna Ações, ao lado do Total, para abrir a prévia sem abrir o pedido. O atalho também aparece no cartão do celular e usa o mesmo modelo de impressão do pedido.
+12. Para salvar o pedido no celular ou tablet, abra Imprimir pedido e use Imprimir / salvar PDF. No Android, selecione Salvar como PDF. No iPhone/iPad, amplie a prévia na tela de impressão com dois dedos, toque em Compartilhar e escolha Salvar em Arquivos ou WhatsApp, se disponível. Depois, anexe o PDF como Documento no WhatsApp. Os menus variam por navegador e versão; prefira Safari no iPhone e Chrome no Android.
+13. No final do pedido em digitação, preencha Observações do pedido e clique Salvar observações antes de imprimir. É possível escrever várias linhas, até 4000 caracteres.
+14. A impressão mostra a razão social e o nome fantasia do cliente, além das observações salvas ao final do documento.
+15. Para trocar a condição de pagamento de um pedido que já avançou, o administrador pode usar Voltar para digitação · administrador, antes da saída para entrega, inclusive se o pedido já estiver cancelado. Todos os boletos emitidos devem estar cancelados ou com baixa confirmada no banco. Cancelamento apenas solicitado ainda bloqueia o retorno. Informe o motivo e confirme.
+16. Se uma tentativa de retorno mostrar Use o cancelamento administrativo com motivo mesmo com o motivo preenchido, a operação é desfeita. Na versão corrigida, atualize a página, abra novamente Voltar para digitação e confirme com o motivo; não é necessário cancelar o boleto novamente se a baixa já foi confirmada.
+17. A reabertura encerra o ciclo anterior: preserva títulos como cancelados e boletos antigos no histórico, libera as reservas, reverte somente as saídas de estoque registradas e limpa a conferência dos itens. Usuário, motivo e situação anterior ficam registrados. Não há nova cobrança ou recebimento automático nesse retorno.
+18. Após retornar, escolha a nova forma de pagamento e clique Salvar pagamento. Siga novamente a aprovação e a confirmação do pedido. A confirmação gera novas parcelas, com valores e vencimentos da condição escolhida; repetir a confirmação não duplica parcelas. Após instalar a fase373, a nova aprovação também atualiza a base e o valor da comissão do ciclo reaberto, conforme os valores aprovados no pedido. Comissões pagas ou agendadas exigem acerto específico; a reapuração normal preserva o valor contratado do ciclo atual. Depois refaça e confira a separação para emitir novos boletos sobre as novas parcelas. Somente administrador altera a forma de pagamento de um pedido reaberto.
+19. Pedidos com pagamentos, boletos liquidados, renegociações, devolução confirmada, documento fiscal, comissão paga/agendada ou saída para entrega não podem ser reabertos por esse atalho. Regularize pelo fluxo financeiro, fiscal ou de devolução correspondente.
+20. A exposição de crédito soma os saldos a receber do cliente. Antes de gerar as parcelas do pedido, inclui também o total do pedido; depois, considera os saldos das parcelas já geradas, sem somar o mesmo pedido novamente. Títulos pagos ou cancelados não consomem limite. Ao reabrir para digitação, o novo ciclo volta a considerar o total até gerar suas novas parcelas.
+21. No computador, a lista de pedidos usa fonte e espaçamentos compactos para acomodar número, cliente, representante, data, status, total e impressão. Nomes longos aparecem em mais de uma linha, sem esconder o texto. Em telas estreitas, a tabela mantém a rolagem necessária e a ação de impressão acessível; no celular, os pedidos continuam em cartões.
 
 Cuidados:
 
@@ -605,6 +606,14 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.67.3 · 2026-11-27 · Corrige a identificação de produtos na impressão do representante
+
+Motivo da atualização: Corrige a identificação de produtos na impressão do representante
+
+- Impressão de pedidos e orçamentos busca os dados comerciais dos produtos vinculados aos documentos autorizados, sem depender da consulta geral do catálogo.
+- Recupera itens históricos para representantes sem liberar custos ou outras lojas e carteiras. A impressão é interrompida se faltar identificação de algum produto.
+- Requer aplicar db/fase380_produtos_impressao_pedidos.sql. Não altera os itens, preços ou totais dos pedidos existentes.
 
 ### v1.67.2 · 2026-11-27 · Exibe o estoque mínimo em inteiros arredondados para cima
 

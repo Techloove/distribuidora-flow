@@ -194,6 +194,7 @@
     "modulos": ["/pedidos"],
     "passos": [
       "Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.",
+      "Na impressão, os dados comerciais de cada produto são consultados pelos pedidos autorizados. A fase380 permite identificar os itens históricos do pedido sem depender da leitura geral do catálogo e sem expor custos. Se algum produto não puder ser identificado, a impressão é interrompida para evitar um documento incompleto.",
       "No filtro Status, marque uma ou mais situações para combinar os pedidos que deseja consultar. As etiquetas de situação abaixo dos totais também podem ser ligadas e desligadas em conjunto; Todos os status ou Todos limpa a seleção de situações. O total e a impressão acompanham os registros filtrados. Total dos documentos inclui os tipos e situações selecionados, não apenas vendas efetivadas.",
       "Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.",
       "O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.",

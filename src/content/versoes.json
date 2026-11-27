@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.67.3",
+    "data": "2026-11-27",
+    "titulo": "Corrige a identificação de produtos na impressão do representante",
+    "motivo": "Corrige a identificação de produtos na impressão do representante",
+    "novidades": [
+      "Impressão de pedidos e orçamentos busca os dados comerciais dos produtos vinculados aos documentos autorizados, sem depender da consulta geral do catálogo.",
+      "Recupera itens históricos para representantes sem liberar custos ou outras lojas e carteiras. A impressão é interrompida se faltar identificação de algum produto.",
+      "Requer aplicar db/fase380_produtos_impressao_pedidos.sql. Não altera os itens, preços ou totais dos pedidos existentes."
+    ]
+  },
+  {
     "versao": "1.67.2",
     "data": "2026-11-27",
     "titulo": "Exibe o estoque mínimo em inteiros arredondados para cima",

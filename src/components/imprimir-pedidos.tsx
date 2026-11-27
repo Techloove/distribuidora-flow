@@ -88,11 +88,29 @@ export function ImprimirPedidos({
           "clientes",
           pedidos.map((p) => p["cliente_id"]),
         ),
-        lookup(
-          "produtos",
-          linhas.map((i) => i["produto_id"]),
-          "id, codigo, descricao, unidade, peso_kg",
-        ),
+        (async () => {
+          const resultado: PrintRow[] = [];
+          for (let de = 0; de < ids.length; de += 100) {
+            resultado.push(
+              ...(await lerPaginas<PrintRow>((inicio, fim) =>
+                client
+                  .rpc("produtos_impressao_pedidos_380", { _pedidos: ids.slice(de, de + 100) })
+                  .order("id")
+                  .range(inicio, fim),
+              )),
+            );
+          }
+          const encontrados = new Map(resultado.map((p) => [String(p["id"]), p]));
+          if (
+            linhas.some(
+              (i) => !String(encontrados.get(String(i["produto_id"]))?.["descricao"] ?? "").trim(),
+            )
+          )
+            throw new Error(
+              "Não foi possível identificar todos os produtos dos pedidos. A impressão foi interrompida para evitar um documento incompleto. Confira a fase380 e os cadastros vinculados.",
+            );
+          return resultado;
+        })(),
         lookup(
           "centros",
           pedidos.map((p) => p["centro_id"]),
