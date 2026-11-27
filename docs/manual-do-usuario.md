@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.67.3 · 2026-11-27
+Versão 1.67.4 · 2026-11-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -159,7 +159,7 @@ Cuidados:
 Da escolha do cliente à confirmação da venda.
 
 1. Escolha a loja e abra Pedidos. Procure um pedido existente ou crie um novo.
-2. Na impressão, os dados comerciais de cada produto são consultados pelos pedidos autorizados. A fase380 permite identificar os itens históricos do pedido sem depender da leitura geral do catálogo e sem expor custos. Se algum produto não puder ser identificado, a impressão é interrompida para evitar um documento incompleto.
+2. Na impressão, o código do cliente acompanha o Cadastro unificado, pelo vínculo pessoa_id; o código legado é usado somente em cadastros sem esse vínculo. Não é feita renumeração. Na impressão, os dados comerciais de cada produto são consultados pelos pedidos autorizados. A fase380 permite identificar os itens históricos do pedido sem depender da leitura geral do catálogo e sem expor custos. Se algum produto não puder ser identificado, a impressão é interrompida para evitar um documento incompleto.
 3. No filtro Status, marque uma ou mais situações para combinar os pedidos que deseja consultar. As etiquetas de situação abaixo dos totais também podem ser ligadas e desligadas em conjunto; Todos os status ou Todos limpa a seleção de situações. O total e a impressão acompanham os registros filtrados. Total dos documentos inclui os tipos e situações selecionados, não apenas vendas efetivadas.
 4. Selecione o cliente, a forma de pagamento e os dados de entrega. Confira representante e rota.
 5. O administrador pode abrir o pedido e usar Alterar vendedor / representante. Selecione um representante ativo da loja ou compartilhado e confirme. A troca preserva os valores e as regras de comissão gravados no pedido e registra o vínculo anterior e o novo na auditoria. Comissão paga, inclusive parcialmente, impede a troca; agendamentos ainda não pagos precisam ser estornados no módulo de comissões. Orçamentos, pedidos cancelados/recusados e documentos com proteção fiscal mantêm suas restrições.
@@ -606,6 +606,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.67.4 · 2026-11-27 · Padroniza o código do cliente na impressão pelo cadastro unificado
+
+Motivo da atualização: Padroniza o código do cliente na impressão pelo cadastro unificado
+
+- Padroniza o código do cliente na impressão pelo cadastro unificado
 
 ### v1.67.3 · 2026-11-27 · Corrige a identificação de produtos na impressão do representante
 

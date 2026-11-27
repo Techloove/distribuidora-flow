@@ -95,6 +95,17 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       let incompleto = false;
       const a = await abrir(role, ({ name, req }) => {
         if (name === "pedidos") return [pedido];
+        if (name === "clientes")
+          return [
+            {
+              ...rows.clientes[0],
+              id: pedido.cliente_id,
+              pessoa_id: id(197),
+              codigo: "150",
+              razao_social: "CLIENTE DE TESTE",
+            },
+          ];
+        if (name === "pessoas") return [{ id: id(197), codigo: "197" }];
         if (name === "pedido_itens") return itens;
         if (name === "produtos") throw Error("Impressão não deve consultar o catálogo físico");
         if (name === "produtos_impressao_pedidos_380") {
@@ -110,6 +121,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
       const frame = a.page.frameLocator('iframe[title="Prévia de impressão dos documentos"]');
       for (const p of produtos) await frame.getByText(p.descricao, { exact: true }).waitFor();
       assert.equal(await frame.getByText("Produto não informado", { exact: true }).count(), 0);
+      assert.ok((await frame.locator(".customer").innerText()).includes("197 - CLIENTE DE TESTE"));
+      assert.ok(!(await frame.locator(".customer").innerText()).includes("150 -"));
       await a.page.getByRole("dialog").getByRole("button", { name: "Fechar", exact: true }).click();
       incompleto = true;
       await a.page

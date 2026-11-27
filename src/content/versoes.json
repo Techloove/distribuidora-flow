@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.67.4",
+    "data": "2026-11-27",
+    "titulo": "Padroniza o código do cliente na impressão pelo cadastro unificado",
+    "motivo": "Padroniza o código do cliente na impressão pelo cadastro unificado",
+    "novidades": [
+      "Padroniza o código do cliente na impressão pelo cadastro unificado"
+    ]
+  },
+  {
     "versao": "1.67.3",
     "data": "2026-11-27",
     "titulo": "Corrige a identificação de produtos na impressão do representante",

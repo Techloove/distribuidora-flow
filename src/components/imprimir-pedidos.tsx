@@ -132,10 +132,25 @@ export function ImprimirPedidos({
           "id, nome",
         ),
       ]);
+      const pessoas = await lookup(
+        "pessoas",
+        clientes.map((c) => c["pessoa_id"]),
+        "id,codigo",
+      );
+      const pessoasPorId = new Map(pessoas.map((p) => [String(p["id"]), p]));
+      const clientesImpressao = clientes.map((c) => {
+        if (!c["pessoa_id"]) return c;
+        const codigo = String(pessoasPorId.get(String(c["pessoa_id"]))?.["codigo"] ?? "").trim();
+        if (!codigo)
+          throw new Error(
+            "Não foi possível conferir o código do cliente no Cadastro unificado. A impressão foi interrompida para evitar um código incorreto.",
+          );
+        return { ...c, codigo };
+      });
       const find = (rows: PrintRow[], id: unknown) => rows.find((r) => r["id"] === id) ?? {};
       const dados: PedidoImpressao[] = pedidos.map((pedido) => ({
         pedido,
-        cliente: find(clientes, pedido["cliente_id"]),
+        cliente: find(clientesImpressao, pedido["cliente_id"]),
         empresa: identidadeLoja(
           find(centros, pedido["centro_id"]),
           companies.error ? {} : (companies.data?.[0] ?? {}),
