@@ -14,6 +14,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
       const c = await browser.newContext({ viewport: { width, height: 900 } });
       let saldo = 100;
       const writes = [];
+      let leiturasMinimo = 0;
       await c.addInitScript(
         ({ uid, center }) => {
           localStorage.setItem("erp.centro", center);
@@ -59,6 +60,20 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
           body = [
             { id: id(50), codigo: "38", descricao: "PREGO", unidade: "KG", estoque_minimo: 0 },
           ];
+        if (name === "estoque_minimos_loja_379") {
+          leiturasMinimo++;
+          assert.equal(req.postDataJSON()._centro, center);
+          body = [
+            {
+              produto_id: id(50),
+              estoque_minimo: 300,
+              media_diaria: 10,
+              venda_periodo: 900,
+              periodo_dias: 90,
+              cobertura_dias: 30,
+            },
+          ];
+        }
         if (name === "saldos_estoque_loja_271")
           body = [{ produto_id: id(50), fisico: saldo, reservado: 0, disponivel: saldo }];
         if (["lancar_movimento_estoque", "ajustar_saldo_estoque_374"].includes(name)) {
@@ -100,6 +115,16 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
       await page.locator("#estoque-quantidade").fill("80");
       await page.getByRole("button", { name: "Registrar ajuste", exact: true }).click();
       await page.waitForFunction(() => document.querySelector("#estoque-quantidade")?.value === "");
+      assert.equal(leiturasMinimo, 0, "mínimos só são consultados ao abrir saldos");
+      await page.getByRole("tab", { name: "Consultar saldos", exact: true }).click();
+      await page.getByText("repor", { exact: true }).waitFor();
+      assert.ok(leiturasMinimo > 0);
+      const linhaSaldo = page.getByRole("row").filter({ hasText: "PREGO" });
+      assert.ok(
+        (await linhaSaldo.innerText()).includes("300"),
+        "mínimo automático substitui valor manual da fixture",
+      );
+      await page.getByText(/média dos últimos 90 dias/).waitFor();
       assert.equal(saldo, 80);
       assert.equal(writes.length, 3);
       assert.equal(writes[2].p._saldo_esperado, 105);
@@ -109,7 +134,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
         "sem transbordamento horizontal",
       );
       console.log(
-        `OK: ${width}px; loja herdada, entrada/saída/ajuste, saldo esperado, sem campos repetidos.`,
+        `OK: ${width}px; loja herdada, entrada/saída/ajuste, saldo esperado, mínimo automático sob demanda, sem campos repetidos.`,
       );
       await c.close();
     }

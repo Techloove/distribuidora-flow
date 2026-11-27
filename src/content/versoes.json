@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.67.0",
+    "data": "2026-11-27",
+    "titulo": "Calcula o estoque mínimo pela média de vendas de cada loja",
+    "motivo": "Substituir o preenchimento manual do mínimo por uma quantidade calculada a partir das vendas de cada loja.",
+    "novidades": [
+      "Estoque mínimo automático com período inicial de 90 dias e cobertura de 30 dias, ambos configuráveis nas regras da loja.",
+      "Vendas efetivadas de estoque entram na média, descontadas devoluções confirmadas; orçamento, aprovação pendente, cancelamento e intermediação ficam fora. Produtos sem vendas no período têm mínimo zero.",
+      "Consulta de saldos, planejamento de compras, reposição e alertas usam o mínimo calculado por loja, atualizado sem lançamento manual nos produtos.",
+      "Requer aplicar db/fase379_estoque_minimo_por_media.sql. A migração preserva saldo físico, reservas, preços e configurações posteriores."
+    ]
+  },
+  {
     "versao": "1.66.0",
     "data": "2026-11-26",
     "titulo": "Adiciona recuperação de backup para conferência em ambiente separado",

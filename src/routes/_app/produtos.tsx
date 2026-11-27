@@ -118,7 +118,6 @@ const fields: CrudField[] = [
   },
   { name: "promo_fim", label: "Promoção Válida até", inTable: true, auto: true, virtual: true },
   { name: "comissao_percentual", label: "Comissão do produto (%)", type: "number", step: "0.01" },
-  { name: "estoque_minimo", label: "Estoque mínimo", type: "number", step: "0.001" },
   { name: "estoque_maximo", label: "Estoque máximo para reposição", type: "number", step: "0.001" },
   { name: "prazo_fornecedor_dias", label: "Prazo do fornecedor (dias)", type: "number", step: "1" },
   {
@@ -279,7 +278,7 @@ function ProdutosPage() {
   return (
     <ErpLayout
       title="Produtos"
-      description="Cadastro geral de produtos. Consulte o estoque e o depósito da loja em Estoque; o preço normal é sincronizado com o catálogo das lojas."
+      description="Cadastro geral de produtos. Consulte o estoque e o depósito da loja em Estoque; o preço normal é sincronizado com o catálogo das lojas. O estoque mínimo é calculado por loja pela média de vendas; configure o período e a cobertura em Lojas."
       actions={
         <Button asChild variant="secondary">
           <Link to="/estoque">
@@ -336,7 +335,6 @@ function ProdutosPage() {
               "promo_fim",
               "comissao_percentual",
               "comissao_fixa_unidade",
-              "estoque_minimo",
               "estoque_maximo",
               "prazo_fornecedor_dias",
               "estoque_atual",

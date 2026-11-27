@@ -18,6 +18,11 @@ import { useSupabase } from "@/lib/supabase-provider";
 
 type Parametro = { chave: string; valor: string | null; descricao: string | null };
 const campos: Record<string, { label: string; tipo: "boolean" | "number" | "comissao" }> = {
+  estoque_media_dias: {
+    label: "Estoque mínimo: período da média de vendas (dias)",
+    tipo: "number",
+  },
+  estoque_cobertura_dias: { label: "Estoque mínimo: dias de cobertura", tipo: "number" },
   intermediacao_habilitada: {
     label: "Habilitar vendas por intermediação (entrega direta da fábrica)",
     tipo: "boolean",
@@ -181,6 +186,13 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
       void qc.invalidateQueries({ queryKey: ["loja-parametros"] });
       void qc.invalidateQueries({ queryKey: ["intermediacao-ativa"] });
       void qc.invalidateQueries({ queryKey: ["validar_pedido"] });
+      for (const chave of [
+        "estoque-minimos-379",
+        "planejamento-compras-294",
+        "dashboard",
+        "vw_reposicao_209",
+      ])
+        void qc.invalidateQueries({ queryKey: [chave] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -193,7 +205,12 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
     );
   return (
     <div className="space-y-4">
-      <h3 className="font-medium">Regras comerciais e financeiras</h3>
+      <h3 className="font-medium">Regras comerciais, financeiras e de estoque</h3>
+      <p className="text-sm text-muted-foreground">
+        O estoque mínimo é calculado automaticamente: vendas líquidas do período ÷ dias da média ×
+        dias de cobertura. Padrão: média de 90 dias e cobertura de 30 dias. Produtos sem vendas no
+        período ficam com mínimo zero.
+      </p>
       <div className="grid gap-4 md:grid-cols-2">
         {q.data
           .filter((p) => campos[p.chave])
@@ -214,7 +231,8 @@ function RegrasLoja({ loja, editar }: { loja: string; editar: boolean }) {
                   <Input
                     {...props}
                     type="number"
-                    min="0"
+                    min={p.chave.startsWith("estoque_") ? "1" : "0"}
+                    max={p.chave.startsWith("estoque_") ? "3650" : undefined}
                     step={p.chave.includes("dias") ? "1" : "0.01"}
                   />
                 ) : (

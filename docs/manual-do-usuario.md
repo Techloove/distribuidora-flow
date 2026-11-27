@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.66.0 · 2026-11-26
+Versão 1.67.0 · 2026-11-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -129,7 +129,8 @@ Entenda como a categoria liga os produtos ao estoque da loja.
 3. A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.
 4. Altere o preço normal em Produtos ou em Lojas → Produtos e preços. Após salvar, o mesmo preço é sincronizado nas duas telas e usado em novos itens de pedidos. Promoções podem aplicar um preço especial; descontos e disponibilidade continuam por loja.
 5. Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro.
-6. Ao editar um produto, use as seções Dados gerais, Preços e estoque, Dados fiscais e Histórico. Os campos preenchidos permanecem ao trocar de seção; clique Salvar para gravar. O histórico tem botões Anterior e Próxima.
+6. O estoque mínimo é automático por loja: vendas líquidas dos últimos 90 dias ÷ 90 × 30 dias de cobertura. Em Lojas → Regras comerciais, financeiras e de estoque, altere separadamente o período da média e os dias de cobertura (1 a 3650). A fase379 inicia as lojas com 90/30 e não sobrescreve ajustes posteriores.
+7. Ao editar um produto, use as seções Dados gerais, Preços e estoque, Dados fiscais e Histórico. Os campos preenchidos permanecem ao trocar de seção; clique Salvar para gravar. O histórico tem botões Anterior e Próxima.
 
 Cuidados:
 
@@ -284,11 +285,12 @@ Planeje a reposição e acompanhe a entrada das mercadorias.
 7. Em Compras → Planejamento e reposição, acompanhe itens para comprar, faltas, investimento estimado e produtos em trânsito. A lista mostra Estoque, Comprado (em trânsito), Mínimo, Média mês, 30d, 60d, 90d e 120d nessa ordem, seguidos da sugestão e dos indicadores. Use Colunas para personalizar e Cálculo para ver de onde veio cada quantidade.
 8. O planejamento considera somente pedidos aprovados e os que já avançaram no fluxo. Digitação, aguardando aprovação, recusados e cancelados ficam fora. Pendência inclui somente o status Aprovado, antes da confirmação que baixa estoque. Vendas históricas descontam devoluções confirmadas da venda original. Cada produto usa seu saldo, compras e demanda na respectiva loja.
 9. Abra Como calcular a compra para escolher Cobertura por consumo, Repor até o mínimo, Mínimo e máximo ou Atender pendências. Use base de 30, 60, 90 ou 120 dias, ou média ponderada de quatro faixas mensais, com maior peso no período recente. Média mês representa 30 dias do consumo ajustado selecionado, não a soma das janelas acumuladas.
-10. Cobertura por consumo soma estoque mínimo e consumo previsto durante cobertura, entrega e segurança; desconta o estoque disponível e as compras em trânsito. Em mínimo/máximo, a reposição só acontece ao atingir o ponto de reposição e exige máximo cadastrado válido. Atender pendências cobre o déficit atual, sem acrescentar estoque mínimo ou previsão futura. Estoque negativo continua contado como falta.
-11. Nos parâmetros avançados, ajuste segurança, demanda, prazo, lote mínimo e múltiplo de compra. O múltiplo automático respeita unidades inteiras ou fracionadas. Os parâmetros valem para a simulação inteira; confira prazo, embalagem e pedido mínimo com o fornecedor. Em Produtos → Preços e estoque, o administrador/gestor pode cadastrar mínimo, máximo e prazo do produto conforme seu acesso.
-12. Compras em trânsito entram somente quando estão como Comprado e ainda não recebidas. Você pode simular sem descontar o trânsito para avaliar atrasos. Ruptura continua avisada quando falta estoque disponível, mesmo havendo compra a caminho. Histórico curto ou sem giro recebe aviso; não há previsão garantida de demanda ou chegada.
-13. O investimento usa último custo positivo de compra ou custo médio. Itens sem custo aparecem sinalizados e ficam fora do total estimado. Frete, impostos adicionais e variação de preço não estão incluídos. Selecione produtos e exporte a seleção visível em CSV; sem seleção, exporta os filtros atuais. O arquivo inclui modelo, parâmetros e alertas. Imprimir inclui todos os resultados filtrados. Calcular ou exportar não cria compras, estoque ou contas a pagar; revise e prossiga em Compras e entradas.
-14. No planejamento, escolha a loja no seletor do topo. Os indicadores, a memória, a lista e a exportação acompanham a escolha; Todas reúne as lojas permitidas. Ao trocar a loja, a seleção e os filtros locais são limpos, mas os parâmetros de cálculo são mantidos. A coluna Pendência não aparece mais na lista: pedidos aprovados a atender continuam considerados internamente e são explicados em Cálculo. Cobertura atual é o estoque menos esses compromissos, dividido pelo consumo diário; trânsito ainda não recebido não aumenta a cobertura disponível.
+10. O mínimo usado no planejamento, consulta de saldos e alertas passa a ser calculado pela média da loja após a fase379. Vendas efetivadas de estoque entram; orçamentos, pedidos apenas aprovados ou em análise, cancelados e intermediação ficam fora. Devoluções confirmadas abatem a venda original sem duplicar itens. Produtos sem vendas no período ficam com mínimo zero. A divisão usa todos os dias do período, inclusive dias sem venda, e o mínimo é arredondado para cima em até três casas decimais.
+11. Cobertura por consumo soma estoque mínimo e consumo previsto durante cobertura, entrega e segurança; desconta o estoque disponível e as compras em trânsito. Em mínimo/máximo, a reposição só acontece ao atingir o ponto de reposição e exige máximo cadastrado válido. Atender pendências cobre o déficit atual, sem acrescentar estoque mínimo ou previsão futura. Estoque negativo continua contado como falta.
+12. Nos parâmetros avançados, ajuste segurança, demanda, prazo, lote mínimo e múltiplo de compra. O múltiplo automático respeita unidades inteiras ou fracionadas. Os parâmetros valem para a simulação inteira; confira prazo, embalagem e pedido mínimo com o fornecedor. Em Produtos → Preços e estoque, o administrador/gestor pode cadastrar mínimo, máximo e prazo do produto conforme seu acesso.
+13. Compras em trânsito entram somente quando estão como Comprado e ainda não recebidas. Você pode simular sem descontar o trânsito para avaliar atrasos. Ruptura continua avisada quando falta estoque disponível, mesmo havendo compra a caminho. Histórico curto ou sem giro recebe aviso; não há previsão garantida de demanda ou chegada.
+14. O investimento usa último custo positivo de compra ou custo médio. Itens sem custo aparecem sinalizados e ficam fora do total estimado. Frete, impostos adicionais e variação de preço não estão incluídos. Selecione produtos e exporte a seleção visível em CSV; sem seleção, exporta os filtros atuais. O arquivo inclui modelo, parâmetros e alertas. Imprimir inclui todos os resultados filtrados. Calcular ou exportar não cria compras, estoque ou contas a pagar; revise e prossiga em Compras e entradas.
+15. No planejamento, escolha a loja no seletor do topo. Os indicadores, a memória, a lista e a exportação acompanham a escolha; Todas reúne as lojas permitidas. Ao trocar a loja, a seleção e os filtros locais são limpos, mas os parâmetros de cálculo são mantidos. A coluna Pendência não aparece mais na lista: pedidos aprovados a atender continuam considerados internamente e são explicados em Cálculo. Cobertura atual é o estoque menos esses compromissos, dividido pelo consumo diário; trânsito ainda não recebido não aumenta a cobertura disponível.
 
 Cuidados:
 
@@ -603,6 +605,15 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.67.0 · 2026-11-27 · Calcula o estoque mínimo pela média de vendas de cada loja
+
+Motivo da atualização: Substituir o preenchimento manual do mínimo por uma quantidade calculada a partir das vendas de cada loja.
+
+- Estoque mínimo automático com período inicial de 90 dias e cobertura de 30 dias, ambos configuráveis nas regras da loja.
+- Vendas efetivadas de estoque entram na média, descontadas devoluções confirmadas; orçamento, aprovação pendente, cancelamento e intermediação ficam fora. Produtos sem vendas no período têm mínimo zero.
+- Consulta de saldos, planejamento de compras, reposição e alertas usam o mínimo calculado por loja, atualizado sem lançamento manual nos produtos.
+- Requer aplicar db/fase379_estoque_minimo_por_media.sql. A migração preserva saldo físico, reservas, preços e configurações posteriores.
 
 ### v1.66.0 · 2026-11-26 · Adiciona recuperação de backup para conferência em ambiente separado
 

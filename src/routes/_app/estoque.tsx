@@ -77,7 +77,7 @@ function EstoquePage() {
       return await lerPaginas<Row>((inicio, fim) =>
         client!
           .from("produtos_consulta_324")
-          .select("id,codigo,descricao,unidade,estoque_minimo")
+          .select("id,codigo,descricao,unidade")
           .order("id")
           .range(inicio, fim),
       );
@@ -95,10 +95,32 @@ function EstoquePage() {
           .range(inicio, fim),
       ),
   });
+  const minimos = useQuery({
+    queryKey: ["estoque-minimos-379", centro],
+    enabled: !!client && !!centro && aba === "saldos",
+    staleTime: 60_000,
+    refetchInterval: aba === "saldos" ? 60_000 : false,
+    queryFn: () =>
+      lerPaginas<Row>((inicio, fim) =>
+        client!
+          .rpc("estoque_minimos_loja_379", { _centro: centro })
+          .order("produto_id")
+          .range(inicio, fim),
+      ),
+  });
+  const minimosPorProduto = useMemo(
+    () => new Map((minimos.data ?? []).map((r) => [String(r["produto_id"]), r])),
+    [minimos.data],
+  );
   const produtosDaLoja = useMemo(() => {
     const ids = new Set((disponibilidade.data ?? []).map((r) => String(r["produto_id"])));
-    return (produtos.data ?? []).filter((p) => ids.has(String(p["id"])));
-  }, [produtos.data, disponibilidade.data]);
+    return (produtos.data ?? [])
+      .filter((p) => ids.has(String(p["id"])))
+      .map<Row>((p) => ({
+        ...p,
+        estoque_minimo: minimosPorProduto.get(String(p["id"]))?.["estoque_minimo"],
+      }));
+  }, [produtos.data, disponibilidade.data, minimosPorProduto]);
   useEffect(() => {
     setForm((f) => ({ ...f, produto_id: "", quantidade: "1", observacao: "" }));
   }, [centro]);
@@ -485,14 +507,29 @@ function EstoquePage() {
               <h2 className="mb-2 text-sm font-semibold text-foreground">
                 Estoque da loja por produto
               </h2>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Mínimo automático: média dos últimos{" "}
+                {String(minimos.data?.[0]?.["periodo_dias"] ?? "—")} dias ×{" "}
+                {String(minimos.data?.[0]?.["cobertura_dias"] ?? "—")} dias de cobertura. Ajuste os
+                períodos em Lojas → Regras da loja. Produtos sem vendas no período têm mínimo zero.
+              </p>
               <div className="rounded-lg border border-border bg-card">
-                {produtos.isLoading || disponibilidade.isLoading || centrosCarregando ? (
+                {produtos.isLoading ||
+                disponibilidade.isLoading ||
+                minimos.isLoading ||
+                centrosCarregando ? (
                   <div className="py-10 text-center text-sm text-muted-foreground">
                     Carregando...
                   </div>
-                ) : produtos.isError || disponibilidade.isError || centrosErro ? (
+                ) : produtos.isError ||
+                  disponibilidade.isError ||
+                  minimos.isError ||
+                  centrosErro ? (
                   <p role="alert" className="p-6 text-sm text-destructive">
-                    {(produtos.error ?? disponibilidade.error ?? centrosErro)?.message}
+                    {
+                      (produtos.error ?? disponibilidade.error ?? minimos.error ?? centrosErro)
+                        ?.message
+                    }
                   </p>
                 ) : (
                   <Table>
@@ -534,7 +571,11 @@ function EstoquePage() {
                                   : "…"}
                             </TableCell>
                             <TableCell className="text-right">
-                              {String(p["estoque_minimo"])}
+                              {p["estoque_minimo"] == null
+                                ? "—"
+                                : Number(p["estoque_minimo"]).toLocaleString("pt-BR", {
+                                    maximumFractionDigits: 3,
+                                  })}
                             </TableCell>
                             <TableCell
                               className={baixo ? "text-destructive" : "text-muted-foreground"}
