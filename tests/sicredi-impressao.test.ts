@@ -8,7 +8,10 @@ import {
   PDFRawStream,
   decodePDFRawStream,
 } from "pdf-lib";
-import { alinharInstrucoesPdfSicredi } from "../src/lib/sicredi-impressao-pdf";
+import {
+  alinharInstrucoesPdfSicredi,
+  prepararPdfSicrediParaImpressao,
+} from "../src/lib/sicredi-impressao-pdf";
 import { pdfFixtureSicredi } from "./fixtures/sicredi-pdf";
 function conteudos(doc: PDFDocument) {
   const c = doc.getPages()[0]!.node.Contents();
@@ -169,4 +172,43 @@ test("preenche instruções superiores vazias com as condições da outra via do
   expect(instrucoes.slice(0, 3)).toEqual(instrucoes.slice(3));
   expect(instrucoes[0]).toContain("10 DIAS");
   expect(conteudos(doc).at(-1)).toContain("1 0 0 1 23 557.5 Tm");
+});
+
+test("modelo incompatível imprime o original byte a byte, preservando imagem Pix e instruções", async () => {
+  const original = await pdfFixtureSicredi(undefined, "sobreposto");
+  const copia = original.slice();
+  const resultado = await prepararPdfSicrediParaImpressao(original);
+  expect(resultado.pdf).toBe(original);
+  expect(resultado.pdf).toEqual(copia);
+  expect(resultado.aviso).toContain("PDF original do Sicredi");
+  const antes = await PDFDocument.load(original),
+    depois = await PDFDocument.load(resultado.pdf);
+  expect(conteudos(depois)).toEqual(conteudos(antes));
+  expect(depois.getPages()[0]!.node.Resources()!.get(PDFName.of("XObject"))?.toString()).toBe(
+    antes.getPages()[0]!.node.Resources()!.get(PDFName.of("XObject"))?.toString(),
+  );
+});
+
+test("modelo reconhecido continua alinhado, e layout diferente preserva todas as páginas", async () => {
+  const alinhado = await prepararPdfSicrediParaImpressao(await pdfFixtureSicredi());
+  expect(alinhado.aviso).toBeNull();
+  const diferente = await PDFDocument.create();
+  diferente.addPage([612, 792]);
+  diferente.addPage([612, 792]);
+  const original = await diferente.save();
+  const preservado = await prepararPdfSicrediParaImpressao(original);
+  expect(preservado.pdf).toBe(original);
+  expect((await PDFDocument.load(preservado.pdf)).getPageCount()).toBe(2);
+  expect(preservado.aviso).toBeTruthy();
+});
+
+test("arquivo corrompido, sem páginas ou acima do limite continua recusado", async () => {
+  await expect(
+    prepararPdfSicrediParaImpressao(new TextEncoder().encode("%PDF-1.7 arquivo incompleto")),
+  ).rejects.toThrow("não pôde ser lido");
+  const vazio = await PDFDocument.create();
+  await expect(
+    prepararPdfSicrediParaImpressao(await vazio.save({ addDefaultPage: false })),
+  ).rejects.toThrow("não pôde ser lido");
+  await expect(prepararPdfSicrediParaImpressao(new Uint8Array(12000001))).rejects.toThrow("limite");
 });

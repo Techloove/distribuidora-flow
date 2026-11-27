@@ -85,6 +85,7 @@ export function PainelImpressaoBoletos({
   const [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(""),
     [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
   const [pdf, setPdf] = useState<string | null>(null),
     [ready, setReady] = useState(false),
     [mock, setMock] = useState(false);
@@ -163,9 +164,11 @@ export function PainelImpressaoBoletos({
       setBusy(true);
       onBusy?.(true);
       setError("");
+      setAviso("");
       setPdf(null);
       try {
         const files: string[] = [];
+        const avisos = new Set<string>();
         for (const [i, b] of lote.entries()) {
           // Distribui as consultas para respeitar o teto bancário de 20 por minuto,
           // incluindo consultas recentes feitas em outras telas pelo mesmo usuário.
@@ -194,10 +197,13 @@ export function PainelImpressaoBoletos({
             });
           }
           files.push(result.base64);
+          if ("aviso" in result && typeof result.aviso === "string" && result.aviso)
+            avisos.add(result.aviso);
         }
         if (cancel.current) throw new Error("Impressão interrompida.");
         const bytes = await unirPdfsBoletos(files);
         if (cancel.current) throw new Error("Impressão interrompida.");
+        setAviso([...avisos].join(" "));
         setMock(lote.some((b) => b.ambiente === "homologacao"));
         setReady(false);
         setPdf(URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" })));
@@ -232,6 +238,14 @@ export function PainelImpressaoBoletos({
     <div className="space-y-4">
       {pdf ? (
         <>
+          {aviso && (
+            <p
+              role="status"
+              className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+            >
+              {aviso}
+            </p>
+          )}
           {mock && (
             <p role="alert" className="text-sm text-amber-700">
               HOMOLOGAÇÃO: documentos de teste. Não encaminhe para pagamento.

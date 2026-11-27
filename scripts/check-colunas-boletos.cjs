@@ -42,6 +42,8 @@ rows.vw_titulos_receber = rows.contas_receber.map((v) => ({ ...v }));
 rows.produtos[0].marca = "Marca Campeão de Materiais";
 const preferences = new Map();
 const serverCalls = [];
+const avisoPdfOriginal =
+  "Neste modelo de boleto, foi mantido o PDF original do Sicredi, com as instruções e informações no formato fornecido pelo banco.";
 (async () => {
   const pdf = await PDFDocument.create();
   pdf.addPage([300, 400]);
@@ -81,7 +83,9 @@ const serverCalls = [];
       if (["127.0.0.1", "localhost"].includes(u.hostname)) {
         if (req.method() === "POST" && u.pathname.includes("_server")) {
           serverCalls.push({ url: u.pathname, data: req.postData() });
-          return route.fulfill({ json: { result: { base64 }, context: {} } });
+          return route.fulfill({
+            json: { result: { base64, aviso: avisoPdfOriginal }, context: {} },
+          });
         }
         return route.continue();
       }
@@ -175,6 +179,8 @@ const serverCalls = [];
   await dialog.getByRole("checkbox", { name: "Selecionar todos do mesmo pedido (2)" }).check();
   await dialog.getByRole("button", { name: "Abrir PDF selecionados (2)" }).click();
   await page.waitForTimeout(1200);
+  await dialog.getByText(avisoPdfOriginal, { exact: true }).waitFor();
+  assert.equal(await dialog.getByText(avisoPdfOriginal, { exact: true }).count(), 1);
   assert.equal(serverCalls.length, 2);
   assert(serverCalls.every((v) => v.data.includes("boletoId") && !v.data.includes("contaId")));
   await dialog.getByRole("link", { name: "Baixar PDF", exact: true }).waitFor();

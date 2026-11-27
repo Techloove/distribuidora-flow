@@ -340,3 +340,34 @@ export async function alinharInstrucoesPdfSicredi(original: Uint8Array): Promise
     );
   }
 }
+
+/** O ajuste visual nunca impede a impressão de um PDF bancário original legível. */
+export async function prepararPdfSicrediParaImpressao(original: Uint8Array): Promise<{
+  pdf: Uint8Array;
+  aviso: string | null;
+}> {
+  if (original.length > 12000000) throw Error("PDF bancário excede o limite de impressão.");
+  try {
+    return { pdf: await alinharInstrucoesPdfSicredi(original), aviso: null };
+  } catch {
+    try {
+      const doc = await PDFDocument.load(original, { updateMetadata: false });
+      if (doc.getPageCount() === 0) throw Error("PDF sem páginas.");
+      for (const pagina of doc.getPages()) {
+        const { width, height } = pagina.getSize();
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
+          throw Error("Página inválida.");
+      }
+    } catch {
+      throw Error(
+        "O PDF retornado pelo Sicredi não pôde ser lido. Tente consultar o PDF novamente, sem emitir outro boleto.",
+      );
+    }
+    // Devolve exatamente os bytes recebidos do banco, sem apagar ou reescrever campos.
+    return {
+      pdf: original,
+      aviso:
+        "Neste modelo de boleto, foi mantido o PDF original do Sicredi, com as instruções e informações no formato fornecido pelo banco.",
+    };
+  }
+}

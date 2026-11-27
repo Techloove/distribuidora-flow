@@ -1,5 +1,16 @@
 [
   {
+    "versao": "1.68.1",
+    "data": "2026-11-27",
+    "titulo": "Preserva a impressão original do Sicredi quando o modelo não permite alinhamento",
+    "motivo": "Evitar que um ajuste visual das instruções interrompa a impressão de boletos válidos.",
+    "novidades": [
+      "Modelos reconhecidos continuam com instruções alinhadas. Quando o layout é incompatível, o PDF original do Sicredi é preservado integralmente e a impressão continua com aviso.",
+      "A correção vale para Boletos, emissão e expedição, inclusive em lotes. Arquivos ilegíveis, corrompidos ou acima do limite continuam recusados.",
+      "Não emite novas cobranças, não altera condições bancárias e não exige SQL."
+    ]
+  },
+  {
     "versao": "1.68.0",
     "data": "2026-11-27",
     "titulo": "Adiciona negociação administrativa de preço por item do pedido",
