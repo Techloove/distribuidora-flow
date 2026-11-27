@@ -1,3 +1,4 @@
+import { NegociarPrecoItem } from "@/components/negociar-preco-item";
 import { lerDatasPedido } from "@/lib/datas-pedido-consulta";
 import { indexarPrimeiro } from "@/lib/indices-listas";
 import { PrecificacaoCompra, LinhaPrecificacaoCompra } from "@/components/precificacao-compra";
@@ -344,6 +345,32 @@ export function DocumentoPage({
           .returns<Row[]>(),
       ),
   });
+
+  const negociacoesPreco = useQuery({
+    queryKey: ["pedido-item-precos-381", user?.id, selected],
+    retry: false,
+    enabled: !!client && !!selected && config.table === "pedidos" && roles.includes("admin"),
+    queryFn: () =>
+      lerPaginas<Row>((inicio, fim) =>
+        client!
+          .from("pedido_item_precos_381")
+          .select("id,item_id,preco_anterior,preco_novo,motivo,alterado_em")
+          .eq("pedido_id", selected!)
+          .order("alterado_em", { ascending: false })
+          .order("id", { ascending: false })
+          .range(inicio, fim),
+      ),
+  });
+  const negociacoesPorItem = useMemo(() => {
+    const mapa = new Map<string, Row[]>();
+    for (const h of negociacoesPreco.data ?? []) {
+      const id = String(h["item_id"]);
+      const grupo = mapa.get(id) ?? [];
+      grupo.push(h);
+      mapa.set(id, grupo);
+    }
+    return mapa;
+  }, [negociacoesPreco.data]);
 
   /** Representante só vê os próprios pedidos; admin/gestor vê todos. */
   const soMeusPedidos =
@@ -937,11 +964,11 @@ export function DocumentoPage({
   const updateItem = useMutation({
     mutationFn: async (patch: { id: string; values: Record<string, number> }) => {
       if (config.table === "pedidos") {
-        const { error } = await client!.rpc("atualizar_item_pedido", {
+        const { error } = await client!.rpc("atualizar_item_pedido_parcial_381", {
           _item_id: patch.id,
-          _quantidade: Number(patch.values["quantidade"] ?? 0),
-          _preco_unitario: Number(patch.values["preco_unitario"] ?? 0),
-          _desconto_percentual: Number(patch.values["desconto_percentual"] ?? 0),
+          _quantidade: patch.values["quantidade"] ?? null,
+          _preco_unitario: patch.values["preco_unitario"] ?? null,
+          _desconto_percentual: patch.values["desconto_percentual"] ?? null,
         });
         if (error) throw new Error(error.message);
       } else {
@@ -2709,9 +2736,54 @@ export function DocumentoPage({
                                   }
                                   className="text-right"
                                 >
-                                  {["rascunho", "digitacao"].includes(String(doc["status"])) &&
-                                  propostaEditavel &&
-                                  podeAlterarPreco ? (
+                                  {config.table === "pedidos" && roles.includes("admin") ? (
+                                    <NegociarPrecoItem
+                                      item={it}
+                                      produto={produtoName(it["produto_id"])}
+                                      historico={negociacoesPorItem.get(String(it["id"])) ?? []}
+                                      confirmado={[
+                                        "aprovado",
+                                        "confirmado",
+                                        "separacao",
+                                        "separado",
+                                        "conferido",
+                                      ].includes(String(doc["status"]))}
+                                      editavel={
+                                        propostaEditavel &&
+                                        [
+                                          "rascunho",
+                                          "digitacao",
+                                          "aguardando_aprovacao",
+                                          "aprovado",
+                                          "confirmado",
+                                          "separacao",
+                                          "separado",
+                                          "conferido",
+                                        ].includes(String(doc["status"])) &&
+                                        doc["modalidade_venda"] !== "intermediacao"
+                                      }
+                                      onChange={() => {
+                                        void queryClient.invalidateQueries({
+                                          queryKey: [config.itemsTable],
+                                        });
+                                        void queryClient.invalidateQueries({
+                                          queryKey: ["pedido-item-precos-381"],
+                                        });
+                                        void queryClient.invalidateQueries({
+                                          queryKey: ["desconto_peso_pedido", selected],
+                                        });
+                                        void queryClient.invalidateQueries({
+                                          queryKey: ["vw_margem_pedido_209"],
+                                        });
+                                        void queryClient.invalidateQueries({
+                                          queryKey: ["margem-produtos"],
+                                        });
+                                        atualizarDocumento();
+                                      }}
+                                    />
+                                  ) : ["rascunho", "digitacao"].includes(String(doc["status"])) &&
+                                    propostaEditavel &&
+                                    podeAlterarPreco ? (
                                     <Input
                                       aria-label={`Preço de ${produtoName(it["produto_id"])}`}
                                       currency

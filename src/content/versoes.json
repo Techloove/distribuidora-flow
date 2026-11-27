@@ -1,5 +1,17 @@
 [
   {
+    "versao": "1.68.0",
+    "data": "2026-11-27",
+    "titulo": "Adiciona negociação administrativa de preço por item do pedido",
+    "motivo": "Permitir negociar o preço de um item com comparação antes/depois e histórico, preservando os demais dados do pedido.",
+    "novidades": [
+      "Administradores podem negociar preços dos itens, inclusive em pedidos confirmados sem boleto ou carga, com prévia de preço e total anterior/novo.",
+      "Histórico por item com valores anteriores, novos, motivo opcional, autor e data. Nos confirmados, parcelas abertas mantêm proporções, IDs e vencimentos; a comissão pendente é reapurada. Recebimentos, ajustes, comissão comprometida e documentos fiscais bloqueiam a negociação.",
+      "Corrige a edição parcial dos itens para preservar quantidade, preço e desconto que não foram alterados.",
+      "Requer aplicar db/fase381_negociacao_preco_item.sql. O preço do cadastro de produtos permanece independente da negociação."
+    ]
+  },
+  {
     "versao": "1.67.4",
     "data": "2026-11-27",
     "titulo": "Padroniza o código do cliente na impressão pelo cadastro unificado",
