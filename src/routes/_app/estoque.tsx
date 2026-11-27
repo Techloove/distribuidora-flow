@@ -1,3 +1,4 @@
+import { estoqueMinimoExibido } from "@/lib/formatacao";
 import { SeletorProdutoEstoque } from "@/components/seletor-produto-estoque";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -571,11 +572,7 @@ function EstoquePage() {
                                   : "…"}
                             </TableCell>
                             <TableCell className="text-right">
-                              {p["estoque_minimo"] == null
-                                ? "—"
-                                : Number(p["estoque_minimo"]).toLocaleString("pt-BR", {
-                                    maximumFractionDigits: 3,
-                                  })}
+                              {estoqueMinimoExibido(p["estoque_minimo"])}
                             </TableCell>
                             <TableCell
                               className={baixo ? "text-destructive" : "text-muted-foreground"}

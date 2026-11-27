@@ -63,3 +63,12 @@ export function cpfCnpjBr(value: unknown): string {
     return digitos.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
   return texto || "—";
 }
+
+/** Quantidade apresentada do mínimo: inteiro superior; não altera o cálculo armazenado. */
+export function estoqueMinimoExibido(value: unknown): string {
+  if (value == null || value === "") return "—";
+  const numero = Number(value);
+  return Number.isFinite(numero)
+    ? Math.ceil(numero).toLocaleString("pt-BR", { maximumFractionDigits: 0 })
+    : "—";
+}

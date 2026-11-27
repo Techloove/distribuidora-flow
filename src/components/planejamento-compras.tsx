@@ -1,3 +1,4 @@
+import { estoqueMinimoExibido } from "@/lib/formatacao";
 import { useCentroValido } from "@/lib/centros-acesso";
 import { filtrarCentro } from "@/lib/centro-store";
 import { useEffect, useMemo, useState } from "react";
@@ -181,7 +182,7 @@ export function PlanejamentoCompras() {
         estoque: qtdCompra(c.estoque),
         pendencia: qtdCompra(c.pendencia),
         transito: qtdCompra(numero(r["em_transito"])),
-        minimo: qtdCompra(c.minimo),
+        minimo: estoqueMinimoExibido(c.minimo),
         media: qtdCompra(c.mediaMes),
         v30: qtdCompra(numero(r["venda_30"])),
         v60: qtdCompra(numero(r["venda_60"])),
@@ -596,7 +597,7 @@ export function PlanejamentoCompras() {
                     {qtdCompra(numero(r["em_transito"]))}
                   </TableCell>
                   <TableCell data-label="Mínimo" className="text-right tabular-nums">
-                    {qtdCompra(c.minimo)}
+                    {estoqueMinimoExibido(c.minimo)}
                   </TableCell>
                   <TableCell
                     data-label="Média mês"

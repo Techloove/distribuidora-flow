@@ -66,7 +66,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
           body = [
             {
               produto_id: id(50),
-              estoque_minimo: 300,
+              estoque_minimo: 50.37,
               media_diaria: 10,
               venda_periodo: 900,
               periodo_dias: 90,
@@ -101,12 +101,12 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw Error("U
       await page
         .getByRole("row")
         .filter({ hasText: "PREGO" })
-        .getByText("300", { exact: true })
+        .getByText("51", { exact: true })
         .waitFor();
       await page.getByRole("button", { name: "Editar registro", exact: true }).first().click();
       await page.getByRole("button", { name: "Preços e estoque", exact: true }).click();
       const minimo = page.locator("#estoque_minimo_calculado");
-      assert.equal(await minimo.inputValue(), "300");
+      assert.equal(await minimo.inputValue(), "51");
       assert.equal(await minimo.isDisabled(), true);
       assert.equal(await page.locator("#estoque_minimo").count(), 0);
       assert.equal(writes.length, 0);

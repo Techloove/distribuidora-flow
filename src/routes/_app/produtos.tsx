@@ -1,5 +1,5 @@
 import { podeVerCustosProduto, CAMPOS_CUSTO_PRODUTO } from "@/lib/produtos-acesso";
-import { dataBr } from "@/lib/formatacao";
+import { dataBr, estoqueMinimoExibido } from "@/lib/formatacao";
 import { lerPaginas } from "@/lib/paginacao";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes } from "lucide-react";
@@ -297,9 +297,7 @@ function ProdutosPage() {
             ? "Indisponível"
             : minimos.data
               ? minimos.data.has(String(r["id"]))
-                ? minimos.data
-                    .get(String(r["id"]))!
-                    .toLocaleString("pt-BR", { maximumFractionDigits: 3 })
+                ? estoqueMinimoExibido(minimos.data.get(String(r["id"])))
                 : "—"
               : lojasMinimo.length
                 ? "…"

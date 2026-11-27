@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.67.2",
+    "data": "2026-11-27",
+    "titulo": "Exibe o estoque mínimo em inteiros arredondados para cima",
+    "motivo": "Exibe o estoque mínimo em inteiros arredondados para cima",
+    "novidades": [
+      "Exibe o estoque mínimo em inteiros arredondados para cima"
+    ]
+  },
+  {
     "versao": "1.67.1",
     "data": "2026-11-27",
     "titulo": "Restaura a exibição do estoque mínimo automático em Produtos",

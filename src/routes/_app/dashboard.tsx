@@ -1,3 +1,4 @@
+import { estoqueMinimoExibido } from "@/lib/formatacao";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -286,7 +287,7 @@ function Dashboard() {
                 <li key={String(p["id"])} className="flex justify-between gap-4">
                   <span className="truncate">{String(p["descricao"])}</span>
                   <span className="text-destructive">
-                    {String(p["estoque_atual"])} / mín. {String(p["estoque_minimo"])}
+                    {String(p["estoque_atual"])} / mín. {estoqueMinimoExibido(p["estoque_minimo"])}
                   </span>
                 </li>
               ))}

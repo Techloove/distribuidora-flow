@@ -2,7 +2,7 @@
 
 Aplique `db/fase379_estoque_minimo_por_media.sql` inteiro. A migração é transacional e reaplicável. Ela inicia os parâmetros de cada loja em **90 dias de histórico** e **30 dias de cobertura**, preservando configurações já gravadas em reaplicações. As próximas lojas recebem os mesmos parâmetros pelo mecanismo existente de criação de loja.
 
-O cálculo é `vendas líquidas do período × dias de cobertura ÷ dias do período`. Exemplo: 900 unidades em 90 dias, com cobertura de 30 dias, resultam em mínimo de 300 unidades. As quantidades usam a unidade do produto, com arredondamento para cima na terceira casa decimal.
+O cálculo é `vendas líquidas do período × dias de cobertura ÷ dias do período`. Exemplo: 900 unidades em 90 dias, com cobertura de 30 dias, resultam em mínimo de 300 unidades. O cálculo interno usa a unidade do produto, com arredondamento para cima na terceira casa decimal. Na exibição do mínimo em Produtos, Estoque, dashboard e planejamento, o valor é apresentado como inteiro superior: 50,37 aparece como 51. Esse arredondamento visual não altera os cálculos, saldos ou parâmetros.
 
 Configure em **Lojas → Regras comerciais, financeiras e de estoque**:
 
