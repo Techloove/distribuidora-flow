@@ -1,5 +1,14 @@
 [
   {
+    "versao": "1.67.1",
+    "data": "2026-11-27",
+    "titulo": "Restaura a exibição do estoque mínimo automático em Produtos",
+    "motivo": "Restaura a exibição do estoque mínimo automático em Produtos",
+    "novidades": [
+      "Restaura a exibição do estoque mínimo automático em Produtos"
+    ]
+  },
+  {
     "versao": "1.67.0",
     "data": "2026-11-27",
     "titulo": "Calcula o estoque mínimo pela média de vendas de cada loja",

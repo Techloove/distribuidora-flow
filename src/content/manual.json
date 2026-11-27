@@ -158,7 +158,7 @@
       "A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.",
       "Altere o preço normal em Produtos ou em Lojas → Produtos e preços. Após salvar, o mesmo preço é sincronizado nas duas telas e usado em novos itens de pedidos. Promoções podem aplicar um preço especial; descontos e disponibilidade continuam por loja.",
       "Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro.",
-      "O estoque mínimo é automático por loja: vendas líquidas dos últimos 90 dias ÷ 90 × 30 dias de cobertura. Em Lojas → Regras comerciais, financeiras e de estoque, altere separadamente o período da média e os dias de cobertura (1 a 3650). A fase379 inicia as lojas com 90/30 e não sobrescreve ajustes posteriores.",
+      "Em Produtos, a coluna Estoque mínimo e o campo de consulta no cadastro mostram o mínimo calculado, sem edição manual. Com Todas as lojas, a coluna soma os mínimos das lojas permitidas para cada produto. O estoque mínimo é automático por loja: vendas líquidas dos últimos 90 dias ÷ 90 × 30 dias de cobertura. Em Lojas → Regras comerciais, financeiras e de estoque, altere separadamente o período da média e os dias de cobertura (1 a 3650). A fase379 inicia as lojas com 90/30 e não sobrescreve ajustes posteriores.",
       "Ao editar um produto, use as seções Dados gerais, Preços e estoque, Dados fiscais e Histórico. Os campos preenchidos permanecem ao trocar de seção; clique Salvar para gravar. O histórico tem botões Anterior e Próxima."
     ],
     "cuidados": [

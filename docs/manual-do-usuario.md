@@ -1,6 +1,6 @@
 # Manual do usuário — Caparaó System
 
-Versão 1.67.0 · 2026-11-27
+Versão 1.67.1 · 2026-11-27
 
 Este manual orienta o uso; não concede acesso aos módulos. Consulte a versão atual em Ajuda → Manual do usuário no sistema.
 
@@ -129,7 +129,7 @@ Entenda como a categoria liga os produtos ao estoque da loja.
 3. A categoria do produto deve corresponder à categoria configurada para sua loja. Após a fase271, o saldo fica no depósito principal dessa loja.
 4. Altere o preço normal em Produtos ou em Lojas → Produtos e preços. Após salvar, o mesmo preço é sincronizado nas duas telas e usado em novos itens de pedidos. Promoções podem aplicar um preço especial; descontos e disponibilidade continuam por loja.
 5. Você pode renomear a loja sem perder o vínculo do depósito, que usa o identificador do cadastro.
-6. O estoque mínimo é automático por loja: vendas líquidas dos últimos 90 dias ÷ 90 × 30 dias de cobertura. Em Lojas → Regras comerciais, financeiras e de estoque, altere separadamente o período da média e os dias de cobertura (1 a 3650). A fase379 inicia as lojas com 90/30 e não sobrescreve ajustes posteriores.
+6. Em Produtos, a coluna Estoque mínimo e o campo de consulta no cadastro mostram o mínimo calculado, sem edição manual. Com Todas as lojas, a coluna soma os mínimos das lojas permitidas para cada produto. O estoque mínimo é automático por loja: vendas líquidas dos últimos 90 dias ÷ 90 × 30 dias de cobertura. Em Lojas → Regras comerciais, financeiras e de estoque, altere separadamente o período da média e os dias de cobertura (1 a 3650). A fase379 inicia as lojas com 90/30 e não sobrescreve ajustes posteriores.
 7. Ao editar um produto, use as seções Dados gerais, Preços e estoque, Dados fiscais e Histórico. Os campos preenchidos permanecem ao trocar de seção; clique Salvar para gravar. O histórico tem botões Anterior e Próxima.
 
 Cuidados:
@@ -605,6 +605,12 @@ Cuidados:
 ## Histórico de versões
 
 Notas preservadas desde a primeira versão numerada. Consulte as instruções atuais para operar o sistema.
+
+### v1.67.1 · 2026-11-27 · Restaura a exibição do estoque mínimo automático em Produtos
+
+Motivo da atualização: Restaura a exibição do estoque mínimo automático em Produtos
+
+- Restaura a exibição do estoque mínimo automático em Produtos
 
 ### v1.67.0 · 2026-11-27 · Calcula o estoque mínimo pela média de vendas de cada loja
 

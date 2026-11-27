@@ -128,6 +128,13 @@ const fields: CrudField[] = [
     inTable: true,
     auto: true,
   },
+  {
+    name: "estoque_minimo_calculado",
+    label: "Estoque mínimo",
+    inTable: true,
+    auto: true,
+    virtual: true,
+  },
   { name: "comprado_qtd", label: "Comprado", inTable: true, auto: true, virtual: true },
   {
     name: "permite_estoque_negativo",
@@ -194,6 +201,38 @@ function ProdutosPage() {
     },
   });
 
+  const lojasMinimo = cv.centro ? [cv.centro] : cv.lista.map((l) => l.id).sort();
+  const minimos = useQuery({
+    queryKey: ["estoque-minimos-379", "produtos", user?.id, lojasMinimo.join(",")],
+    enabled: !!client && !cv.isLoading && !cv.error && lojasMinimo.length > 0,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const mapa = new Map<string, number>();
+      // Limita a concorrência na visão consolidada; cada loja é agregada no servidor.
+      for (let i = 0; i < lojasMinimo.length; i += 3) {
+        const lotes = await Promise.all(
+          lojasMinimo
+            .slice(i, i + 3)
+            .map((loja) =>
+              lerPaginas<Row>((inicio, fim) =>
+                client!
+                  .rpc("estoque_minimos_loja_379", { _centro: loja })
+                  .order("produto_id")
+                  .range(inicio, fim),
+              ),
+            ),
+        );
+        for (const lote of lotes)
+          for (const r of lote) {
+            const id = String(r["produto_id"]);
+            mapa.set(id, (mapa.get(id) ?? 0) + Number(r["estoque_minimo"]));
+          }
+      }
+      return mapa;
+    },
+  });
+
   /** Promoções vigentes (tabelas de preço) usadas para exibir o preço promocional do produto. */
   const promocoes = useQuery({
     queryKey: ["vw_promocoes", "vigentes", user?.id, cv.centro],
@@ -254,10 +293,31 @@ function ProdutosPage() {
           promo_preco: promoBase > 0 ? promoBase : null,
           promo_fim: promoBase > 0 ? (p ? fmtDate(p["vigencia_fim"]) : "sem limite") : "—",
           comprado_qtd: comprado > 0 ? `C ${comprado}` : "—",
+          estoque_minimo_calculado: minimos.isError
+            ? "Indisponível"
+            : minimos.data
+              ? minimos.data.has(String(r["id"]))
+                ? minimos.data
+                    .get(String(r["id"]))!
+                    .toLocaleString("pt-BR", { maximumFractionDigits: 3 })
+                : "—"
+              : lojasMinimo.length
+                ? "…"
+                : "—",
         };
       });
     },
-    [promocoes.data, comprados.data, cv.centro, cv.isLoading, cv.error, vinculosLoja.data],
+    [
+      promocoes.data,
+      comprados.data,
+      cv.centro,
+      cv.isLoading,
+      cv.error,
+      vinculosLoja.data,
+      minimos.data,
+      minimos.isError,
+      lojasMinimo.length,
+    ],
   );
 
   /** Alteração direta na listagem: markup e preço de venda sempre sobre o custo médio. */
@@ -295,6 +355,12 @@ function ProdutosPage() {
         </Link>
         .
       </p>
+      {minimos.error && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          Não foi possível calcular o estoque mínimo. Confira a aplicação do SQL da fase379.{" "}
+          {minimos.error.message}
+        </p>
+      )}
       {(cv.error || vinculosLoja.error) && (
         <p role="alert" className="mb-3 text-sm text-destructive">
           Não foi possível validar os produtos da loja: {(cv.error || vinculosLoja.error)?.message}
@@ -338,6 +404,7 @@ function ProdutosPage() {
               "estoque_maximo",
               "prazo_fornecedor_dias",
               "estoque_atual",
+              "estoque_minimo_calculado",
               "comprado_qtd",
               "permite_estoque_negativo",
             ],
